@@ -5,11 +5,9 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
-#include <pthread.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
-#include <linux/spi/spidev.h>
 #include <math.h>
 
 #include "pinconfig.h"
@@ -24,11 +22,11 @@ int debug;
 
 int main(int argc, char *argv[])
 {
-  const float frq_hz = 500;
+  const float frq_hz = 1500;
   static FILE* f_log;
 
-  /* Cmd line arguments */
-  if ( (argc == 2) && (strcmp(argv[1],"-v") == 0) ){
+  /* Command line arguments */
+  if( (argc == 2) && (strcmp(argv[1],"-v") == 0) ){
     printf("DEBUG MODE.");
     debug = 1;
   }
@@ -37,26 +35,24 @@ int main(int argc, char *argv[])
   printf("Welcome to AnkleOS\n");
   printf("---------------------\n");
 
-
-  if(init_tui() != 0){
-    perror("Text UI failed.\n");
-    return -1;
-  }
-
+  /* Controller */
   if(init_control(frq_hz, f_log) != 0){
-    perror("controller initialization failed.");
+    perror("Controller initialization failed.\n");
     return -1;
   }
-
   if(start_control() != 0){
-    perror("controller start failed.");
+    perror("Controller start failed.\n");
     return -1;
   }
 
-  ui_menu_cb();
-  while(1){
-    pause();
-    ui_input();
+  while(1);
+  /* UI */
+  if(init_tui() != 0){
+    printf("TUI initialization failed.\n");
+    return -1;
+  }
+  if(start_tui() == 1){
+    raise(SIGINT);
   }
 }
 
