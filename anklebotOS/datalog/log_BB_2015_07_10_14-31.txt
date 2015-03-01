@@ -1,5 +1,0 @@
-% BBB ankleOS version 0
-% Date: 2015_07_10_14-31
-%
-% timestamp kp
-% Sample frequency = 200.000000

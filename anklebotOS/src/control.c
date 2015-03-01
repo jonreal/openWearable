@@ -107,6 +107,7 @@ int init_control(const float frq_hz, FILE* f)
   /* set handler for control loop signal */
   action_loop.sa_handler = control_loop_cb;
   sigemptyset(&action_loop.sa_mask);
+  sigaddset(&action_loop.sa_mask, SIGIO);
   action_loop.sa_flags = 0;
   if(sigaction(SIGALRM, &action_loop, NULL) != 0){
     printf("Unable to catch SIGALRM\n");
@@ -150,6 +151,7 @@ int start_control(void)
 
 void add_func_to_cleanup(int (*FuncPtr)(void))
 {
+  cleanup_ptr->func[cleanup_ptr->numOfFuncs] = malloc(sizeof(FuncPtr));
   cleanup_ptr->func[cleanup_ptr->numOfFuncs] = FuncPtr;
   cleanup_ptr->numOfFuncs++;
 }
@@ -162,9 +164,20 @@ void control_cleanup(int signum)
   printf("\nCleaning up....\n");
   fclose(config_ptr->f_log);
   printf("Log closed.\n");
+
+  free(s_ptr);
+  s_ptr = NULL;
+  free(flgs_ptr);
+  flgs_ptr = NULL;
+  free(config_ptr);
+  config_ptr = NULL;
+
   for(int i=0; i<cleanup_ptr->numOfFuncs; i++){
     cleanup_ptr->func[i]();
   }
+
+  free(cleanup_ptr);
+  cleanup_ptr = NULL;
   exit(0);
 }
 
@@ -251,11 +264,11 @@ int update_state(void)
   float prev_pos_error = s_ptr->pos_0 - s_ptr->pos;
 
   /* ankle position */
-//  if (read_pos() != 0){
-//    printf("State update failed -- get_pos().\n");
-//    fprintf(config_ptr->f_log,"State update failed -- get_pos().\n");
-//    return -1;
-//  }
+  if (read_pos() != 0){
+    printf("State update failed -- get_pos().\n");
+    fprintf(config_ptr->f_log,"State update failed -- get_pos().\n");
+    return -1;
+  }
 
   /* ankle velocity */
 //  s_ptr->vel = (s_ptr->pos_0 - s_ptr->pos - prev_pos_error)*config_ptr->frq_hz;

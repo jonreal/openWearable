@@ -16,6 +16,7 @@ pruIo *io;
 int init_adc(void)
 {
   io = pruio_new(PRUIO_DEF_ACTIVE, 0x98, 0, 1);
+
   if(io->Errr){
     printf("ADC-pru initialization failed: %s",io->Errr);
     return -1;
@@ -45,6 +46,7 @@ int read_adc(int value[7])
 int adc_cleanup(void)
 {
   pruio_destroy(io);
+  io = NULL;
   printf("ADC-pru cleanned up.\n");
   return 0;
 }

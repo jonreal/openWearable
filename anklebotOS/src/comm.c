@@ -96,22 +96,22 @@ void udp_read_sig_cb(int signal)
 
   if (c_ptr->recvBuff[0] == 'D'){
     set_pos_0(DEG2RAD(25.0));
-    ui_menu_cb();
+//    ui_menu_cb();
   }
   else if (c_ptr->recvBuff[0] == 'P'){
     set_pos_0(DEG2RAD(-20.0));
-    ui_menu_cb();
+  //  ui_menu_cb();
   }
   else if (c_ptr->recvBuff[0] == 'T'){
     if (!is_FF_on()){
       set_FB_cntrl(0);
       set_FF_cntrl(1);
-      ui_menu_cb();
+    //  ui_menu_cb();
     }
     else if (is_FF_on()){
       set_FF_cntrl(0);
       set_pos_0(ANGLE_OFFSET);
-      ui_menu_cb();
+    //  ui_menu_cb();
       set_FB_cntrl(1);
     }
   }
