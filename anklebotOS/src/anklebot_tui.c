@@ -23,7 +23,7 @@ const int debug = 1;
 
 int main(int argc, char *argv[])
 {
-  const float frq_hz = 200;
+  const float frq_hz = 20;
   static FILE* f_log;
 
   printf("\n---------------------\n");
