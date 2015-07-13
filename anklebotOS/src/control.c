@@ -398,7 +398,7 @@ float encoder_to_angle(uint8_t MSB, uint8_t LSB)
  * ------------------------------------------------------------------------- */
 int create_log_file(void)
 {
-  char logstr[256] = "log/log_BB_";
+  char logstr[256] = "datalog/log_BB_";
   char timestr[256];
 
   time_t now = time(NULL);
