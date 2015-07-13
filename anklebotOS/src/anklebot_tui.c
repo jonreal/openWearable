@@ -19,7 +19,7 @@
 
 #define ANKLE_OS_v 1
 
-const int debug = 0;
+const int debug = 1;
 
 int main(int argc, char *argv[])
 {

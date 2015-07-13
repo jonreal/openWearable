@@ -4,9 +4,7 @@
 # J. Realmuto realmuto@uw.edu
 # -----------------------------------------------------------------------------
 
-TARGET = ankleOS_textUI
-NONTARGET = ankleOS_myo
-$(warning Building: $(TARGET))
+TARGET = ankleOS_tui
 
 # C Source Directories
 CSRC_DIR = ./src
@@ -23,10 +21,10 @@ CFLAGS = -Wall -g -O2 -mtune=cortex-a8 -march=armv7-a
 LDFLAGS =
 
 # Find source/target files
-SOURCES = $(filter-out $(CSRC_DIR)/$(NONTARGET).c,$(wildcard $(CSRC_DIR)/*.c))
+SOURCES = $(wildcard $(CSRC_DIR)/*.c)
 OBJECTS = $(patsubst $(CSRC_DIR)/%,$(BUILD_DIR)/%,$(SOURCES:.c=.o))
 
-# Build
+# Link
 $(TARGET): $(OBJECTS)
 	@echo " Linking ..."
 	@echo " $(SOURCES) "
