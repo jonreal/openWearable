@@ -1,21 +1,23 @@
-D = dlmread('log_BB_12_09_2014_13-47.txt', ' ',6,0);
+datalog = '../datalog/';
+listing = dir(datalog);
+file = listing(end).name
+
+D = dlmread([datalog,'/',file],' ',6,0);
 
 
 dt = D(2:end,1) - D(1:end-1,1);
+cpu_per_cycle = D(:,2);
 
 figure;
   plot(dt)
   ylabel('dt')
   xlabel('Sample')
 
-
-figure;
-  plot(D(:,1), rad2deg(D(:,end-1)),'r', ...
-       D(:,1), rad2deg(D(:,end)),'--k')
-  xlabel('Time (s)')
-  ylabel('Ankle Position (deg)')
-  legend('Response', 'Desired')
-
+fprintf('STATS\n')
+fprintf('-----------')
 mean_dt = mean(dt)
+mean_frq = 1/mean_dt
 var_dt = var(dt)
+mean_cpu_cycle_s = mean(cpu_per_cycle)
+mean_cpu_cycle_frq = 1/mean_cpu_cycle_s
 
