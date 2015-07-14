@@ -2,20 +2,17 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <sys/time.h>
-#include <unistd.h>
 #include <signal.h>
 #include <string.h>
 #include <pthread.h>
-#include <fcntl.h>
 #include <unistd.h>
-#include <sys/ioctl.h>
 #include <math.h>
 
-#include "pwm.h"
 #include "common.h"
 #include "pinconfig.h"
 #include "motor.h"
 #include "spi.h"
+#include "adc.h"
 #include "control.h"
 
 
@@ -23,7 +20,6 @@
 anklestate_t *s_ptr;
 cntlr_flgs_t *flgs_ptr;
 config_t *config_ptr;
-
 
 /* ----------------------------------------------------------------------------
  * Function init_control(*,*) initializes control structures, control loop
@@ -47,9 +43,8 @@ int init_control(const float frq_hz, FILE* f)
   config_ptr->frq_hz = frq_hz;
   config_ptr->dt_us = (suseconds_t)(1000000.0 / config_ptr->frq_hz);
 
-
+  /* Initialize state */
   s_ptr->time_stamp = 0.0;
-
   s_ptr->pos = 0.0;
   s_ptr->pos_0 = ANGLE_OFFSET;
   s_ptr->vel = 0.0;
@@ -64,6 +59,11 @@ int init_control(const float frq_hz, FILE* f)
   s_ptr->FF_gain = 15.0;
   s_ptr->FF_period = 1.0;
   s_ptr->FF_phase = 0.0;
+
+  for (int i=0; i<s_ptr->numOfADC; i++){
+    s_ptr->adc_value[i] = 0.0;
+    s_ptr->adc_ch[i] = 0;
+  }
 
   flgs_ptr->control_loop_started = 0;
   flgs_ptr->FB_cntlr = 1;
@@ -86,6 +86,10 @@ int init_control(const float frq_hz, FILE* f)
     printf("spi initialization error.\n");
     fprintf(config_ptr->f_log,"spi initialization error.\n");
     return -1;
+  }
+
+  if(init_adc() != 0){
+    printf("Init adc eror.\n");
   }
 
   /* set handler for control loop signal */
@@ -138,9 +142,9 @@ int start_control(void)
 void control_cleanup(int signum)
 {
   alarm(0);
-  printf("\nCleaning up.\n");
+  printf("\nCleaning up....\n");
   fclose(config_ptr->f_log);
-  printf("log closed.\n");
+  printf("Log closed.\n");
   spi_cleanup();
   motor_cleanup();
   exit(0);
@@ -164,27 +168,29 @@ void control_loop_cb(int signum)
     fprintf(config_ptr->f_log, "Error getting time.\n");
   }
 
-  /* check control loop flag, set time stamp */
+  /* check control loop flag, set time stamp, and flag */
   if (flgs_ptr->control_loop_started != 0){
     s_ptr->time_stamp = get_time_stamp(t_now);
   }
   else{
-    s_ptr->time_stamp = 0;
+    s_ptr->time_stamp = 0.0;
     config_ptr->start_time = t_now;
     flgs_ptr->control_loop_started = 1;
   }
 
+  /* State update */
   if (update_state() != 0){
     printf("State update failed\n");
     fprintf(config_ptr->f_log,"State update failed\n");
   }
 
+  /* Control update */
   if (update_control() != 0){
     printf("Control update failed\n");
     fprintf(config_ptr->f_log,"Control update failed\n");
   }
 
-  /* get end time */
+  /* Get cpu time for control loop */
   if(gettimeofday(&t_end, NULL) == -1){
     printf("Error getting time.");
     fprintf(config_ptr->f_log, "Error getting time.\n");
@@ -227,7 +233,7 @@ int update_state(void)
   float prev_pos_error = s_ptr->pos_0 - s_ptr->pos;
 
   /* ankle position */
-  if (get_pos(&s_ptr->pos) != 0){
+  if (read_pos() != 0){
     printf("State update failed -- get_pos().\n");
     fprintf(config_ptr->f_log,"State update failed -- get_pos().\n");
     return -1;
@@ -236,18 +242,11 @@ int update_state(void)
   /* ankle velocity */
   s_ptr->vel = ((s_ptr->pos_0 - s_ptr->pos) - prev_pos_error)*config_ptr->frq_hz;
 
-  if (read_motor_velocity(&s_ptr->motor_vel) != 0){
-    printf("State update failed -- read_motor_velocity().\n");
-    fprintf(config_ptr->f_log,"State update failed -- read_motor_velocity().\n");
+  /* Read all adc channels */
+  if (read_adc() != 0){
+    printf("Error reading adc\n");
     return -1;
   }
-
-  if (read_motor_current(&s_ptr->motor_cur) != 0){
-    printf("State update failed -- read_motor_current().\n");
-    fprintf(config_ptr->f_log,"State update failed -- read_motor_current().\n");
-    return -1;
-  }
-
   return 0;
 }
 
@@ -283,72 +282,14 @@ int update_control(void)
 }
 
 /* ----------------------------------------------------------------------------
- * Function set_pos_0() updates zero torque position. This function acts as
- * a helper function, ie can be called in other .c files.
+ * Function read_pos(*) is low level get ankle position using SPI.
  * ------------------------------------------------------------------------- */
-int set_pos_0(float new_pos)
-{
-  s_ptr->pos_0 = new_pos;
-  return 0;
-}
-
-/* ----------------------------------------------------------------------------
- * Function set_Kp() updates proportional gain. This function acts as
- * a helper function, ie can be called in other .c files.
- * ------------------------------------------------------------------------- */
-int set_Kp(float new_Kp)
-{
-  s_ptr->Kp = new_Kp;
-  return 0;
-}
-
-/* ----------------------------------------------------------------------------
- * Function set_Kd() updates proportional gain. This function acts as
- * a helper function, ie can be called in other .c files.
- * ------------------------------------------------------------------------- */
-int set_Kd(float new_Kd)
-{
-  s_ptr->Kd = new_Kd;
-  return 0;
-}
-
-/* ----------------------------------------------------------------------------
- * Function get_Kp() returns proportional gain. This function acts as
- * a helper function, ie can be called in other .c files.
- * ------------------------------------------------------------------------- */
-float get_Kp(void)
-{
-  return s_ptr->Kp;
-}
-
-/* ----------------------------------------------------------------------------
- * Function get_Kd() returns derivative gain. This function acts as
- * a helper function, ie can be called in other .c files.
- * ------------------------------------------------------------------------- */
-float get_Kd(void)
-{
-  return s_ptr->Kd;
-}
-
-/* ----------------------------------------------------------------------------
- * Function get_pos_0() returns zero torque position. This function acts as
- * a helper function, ie can be called in other .c files.
- * ------------------------------------------------------------------------- */
-float get_pos_0(void)
-{
-  return s_ptr->pos_0;
-}
-
-/* ----------------------------------------------------------------------------
- * Function get_pos(*) is low level get ankle position using SPI. A pointer to
- * position state is input.
- * ------------------------------------------------------------------------- */
-int get_pos(volatile float *pos)
+int read_pos(void)
 {
   uint8_t MSB[1] = {0x00};
   uint8_t LSB[1] = {0x00};
 
-  /* read encoder */
+  /* send cmd */
   uint8_t cmd[1] = {0x10};
   uint8_t recv[ARRAY_SIZE(cmd)] = {0,};
   if(spi_transfer(cmd, recv) != 0){
@@ -377,7 +318,7 @@ int get_pos(volatile float *pos)
     return -1;
   }
 
-  *pos = encoder_to_angle(MSB[0],LSB[0]);
+  s_ptr->pos = encoder_to_angle(MSB[0],LSB[0]);
   return 0;
 }
 
@@ -391,6 +332,42 @@ float encoder_to_angle(uint8_t MSB, uint8_t LSB)
     angle = angle - 2.0*M_PI;
   }
   return angle + ANGLE_OFFSET;
+}
+
+/* ----------------------------------------------------------------------------
+ * Helper functions to allow acces to local state ptr.
+ * ------------------------------------------------------------------------- */
+int set_pos_0(float new_pos)
+{
+  s_ptr->pos_0 = new_pos;
+  return 0;
+}
+
+int set_Kp(float new_Kp)
+{
+  s_ptr->Kp = new_Kp;
+  return 0;
+}
+
+int set_Kd(float new_Kd)
+{
+  s_ptr->Kd = new_Kd;
+  return 0;
+}
+
+float get_Kp(void)
+{
+  return s_ptr->Kp;
+}
+
+float get_Kd(void)
+{
+  return s_ptr->Kd;
+}
+
+float get_pos_0(void)
+{
+  return s_ptr->pos_0;
 }
 
 /* ----------------------------------------------------------------------------
@@ -412,7 +389,8 @@ int create_log_file(void)
   printf("Log file: %s\n",logstr);
 
   /* Create header */
-  fprintf(config_ptr->f_log,"%% BBB ankleOS version %i\n",config_ptr->codeVersion);
+  fprintf(config_ptr->f_log,"%% BBB ankleOS version %i\n",
+         config_ptr->codeVersion);
   fprintf(config_ptr->f_log,"%% Date: %s\n", timestr);
   fprintf(config_ptr->f_log,"%%\n%% timestamp kp\n");
   fprintf(config_ptr->f_log,"%% Sample frequency = %f\n",config_ptr->frq_hz);
@@ -444,82 +422,6 @@ float get_time_interval(struct timeval t1, struct timeval t2)
 suseconds_t get_time_interval_us(struct timeval t1, struct timeval t2)
 {
   return (t2.tv_usec - t1.tv_usec);
-}
-
-/* ----------------------------------------------------------------------------
- * Function ui_menu_cb()
- * ------------------------------------------------------------------------- */
-void ui_menu_cb(void)
-{
-  printf("\n\n--------------------------\n");
-  printf("Kp = %f, Kd = %f, pos_0 = %f\n",
-         s_ptr->Kp, s_ptr->Kd, RAD2DEG(s_ptr->pos_0));
-
-  printf("Menu: a - enter new Kp\n");
-  printf("      s - enter new Kd\n");
-  printf("      d - enter new pos_0 (deg)\n");
-  printf("      f - open loop\n");
-  printf("      e - exit\n");
-  printf("--------------------------\n");
-}
-
-/* ----------------------------------------------------------------------------
- * Function ui_input()
- * ------------------------------------------------------------------------- */
-void ui_input(void)
-{
-  char user_input = 0;
-  float user_float_input = 0.0;
-
-  scanf("%c", &user_input);
-
-  if (user_input == 'e'){
-    control_cleanup(0);
-  }
-  else if (user_input == 'a'){
-    printf("\t\t enter new Kp: ");
-    while(1){
-      pause();
-      if(scanf("%f", &user_float_input) != -1)
-        break;
-    }
-    set_Kp(user_float_input);
-    ui_menu_cb();
-  }
-  else if (user_input == 's'){
-    printf("\t\t enter new Kd: ");
-    while(1){
-      pause();
-      if(scanf("%f", &user_float_input) != -1)
-        break;
-    }
-    set_Kd(user_float_input);
-    ui_menu_cb();
-  }
-  else if (user_input == 'd'){
-    printf("\t\t enter new pos_0: ");
-    while(1){
-      pause();
-      if(scanf("%f", &user_float_input) != -1)
-        break;
-    }
-    set_pos_0(DEG2RAD(user_float_input));
-    ui_menu_cb();
-  }
-  else if (user_input == 'f'){
-    set_FB_cntrl(0);
-    set_FF_cntrl(1);
-    printf("\t\t Press 0 enter exit.");
-    while(1){
-      pause();
-      if(scanf("%f", &user_float_input) != -1)
-        break;
-    }
-    set_FF_cntrl(0);
-    set_pos_0(ANGLE_OFFSET);
-    ui_menu_cb();
-    set_FB_cntrl(1);
-  }
 }
 
 /* ----------------------------------------------------------------------------
@@ -563,3 +465,88 @@ int is_FF_on(void){
 int is_FB_on(void){
   return flgs_ptr->FB_cntlr;
 }
+
+/* ----------------------------------------------------------------------------
+ * Function init_adc()
+ * ------------------------------------------------------------------------- */
+int init_adc(void)
+{
+  unsigned int gpio;
+
+  /* Set up ADC */
+  if(adc_setup() != 1){
+    printf("ADC setup failed\n");
+    return -1;
+  }
+
+  /* Try each channel */
+  if(get_adc_ain(ADC0, &gpio) != 1){
+    printf("Error getting adc %s.\n",ADC0);
+    return -1;
+  }
+  s_ptr->adc_ch[0] = gpio;
+
+  if(get_adc_ain(ADC1, &gpio) != 1){
+    printf("Error getting adc %s.\n",ADC1);
+    return -1;
+  }
+  s_ptr->adc_ch[1] = gpio;
+
+  if(get_adc_ain(ADC2, &gpio) != 1){
+    printf("Error getting adc %s.\n",ADC2);
+    return -1;
+  }
+  s_ptr->adc_ch[2] = gpio;
+
+  if(get_adc_ain(ADC3, &gpio) != 1){
+    printf("Error getting adc %s.\n",ADC3);
+    return -1;
+  }
+  s_ptr->adc_ch[3] = gpio;
+
+  if(get_adc_ain(ADC4, &gpio) != 1){
+    printf("Error getting adc %s.\n",ADC4);
+    return -1;
+  }
+  s_ptr->adc_ch[4] = gpio;
+
+  if(get_adc_ain(ADC5, &gpio) != 1){
+    printf("Error getting adc %s.\n",ADC5);
+    return -1;
+  }
+  s_ptr->adc_ch[5] = gpio;
+
+  if(get_adc_ain(ADC6, &gpio) != 1){
+    printf("Error getting adc %s.\n",ADC6);
+    return -1;
+  }
+  s_ptr->adc_ch[6] = gpio;
+
+ return 0;
+}
+
+int read_adc(void)
+{
+  for (int i=0; i<7; i++){
+    if (read_value(s_ptr->adc_ch[i],&s_ptr->adc_value[i]) != 1){
+      printf("ADC read failed, channel: %i.\n",s_ptr->adc_ch[i]);
+      return -1;
+    }
+  }
+  return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

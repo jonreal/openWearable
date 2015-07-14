@@ -17,7 +17,7 @@ BUILD_DIR = ./build
 
 # Compiler
 CC = gcc
-CFLAGS = -Wall -g -O2 -mtune=cortex-a8 -march=armv7-a
+CFLAGS = -std=gnu99 -Wall -g -O2 -mtune=cortex-a8 -march=armv7-a
 LDFLAGS =
 
 # Find source/target files

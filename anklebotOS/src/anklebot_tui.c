@@ -16,14 +16,15 @@
 #include "control.h"
 #include "motor.h"
 #include "spi.h"
+#include "tui.h"
 
 #define ANKLE_OS_v 1
 
-const int debug = 1;
+const int debug = 0;
 
 int main(int argc, char *argv[])
 {
-  const float frq_hz = 20;
+  const float frq_hz = 2;
   static FILE* f_log;
 
   printf("\n---------------------\n");

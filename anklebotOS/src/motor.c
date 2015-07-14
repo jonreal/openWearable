@@ -6,7 +6,6 @@
 #include "gpio.h"
 #include "pwm.h"
 #include "motor.h"
-#include "adc.h"
 
 /* Stuct for pin config ---------------------------------------------------- */
 motor_gpio_t *mp_ptr;
@@ -45,26 +44,6 @@ int init_motor(void)
     printf("PWM unable to start.");
     return -1;
   }
-
-  /* Set up ADC */
-  if (adc_setup() != 1){
-    printf("ADC setup failed.\n");
-  }
-
-  /* motor ain current pin */
-  if(get_adc_ain(CUR_AIN, &gpio) != 1){
-    printf("Error getting adc ain.\n");
-    return -1;
-  }
-  mp_ptr->cur_ai = gpio;
-
-  /* motor ain velocity pin */
-  if(get_adc_ain(VEL_AIN, &gpio) != 1){
-    printf("Error getting adc ain.\n");
-    return -1;
-  }
-  mp_ptr->vel_ai = gpio;
-
   return 0;
 }
 
@@ -92,29 +71,6 @@ int set_motor_duty(float duty)
   else{
     pwm_set_duty_cycle(PWM_PIN, abs(duty));
   }
-  return 0;
-}
-
-int read_motor_current(volatile float *value)
-{
-  float temp;
-  if (read_value(mp_ptr->cur_ai,&temp) != 1){
-    printf("ADC read failed.\n");
-    return -1;
-  }
-  *value = temp + ADC_OFFSET;
-  return 0;
-}
-
-int read_motor_velocity(volatile float *value)
-{
-  float temp;
-  if (read_value(mp_ptr->vel_ai,&temp) != 1){
-    printf("ADC read failed.\n");
-    return -1;
-  }
-
-  *value = temp + ADC_OFFSET;
   return 0;
 }
 
