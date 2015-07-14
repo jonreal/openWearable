@@ -44,6 +44,7 @@ int init_motor(void)
     printf("PWM unable to start.");
     return -1;
   }
+  printf("Motor initialized.\n");
   return 0;
 }
 

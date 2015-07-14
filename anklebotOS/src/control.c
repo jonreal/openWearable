@@ -1,6 +1,7 @@
-#include <stdlib.h>
+
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <sys/time.h>
 #include <signal.h>
 #include <string.h>
@@ -76,20 +77,23 @@ int init_control(const float frq_hz, FILE* f)
   }
 
   if(init_motor() != 0){
-    printf("motor initialization error.\n");
-    fprintf(config_ptr->f_log,"motor initialization error.\n");
+    printf("Motor initialization error.\n");
+    fprintf(config_ptr->f_log,"Motor initialization error.\n");
     control_cleanup(0);
     return -1;
   }
 
   if(init_spi() != 0){
-    printf("spi initialization error.\n");
-    fprintf(config_ptr->f_log,"spi initialization error.\n");
+    printf("SPI initialization error.\n");
+    fprintf(config_ptr->f_log,"SPI initialization error.\n");
+    control_cleanup(0);
     return -1;
   }
 
   if(init_adc() != 0){
-    printf("Init adc eror.\n");
+    printf("ADC initialization error.\n");
+    fprintf(config_ptr->f_log, "ADC initialization error.\n");
+    control_cleanup(0);
   }
 
   /* set handler for control loop signal */
@@ -233,14 +237,14 @@ int update_state(void)
   float prev_pos_error = s_ptr->pos_0 - s_ptr->pos;
 
   /* ankle position */
-  if (read_pos() != 0){
-    printf("State update failed -- get_pos().\n");
-    fprintf(config_ptr->f_log,"State update failed -- get_pos().\n");
-    return -1;
-  }
+//  if (read_pos() != 0){
+//    printf("State update failed -- get_pos().\n");
+//    fprintf(config_ptr->f_log,"State update failed -- get_pos().\n");
+//    return -1;
+//  }
 
   /* ankle velocity */
-  s_ptr->vel = ((s_ptr->pos_0 - s_ptr->pos) - prev_pos_error)*config_ptr->frq_hz;
+//  s_ptr->vel = (s_ptr->pos_0 - s_ptr->pos - prev_pos_error)*config_ptr->frq_hz;
 
   /* Read all adc channels */
   if (read_adc() != 0){
@@ -521,8 +525,8 @@ int init_adc(void)
     return -1;
   }
   s_ptr->adc_ch[6] = gpio;
-
- return 0;
+  printf("ADC initialized.\n");
+  return 0;
 }
 
 int read_adc(void)

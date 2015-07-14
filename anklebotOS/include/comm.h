@@ -13,7 +13,7 @@ typedef struct{
 } udp_t;
 
 /* globals ---------------------------------------------------------------- */
-extern const int debug;
+extern int debug;
 
 /* prototypes ------------------------------------------------------------- */
 int init_udp(void);

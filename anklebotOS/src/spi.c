@@ -61,10 +61,10 @@ int init_spi(void)
     printf("can't get max speed\n");
     return -1;
   }
-
-  printf("spi mode: %d\n", SPI.mode);
-	printf("bits per word: %d\n", SPI.bpw);
-	printf("max speed: %d Hz (%d KHz)\n", SPI.msh, SPI.msh/1000);
+  printf("SPI initialized.\n");
+  printf("\tspi mode: %d\n", SPI.mode);
+	printf("\tbits per word: %d\n", SPI.bpw);
+	printf("\tmax speed: %d Hz (%d KHz)\n", SPI.msh, SPI.msh/1000);
 
   return 0;
 }
@@ -104,8 +104,6 @@ int spi_transfer(uint8_t tx[], uint8_t* rx)
 int spi_cleanup(void)
 {
   close(SPI.fd);
-  printf("spi cleaned up.\n");
-
+  printf("SPI cleaned up.\n");
   return 0;
-};
-
+}

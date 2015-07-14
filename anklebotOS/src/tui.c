@@ -4,13 +4,9 @@
 #include <unistd.h>
 #include <math.h>
 
-#include "pwm.h"
-#include "common.h"
 #include "pinconfig.h"
-#include "motor.h"
-#include "spi.h"
-#include "adc.h"
 #include "control.h"
+#include "tui.h"
 
 
 /* ----------------------------------------------------------------------------
@@ -39,7 +35,6 @@ void ui_input(void)
   float user_float_input = 0.0;
 
   scanf("%c", &user_input);
-
   if (user_input == 'e'){
     control_cleanup(0);
   }

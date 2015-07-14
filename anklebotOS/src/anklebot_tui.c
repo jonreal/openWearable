@@ -20,12 +20,18 @@
 
 #define ANKLE_OS_v 1
 
-const int debug = 0;
+int debug;
 
 int main(int argc, char *argv[])
 {
-  const float frq_hz = 2;
+  const float frq_hz = 10;
   static FILE* f_log;
+
+  /* Cmd line arguments */
+  if ( (argc == 2) && (strcmp(argv[1],"-v") == 0) ){
+    printf("DEBUG MODE.");
+    debug = 1;
+  }
 
   printf("\n---------------------\n");
   printf("Welcome to AnkleOS\n");
