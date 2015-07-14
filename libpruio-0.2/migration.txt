@@ -1,0 +1,75 @@
+Migrating from 0.0 to 0.2
+=========================
+
+Find the old syntax in the first line and the new one in the second.
+
+FreeBASIC
+---------
+
+'PruIo->Value[.]
+PruIo->Adc->Value[.]
+
+'PruIo->mm_trg_pin()
+PruIo->Adc->mm_trg_pin()
+
+'PruIo->am_trg_pin()
+PruIo->Adc->mm_trg_ain()
+
+'PruIo->mm_trg_pre()
+PruIo->Adc->mm_trg_pre()
+
+'PruIo->Gpio[.]->Stat
+PruIo->Gpio(.)->Raw->Mix
+
+'PruIo->gpio_get()
+PruIo->Gpio->Value()
+
+'PruIo->gpio_set()
+PruIo->Gpio->config()
+
+'PruIo->gpio_out()
+PruIo->Gpio->setValue()
+
+'PruIo->gpio_get_config()
+PruIo->Pin()
+
+
+
+C
+-
+
+//PruIo
+pruIo
+
+//char* pruio_config(PruIo* Io, uint32 Samp, uint32 Mask, uint32 Tmr, uint16 Mds, uint8 ClDv);
+char* pruio_config(pruIo* Io, uint32 Samp, uint32 Mask, uint32 Tmr, uint16 Mds);
+
+//char* pruio_gpio_get_config(PruIo* Io, uint8 Ball);!!!
+char* pruio_Pin(pruIo* Io, uint8 Ball);
+
+//char* pruio_adc_mm_start(PruIo* Io, uint32 Trg1, uint32 Trg2, uint32 Trg3, uint32 Trg4);
+char* pruio_mm_start(pruIo* Io, uint32 Trg1, uint32 Trg2, uint32 Trg3, uint32 Trg4);
+
+//char* pruio_adc_rb_start(PruIo* Io);
+char* pruio_rb_start(pruIo* Io);
+
+//char* pruio_gpio_out(PruIo* Io, uint8 Ball, uint8 Modus);!!!
+char* pruio_gpio_setValue(pruIo* Io, uint8 Ball, uint8 Modus);
+
+//char* pruio_gpio_set(PruIo* Io, uint8 Ball, uint8 Modus, uint8 Lokk);!!!
+char* pruio_gpio_setValue(pruIo* Io, uint8 Ball, uint8 Modus);
+
+//uint32 pruio_gpio_get(PruIo* Io, uint8 Ball);
+uint32 pruio_gpio_Value(pruIo* Io, uint8 Ball);
+
+//char* pruio_adc_step(PruIo* Io, uint8 Stp, uint8 ChN, uint8 Av, uint8 SaD, uint32 OpD);!!!
+char* pruio_adc_setStep(pruIo* Io, uint8 Stp, uint8 ChN, uint8 Av, uint8 SaD, uint32 OpD);
+
+//uint32 pruio_mm_trg_pin(PruIo* Io, uint8 Ball, uint8 GpioV, uint16 Skip);
+uint32 pruio_adc_mm_trg_pin(pruIo* Io, uint8 Ball, uint8 GpioV, uint16 Skip);
+
+//uint32 pruio_mm_trg_ain(pruIo* Io, uint8 Stp, int32 AdcV, uint8 Rela, uint16 Skip);
+uint32 pruio_adc_mm_trg_ain(pruIo* Io, uint8 Stp, int32 AdcV, uint8 Rela, uint16 Skip);
+
+//uint32 pruio_mm_trg_pre(pruIo* Io, uint8 Stp, int32 AdcV, uint16 Samp, uint8 Rela);
+uint32 pruio_adc_mm_trg_pre(pruIo* Io, uint8 Stp, int32 AdcV, uint16 Samp, uint8 Rela);
