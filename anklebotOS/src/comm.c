@@ -20,6 +20,7 @@
 #include "comm.h"
 #include "control.h"
 
+/* THIS WHOLE FILE NEEDS REWRITE */
 /* Comm struct */
 udp_t *c_ptr;
 

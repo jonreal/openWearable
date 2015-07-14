@@ -10,16 +10,14 @@ typedef struct
 {
   unsigned int enb;
   unsigned int dir;
-  unsigned int cur_ai;
-  unsigned int vel_ai;
 } motor_gpio_t;
 
 int init_motor(void);
 int set_motor_duty(float duty);
 int stop_motor(void);
 int motor_cleanup(void);
-int read_motor_current(volatile float *value);
-int read_motor_velocity(volatile float *value);
+//int read_motor_current(volatile float *value);
+//int read_motor_velocity(volatile float *value);
 
 
 #endif
