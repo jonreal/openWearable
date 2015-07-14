@@ -35,7 +35,7 @@ typedef struct{
 } anklestate_t;
 
 /* globals ---------------------------------------------------------------- */
-extern const int debug;
+extern int debug;
 
 /* prototypes ------------------------------------------------------------- */
 int init_control(const float frq_hz, FILE* f);

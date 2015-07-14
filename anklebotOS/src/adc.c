@@ -65,6 +65,10 @@ int initialize_adc(void)
     return 0;
 }
 
+int read_all_adc(float *value[7])
+{
+}
+
 int read_value(unsigned int ain, float *value)
 {
     FILE * fh;
@@ -80,6 +84,8 @@ int read_value(unsigned int ain, float *value)
     while (!read_successful && try_count < 3)
     {
         fh = fopen(ain_path, "r");
+
+//        printf("%s\n",ain_path);
 
         // Likely a bad path to the ocp device driver
         if (!fh) {
