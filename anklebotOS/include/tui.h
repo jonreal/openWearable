@@ -3,7 +3,8 @@
 
 
 /* prototypes ------------------------------------------------------------- */
-void ui_menu_cb();
-void ui_input();
+int init_tui(void);
+void ui_menu_cb(void);
+void ui_input(void);
 
 #endif

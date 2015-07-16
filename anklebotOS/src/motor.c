@@ -1,10 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #include "pinconfig.h"
 #include "common.h"
 #include "gpio.h"
 #include "pwm.h"
+#include "control.h"
 #include "motor.h"
 
 /* Stuct for pin config ---------------------------------------------------- */
@@ -20,7 +22,7 @@ int init_motor(void)
 
   /* set enable pins */
   if(get_gpio_number(ENB_PIN, &gpio) != 0){
-    printf("Error getting gpio number.");
+    printf("Error getting gpio number.\n");
     return -1;
   }
   mp_ptr->enb = gpio;
@@ -29,7 +31,7 @@ int init_motor(void)
 
   /* set direction pin */
   if(get_gpio_number(DIR_PIN, &gpio) != 0){
-    printf("Error getting gpio number.");
+    printf("Error getting gpio number.\n");
     return -1;
   }
   mp_ptr->dir = gpio;
@@ -41,9 +43,10 @@ int init_motor(void)
   gpio_set_value(mp_ptr->dir, HIGH);
 
   if(pwm_start(PWM_PIN, MIN_DUTY, 5000.0, 0) != 1){
-    printf("PWM unable to start.");
+    printf("PWM unable to start.\n");
     return -1;
   }
+  add_func_to_cleanup(motor_cleanup);
   printf("Motor initialized.\n");
   return 0;
 }

@@ -9,6 +9,7 @@
 #include <linux/spi/spidev.h>
 
 #include "common.h"
+#include "control.h"
 #include "spi.h"
 
 SPI_t SPI;
@@ -61,6 +62,9 @@ int init_spi(void)
     printf("can't get max speed\n");
     return -1;
   }
+
+  add_func_to_cleanup(&spi_cleanup);
+
   printf("SPI initialized.\n");
   printf("\tspi mode: %d\n", SPI.mode);
 	printf("\tbits per word: %d\n", SPI.bpw);

@@ -19,6 +19,7 @@
 #include "pinconfig.h"
 #include "comm.h"
 #include "control.h"
+#include "tui.h"
 
 /* THIS WHOLE FILE NEEDS REWRITE */
 /* Comm struct */

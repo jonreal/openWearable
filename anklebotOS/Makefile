@@ -9,7 +9,7 @@ TARGET = ankleOS_tui
 # C Source Directories
 CSRC_DIR = ./src
 CINC_DIR = ./include
-CLIB_DIR =
+CLIB = -lpruio
 
 # Build Directories
 TARGET_DIR = ./bin
@@ -29,12 +29,12 @@ $(TARGET): $(OBJECTS)
 	@echo " Linking ..."
 	@echo " $(SOURCES) "
 	@mkdir -p $(TARGET_DIR)
-	$(CC) $^ -o $(TARGET_DIR)/$(TARGET) $(LIB) -lm
+	$(CC) $^ -o $(TARGET_DIR)/$(TARGET) $(CLIB) -lm
 
 $(BUILD_DIR)/%.o: $(CSRC_DIR)/%.c
 	@echo " Building ... ";
 	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -I$(CINC_DIR) -c -o $@ $<
+	$(CC) $(CFLAGS) -I$(CINC_DIR) -c -o $@ $< $(CLIB) -lm
 
 clean:
 	@echo " Cleaning...";
