@@ -24,7 +24,7 @@ int debug;
 
 int main(int argc, char *argv[])
 {
-  const float frq_hz = 10;
+  const float frq_hz = 500;
   static FILE* f_log;
 
   /* Cmd line arguments */
@@ -36,6 +36,12 @@ int main(int argc, char *argv[])
   printf("\n---------------------\n");
   printf("Welcome to AnkleOS\n");
   printf("---------------------\n");
+
+
+  if(init_tui() != 0){
+    perror("Text UI failed.\n");
+    return -1;
+  }
 
   if(init_control(frq_hz, f_log) != 0){
     perror("controller initialization failed.");

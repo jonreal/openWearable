@@ -11,6 +11,11 @@ typedef struct{
 } config_t;
 
 typedef struct{
+  int numOfFuncs;
+  int (*func[5])(void);
+} cleanup_t;
+
+typedef struct{
   int control_loop_started;
   int FB_cntlr;
   int FF_cntlr;
@@ -29,9 +34,7 @@ typedef struct{
   float FF_gain;
   float FF_period;
   float FF_phase;
-  int numOfADC;
-  float adc_value[7];
-  unsigned int adc_ch[7];
+  int adc_value[7];
 } anklestate_t;
 
 /* globals ---------------------------------------------------------------- */
@@ -40,6 +43,7 @@ extern int debug;
 /* prototypes ------------------------------------------------------------- */
 int init_control(const float frq_hz, FILE* f);
 int start_control(void);
+void add_func_to_cleanup(int (*FuncPtr)(void));
 void control_cleanup(int signum);
 void control_loop_cb(int signum);
 int update_state(void);
@@ -60,6 +64,4 @@ int set_FB_cntrl(int is_FB_on);
 int set_FF_cntrl(int is_FF_on);
 int is_FF_on(void);
 int is_FB_on(void);
-int init_adc(void);
-int read_adc(void);
 #endif

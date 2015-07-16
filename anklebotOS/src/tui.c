@@ -3,12 +3,47 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <math.h>
+#include <termios.h>
 
 #include "pinconfig.h"
 #include "control.h"
 #include "tui.h"
 
 
+/* ----------------------------------------------------------------------------
+ * Function init_tui()
+ * ------------------------------------------------------------------------- */
+int init_tui(void)
+{
+  struct termios newt;
+
+  if(tcgetattr(0, &newt) != 0){
+    printf("Failed to get terminal attributes\n.");
+    return -1;
+  }
+
+  /* This is a hack. libpruio uses other terminal settings. I found the
+   * setting that work for me by NOT including lipruio, then printing out
+   * defualt terminal settings. Then setting these setting while including
+   * libpruio.
+   */
+
+  newt.c_iflag = 1280;
+  newt.c_oflag = 5;
+  newt.c_cflag = 191;
+  newt.c_lflag = 35387;
+
+//  printf("c_iflag = %i.\n", newt.c_iflag);
+//  printf("c_oflag = %i.\n", newt.c_oflag);
+//  printf("c_cflag = %i.\n", newt.c_cflag);
+//  printf("c_lflag = %i.\n", newt.c_lflag);
+
+  if(tcsetattr(0, TCSANOW, &newt) != 0){
+    printf("Failed to set terminal attributes\n.");
+    return -1;
+  }
+  return 0;
+}
 /* ----------------------------------------------------------------------------
  * Function ui_menu_cb()
  * ------------------------------------------------------------------------- */
@@ -35,6 +70,7 @@ void ui_input(void)
   float user_float_input = 0.0;
 
   scanf("%c", &user_input);
+
   if (user_input == 'e'){
     control_cleanup(0);
   }

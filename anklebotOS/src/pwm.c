@@ -103,7 +103,7 @@ int pwm_set_frequency(const char *key, float freq) {
         len = snprintf(buffer, sizeof(buffer), "%lu", period_ns);
         write(pwm->period_fd, buffer, len);
     }
-    printf("pwm period_ns: %lu, %i (Hz)\n", pwm->period_ns,
+    printf("\tpwm period_ns: %lu, %i (Hz)\n", pwm->period_ns,
            (int)(1.0/(((float)pwm->period_ns)*1e-9)));
 
     return 1;

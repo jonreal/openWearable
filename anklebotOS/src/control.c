@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -16,11 +15,13 @@
 #include "adc.h"
 #include "control.h"
 
+#include "pruio.h"
 
 /* Controller Structures */
 anklestate_t *s_ptr;
 cntlr_flgs_t *flgs_ptr;
 config_t *config_ptr;
+cleanup_t *cleanup_ptr;
 
 /* ----------------------------------------------------------------------------
  * Function init_control(*,*) initializes control structures, control loop
@@ -38,6 +39,7 @@ int init_control(const float frq_hz, FILE* f)
   s_ptr = malloc(sizeof(anklestate_t));
   flgs_ptr = malloc(sizeof(cntlr_flgs_t));
   config_ptr = malloc(sizeof(config_t));
+  cleanup_ptr = malloc(sizeof(cleanup_t));
 
   /* Initialize */
   config_ptr->codeVersion = 0;
@@ -61,14 +63,15 @@ int init_control(const float frq_hz, FILE* f)
   s_ptr->FF_period = 1.0;
   s_ptr->FF_phase = 0.0;
 
-  for (int i=0; i<s_ptr->numOfADC; i++){
+  for (int i=0; i<7; i++){
     s_ptr->adc_value[i] = 0.0;
-    s_ptr->adc_ch[i] = 0;
   }
 
   flgs_ptr->control_loop_started = 0;
   flgs_ptr->FB_cntlr = 1;
   flgs_ptr->FF_cntlr = 0;
+
+  cleanup_ptr->numOfFuncs = 0;
 
   if(create_log_file() != 0){
     printf("Cannot create log file.\n");
@@ -76,12 +79,16 @@ int init_control(const float frq_hz, FILE* f)
     return -1;
   }
 
+  printf("State Initialized.\n");
+
+  /*
   if(init_motor() != 0){
     printf("Motor initialization error.\n");
     fprintf(config_ptr->f_log,"Motor initialization error.\n");
     control_cleanup(0);
     return -1;
   }
+  */
 
   if(init_spi() != 0){
     printf("SPI initialization error.\n");
@@ -94,6 +101,7 @@ int init_control(const float frq_hz, FILE* f)
     printf("ADC initialization error.\n");
     fprintf(config_ptr->f_log, "ADC initialization error.\n");
     control_cleanup(0);
+    return -1;
   }
 
   /* set handler for control loop signal */
@@ -140,6 +148,11 @@ int start_control(void)
   return 0;
 }
 
+void add_func_to_cleanup(int (*FuncPtr)(void))
+{
+  cleanup_ptr->func[cleanup_ptr->numOfFuncs] = FuncPtr;
+  cleanup_ptr->numOfFuncs++;
+}
 /* ----------------------------------------------------------------------------
  * Function control_cleanup(*) is a callback to cleanup controller.
  * ------------------------------------------------------------------------- */
@@ -149,8 +162,9 @@ void control_cleanup(int signum)
   printf("\nCleaning up....\n");
   fclose(config_ptr->f_log);
   printf("Log closed.\n");
-  spi_cleanup();
-  motor_cleanup();
+  for(int i=0; i<cleanup_ptr->numOfFuncs; i++){
+    cleanup_ptr->func[i]();
+  }
   exit(0);
 }
 
@@ -182,17 +196,18 @@ void control_loop_cb(int signum)
     flgs_ptr->control_loop_started = 1;
   }
 
-  /* State update */
+
   if (update_state() != 0){
     printf("State update failed\n");
     fprintf(config_ptr->f_log,"State update failed\n");
   }
 
-  /* Control update */
+  /*
   if (update_control() != 0){
     printf("Control update failed\n");
     fprintf(config_ptr->f_log,"Control update failed\n");
   }
+*/
 
   /* Get cpu time for control loop */
   if(gettimeofday(&t_end, NULL) == -1){
@@ -200,7 +215,6 @@ void control_loop_cb(int signum)
     fprintf(config_ptr->f_log, "Error getting time.\n");
   }
 
-  /* Log data */
   fprintf(config_ptr->f_log,"%lf %f %f %f %f %f %f %f %f %f\n",
                       s_ptr->time_stamp,
                       get_time_interval(t_now, t_end),
@@ -247,10 +261,21 @@ int update_state(void)
 //  s_ptr->vel = (s_ptr->pos_0 - s_ptr->pos - prev_pos_error)*config_ptr->frq_hz;
 
   /* Read all adc channels */
-  if (read_adc() != 0){
+  if (read_adc(s_ptr->adc_value) != 0){
     printf("Error reading adc\n");
     return -1;
   }
+
+  /*
+  printf("%i\t %i\t %i\t %i\t %i\t %i\t %i\t\n",
+          s_ptr->adc_value[0],
+          s_ptr->adc_value[1],
+          s_ptr->adc_value[2],
+          s_ptr->adc_value[3],
+          s_ptr->adc_value[4],
+          s_ptr->adc_value[5],
+          s_ptr->adc_value[6]);
+ */
   return 0;
 }
 
@@ -470,75 +495,7 @@ int is_FB_on(void){
   return flgs_ptr->FB_cntlr;
 }
 
-/* ----------------------------------------------------------------------------
- * Function init_adc()
- * ------------------------------------------------------------------------- */
-int init_adc(void)
-{
-  unsigned int gpio;
 
-  /* Set up ADC */
-  if(adc_setup() != 1){
-    printf("ADC setup failed\n");
-    return -1;
-  }
-
-  /* Try each channel */
-  if(get_adc_ain(ADC0, &gpio) != 1){
-    printf("Error getting adc %s.\n",ADC0);
-    return -1;
-  }
-  s_ptr->adc_ch[0] = gpio;
-
-  if(get_adc_ain(ADC1, &gpio) != 1){
-    printf("Error getting adc %s.\n",ADC1);
-    return -1;
-  }
-  s_ptr->adc_ch[1] = gpio;
-
-  if(get_adc_ain(ADC2, &gpio) != 1){
-    printf("Error getting adc %s.\n",ADC2);
-    return -1;
-  }
-  s_ptr->adc_ch[2] = gpio;
-
-  if(get_adc_ain(ADC3, &gpio) != 1){
-    printf("Error getting adc %s.\n",ADC3);
-    return -1;
-  }
-  s_ptr->adc_ch[3] = gpio;
-
-  if(get_adc_ain(ADC4, &gpio) != 1){
-    printf("Error getting adc %s.\n",ADC4);
-    return -1;
-  }
-  s_ptr->adc_ch[4] = gpio;
-
-  if(get_adc_ain(ADC5, &gpio) != 1){
-    printf("Error getting adc %s.\n",ADC5);
-    return -1;
-  }
-  s_ptr->adc_ch[5] = gpio;
-
-  if(get_adc_ain(ADC6, &gpio) != 1){
-    printf("Error getting adc %s.\n",ADC6);
-    return -1;
-  }
-  s_ptr->adc_ch[6] = gpio;
-  printf("ADC initialized.\n");
-  return 0;
-}
-
-int read_adc(void)
-{
-  for (int i=0; i<7; i++){
-    if (read_value(s_ptr->adc_ch[i],&s_ptr->adc_value[i]) != 1){
-      printf("ADC read failed, channel: %i.\n",s_ptr->adc_ch[i]);
-      return -1;
-    }
-  }
-  return 0;
-}
 
 
 
