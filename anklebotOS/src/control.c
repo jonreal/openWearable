@@ -33,7 +33,7 @@ cleanup_t *cleanup_ptr;
  * ------------------------------------------------------------------------- */
 int init_control(const float frq_hz, FILE* f)
 {
-  struct sigaction action_loop, action_cleanup;
+  struct sigaction action_loop, action_cleanup, action_log;
 
   /* Allocate */
   s_ptr = malloc(sizeof(anklestate_t));
@@ -47,13 +47,18 @@ int init_control(const float frq_hz, FILE* f)
   config_ptr->dt_us = (suseconds_t)(1000000.0 / config_ptr->frq_hz);
 
   /* Initialize state */
+  s_ptr->start_time.tv_sec = 0.0;
+  s_ptr->start_time.tv_usec = 0.0;
+  s_ptr->t_now.tv_sec = 0.0;
+  s_ptr->t_now.tv_usec = 0.0;
+  s_ptr->t_end.tv_sec = 0.0;
+  s_ptr->t_end.tv_usec = 0.0;
+
   s_ptr->time_stamp = 0.0;
+  s_ptr->cpu_time = 0.0;
   s_ptr->pos = 0.0;
   s_ptr->pos_0 = ANGLE_OFFSET;
   s_ptr->vel = 0.0;
-
-  s_ptr->motor_cur = 0.0;
-  s_ptr->motor_vel = 0.0;
 
   s_ptr->Kp = 100.0;
   s_ptr->Kd = 15.0;
@@ -92,14 +97,12 @@ int init_control(const float frq_hz, FILE* f)
 
   if(init_spi() != 0){
     printf("SPI initialization error.\n");
-    fprintf(config_ptr->f_log,"SPI initialization error.\n");
     control_cleanup(0);
     return -1;
   }
 
   if(init_adc() != 0){
     printf("ADC initialization error.\n");
-    fprintf(config_ptr->f_log, "ADC initialization error.\n");
     control_cleanup(0);
     return -1;
   }
@@ -108,10 +111,19 @@ int init_control(const float frq_hz, FILE* f)
   action_loop.sa_handler = control_loop_cb;
   sigemptyset(&action_loop.sa_mask);
   sigaddset(&action_loop.sa_mask, SIGIO);
+  sigaddset(&action_loop.sa_mask, SIGUSR1);
   action_loop.sa_flags = 0;
   if(sigaction(SIGALRM, &action_loop, NULL) != 0){
     printf("Unable to catch SIGALRM\n");
-    fprintf(config_ptr->f_log, "Unable to catch SIGALRM\n");
+    return -1;
+  }
+
+  /* set handler for log_data */
+  action_log.sa_handler = log_data;
+  sigemptyset(&action_log.sa_mask);
+  action_log.sa_flags = 0;
+  if(sigaction(SIGUSR1, &action_log, NULL) != 0){
+    printf("Unable to catch SIGALRM\n");
     return -1;
   }
 
@@ -190,69 +202,42 @@ void control_cleanup(int signum)
  * ------------------------------------------------------------------------- */
 void control_loop_cb(int signum)
 {
-  struct timeval t_now;
-  struct timeval t_end;
-
   /* start time */
-  if(gettimeofday(&t_now, NULL) == -1){
+  if(gettimeofday(&s_ptr->t_now, NULL) == -1){
     printf("Error getting time.");
-    fprintf(config_ptr->f_log, "Error getting time.\n");
   }
 
   /* check control loop flag, set time stamp, and flag */
   if (flgs_ptr->control_loop_started != 0){
-    s_ptr->time_stamp = get_time_stamp(t_now);
+    set_time_stamp();
   }
   else{
     s_ptr->time_stamp = 0.0;
-    config_ptr->start_time = t_now;
+    set_start_time();
     flgs_ptr->control_loop_started = 1;
   }
 
-
   if (update_state() != 0){
     printf("State update failed\n");
-    fprintf(config_ptr->f_log,"State update failed\n");
   }
 
   /*
   if (update_control() != 0){
     printf("Control update failed\n");
-    fprintf(config_ptr->f_log,"Control update failed\n");
   }
 */
 
   /* Get cpu time for control loop */
-  if(gettimeofday(&t_end, NULL) == -1){
+  if(gettimeofday(&s_ptr->t_end, NULL) == -1){
     printf("Error getting time.");
-    fprintf(config_ptr->f_log, "Error getting time.\n");
   }
 
-  fprintf(config_ptr->f_log,"%lf %f %f %f %f %f %f %f %f %f\n",
-                      s_ptr->time_stamp,
-                      get_time_interval(t_now, t_end),
-                      s_ptr->pos,
-                      s_ptr->pos_0,
-                      s_ptr->vel,
-                      s_ptr->motor_cur,
-                      s_ptr->motor_vel,
-                      s_ptr->cmd,
-                      s_ptr->Kp,
-                      s_ptr->Kd);
-  if (debug){
-    printf("%lf %f %f %f %f %f %f %f %f %f\n",
-           s_ptr->time_stamp,
-           get_time_interval(t_now, t_end),
-           s_ptr->pos,
-           s_ptr->pos_0,
-           s_ptr->vel,
-           s_ptr->motor_cur,
-           s_ptr->motor_vel,
-           s_ptr->cmd,
-           s_ptr->Kp,
-           s_ptr->Kd);
-  }
+  set_cpu_time();
+
+  /* Raise signal to log data */
+  raise(SIGUSR1);
 }
+
 
 /* ----------------------------------------------------------------------------
  * Function update_state() updates the controller states.
@@ -261,34 +246,18 @@ void control_loop_cb(int signum)
  * ------------------------------------------------------------------------- */
 int update_state(void)
 {
-  float prev_pos_error = s_ptr->pos_0 - s_ptr->pos;
-
-  /* ankle position */
+  /* Read current position of ankle encoder */
   if (read_pos() != 0){
-    printf("State update failed -- get_pos().\n");
-    fprintf(config_ptr->f_log,"State update failed -- get_pos().\n");
+    printf("State update failed -- read_pos().\n");
     return -1;
   }
-
-  /* ankle velocity */
-//  s_ptr->vel = (s_ptr->pos_0 - s_ptr->pos - prev_pos_error)*config_ptr->frq_hz;
 
   /* Read all adc channels */
-  if (read_adc(s_ptr->adc_value) != 0){
-    printf("Error reading adc\n");
-    return -1;
-  }
+//  if (read_adc(s_ptr->adc_value) != 0){
+//    printf("Error reading adc\n");
+//    return -1;
+//  }
 
-  /*
-  printf("%i\t %i\t %i\t %i\t %i\t %i\t %i\t\n",
-          s_ptr->adc_value[0],
-          s_ptr->adc_value[1],
-          s_ptr->adc_value[2],
-          s_ptr->adc_value[3],
-          s_ptr->adc_value[4],
-          s_ptr->adc_value[5],
-          s_ptr->adc_value[6]);
- */
   return 0;
 }
 
@@ -328,54 +297,100 @@ int update_control(void)
  * ------------------------------------------------------------------------- */
 int read_pos(void)
 {
-  uint8_t MSB[1] = {0x00};
-  uint8_t LSB[1] = {0x00};
-
   /* send cmd */
-  uint8_t cmd[1] = {0x10};
-  uint8_t recv[ARRAY_SIZE(cmd)] = {0,};
-  if(spi_transfer(cmd, recv) != 0){
+  uint8_t msb[1] = {0x00};
+  uint8_t lsb[1] = {0x00};
+
+  /* Send request 0x10 */
+  uint8_t tx[1] = {0x10};
+  uint8_t rx[ARRAY_SIZE(tx)] = {0x00,};
+  if(spi_transfer(tx, rx) != 0){
     printf("spi transfer failed\n");
     return -1;
   }
 
+  /*
+  printf("Send Request.\n");
+  printf("tx: %x\n", tx[0]);
+  printf("rx: %x\n", rx[0]);
+  printf("\n");
+  */
+
   /* send 0x00 till acknowledgement */
-  cmd[0] = 0x00;
-  while(recv[0] != 0x10){
-    if(spi_transfer(cmd, recv) != 0){
+  tx[0] = 0x00;
+  while(rx[0] != 0x10){
+    if(spi_transfer(tx, rx) != 0){
       printf("spi transfer failed\n");
       return -1;
     }
+
+    /*
+    printf("Wait for acknowledge.\n");
+    printf("tx: %x\n", tx[0]);
+    printf("rx: %x\n", rx[0]);
+    printf("\n");
+    */
+
   }
 
   /* receive position */
-  cmd[0] = 0x00;
-  if(spi_transfer(cmd, MSB) != 0){
-    printf("spi transfer failed\n");
-    return -1;
-  }
-  cmd[0] = 0x00;
-  if(spi_transfer(cmd, LSB) != 0){
+  if(spi_transfer(tx, msb) != 0){
     printf("spi transfer failed\n");
     return -1;
   }
 
-  s_ptr->pos = encoder_to_angle(MSB[0],LSB[0]);
+  /*
+  printf("MSB.\n");
+  printf("tx: %x\n", tx[0]);
+  printf("rx: %x\n", msb[0]);
+  printf("\n");
+  */
+
+  if(spi_transfer(tx, lsb) != 0){
+    printf("spi transfer failed\n");
+    return -1;
+  }
+
+  /*
+  printf("LSB.\n");
+  printf("tx: %x\n", tx[0]);
+  printf("rx: %x\n", lsb[0]);
+  printf("\n");
+  */
+
+  s_ptr->pos = encoder_to_angle(msb[0],lsb[0]);
   return 0;
 }
 
 /* ----------------------------------------------------------------------------
  * Function encoder_to_angle(*,*) converts encoder counts to radians.
  * ------------------------------------------------------------------------- */
-float encoder_to_angle(uint8_t MSB, uint8_t LSB)
+float encoder_to_angle(uint8_t msb, uint8_t lsb)
 {
-  float angle = ((float)((MSB << 8) | (LSB & 0xff)))*2.0*M_PI/4096.0;
+  float angle = ((float)((msb << 8) | (lsb & 0xff)))*2.0*M_PI/4096.0;
   if(angle > M_PI){
     angle = angle - 2.0*M_PI;
   }
   return angle + ANGLE_OFFSET;
 }
+/* ----------------------------------------------------------------------------
+ * Log data
+ * ------------------------------------------------------------------------- */
+void log_data(int signum)
+{
+ fprintf(config_ptr->f_log,
+          "%e "
+          "%e\n",
+          s_ptr->time_stamp,
+          s_ptr->cpu_time);
 
+  if(debug){
+    printf("%e "
+          "%e\n",
+          s_ptr->time_stamp,
+          s_ptr->cpu_time);
+  }
+}
 /* ----------------------------------------------------------------------------
  * Helper functions to allow acces to local state ptr.
  * ------------------------------------------------------------------------- */
@@ -440,31 +455,28 @@ int create_log_file(void)
   return 0;
 }
 
+void set_start_time(void)
+{
+  s_ptr->start_time = s_ptr->t_now;
+}
 /* ----------------------------------------------------------------------------
  * Function get_time_stamp(*) creates time stamp for data.
  * ------------------------------------------------------------------------- */
-float get_time_stamp(struct timeval t_now)
+void set_time_stamp(void)
 {
-  return((float)(t_now.tv_sec - config_ptr->start_time.tv_sec)
-       + (float)(t_now.tv_usec - config_ptr->start_time.tv_usec)/1000000.0);
+  s_ptr->time_stamp = (float)(s_ptr->t_now.tv_sec - s_ptr->start_time.tv_sec)
+      + (float)(s_ptr->t_now.tv_usec - s_ptr->start_time.tv_usec)/1.0e6;
 }
 
 /* ----------------------------------------------------------------------------
  * Function get_time_interval(*,*) calculates interval.
  * ------------------------------------------------------------------------- */
-float get_time_interval(struct timeval t1, struct timeval t2)
+void set_cpu_time(void)
 {
-  return((float)(t2.tv_sec - t1.tv_sec)
-       + (float)(t2.tv_usec - t1.tv_usec)/1000000.0);
+  s_ptr->cpu_time = (float)(s_ptr->t_end.tv_sec - s_ptr->t_now.tv_sec)
+      + (float)(s_ptr->t_end.tv_usec - s_ptr->t_now.tv_usec)/1.0e6;
 }
 
-/* ----------------------------------------------------------------------------
- * Function get_time_interval_us(*,*) calculates interval in us.
- * ------------------------------------------------------------------------- */
-suseconds_t get_time_interval_us(struct timeval t1, struct timeval t2)
-{
-  return (t2.tv_usec - t1.tv_usec);
-}
 
 /* ----------------------------------------------------------------------------
  * Function set_FB_cntrl()

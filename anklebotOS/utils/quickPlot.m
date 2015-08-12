@@ -4,6 +4,7 @@ file = listing(end).name
 
 D = dlmread([datalog,'/',file],' ',6,0);
 
+size(D)
 
 dt = D(2:end,1) - D(1:end-1,1);
 cpu_dt = D(:,2);

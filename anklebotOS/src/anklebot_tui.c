@@ -22,7 +22,7 @@ int debug;
 
 int main(int argc, char *argv[])
 {
-  const float frq_hz = 1500;
+  const float frq_hz = 500;
   static FILE* f_log;
 
   /* Command line arguments */
@@ -45,7 +45,8 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  while(1);
+  //while(1);
+
   /* UI */
   if(init_tui() != 0){
     printf("TUI initialization failed.\n");
