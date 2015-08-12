@@ -25,11 +25,11 @@ int init_spi(void)
   SPI->msg->cs_change = (__u8) 0;
   SPI->msg->pad = (__u8) 0;
 
+  /* Load Device tree and open SPI device */
   if(load_device_tree("BB-SPIDEV0") != 1){
     printf("Unable to load spi device tree.\n");
     return -1;
   }
-
   SPI->fd = open("/dev/spidev1.0", O_RDWR);
   if(SPI->fd < 0){
     printf("Can't open spi device.\n");

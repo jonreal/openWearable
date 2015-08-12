@@ -16,7 +16,7 @@ TARGET_DIR = ./bin
 BUILD_DIR = ./build
 
 # Compiler
-CC = gcc
+CC = gcc -pg
 CFLAGS = -std=gnu99 -Wall -g -O2 -mtune=cortex-a8 -march=armv7-a
 LDFLAGS =
 
