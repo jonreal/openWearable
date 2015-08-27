@@ -75,9 +75,12 @@
 #define PRU1_IRAM		(PRU_GLOBAL_BASE + 0x00038000)
 
 /* PRU Local Offsets */
-#define PRU_IRAM		(0x00000000)
-#define PRU_DRAM		(0x00000000)
-#define PRU_L_SHARED_DRAM	(0x00002000)
+//#define PRU_IRAM		(0x00000000)
+//#define PRU_DRAM		(0x00000000)
+//#define PRU_L_SHARED_DRAM	(0x00002000)
+#define PRU_DRAM            (0x00000000)
+#define PRU_L_SHARED_DRAM   (0x00010000)
+
 
 /* Sizes */
 #define PRU0_IRAM_SIZE		(SZ_8K)
@@ -151,7 +154,8 @@ struct my_resource_table am335x_pru_remoteproc_ResourceTable = {
 		{ /* PRU_INTS version */
                   0x0000,
                   /* Channel-to-host mapping, 255 for unused */
-                  0, 1, 2, 3, 0, 6, 1, 7, HOST_UNUSED, HOST_UNUSED,
+/*                  0, 1, 2, 3, 0, 6, 1, 7, HOST_UNUSED, HOST_UNUSED, */
+                  HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED,
                   /* Number of evts being mapped to channels */
                   (sizeof(pru_intc_map) / sizeof(struct ch_map)),
                   /* Pointer to the structure containing mapped events */

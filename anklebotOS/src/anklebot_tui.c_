@@ -52,8 +52,10 @@ int main(int argc, char *argv[])
     printf("TUI initialization failed.\n");
     return -1;
   }
-  if(start_tui() == 1){
-    raise(SIGINT);
-  }
+
+  /* Poll exit flag */
+  while(start_tui() != 1){}
+
+  raise(SIGINT);
 }
 

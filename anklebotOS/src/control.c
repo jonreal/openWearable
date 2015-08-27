@@ -95,17 +95,21 @@ int init_control(const float frq_hz, FILE* f)
   }
   */
 
+  /*
   if(init_spi() != 0){
     printf("SPI initialization error.\n");
     control_cleanup(0);
     return -1;
   }
+  */
 
+  /*
   if(init_adc() != 0){
     printf("ADC initialization error.\n");
     control_cleanup(0);
     return -1;
   }
+  */
 
   /* set handler for control loop signal */
   action_loop.sa_handler = control_loop_cb;
@@ -161,12 +165,16 @@ int start_control(void)
   return 0;
 }
 
+/* ----------------------------------------------------------------------------
+ * Function add_func_to_cleanup() adds a cleanup function to be called on exit.
+ * ------------------------------------------------------------------------- */
 void add_func_to_cleanup(int (*FuncPtr)(void))
 {
   cleanup_ptr->func[cleanup_ptr->numOfFuncs] = malloc(sizeof(FuncPtr));
   cleanup_ptr->func[cleanup_ptr->numOfFuncs] = FuncPtr;
   cleanup_ptr->numOfFuncs++;
 }
+
 /* ----------------------------------------------------------------------------
  * Function control_cleanup(*) is a callback to cleanup controller.
  * ------------------------------------------------------------------------- */
@@ -247,10 +255,12 @@ void control_loop_cb(int signum)
 int update_state(void)
 {
   /* Read current position of ankle encoder */
+  /*
   if (read_pos() != 0){
     printf("State update failed -- read_pos().\n");
     return -1;
   }
+  */
 
   /* Read all adc channels */
 //  if (read_adc(s_ptr->adc_value) != 0){
@@ -373,6 +383,7 @@ float encoder_to_angle(uint8_t msb, uint8_t lsb)
   }
   return angle + ANGLE_OFFSET;
 }
+
 /* ----------------------------------------------------------------------------
  * Log data
  * ------------------------------------------------------------------------- */
@@ -391,6 +402,7 @@ void log_data(int signum)
           s_ptr->cpu_time);
   }
 }
+
 /* ----------------------------------------------------------------------------
  * Helper functions to allow acces to local state ptr.
  * ------------------------------------------------------------------------- */
@@ -459,6 +471,7 @@ void set_start_time(void)
 {
   s_ptr->start_time = s_ptr->t_now;
 }
+
 /* ----------------------------------------------------------------------------
  * Function get_time_stamp(*) creates time stamp for data.
  * ------------------------------------------------------------------------- */
