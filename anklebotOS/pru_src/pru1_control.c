@@ -128,7 +128,7 @@ int main(void)
 
 static void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 {
-  p->state[bi][si].motor_current_cmd = cnt;
+//  p->state[bi][si].motor_current_cmd = cnt;
 }
 
 static inline void interruptInit(void)

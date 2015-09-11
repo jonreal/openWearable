@@ -199,8 +199,8 @@ int pru_mem_init(void)
   for(int i=0; i<NUM_OF_BUFFS; i++){
     for(int j=0; j<SIZE_OF_BUFFS; j++){
       p->state[i][j].timeStamp = 0;
-      p->state[i][j].ankle_pos = 0;
-      p->state[i][j].ankle_vel = 0;
+    //  p->state[i][j].ankle_pos = 0;
+    //  p->state[i][j].ankle_vel = 0;
       p->state[i][j].adc_value[0] = 0;
       p->state[i][j].adc_value[1] = 0;
       p->state[i][j].adc_value[2] = 0;
@@ -208,17 +208,17 @@ int pru_mem_init(void)
       p->state[i][j].adc_value[4] = 0;
       p->state[i][j].adc_value[5] = 0;
       p->state[i][j].adc_value[6] = 0;
-      p->state[i][j].imu_value[0] = 0;
-      p->state[i][j].imu_value[1] = 0;
-      p->state[i][j].imu_value[2] = 0;
-      p->state[i][j].imu_value[3] = 0;
-      p->state[i][j].imu_value[4] = 0;
-      p->state[i][j].imu_value[5] = 0;
-      p->state[i][j].imu_value[6] = 0;
-      p->state[i][j].imu_value[7] = 0;
-      p->state[i][j].imu_value[8] = 0;
-      p->state[i][j].motor_current_cmd = 0;
-      p->state[i][j].gaitPhase = 0;
+     // p->state[i][j].imu_value[0] = 0;
+     // p->state[i][j].imu_value[1] = 0;
+     // p->state[i][j].imu_value[2] = 0;
+     // p->state[i][j].imu_value[3] = 0;
+     // p->state[i][j].imu_value[4] = 0;
+     // p->state[i][j].imu_value[5] = 0;
+     // p->state[i][j].imu_value[6] = 0;
+     // p->state[i][j].imu_value[7] = 0;
+     // p->state[i][j].imu_value[8] = 0;
+     // p->state[i][j].motor_current_cmd = 0;
+     // p->state[i][j].gaitPhase = 0;
     }
   }
 
@@ -311,6 +311,31 @@ void writePruConrtolParams(uint32_t Kp, uint32_t Kd, uint32_t pos0,
 void writeState(uint8_t bi)
 {
   for(int i=0; i<SIZE_OF_BUFFS; i++){
+    printf("0x%X\t", p->state[bi][i].timeStamp);
+    printf("%i\t", p->state[bi][i].adc_value[0]);
+    printf("%i\t", p->state[bi][i].adc_value[1]);
+    printf("%i\t", p->state[bi][i].adc_value[2]);
+    printf("%i\t", p->state[bi][i].adc_value[3]);
+    printf("%i\t", p->state[bi][i].adc_value[4]);
+    printf("%i\t", p->state[bi][i].adc_value[5]);
+    printf("%i\t", p->state[bi][i].adc_value[6]);
+ /*   printf("%i ", p->state[bi][i].imu_value[0]);
+    printf("%i ", p->state[bi][i].imu_value[1]);
+    printf("%i ", p->state[bi][i].imu_value[2]);
+    printf("%i ", p->state[bi][i].imu_value[3]);
+    printf("%i ", p->state[bi][i].imu_value[4]);
+    printf("%i ", p->state[bi][i].imu_value[5]);
+    printf("%i ", p->state[bi][i].imu_value[6]);
+    printf("%i ", p->state[bi][i].imu_value[7]);
+    printf("%i ", p->state[bi][i].imu_value[8]);
+    printf("%i ", p->state[bi][i].motor_current_cmd);
+    printf("%i ", p->state[bi][i].gaitPhase);
+    */
+    printf("\n");
+//  }
+
+//  for(int i=0; i<SIZE_OF_BUFFS; i++){
+/*
     fprintf(fid,"%i ", p->state[bi][i].timeStamp);
     fprintf(fid,"%i ", p->state[bi][i].ankle_pos);
     fprintf(fid,"%i ", p->state[bi][i].ankle_vel);
@@ -333,11 +358,12 @@ void writeState(uint8_t bi)
     fprintf(fid,"%i ", p->state[bi][i].motor_current_cmd);
     fprintf(fid,"%i ", p->state[bi][i].gaitPhase);
     fprintf(fid,"\n");
-
+*/
     /* Zero State */
     p->state[bi][i].timeStamp = 0;
-    p->state[bi][i].ankle_pos = 0;
-    p->state[bi][i].ankle_vel = 0;
+//    p->state[bi][i].ankle_pos = 0;
+//    p->state[bi][i].ankle_vel = 0;
+
     p->state[bi][i].adc_value[0] = 0;
     p->state[bi][i].adc_value[1] = 0;
     p->state[bi][i].adc_value[2] = 0;
@@ -345,6 +371,7 @@ void writeState(uint8_t bi)
     p->state[bi][i].adc_value[4] = 0;
     p->state[bi][i].adc_value[5] = 0;
     p->state[bi][i].adc_value[6] = 0;
+/*
     p->state[bi][i].imu_value[0] = 0;
     p->state[bi][i].imu_value[1] = 0;
     p->state[bi][i].imu_value[2] = 0;
@@ -356,7 +383,9 @@ void writeState(uint8_t bi)
     p->state[bi][i].imu_value[8] = 0;
     p->state[bi][i].motor_current_cmd = 0;
     p->state[bi][i].gaitPhase = 0;
+    */
   }
+  printf("\n");
 }
 
 void clearFlowBitFeild(void)
