@@ -19,8 +19,8 @@
 
 #define DEBUG_PIN "P8_15"
 
-int doneFlag = 0;
-float freq_hz = 2000.0;
+volatile int doneFlag = 0;
+float freq_hz = 20.0;
 int debug;
 FILE* fid;
 
@@ -118,34 +118,25 @@ int main(int argc, char **argv)
   armToPru1Interrupt();
   armToPru0Interrupt();
 
-  while(1){
 
-    if(doneFlag)
-      break;
+  while(!(doneFlag)){
+    if(isBufferFull()){
+      resetBufferFullFlag();
 
+      gpio_set_value(gpio_debug, HIGH);
 
-    while(1){
-      if(isBufferFull()){
-        resetBufferFullFlag();
-        break;
-      }
-      if(doneFlag)
-        break;
+      writeState(buffIndx);
+
+      buffIndx++;
+      if(buffIndx == NUM_OF_BUFFS)
+        buffIndx = 0;
+
+      gpio_set_value(gpio_debug, LOW);
     }
-
-    gpio_set_value(gpio_debug, HIGH);
-    writeState(buffIndx);
-    gpio_set_value(gpio_debug, LOW);
-
-    buffIndx++;
-    if(buffIndx == NUM_OF_BUFFS)
-      buffIndx = 0;
   }
 
   disable();
-
   fclose(fid);
-  sleep(1);
 
   /* Cleanup */
   pru_cleanup();
