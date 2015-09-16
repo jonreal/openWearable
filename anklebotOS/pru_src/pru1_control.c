@@ -8,11 +8,18 @@
 #include "rsc_table.h"
 #include "mem_types.h"
 
+#define PWM_SS2_BASE      0x48304000
+#define EPWM2_BASE        0x48304200
+#define DEBUG_R30_BIT     8
+
 /* Prototypes -------------------------------------------------------------- */
 static void updateControl(uint32_t cnt, uint8_t bi, uint8_t si);
 static inline void interruptInit(void);
 static inline void clearInterrupt(void);
 static inline void pru1ToArmInterrupt(void);
+static void pwmInit(void);
+void disablePwm(void);
+void setDuty(uint16_t duty);
 
 /* Globals ----------------------------------------------------------------- */
 
@@ -62,6 +69,10 @@ int main(void)
   ptr = (void *) PRU_DRAM;
   param = (pru1_param_mem_t *) ptr;
 
+  /* Init pwm */
+  pwmInit();
+
+  /* Init interrupts */
   interruptInit();
 
   /* Wait for host interrupt */
@@ -79,7 +90,7 @@ int main(void)
     p->flow_control_bit.sensorDone = 0;
 
     /* Pin High */
-    __R30 |= (1<<0);
+    __R30 |= (1<<DEBUG_R30_BIT);
 
     /* Update Control */
     updateControl(cnt, buffIndx, stateIndx);
@@ -92,14 +103,16 @@ int main(void)
     if(stateIndx == SIZE_OF_BUFFS){
       stateIndx = 0;
       buffIndx++;
+      setDuty(1000);
       p->flow_control_bit.bufferFull = 1;
       if(buffIndx == NUM_OF_BUFFS){
         buffIndx = 0;
+        setDuty(100);
       }
     }
 
     /* Pin Low */
-    __R30 &= ~(1<<0);
+    __R30 &= ~(1<<DEBUG_R30_BIT);
 
     /* Check for exit flag*/
     if(p->flow_control_bit.exit)
@@ -107,7 +120,14 @@ int main(void)
   }
 
   /* Pin Low */
-  __R30 &= ~(1<<0);
+  __R30 &= ~(1<<DEBUG_R30_BIT);
+
+  /* Disable pwm */
+  __delay_cycles(1000);
+  setDuty(10000);
+  __delay_cycles(1000);
+
+  disablePwm();
 
   /* Clear all interrupts */
   clearInterrupt();
@@ -128,8 +148,96 @@ int main(void)
 
 static void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 {
-//  p->state[bi][si].motor_current_cmd = cnt;
+  p->state[bi][si].motor_current_cmd = 0xdead;
+
+  uint32_t *p32 = NULL;
+  uint16_t *p16 = NULL;
+
+  p16 = (uint16_t *) (EPWM2_BASE + 0x8);
+  p->state[bi][si].timeStamp = *p16;
+
 }
+
+
+static void pwmInit(void)
+{
+  volatile uint32_t *p32 = NULL;
+  volatile uint16_t *p16 = NULL;
+
+  /* Disable Global enable interrupts */
+  CT_INTC.GER = 0;
+
+  /**** PWM SS 2 registers *****/
+
+  /* IDVER: */
+  p32 = (uint32_t *) (PWM_SS2_BASE);
+
+  /* CLKCONFIG: set ePWMCLK_EN, everthing else 0 */
+  p32 = (uint32_t *) (PWM_SS2_BASE + 0x8);
+  *p32 = (0<<1) | (0<<5) | (1<<8);
+
+  /**** EPWM registers *****/
+
+  /* CMPCTL: shadow mode off */
+  p16 = (uint16_t *) (EPWM2_BASE + 0xE);
+  *p16 = (1<<4) | (1<<6);
+
+  /* CMPA: compare reg */
+  p16 = (uint16_t *) (EPWM2_BASE + 0x12);
+  *p16 = 10000;
+
+  /* CMPB: compare reg */
+  p16 = (uint16_t *) (EPWM2_BASE + 0x14);
+  *p16 = 0x0;
+
+  /* AQCTLA: */
+  p16 = (uint16_t *) (EPWM2_BASE + 0x16);
+  *p16 = (0x2 << 4) | (0x1 << 6);
+
+  /* AQCTLB: */
+  p16 = (uint16_t *) (EPWM2_BASE + 0x18);
+  *p16 = (0x2 << 4) | (0x1 << 6);
+
+  /* TBCTL: CTRMODE = up-down-cnt mode (0x2) */
+  p16 = (uint16_t *) (EPWM2_BASE);
+  *p16 = 0x2;
+
+  /* TBPRD: set period */
+  p16 = (uint16_t *) (EPWM2_BASE + 0xA);
+  *p16 = 10000;
+
+  /*ETCLR: clear interrupts */
+  p16 = (uint16_t *) (EPWM2_BASE + 0x38);
+  *p16 = 0x1;
+
+  /*ETSEL: enable pwm interrupt */
+  p16 = (uint16_t *) (EPWM2_BASE + 0x32);
+  *p16 = (0x1 << 3);
+
+  /* Globaly enable interrupts */
+  CT_INTC.GER = 1;
+
+}
+
+void setDuty(uint16_t duty)
+{
+  volatile uint16_t *p16 = NULL;
+
+  /* CMPA: compare register */
+  p16 = (uint16_t *) (EPWM2_BASE + 0x12);
+  *p16 = duty;
+}
+
+void disablePwm(void)
+{
+  volatile uint16_t *p16 = NULL;
+
+  /* CMPA: compare reg */
+  p16 = (uint16_t *) (EPWM2_BASE + 0x12);
+  *p16 = 10000;
+
+}
+
 
 static inline void interruptInit(void)
 {

@@ -9,10 +9,10 @@
 #define PRU1_ARM_INT  (20 + 16)
 
 #define NUM_OF_BUFFS    2
-#define SIZE_OF_BUFFS   16
+#define SIZE_OF_BUFFS   15
 
 #define NUM_ADC     8
-#define NUM_IMU     9
+#define NUM_IMU     10
 
 /* Enums --------------------------------------------------------------------*/
 
@@ -27,12 +27,12 @@ enum{
 /* Anklebot state */
 typedef struct{
   volatile uint32_t timeStamp;
-//  volatile uint16_t ankle_pos;
-//  volatile uint16_t ankle_vel;
-  volatile uint32_t adc_value[NUM_ADC];
-//  volatile uint16_t imu_value[NUM_IMU];
-//  volatile uint16_t motor_current_cmd;
-//  volatile uint16_t gaitPhase;
+  volatile uint16_t ankle_pos;
+  volatile uint16_t ankle_vel;
+  volatile uint16_t gaitPhase;
+  volatile uint16_t motor_current_cmd;
+  volatile uint16_t adc_value[NUM_ADC];
+  volatile uint16_t imu_value[NUM_IMU];
 } state_t;
 
 /* Shared Memory */

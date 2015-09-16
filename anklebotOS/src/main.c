@@ -9,8 +9,6 @@
 #include <prussdrv.h>
 #include <pruss_intc_mapping.h>
 
-
-
 #include "mem_types.h"
 #include "pru_wrappers.h"
 #include "gpio.h"
@@ -20,7 +18,7 @@
 #define DEBUG_PIN "P8_15"
 
 volatile int doneFlag = 0;
-float freq_hz = 20.0;
+float freq_hz = 2500.0;
 int debug;
 FILE* fid;
 

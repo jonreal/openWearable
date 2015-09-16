@@ -5,6 +5,12 @@
 * it under the terms of the GNU General Public License version 2 as
 * published by the Free Software Foundation.
 */
+
+/*
+* Modified by Jonathan Realmuto <jonreal731@gmail.com>
+*/
+
+
 /dts-v1/;
 /plugin/;
 
@@ -17,25 +23,59 @@
 
   /* state the resources this cape uses */
   exclusive-use =
-    /* the pin header uses */
-    "P9.31",  /* pr1_pru0_pru_r30_0 - debug pin */
-    "P8.45",  /* pr1_pru1_pru_r30_0 - debug pin */
+
+    /**** pru debug pins ****/
+    "P9.27",  /* pr1_pru0_pru_r30_5 - debug pin */
+    "P8.27",  /* pr1_pru1_pru_r30_8 - debug pin */
+
+    /**** PWM pins ****/
+    "P8.45",  /* ehrpwm2A */
+    "P8.46",  /* ehrpwm2B */
+
+    /**** ADC pins ****/
+    "P9.39",  /* AIN0 */
+    "P9.40",  /* AIN1 */
+    "P9.37",  /* AIN2 */
+    "P9.38",  /* AIN3 */
+    "P9.33",  /* AIN4 */
+    "P9.36",  /* AIN5 */
+    "P9.35",  /* AIN6 */
+
     /* the hardware IP uses */
-    "pru0",
-    "pru1";
+    "ehrpwm2A",
+    "ehrpwm2B",
+    "tscadc",
+    "pruss";
+
+  /*----- pin mux -----*/
+
+  /* Bit 0-2 : Mode
+   * Bit 3   : 1-pull disabled, 0-pull enabled
+   * Bit 4   : 1-pullup, 0-pulldown
+   * Bit 5   : 1-input, 0-output
+   */
 
   fragment@0 {
     target = <&am33xx_pinmux>;
     __overlay__ {
 
+      pwm_pins: pinmux_pwm_pins {
+        pinctrl-single,pins = <
+          0x0A0 0x03  /* P8.45 - ehrpwm2A, MODE3 */
+          0x0A4 0x03  /* P8.46 - ehrpwm2B, MODE3 */
+        >;
+      };
+
       pruss_pins: pinmux_pruss_pins {
         pinctrl-single,pins = <
-          0x190 0x0d  /* pr1_pru0_pru_r30_0, MODE5 | OUTPUT | DIS */
-          0x0A0 0x0d  /* pr1_pru1_pru_r30_0, MODE5 */
+          0x1A4 0x0D  /* P9.27 - pr1_pru0_pru_r30_5, MODE5 | OUTPUT */
+          0x0E0 0x0D  /* P8.27 - pr1_pru1_pru_r30_8, MODE5 | OUTPUT */
         >;
       };
     };
   };
+
+  /*----- pru enable -----*/
 
   fragment@1 {
     target = <&pruss>;
@@ -43,6 +83,78 @@
       status = "okay";
       pinctrl-names = "default";
       pinctrl-0 = <&pruss_pins>;
+    };
+  };
+
+  /*------ PWM enable ------*/
+
+  fragment@2 {
+    target = <&epwmss2>;
+    __overlay__ {
+      status = "okay";
+    };
+  };
+
+  fragment@3 {
+    target = <&ehrpwm2>;
+    __overlay__ {
+      status = "okay";
+      pinctrl-names = "default";
+      pinctrl-0 = <&pwm_pins>;
+    };
+  };
+
+  /*------ PWM settings ------*/
+
+  fragment@4 {
+    target = <&ocp>;
+    __overlay__ {
+
+      #address-cells = <1>;
+      #size-cells = <1>;
+
+      anklebot {
+        compatible = "anklebot";
+        status = "okay";
+
+        pinctrl-names = "default";
+        pinctrl-0 = <&pwm_pins>;
+
+        pwms = <&ehrpwm2 0 500000 0>;
+        pwm-names = "anklebot";
+
+        pwm-frequency = <9250>;
+        pwm-duty-cycle = <35>;
+
+        default-brightness = <35>;
+
+      };
+    };
+  };
+
+  /*------ ADC settings ------*/
+
+  fragment@5 {
+    target = <&ocp>;
+    __overlay__ {
+
+      #address-cells = <1>;
+      #size-cells = <1>;
+
+      tscadc {
+        compatible = "ti,ti-tscadc";
+        reg = <0x44e0d000 0x1000>;
+        interrupt-parent = <&intc>;
+        interrupts = <16>;
+        ti,hwmods = "adc_tsc";
+        status = "okay";
+        linux,phandle = <0x3d>;
+        phandle = <0x3d>;
+
+        adc {
+          ti,adc-channels = <0 1 2 3 4 5 6 7>;
+        };
+      };
     };
   };
 };
