@@ -11,6 +11,7 @@
 
 #define ADC_BASE          0x44E0D000
 #define ADC_EN_BIT_MASK   0x1FE
+#define DEBUG_R30_BIT     5
 
 /* Prototypes -------------------------------------------------------------- */
 static void updateState(uint32_t cnt, uint8_t bi, uint8_t si);
@@ -89,6 +90,7 @@ int main(void)
 
   /*** Sensor Loop ***/
   cnt = 0;
+
   while(1){
 
     /* Poll for IEP timer interrupt */
@@ -97,12 +99,10 @@ int main(void)
     clearTimerFlag();
 
     /* Pin High */
-    __R30 |= (1<<0);
+    __R30 |= (1<<DEBUG_R30_BIT);
 
     /* Update State */
     updateState(cnt, buffIndx, stateIndx);
-
-    __delay_cycles(1000);
 
     /* Increment state index */
     cnt++;
@@ -127,12 +127,11 @@ int main(void)
     clearIepInterrupt();
 
     /* Pin Low */
-    __R30 &= ~(1<<0);
+    __R30 &= ~(1<<DEBUG_R30_BIT);
  }
 
   /* Pin Low */
-  __R30 &= ~(1<<0);
-  __R30 = 0;
+  __R30 &= ~(1<<DEBUG_R30_BIT);
 
   /* Clear all interrupts */
   clearIepInterrupt();
@@ -158,7 +157,7 @@ static void adcInit(void)
 {
 
   uint8_t sampleDelay = 254;
-  uint8_t openDelay = 100000;
+  uint8_t openDelay = 10000;
 
   uint32_t *pp = NULL;
 
@@ -310,7 +309,12 @@ static void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
   /* Poll for interrupt */
   while( (*adc_irqstatus & (1<<2)) == 0){}
 
-  p->state[bi][si].timeStamp = cnt;
+  p->state[bi][si].timeStamp = *(uint32_t *) (ADC_BASE);
+
+  p->state[bi][si].ankle_pos = 0xdead;
+  p->state[bi][si].ankle_vel = 0xbeaf;
+  p->state[bi][si].gaitPhase = 0xAAAA;
+
   p->state[bi][si].adc_value[0] = FIFO[0] & 0xFFF;
   p->state[bi][si].adc_value[1] = FIFO[1] & 0xFFF;
   p->state[bi][si].adc_value[2] = FIFO[2] & 0xFFF;
@@ -318,13 +322,8 @@ static void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
   p->state[bi][si].adc_value[4] = FIFO[4] & 0xFFF;
   p->state[bi][si].adc_value[5] = FIFO[5] & 0xFFF;
   p->state[bi][si].adc_value[6] = FIFO[6] & 0xFFF;
+  p->state[bi][si].adc_value[7] = FIFO[7] & 0xFFF;
 
-  uint32_t temp0 = FIFO[7] & 0xFFF;
-
-  /* Reset Iterrupt */
-   *adc_irqstatus = (1<<2);
-
-  /*
   p->state[bi][si].imu_value[0] = cnt;
   p->state[bi][si].imu_value[1] = cnt;
   p->state[bi][si].imu_value[2] = cnt;
@@ -334,10 +333,10 @@ static void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
   p->state[bi][si].imu_value[6] = cnt;
   p->state[bi][si].imu_value[7] = cnt;
   p->state[bi][si].imu_value[8] = 99;
+  p->state[bi][si].imu_value[9] = 0;
 
-  p->state[bi][si].gaitPhase = 1;
-  */
-  
+  /* Reset Iterrupt */
+   *adc_irqstatus = (1<<2);
 }
 
 static inline void iepTimerInit(uint32_t count)
