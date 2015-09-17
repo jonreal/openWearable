@@ -8,25 +8,21 @@
 #include "rsc_table.h"
 #include "mem_types.h"
 
-
-#define ADC_BASE          0x44E0D000
-#define ADC_EN_BIT_MASK   0x1FE
-#define DEBUG_R30_BIT     5
-
 /* Prototypes -------------------------------------------------------------- */
-static void updateState(uint32_t cnt, uint8_t bi, uint8_t si);
-static inline void iepTimerInit(uint32_t count);
-static inline void iepInterruptInit(void);
-static inline void startTimer(void);
-static inline void clearTimerFlag(void);
-static inline void clearIepInterrupt(void);
-static inline void pru0ToArmInterrupt(void);
-static void adcInit(void);
-static inline void adcEnable(void);
-static inline void adcDisable(void);
+void updateState(uint32_t cnt, uint8_t bi, uint8_t si);
+void iepTimerInit(uint32_t count);
+void iepInterruptInit(void);
+void startTimer(void);
+void clearTimerFlag(void);
+void clearIepInterrupt(void);
+void pru0ToArmInterrupt(void);
+void spiInit(void);
+uint8_t spiXfer(uint8_t tx);
+void adcInit(void);
+void sampleAdc(volatile uint16_t adc[8]);
+void adcDisable(void);
 
 /* Globals ----------------------------------------------------------------- */
-
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 
@@ -48,7 +44,8 @@ pru0_param_mem_t *param;
 /* Main ---------------------------------------------------------------------*/
 int main(void)
 {
-  void *ptr;
+  void *ptr = NULL;
+
   volatile uint32_t cnt = 0;
   volatile uint8_t stateIndx = 0;
   volatile uint8_t buffIndx = 0;
@@ -63,24 +60,20 @@ int main(void)
 
   /*** Memory Setup ***/
 
-  /* Local memory map for shared memory */
-  ptr = NULL;
+  /* Memory map for shared memory */
   ptr = (void *)PRU_L_SHARED_DRAM;
   p = (shared_mem_t *) ptr;
 
   /* Memory map for dram (params) */
-  ptr = NULL;
   ptr = (void *) PRU_DRAM;
   param = (pru0_param_mem_t *) ptr;
 
-  /*** Init timer ***/
+  /*** Init ***/
   iepInterruptInit();
   iepTimerInit(param->frq_clock_ticks);
   clearIepInterrupt();
-
-  /*** Init ADC ***/
   adcInit();
-
+  spiInit();
 
   /*** Wait for host interrupt ***/
   while( (__R31 & HOST0_MASK) == 0){}
@@ -89,8 +82,6 @@ int main(void)
   startTimer();
 
   /*** Sensor Loop ***/
-  cnt = 0;
-
   while(1){
 
     /* Poll for IEP timer interrupt */
@@ -99,7 +90,7 @@ int main(void)
     clearTimerFlag();
 
     /* Pin High */
-    __R30 |= (1<<DEBUG_R30_BIT);
+    __R30 |= (1 << PRU0_DEBUG_PIN);
 
     /* Update State */
     updateState(cnt, buffIndx, stateIndx);
@@ -115,33 +106,30 @@ int main(void)
       }
     }
 
-    /* Set done bit to start control */
-    p->flow_control_bit.sensorDone = 1;
-
-    /* Check enable bit */
+    /* Set done bit to start control and check enable bit */
     if(!(p->flow_control_bit.enable)){
+      p->flow_control_bit.sensorDone = 1;
       p->flow_control_bit.exit = 1;
       break;
+    }
+    else{
+      p->flow_control_bit.sensorDone = 1;
     }
 
     clearIepInterrupt();
 
     /* Pin Low */
-    __R30 &= ~(1<<DEBUG_R30_BIT);
+    __R30 &= ~(1 << PRU0_DEBUG_PIN);
  }
 
   /* Pin Low */
-  __R30 &= ~(1<<DEBUG_R30_BIT);
+  __R30 &= ~(1 << PRU0_DEBUG_PIN);
 
   /* Clear all interrupts */
   clearIepInterrupt();
   CT_INTC.SECR0 = 0xFFFFFFFF;
   CT_INTC.SECR1 = 0xFFFFFFFF;
-
-  /* CTRL: Disable ADC */
-  uint32_t *pp = NULL;
-  pp = (uint32_t *) (ADC_BASE + 0x40);
-  *pp = 0x0;
+  adcDisable();
 
   /* Wait for Host interrupt */
 //  while( (__R31 & HOST0_MASK) == 0){}
@@ -153,176 +141,101 @@ int main(void)
   return 0;
 }
 
-static void adcInit(void)
+void spiInit(void)
 {
+  /* CM_PER_SPI1_CLKCTRL: IDLEST = 0x0
+   *                      MODULEMODE = 0x2
+   * This just enables the SPI1 module */
+  HWREG32(0x44E00050) = (0x2) | (0x0 << 16);
 
-  uint8_t sampleDelay = 254;
-  uint8_t openDelay = 10000;
+  /* MCSPI_SYSCONFIG:  Reset Module */
+  HWREG32(SPI1_BASE + 0x110) = (0x1 << 1);
 
-  uint32_t *pp = NULL;
+  /* MCSPI_SYSSTATUS: Poll for Reset done flag */
+  while( (HWREG32(SPI1_BASE + 0x114) & 0x1) == 0) {}
 
-  /* CTRL: Disable ADC */
-  pp = (uint32_t *) (ADC_BASE + 0x40);
-  *pp = 0x0;
+  /* MCSPI_MODULCTRL:   FDAA = 0x0 - FIFO data in MCSPI_(TX/RX)(i)
+   *                    MOA  = 0x0 - multi word disabled
+   *                    INITDLY = 0x0 - no delay
+   *                    SYSTEM_TEST = 0x0 - Functional mode
+   *                    MS = 0x0 - master mode
+   *                    PIN34 = 0x0 - SPIEN used as CS
+   *                    SINGLE = 0x0 - multi-channel */
+  HWREG32(SPI1_BASE + 0x128) = 0x00000000;
 
-  /* CTRL: Enable step config, and ID tag */
-  *pp |= 0x6;
+  /* MCSPI_SYSCONFIG: CLOCKACTIVITY = 0x3 - ocp and func. clocks maintained
+   *                  SIDLEMODE = 0x2 - smart idle
+   *                  AUTOIDLE = 0x1 - auto idle */
+  HWREG32(SPI1_BASE + 0x110) = (0x3 << 8) | (0x2 << 3) | 0x1;
 
-  /* FIFO0THRESHOLD: set to 7 = (8-1) */
-  pp = (uint32_t *) (ADC_BASE + 0xE8);
-  *pp = 0x7;
+  /* MCSPI_IQRSTATUS: reset all interrupts */
+  HWREG32(SPI1_BASE + 0x118) = 0xFFFFFFFF;
 
-  /* Disable all steps */
-  pp = (uint32_t *) (ADC_BASE + 0x54);
-  *pp = 0x0;
+  /* MCSPI_IQRENABLE: none */
+  HWREG32(SPI1_BASE + 0x11C) = 0x00000000;
 
-  /* All steps configured for fifo0 */
-
-  /* STEPCONFIG1: Set to CH. 1, and avg. 16 samples */
-  pp = (uint32_t *) (ADC_BASE + 0x64);
-  *pp = (0x0 << 19);
-
-  /* STEPDELAY1: */
-  pp = (uint32_t *) (ADC_BASE + 0x68);
-  *pp = (sampleDelay << 24) | openDelay;
-
-  /* STEPCONFIG2: Set to CH. 2, and avg. 16 samples */
-  pp = (uint32_t *) (ADC_BASE + 0x6C);
-  *pp = (0x1 << 19);
-
-  /* STEPDELAY2: */
-  pp = (uint32_t *) (ADC_BASE + 0x70);
-  *pp = (sampleDelay << 24) | openDelay;
-
-  /* STEPCONFIG3: Set to CH. 3, and avg. 16 samples */
-  pp = (uint32_t *) (ADC_BASE + 0x74);
-  *pp = (0x2 << 19);
-
-  /* STEPDELAY3: */
-  pp = (uint32_t *) (ADC_BASE + 0x78);
-  *pp = (sampleDelay << 24) | openDelay;
-
-  /* STEPCONFIG4: Set to CH. 4, and avg. 16 samples */
-  pp = (uint32_t *) (ADC_BASE + 0x7C);
-  *pp = (0x3 << 19);
-
-  /* STEPDELAY4: */
-  pp = (uint32_t *) (ADC_BASE + 0x80);
-  *pp = (sampleDelay << 24) | openDelay;
-
-  /* STEPCONFIG5: Set to CH. 5, and avg. 16 samples */
-  pp = (uint32_t *) (ADC_BASE + 0x84);
-  *pp = (0x4 << 19);
-
-  /* STEPDELAY5: */
-  pp = (uint32_t *) (ADC_BASE + 0x88);
-  *pp = (sampleDelay << 24) | openDelay;
-
-  /* STEPCONFIG6: Set to CH. 6, and avg. 16 samples */
-  pp = (uint32_t *) (ADC_BASE + 0x8C);
-  *pp = (0x5 << 19);
-
-  /* STEPDELAY6: */
-  pp = (uint32_t *) (ADC_BASE + 0x90);
-  *pp = (sampleDelay << 24) | openDelay;
-
-  /* STEPCONFIG7: Set to CH. 7, and avg. 16 samples */
-  pp = (uint32_t *) (ADC_BASE + 0x94);
-  *pp = (0x6 << 19);
-
-  /* STEPDELAYd7: */
-  pp = (uint32_t *) (ADC_BASE + 0x98);
-  *pp = (sampleDelay << 24) | openDelay;
-
-  /* STEPCONFIG8: Set to CH. 8, and avg. 16 samples */
-  pp = (uint32_t *) (ADC_BASE + 0x9C);
-  *pp = (0x7 << 19);
-
-  /* STEPDELAY8: */
-  pp = (uint32_t *) (ADC_BASE + 0xA0);
-  *pp = (sampleDelay << 24) | openDelay;
-
-  /* Turn off other steps */
-
-  /* STEPCONFIG9: off */
-  pp = (uint32_t *) (ADC_BASE + 0xA4);
-  *pp = 0x0;
-
-  /* STEPCONFIG10: off */
-  pp = (uint32_t *) (ADC_BASE + 0xAC);
-  *pp = 0x0;
-
-  /* STEPCONFIG11: off */
-  pp = (uint32_t *) (ADC_BASE + 0xB4);
-  *pp = 0x0;
-
-  /* STEPCONFIG12: off */
-  pp = (uint32_t *) (ADC_BASE + 0xBC);
-  *pp = 0x0;
-
-  /* STEPCONFIG13: off */
-  pp = (uint32_t *) (ADC_BASE + 0xC4);
-  *pp = 0x0;
-
-  /* STEPCONFIG14: off */
-  pp = (uint32_t *) (ADC_BASE + 0xCC);
-  *pp = 0x0;
-
-  /* STEPCONFIG15: off */
-  pp = (uint32_t *) (ADC_BASE + 0xD4);
-  *pp = 0x0;
-
-  /* STEPCONFIG16: off */
-  pp = (uint32_t *) (ADC_BASE + 0xDC);
-  *pp = 0x0;
-
-  /* SYSCONFIG: Force Idle */
-  pp = (uint32_t *) (ADC_BASE + 0x10);
-  *pp = 0x0;
-
-  /* IRQENABLE_SET: Interrput for FIFO0 Threshold */
-  pp = (uint32_t *) (ADC_BASE + 0x2C);
-  *pp = (1<<2);
-
-  /* ADC_CLKDIV: 0 */
-  pp = (uint32_t *) (ADC_BASE + 0x4C);
-  *pp = 0x0;
-
-  /* CTRL: Enable ADC */
-  pp = (uint32_t *) (ADC_BASE + 0x40);
-  *pp |= 0x1;
-
-  /* ADC_IRQSTATUS: Reset Iterrupt */
-  pp = (uint32_t *) (ADC_BASE + 0x28);
-  *pp = (1<<2);
+  /* MCSPI_CH0CONF:   CLKG = 0x0 - clock granularity of power 2
+   *                  FFER = 0x1 - enable FIFO for RX
+   *                  FFEW = 0x1 - enable FIFO for TX
+   *                  TCS = 0x0  - CS timing
+   *                  SBPOL = 0x0 - start bit polarity
+   *                  SBE = 0x0 - default TX length
+   *                  SPIENSLV = 0x0 - Detection enabled only on SPIEN[0]
+   *                  FORCE = 0x0
+   *                  TURBO = 0x0
+   *                  IS = 0x0 - Input (RX) SPIDAT[0]
+   *                  DPE1 = 0x0 - Output (TX) SPIDAT[1]
+   *                  DPE0 = 0x1 - No TX on SPIDAT[0]
+   *                  DMAR = 0x0 - No DMA (RX)
+   *                  DMAW = 0x0 - No DMA (TX)
+   *                  TRM = 0x0 - TX/RX mode
+   *                  WL = 0x7 - word length of 8-bits
+   *                  EPOL = 0x0 - SPIEN polarity
+   *                  CLKD = 0x2 - divide by 2
+   *                  POL = 0x0
+   *                  PHA = 0x0; */
+  HWREG32(SPI1_BASE + 0x12C) = (0x0 << 29) | (0x1 << 28) | (0x1 << 27)
+          | (0x0 << 25) | (0x0 << 24) | (0x0 << 23) | (0x0 << 21) | (0x0 << 20)
+          | (0x0 << 19) | (0x0 << 18) | (0x0 << 17) | (0x1 << 16) | (0x0 << 15)
+          | (0x0 << 14) | (0x0 << 12) | (0x7 << 7) | (0x0 << 6) | (0x2 << 2)
+          | (0x0 << 1) | (0x0 << 0);
 }
 
-static void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
+uint8_t spiXfer(uint8_t tx)
 {
-  volatile uint32_t *STEPENABLE = (uint32_t *) (ADC_BASE + 0x54);
-  volatile uint32_t *FIFO = (uint32_t *) (ADC_BASE + 0x100);
-  volatile uint32_t *adc_irqstatus = (uint32_t *) (ADC_BASE + 0x28);
+  uint32_t temp = 0;
 
-  /* Start ADC capture */
-  *STEPENABLE = ADC_EN_BIT_MASK;
+  /* MCSPI_CH0CTRL: Enable SPI ch0 */
+  HWREG32(SPI1_BASE + 0x134) |= 0x1;
 
-  /* Poll for interrupt */
-  while( (*adc_irqstatus & (1<<2)) == 0){}
+  /* MCSPI_TX0: Write payload word to TX FIFO ch0 */
+  HWREG32(SPI1_BASE + 0x138) = tx;
 
-  p->state[bi][si].timeStamp = *(uint32_t *) (ADC_BASE);
+  /* MCSPI_CH0STAT: Poll for EOT (end of transmission) */
+  while( (HWREG32(SPI1_BASE + 0x130) & (1 << 2)) == 0) {}
+
+  /* MCSPI_RX0: Read word */
+  temp = HWREG32(SPI1_BASE + 0x13C);
+
+  /* MCSPI_CH0CTRL: Disable spi ch0 */
+  HWREG32(SPI1_BASE + 0x134) &= ~(0x1);
+
+  return (uint8_t) temp;
+}
+
+
+void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
+{
+  uint8_t data = 0;
+  data = spiXfer(0xFE);
+
+  sampleAdc(p->state[bi][si].adc_value);
+
+  p->state[bi][si].timeStamp = data;
 
   p->state[bi][si].ankle_pos = 0xdead;
   p->state[bi][si].ankle_vel = 0xbeaf;
   p->state[bi][si].gaitPhase = 0xAAAA;
-
-  p->state[bi][si].adc_value[0] = FIFO[0] & 0xFFF;
-  p->state[bi][si].adc_value[1] = FIFO[1] & 0xFFF;
-  p->state[bi][si].adc_value[2] = FIFO[2] & 0xFFF;
-  p->state[bi][si].adc_value[3] = FIFO[3] & 0xFFF;
-  p->state[bi][si].adc_value[4] = FIFO[4] & 0xFFF;
-  p->state[bi][si].adc_value[5] = FIFO[5] & 0xFFF;
-  p->state[bi][si].adc_value[6] = FIFO[6] & 0xFFF;
-  p->state[bi][si].adc_value[7] = FIFO[7] & 0xFFF;
 
   p->state[bi][si].imu_value[0] = cnt;
   p->state[bi][si].imu_value[1] = cnt;
@@ -335,11 +248,177 @@ static void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
   p->state[bi][si].imu_value[8] = 99;
   p->state[bi][si].imu_value[9] = 0;
 
-  /* Reset Iterrupt */
-   *adc_irqstatus = (1<<2);
 }
 
-static inline void iepTimerInit(uint32_t count)
+void sampleAdc(volatile uint16_t adc[8])
+{
+  volatile uint32_t *FIFO =  (uint32_t *) (ADC_BASE + 0x100);
+
+  /* STEPENABLE: Enable STEP1-8 */
+  HWREG32(ADC_BASE + 0x54) = (1 << 8) | (1 << 7) | (1 << 6) | (1 << 5)
+      | (1 << 4) | (1 << 3) | (1 << 2) | (1 << 1);
+
+  /* IRQSTATUS: poll for interrupt */
+  while( (HWREG32(ADC_BASE + 0x28) & (1 << 2)) == 0){}
+
+  /* Write to memory */
+  adc[0] = FIFO[0] & 0xFFF;
+  adc[1] = FIFO[1] & 0xFFF;
+  adc[2] = FIFO[2] & 0xFFF;
+  adc[3] = FIFO[3] & 0xFFF;
+  adc[4] = FIFO[4] & 0xFFF;
+  adc[5] = FIFO[5] & 0xFFF;
+  adc[6] = FIFO[6] & 0xFFF;
+  adc[7] = FIFO[7] & 0xFFF;
+
+  /* IRQSTATUS: Clear all interrupts */
+  HWREG32(ADC_BASE + 0x28) = 0x7FF;
+}
+
+
+void adcInit(void)
+{
+
+  /* TODO make these params */
+  uint8_t sampleDelay = 254;
+  uint16_t openDelay = 10000;
+
+  /* CTRL:  StepConfig_WriteProtext_n_active_low = 0x1 - enable step config
+   *        Step_ID_tag = 0x1 - store ch id tag in FIFO
+   *        Enable = 0x0 - Disable ADC */
+  HWREG32(ADC_BASE + 0x40) = (0x1 << 2) | (0x1 << 1) | (0x0);
+
+  /* FIFO0THRESHOLD: FIFO0_threshold_Level = 7 (8-1) */
+  HWREG32(ADC_BASE + 0xE8) = 0x7;
+
+  /* STEPENABLE: Disable all steps */
+  HWREG32(ADC_BASE + 0x54) = 0x0000;
+
+  /**** Step configs - All steps configured for fifo0 ****/
+
+  /* STEPCONFIG1: FIFO_select = 0x0
+   *              SEL_INP_SWC_3_0 = 0x0 - ch1
+   *              Averaging = 0x2 - 4 samples
+   *              Mode = 0x0 - SW enabled, one-shot */
+  HWREG32(ADC_BASE + 0x64) = (0x0 << 26) | (0x0 << 19) | (0x2 << 2) | (0x0);
+
+  /* STEPDELAY1:  SampleDelay = sampleDelay - number of clks to sample
+   *              OpenDelay = openDelay - clks to wait */
+  HWREG32(ADC_BASE + 0x68) = (sampleDelay << 24) | openDelay;
+
+  /* STEPCONFIG2: FIFO_select = 0x0
+   *              SEL_INP_SWC_3_0 = 0x1 - ch2
+   *              Averaging = 0x2 - 4 samples
+   *              Mode = 0x0 - SW enabled, one-shot */
+  HWREG32(ADC_BASE + 0x6C) = (0x0 << 26) | (0x1 << 19) | (0x2 << 2) | (0x0);
+
+  /* STEPDELAY2:  SampleDelay = sampleDelay - number of clks to sample
+   *              OpenDelay = openDelay - clks to wait */
+  HWREG32(ADC_BASE + 0x70) = (sampleDelay << 24) | openDelay;
+
+  /* STEPCONFIG3: FIFO_select = 0x0
+   *              SEL_INP_SWC_3_0 = 0x2 - ch3
+   *              Averaging = 0x2 - 4 samples
+   *              Mode = 0x0 - SW enabled, one-shot */
+  HWREG32(ADC_BASE + 0x74) = (0x0 << 26) | (0x2 << 19) | (0x2 << 2) | (0x0);
+
+  /* STEPDELAY3:  SampleDelay = sampleDelay - number of clks to sample
+   *              OpenDelay = openDelay - clks to wait */
+  HWREG32(ADC_BASE + 0x78) = (sampleDelay << 24) | openDelay;
+
+  /* STEPCONFIG4: FIFO_select = 0x0
+   *              SEL_INP_SWC_3_0 = 0x3 - ch4
+   *              Averaging = 0x2 - 4 samples
+   *              Mode = 0x0 - SW enabled, one-shot */
+  HWREG32(ADC_BASE + 0x7C) = (0x0 << 26) | (0x3 << 19) | (0x2 << 2) | (0x0);
+
+  /* STEPDELAY4:  SampleDelay = sampleDelay - number of clks to sample
+   *              OpenDelay = openDelay - clks to wait */
+  HWREG32(ADC_BASE + 0x80) = (sampleDelay << 24) | openDelay;
+
+  /* STEPCONFIG5: FIFO_select = 0x0
+   *              SEL_INP_SWC_3_0 = 0x4 - ch5
+   *              Averaging = 0x2 - 4 samples
+   *              Mode = 0x0 - SW enabled, one-shot */
+  HWREG32(ADC_BASE + 0x84) = (0x0 << 26) | (0x4 << 19) | (0x2 << 2) | (0x0);
+
+  /* STEPDELAY5:  SampleDelay = sampleDelay - number of clks to sample
+   *              OpenDelay = openDelay - clks to wait */
+  HWREG32(ADC_BASE + 0x88) = (sampleDelay << 24) | openDelay;
+
+  /* STEPCONFIG6: FIFO_select = 0x0
+   *              SEL_INP_SWC_3_0 = 0x5 - ch6
+   *              Averaging = 0x2 - 4 samples
+   *              Mode = 0x0 - SW enabled, one-shot */
+  HWREG32(ADC_BASE + 0x8C) = (0x0 << 26) | (0x5 << 19) | (0x2 << 2) | (0x0);
+
+  /* STEPDELAY6:  SampleDelay = sampleDelay - number of clks to sample
+   *              OpenDelay = openDelay - clks to wait */
+  HWREG32(ADC_BASE + 0x90) = (sampleDelay << 24) | openDelay;
+
+  /* STEPCONFIG7: FIFO_select = 0x0
+   *              SEL_INP_SWC_3_0 = 0x6 - ch7
+   *              Averaging = 0x2 - 4 samples
+   *              Mode = 0x0 - SW enabled, one-shot */
+  HWREG32(ADC_BASE + 0x94) = (0x0 << 26) | (0x6 << 19) | (0x2 << 2) | (0x0);
+
+  /* STEPDELAY7:  SampleDelay = sampleDelay - number of clks to sample
+   *              OpenDelay = openDelay - clks to wait */
+  HWREG32(ADC_BASE + 0x98) = (sampleDelay << 24) | openDelay;
+
+  /* STEPCONFIG8: FIFO_select = 0x0
+   *              SEL_INP_SWC_3_0 = 0x7 - ch7
+   *              Averaging = 0x2 - 4 samples
+   *              Mode = 0x0 - SW enabled, one-shot */
+  HWREG32(ADC_BASE + 0x9C) = (0x0 << 26) | (0x7 << 19) | (0x2 << 2) | (0x0);
+
+  /* STEPDELAY8:  SampleDelay = sampleDelay - number of clks to sample
+   *              OpenDelay = openDelay - clks to wait */
+  HWREG32(ADC_BASE + 0xA0) = (sampleDelay << 24) | openDelay;
+
+  /**** Turn off other steps ****/
+
+  /* STEPCONFIG9: off */
+  HWREG32(ADC_BASE + 0xA4) = 0x0;
+
+  /* STEPCONFIG10: off */
+  HWREG32(ADC_BASE + 0xAC) = 0x0;
+
+  /* STEPCONFIG11: off */
+  HWREG32(ADC_BASE + 0xB4) = 0x0;
+
+  /* STEPCONFIG12: off */
+  HWREG32(ADC_BASE + 0xBC) = 0x0;
+
+  /* STEPCONFIG13: off */
+  HWREG32(ADC_BASE + 0xC4) = 0x0;
+
+  /* STEPCONFIG14: off */
+  HWREG32(ADC_BASE + 0xCC) = 0x0;
+
+  /* STEPCONFIG15: off */
+  HWREG32(ADC_BASE + 0xD4) = 0x0;
+
+  /* STEPCONFIG16: off */
+  HWREG32(ADC_BASE + 0xDC) = 0x0;
+
+  /* SYSCONFIG: IdleMode = 0x2 - Smart-Idel Mode */
+  HWREG32(ADC_BASE + 0x10) = (0x2 << 2);
+
+  /* IRQENABLE_SET: FIFO0_Threshold = 0x1 - enable FIFO int */
+  HWREG32(ADC_BASE + 0x2C) = (1 << 2);
+
+  /* ADC_CLKDIV: ADC_ClkDiv = 0x3 (divide by 4 (4-1 = 3)  */
+  HWREG32(ADC_BASE + 0x4C) = 0x4;
+
+  /* CTRL: Enable = 0x1 */
+  HWREG32(ADC_BASE + 0x40) |= 0x1;
+
+  /* IRQSTATUS: Clear all interrupts */
+  HWREG32(ADC_BASE + 0x28) = 0x7FF;
+}
+
+void iepTimerInit(uint32_t count)
 {
   /*** IEP Timer Setup ***/
 
@@ -369,7 +448,7 @@ static inline void iepTimerInit(uint32_t count)
   CT_IEP.TMR_CMP_CFG_bit.CMP_EN = 1;
 }
 
-static inline void iepInterruptInit(void)
+void iepInterruptInit(void)
 {
   /*** System event 7 Interrupt -> Host 1 ***/
 
@@ -393,54 +472,41 @@ static inline void iepInterruptInit(void)
   CT_INTC.EISR = 7;
 
   /* Enable Host interrupt 1 */
-  CT_INTC.HIEISR |= (1<<0);
+  CT_INTC.HIEISR |= (1 << 0);
 
   /* Gloablly enable interrupts */
   CT_INTC.GER = 1;
 }
 
-static inline void startTimer(void)
+void startTimer(void)
 {
    /* Start Timer */
 //  CT_IEP.TMR_GLB_CFG_bit.CNT_EN = 1;
   CT_IEP.TMR_GLB_CFG = 0x11;
 }
 
-static inline void clearTimerFlag(void)
+void clearTimerFlag(void)
 {
     /* Clear compare status */
     CT_IEP.TMR_CMP_STS_bit.CMP_HIT = 0xFF;
 }
 
-static inline void pru0ToArmInterrupt(void)
+void pru0ToArmInterrupt(void)
 {
   __R31 = PRU0_ARM_INT;
 }
 
-static inline void clearIepInterrupt(void)
+void clearIepInterrupt(void)
 {
     /* Clear interrupt's status */
     CT_INTC.SECR0 = (1<<7);
     __R31 = 0x00000000;
 }
 
-
-static inline void adcEnable(void)
+void adcDisable(void)
 {
-  uint32_t *pp = NULL;
-
-  /* CTRL: enable */
-  pp = (uint32_t *) (ADC_BASE + 0x40);
-  *pp |= 0x1;
-}
-
-static inline void adcDisable(void)
-{
-  uint32_t *pp = NULL;
-
-  /* CTRL: enable */
-  pp = (uint32_t *) (ADC_BASE + 0x40);
-  *pp |= 0x0;
+  /* CTRL: Enable = 0x0*/
+  HWREG32(ADC_BASE + 0x40) &= ~(0x1);
 }
 
 

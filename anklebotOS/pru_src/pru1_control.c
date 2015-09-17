@@ -59,13 +59,11 @@ int main(void)
 
   /*** Memory Setup ***/
 
-  /* Local memory map for shared memory */
-  ptr = NULL;
+  /* Memory map for shared memory */
   ptr = (void *)PRU_L_SHARED_DRAM;
   p = (shared_mem_t *) ptr;
 
-  /* Memory map for dram (params) */
-  ptr = NULL;
+  /* Memory map for local memory*/
   ptr = (void *) PRU_DRAM;
   param = (pru1_param_mem_t *) ptr;
 
@@ -103,30 +101,24 @@ int main(void)
     if(stateIndx == SIZE_OF_BUFFS){
       stateIndx = 0;
       buffIndx++;
-      setDuty(1000);
       p->flow_control_bit.bufferFull = 1;
       if(buffIndx == NUM_OF_BUFFS){
         buffIndx = 0;
-        setDuty(100);
       }
     }
-
-    /* Pin Low */
-    __R30 &= ~(1<<DEBUG_R30_BIT);
 
     /* Check for exit flag*/
     if(p->flow_control_bit.exit)
       break;
+
+    /* Pin Low */
+    __R30 &= ~(1<<DEBUG_R30_BIT);
   }
 
   /* Pin Low */
   __R30 &= ~(1<<DEBUG_R30_BIT);
 
   /* Disable pwm */
-  __delay_cycles(1000);
-  setDuty(10000);
-  __delay_cycles(1000);
-
   disablePwm();
 
   /* Clear all interrupts */
@@ -148,15 +140,15 @@ int main(void)
 
 static void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 {
-  p->state[bi][si].motor_current_cmd = 0xdead;
 
-  uint32_t *p32 = NULL;
-  uint16_t *p16 = NULL;
+  uint16_t cmd = cnt % 10000;
 
-  p16 = (uint16_t *) (EPWM2_BASE + 0x8);
-  p->state[bi][si].timeStamp = *p16;
+  p->state[bi][si].motor_current_cmd = cmd;
+
+  setDuty(cnt % 10000);
 
 }
+
 
 
 static void pwmInit(void)
@@ -174,28 +166,20 @@ static void pwmInit(void)
 
   /* CLKCONFIG: set ePWMCLK_EN, everthing else 0 */
   p32 = (uint32_t *) (PWM_SS2_BASE + 0x8);
-  *p32 = (0<<1) | (0<<5) | (1<<8);
+  *p32 = (0x0 << 1) | (0x0 << 5) | (0x1 << 8);
 
   /**** EPWM registers *****/
 
-  /* CMPCTL: shadow mode off */
+  /* CMPCTL: shadow-A mode: on, load-A mode: load on zero */
   p16 = (uint16_t *) (EPWM2_BASE + 0xE);
-  *p16 = (1<<4) | (1<<6);
+  *p16 = (0x0 << 4) | (0x0 << 0);
 
   /* CMPA: compare reg */
   p16 = (uint16_t *) (EPWM2_BASE + 0x12);
   *p16 = 10000;
 
-  /* CMPB: compare reg */
-  p16 = (uint16_t *) (EPWM2_BASE + 0x14);
-  *p16 = 0x0;
-
   /* AQCTLA: */
   p16 = (uint16_t *) (EPWM2_BASE + 0x16);
-  *p16 = (0x2 << 4) | (0x1 << 6);
-
-  /* AQCTLB: */
-  p16 = (uint16_t *) (EPWM2_BASE + 0x18);
   *p16 = (0x2 << 4) | (0x1 << 6);
 
   /* TBCTL: CTRMODE = up-down-cnt mode (0x2) */

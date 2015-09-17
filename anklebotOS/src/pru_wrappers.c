@@ -313,12 +313,12 @@ void writePruConrtolParams(uint32_t Kp, uint32_t Kd, uint32_t pos0,
 void writeState(uint8_t bi)
 {
   for(int i=0; i<SIZE_OF_BUFFS; i++){
-    printf("%i\t", p->state[bi][i].timeStamp);
+    printf("0x%X\t", p->state[bi][i].timeStamp);
 
     printf("0x%X\t", p->state[bi][i].ankle_pos);
     printf("0x%X\t", p->state[bi][i].ankle_vel);
     printf("0x%X\t", p->state[bi][i].gaitPhase);
-    printf("0x%X\t", p->state[bi][i].motor_current_cmd);
+    printf("%i\t", p->state[bi][i].motor_current_cmd);
 
     printf("%i\t", p->state[bi][i].adc_value[0]);
     printf("%i\t", p->state[bi][i].adc_value[1]);

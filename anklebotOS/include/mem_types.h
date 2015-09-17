@@ -1,6 +1,7 @@
 #ifndef _MEM_TYPES_
 #define _MEM_TYPES_
 
+/* Constants */
 #define CLOCK         (200000000)
 #define HOST0_MASK    (0x40000000)
 #define HOST1_MASK    (0x80000000)
@@ -13,6 +14,20 @@
 
 #define NUM_ADC     8
 #define NUM_IMU     10
+
+/* Global Addresses to modules */
+#define ADC_BASE      0x44E0D000
+#define SPI1_BASE     0x481A0000
+#define PWM_SS2_BASE  0x48304000
+#define EPWM2_BASE    0x48304200
+
+/* Pru debug pins */
+#define PRU0_DEBUG_PIN  5
+#define PRU1_DEBUG_PIN  8
+
+/* Macros */
+#define HWREG32(x) (*((volatile uint32_t *)(x)))
+#define HWREG16(x) (*((volatile uint16_t *)(x)))
 
 /* Enums --------------------------------------------------------------------*/
 
