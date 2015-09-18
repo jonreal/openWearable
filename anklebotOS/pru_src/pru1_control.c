@@ -140,7 +140,7 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 
   uint16_t cmd = cnt % 10000;
 
-  p->state[bi][si].motor_current_cmd = cmd;
+  p->state[bi][si].motor_current_cmd = :cmd;
   setDuty(cmd);
 
 }
@@ -160,8 +160,9 @@ void pwmInit(void)
    *    Res (bits) = log2(F_pwm/F_sysclkout)
    *
    *
-   * Example: F_pwm = 5000 Hz, T_pwm = 2e-4
-   *
+   * Example: F_pwm = 5000 Hz, T_pwm = 2e-4, CLK_DIV = 128
+   *          F_tbclk = (PWM_CLK/CLK_DIV) =  781250 (Hz)
+   *          TBPRD = T_pwm/(2*T_tbclk)
    *          
    * /
 
