@@ -433,7 +433,7 @@ void resetBufferFullFlag(void)
  * ------------------------------------------------------------------------- */
 uint32_t hzToPruTicks(float freq_hz)
 {
-  return (uint32_t)( (float)CLOCK / freq_hz);
+  return (uint32_t)( (float)PRU_CLK / freq_hz);
 }
 
 /* ----------------------------------------------------------------------------

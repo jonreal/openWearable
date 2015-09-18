@@ -2,7 +2,9 @@
 #define _MEM_TYPES_
 
 /* Constants */
-#define CLOCK         (200000000)
+#define PRU_CLK         (200000000)
+#define PWM_CLK         (100000000)
+
 #define HOST0_MASK    (0x40000000)
 #define HOST1_MASK    (0x80000000)
 
