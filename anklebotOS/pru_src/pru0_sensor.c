@@ -280,8 +280,10 @@ void adcInit(void)
 {
 
   /* TODO make these params */
-  uint8_t sampleDelay = 254;
-  uint16_t openDelay = 10000;
+  uint8_t sampleDelay = 0x0;
+  uint16_t openDelay = 0x0;
+  uint8_t avrg = 0x0;
+  uint16_t adc_clk_div = 0x0;
 
   /* CTRL:  StepConfig_WriteProtext_n_active_low = 0x1 - enable step config
    *        Step_ID_tag = 0x1 - store ch id tag in FIFO
@@ -300,7 +302,7 @@ void adcInit(void)
    *              SEL_INP_SWC_3_0 = 0x0 - ch1
    *              Averaging = 0x2 - 4 samples
    *              Mode = 0x0 - SW enabled, one-shot */
-  HWREG32(ADC_BASE + 0x64) = (0x0 << 26) | (0x0 << 19) | (0x2 << 2) | (0x0);
+  HWREG32(ADC_BASE + 0x64) = (0x0 << 26) | (0x0 << 19) | (avrg << 2) | (0x0);
 
   /* STEPDELAY1:  SampleDelay = sampleDelay - number of clks to sample
    *              OpenDelay = openDelay - clks to wait */
@@ -310,7 +312,7 @@ void adcInit(void)
    *              SEL_INP_SWC_3_0 = 0x1 - ch2
    *              Averaging = 0x2 - 4 samples
    *              Mode = 0x0 - SW enabled, one-shot */
-  HWREG32(ADC_BASE + 0x6C) = (0x0 << 26) | (0x1 << 19) | (0x2 << 2) | (0x0);
+  HWREG32(ADC_BASE + 0x6C) = (0x0 << 26) | (0x1 << 19) | (avrg << 2) | (0x0);
 
   /* STEPDELAY2:  SampleDelay = sampleDelay - number of clks to sample
    *              OpenDelay = openDelay - clks to wait */
@@ -320,7 +322,7 @@ void adcInit(void)
    *              SEL_INP_SWC_3_0 = 0x2 - ch3
    *              Averaging = 0x2 - 4 samples
    *              Mode = 0x0 - SW enabled, one-shot */
-  HWREG32(ADC_BASE + 0x74) = (0x0 << 26) | (0x2 << 19) | (0x2 << 2) | (0x0);
+  HWREG32(ADC_BASE + 0x74) = (0x0 << 26) | (0x2 << 19) | (avrg << 2) | (0x0);
 
   /* STEPDELAY3:  SampleDelay = sampleDelay - number of clks to sample
    *              OpenDelay = openDelay - clks to wait */
@@ -330,7 +332,7 @@ void adcInit(void)
    *              SEL_INP_SWC_3_0 = 0x3 - ch4
    *              Averaging = 0x2 - 4 samples
    *              Mode = 0x0 - SW enabled, one-shot */
-  HWREG32(ADC_BASE + 0x7C) = (0x0 << 26) | (0x3 << 19) | (0x2 << 2) | (0x0);
+  HWREG32(ADC_BASE + 0x7C) = (0x0 << 26) | (0x3 << 19) | (avrg << 2) | (0x0);
 
   /* STEPDELAY4:  SampleDelay = sampleDelay - number of clks to sample
    *              OpenDelay = openDelay - clks to wait */
@@ -340,7 +342,7 @@ void adcInit(void)
    *              SEL_INP_SWC_3_0 = 0x4 - ch5
    *              Averaging = 0x2 - 4 samples
    *              Mode = 0x0 - SW enabled, one-shot */
-  HWREG32(ADC_BASE + 0x84) = (0x0 << 26) | (0x4 << 19) | (0x2 << 2) | (0x0);
+  HWREG32(ADC_BASE + 0x84) = (0x0 << 26) | (0x4 << 19) | (avrg << 2) | (0x0);
 
   /* STEPDELAY5:  SampleDelay = sampleDelay - number of clks to sample
    *              OpenDelay = openDelay - clks to wait */
@@ -350,7 +352,7 @@ void adcInit(void)
    *              SEL_INP_SWC_3_0 = 0x5 - ch6
    *              Averaging = 0x2 - 4 samples
    *              Mode = 0x0 - SW enabled, one-shot */
-  HWREG32(ADC_BASE + 0x8C) = (0x0 << 26) | (0x5 << 19) | (0x2 << 2) | (0x0);
+  HWREG32(ADC_BASE + 0x8C) = (0x0 << 26) | (0x5 << 19) | (avrg << 2) | (0x0);
 
   /* STEPDELAY6:  SampleDelay = sampleDelay - number of clks to sample
    *              OpenDelay = openDelay - clks to wait */
@@ -360,7 +362,7 @@ void adcInit(void)
    *              SEL_INP_SWC_3_0 = 0x6 - ch7
    *              Averaging = 0x2 - 4 samples
    *              Mode = 0x0 - SW enabled, one-shot */
-  HWREG32(ADC_BASE + 0x94) = (0x0 << 26) | (0x6 << 19) | (0x2 << 2) | (0x0);
+  HWREG32(ADC_BASE + 0x94) = (0x0 << 26) | (0x6 << 19) | (avrg << 2) | (0x0);
 
   /* STEPDELAY7:  SampleDelay = sampleDelay - number of clks to sample
    *              OpenDelay = openDelay - clks to wait */
@@ -370,7 +372,7 @@ void adcInit(void)
    *              SEL_INP_SWC_3_0 = 0x7 - ch7
    *              Averaging = 0x2 - 4 samples
    *              Mode = 0x0 - SW enabled, one-shot */
-  HWREG32(ADC_BASE + 0x9C) = (0x0 << 26) | (0x7 << 19) | (0x2 << 2) | (0x0);
+  HWREG32(ADC_BASE + 0x9C) = (0x0 << 26) | (0x7 << 19) | (avrg << 2) | (0x0);
 
   /* STEPDELAY8:  SampleDelay = sampleDelay - number of clks to sample
    *              OpenDelay = openDelay - clks to wait */
@@ -409,7 +411,7 @@ void adcInit(void)
   HWREG32(ADC_BASE + 0x2C) = (1 << 2);
 
   /* ADC_CLKDIV: ADC_ClkDiv = 0x3 (divide by 4 (4-1 = 3)  */
-  HWREG32(ADC_BASE + 0x4C) = 0x4;
+  HWREG32(ADC_BASE + 0x4C) = adc_clk_div;
 
   /* CTRL: Enable = 0x1 */
   HWREG32(ADC_BASE + 0x40) |= 0x1;
