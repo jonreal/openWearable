@@ -18,10 +18,9 @@ void clearInterrupt(void);
 void pru1ToArmInterrupt(void);
 void pwmInit(void);
 void disablePwm(void);
-void setDuty(uint16_t duty);
+void setDuty(float duty, volatile uint16_t *motorDuty);
 
 /* Globals ----------------------------------------------------------------- */
-
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 
@@ -138,10 +137,7 @@ int main(void)
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 {
 
-  uint16_t cmd = cnt % 10000;
-
-  p->state[bi][si].motor_current_cmd = :cmd;
-  setDuty(cmd);
+  setDuty(100, &(p->state[bi][si].motorDuty));
 
 }
 
@@ -157,14 +153,7 @@ void pwmInit(void)
    *
    * PWM resolution
    *    Res (%) = F_pwm/F_sysclkout X 100
-   *    Res (bits) = log2(F_pwm/F_sysclkout)
-   *
-   *
-   * Example: F_pwm = 5000 Hz, T_pwm = 2e-4, CLK_DIV = 128
-   *          F_tbclk = (PWM_CLK/CLK_DIV) =  781250 (Hz)
-   *          TBPRD = T_pwm/(2*T_tbclk)
-   *          
-   * /
+   *    Res (bits) = log2(F_pwm/F_sysclkout) */
 
   /* TODO: make this a param */
   uint16_t pwm_prd = 10000;
@@ -211,10 +200,16 @@ void pwmInit(void)
   CT_INTC.GER = 1;
 }
 
-void setDuty(uint16_t duty)
+void setDuty(float duty, volatile uint16_t *motorDuty)
 {
+  /* Store duty command */
+  *motorDuty = (uint16_t) (duty * 10.0);
+
+  /* Calculate compare value */
+  uint16_t cmpvalue = (uint16_t) (-100.0*duty + 10000.0);
+
   /* CMPA: compare register */
-  HWREG16(EPWM2_BASE + 0x12) = duty;
+  HWREG16(EPWM2_BASE + 0x12) = cmpvalue;
 }
 
 void disablePwm(void)

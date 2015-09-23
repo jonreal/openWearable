@@ -4,6 +4,7 @@
 /* Constants */
 #define PRU_CLK         (200000000)
 #define PWM_CLK         (100000000)
+#define SPI_CLK         (48000000)
 
 #define HOST0_MASK    (0x40000000)
 #define HOST1_MASK    (0x80000000)
@@ -44,12 +45,12 @@ enum{
 /* Anklebot state */
 typedef struct{
   volatile uint32_t timeStamp;
-  volatile uint16_t ankle_pos;
-  volatile uint16_t ankle_vel;
+  volatile uint16_t anklePos;
+  volatile uint16_t ankleVel;
   volatile uint16_t gaitPhase;
-  volatile uint16_t motor_current_cmd;
-  volatile uint16_t adc_value[NUM_ADC];
-  volatile uint16_t imu_value[NUM_IMU];
+  volatile uint16_t motorDuty;
+  volatile uint16_t adc[NUM_ADC];
+  volatile uint16_t imu[NUM_IMU];
 } state_t;
 
 /* Shared Memory */

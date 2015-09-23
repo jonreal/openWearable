@@ -18,7 +18,9 @@ void clearIepInterrupt(void);
 void pru0ToArmInterrupt(void);
 void spiInit(void);
 uint8_t spiXfer(uint8_t tx);
+uint16_t sampleEncoder(void);
 void adcInit(void);
+void i2cInit(void);
 void sampleAdc(volatile uint16_t adc[8]);
 void adcDisable(void);
 
@@ -143,6 +145,9 @@ int main(void)
 
 void spiInit(void)
 {
+  /* TODO: param */
+  uint16_t clkdiv = 200;
+
   /* CM_PER_SPI1_CLKCTRL: IDLEST = 0x0
    *                      MODULEMODE = 0x2
    * This just enables the SPI1 module */
@@ -174,10 +179,10 @@ void spiInit(void)
   /* MCSPI_IQRENABLE: none */
   HWREG32(SPI1_BASE + 0x11C) = 0x00000000;
 
-  /* MCSPI_CH0CONF:   CLKG = 0x0 - clock granularity of power 2
+  /* MCSPI_CH0CONF:   CLKG = 0x1 - a clock cycle granularity
    *                  FFER = 0x1 - enable FIFO for RX
    *                  FFEW = 0x1 - enable FIFO for TX
-   *                  TCS = 0x0  - CS timing
+   *                  TCS = 0x0  - CS timing 0 cycles
    *                  SBPOL = 0x0 - start bit polarity
    *                  SBE = 0x0 - default TX length
    *                  SPIENSLV = 0x0 - Detection enabled only on SPIEN[0]
@@ -190,15 +195,18 @@ void spiInit(void)
    *                  DMAW = 0x0 - No DMA (TX)
    *                  TRM = 0x0 - TX/RX mode
    *                  WL = 0x7 - word length of 8-bits
-   *                  EPOL = 0x0 - SPIEN polarity
-   *                  CLKD = 0x2 - divide by 2
+   *                  EPOL = 0x1 - CS low for active state
+   *                  CLKD = 0x4 - divide by 16
    *                  POL = 0x0
    *                  PHA = 0x0; */
-  HWREG32(SPI1_BASE + 0x12C) = (0x0 << 29) | (0x1 << 28) | (0x1 << 27)
-          | (0x0 << 25) | (0x0 << 24) | (0x0 << 23) | (0x0 << 21) | (0x0 << 20)
+  HWREG32(SPI1_BASE + 0x12C) = (0x1 << 29) | (0x1 << 28) | (0x1 << 27)
+          | (0x3 << 25) | (0x0 << 24) | (0x0 << 23) | (0x0 << 21) | (0x0 << 20)
           | (0x0 << 19) | (0x0 << 18) | (0x0 << 17) | (0x1 << 16) | (0x0 << 15)
-          | (0x0 << 14) | (0x0 << 12) | (0x7 << 7) | (0x0 << 6) | (0x2 << 2)
-          | (0x0 << 1) | (0x0 << 0);
+          | (0x0 << 14) | (0x0 << 12) | (0x7 << 7) | (0x1 << 6)
+          | ( (clkdiv & 0xF) << 2) | (0x0 << 1) | (0x0 << 0);
+
+  /* MCSPI_CH0CTRL: EXTCLK =  clock divider extension */
+  HWREG32(SPI1_BASE + 0x134) = ( ((clkdiv >> 4) & 0xFF) << 8);
 }
 
 uint8_t spiXfer(uint8_t tx)
@@ -223,30 +231,54 @@ uint8_t spiXfer(uint8_t tx)
   return (uint8_t) temp;
 }
 
+uint16_t sampleEncoder(void)
+{
+  uint8_t rx = 0;
+  uint8_t MSB = 0;
+  uint8_t LSB = 0;
+
+  uint8_t cnt = 0;
+  /* Issue read command (0x10) */
+  rx = spiXfer(0x10);
+  cnt++;
+
+  /* Wait till recieve ack. (0x10) */
+  while(rx != 0x10){
+    rx = spiXfer(0x00);
+    cnt++;
+  }
+
+  /* RX data */
+  MSB = spiXfer(0x00);
+  LSB = spiXfer(0x00);
+  cnt++;
+  cnt++;
+
+  //return (uint16_t) ((MSB << 8) | (LSB & 0xFF));
+  return cnt;
+
+}
 
 void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 {
-  uint8_t data = 0;
-  data = spiXfer(0xFE);
+  sampleAdc(p->state[bi][si].adc);
 
-  sampleAdc(p->state[bi][si].adc_value);
+  p->state[bi][si].timeStamp = cnt;
 
-  p->state[bi][si].timeStamp = data;
-
-  p->state[bi][si].ankle_pos = 0xdead;
-  p->state[bi][si].ankle_vel = 0xbeaf;
+  p->state[bi][si].anklePos = sampleEncoder();
+  p->state[bi][si].ankleVel = 0xbeaf;
   p->state[bi][si].gaitPhase = 0xAAAA;
 
-  p->state[bi][si].imu_value[0] = cnt;
-  p->state[bi][si].imu_value[1] = cnt;
-  p->state[bi][si].imu_value[2] = cnt;
-  p->state[bi][si].imu_value[3] = cnt;
-  p->state[bi][si].imu_value[4] = cnt;
-  p->state[bi][si].imu_value[5] = cnt;
-  p->state[bi][si].imu_value[6] = cnt;
-  p->state[bi][si].imu_value[7] = cnt;
-  p->state[bi][si].imu_value[8] = 99;
-  p->state[bi][si].imu_value[9] = 0;
+  p->state[bi][si].imu[0] = 0xFF;
+  p->state[bi][si].imu[1] = 0x1;
+  p->state[bi][si].imu[2] = 0x1;
+  p->state[bi][si].imu[3] = 0x1;
+  p->state[bi][si].imu[4] = 0x1;
+  p->state[bi][si].imu[5] = 0x1;
+  p->state[bi][si].imu[6] = 0x1;
+  p->state[bi][si].imu[7] = 0x1;
+  p->state[bi][si].imu[8] = 0x1;
+  p->state[bi][si].imu[9] = 0xAA;
 
 }
 
@@ -280,10 +312,10 @@ void adcInit(void)
 {
 
   /* TODO make these params */
-  uint8_t sampleDelay = 0x0;
-  uint16_t openDelay = 0x0;
-  uint8_t avrg = 0x0;
-  uint16_t adc_clk_div = 0x0;
+  uint8_t sampleDelay = 10;
+  uint16_t openDelay = 100;
+  uint8_t avrg = 0x2;
+  uint16_t adc_clk_div = 0x2;
 
   /* CTRL:  StepConfig_WriteProtext_n_active_low = 0x1 - enable step config
    *        Step_ID_tag = 0x1 - store ch id tag in FIFO
@@ -420,6 +452,9 @@ void adcInit(void)
   HWREG32(ADC_BASE + 0x28) = 0x7FF;
 }
 
+void i2cInit(void)
+{
+}
 void iepTimerInit(uint32_t count)
 {
   /*** IEP Timer Setup ***/
