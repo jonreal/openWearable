@@ -28,6 +28,7 @@ void adcDisable(void);
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 
+/* Constant Table */
 volatile far pruIntc CT_INTC
   __attribute__((cregister("PRU_INTC", far), peripheral));
 
@@ -54,8 +55,11 @@ int main(void)
 
   /*** Init Pru ***/
 
-  /* Clear SYSCFG[STANDBY_INIT] to enable OCP master port */
+  /* CFG - SYSCFG: STANDBY_INIT = 0x0 - enable OCP master port */
   CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
+
+  /* PRU CTRL: CTR_EN = 0x1 - enable cycle counter */
+  HWREG32(PRU_CTRL_BASE) |= (1 << 3);
 
   /* Pin Mux */
   CT_CFG.GPCFG0 = 0;
@@ -76,6 +80,8 @@ int main(void)
   clearIepInterrupt();
   adcInit();
   spiInit();
+  i2cInit();
+
 
   /*** Wait for host interrupt ***/
   while( (__R31 & HOST0_MASK) == 0){}
@@ -143,15 +149,92 @@ int main(void)
   return 0;
 }
 
+
+void i2cInit(void)
+{
+  /* TODO: Notes on clock here */
+
+  /* I2C_SYSC: Reset Module */
+  HWREG32(I2C1_BASE + 0x10) = (0x1 << 1);
+
+  /* Wait for reset */
+  while( (HWREG32(I2C1_BASE + 0x90) & (0x1 << 1) == 0)){}
+
+  /* CM_PER_I2C1_CLKCTRL: MODULEMODE = 0x2 - enable */
+  HWREG32(0x44E00000 + 0x48) = 0x2;
+
+  /* I2C_PSC:  PSC = 0x4 - clock prescaler 48MHz/4 = 12Mhz */
+  HWREG32(I2C1_BASE + 0xB0) = 0x4;
+
+  /* I2C_SCLL: SCLL = 0x43 */
+  HWREG32(I2C1_BASE + 0xB4) = 0x43;
+
+  /* I2C_SCHL: SCHL = 0x43 */
+  HWREG32(I2C1_BASE + 0xB8) = 0x43;
+
+  /* I2C_OA: OA = 0x7F - Own address */
+  HWREG32(I2C1_BASE + 0xA8) = 0x7F;
+
+  /* I2C_CON:   I2C_EN = 0x1 - enable
+   *            MST = 0x1 - master mode */
+  HWREG32(I2C1_BASE + 0xA4) = (0x1 << 15) | (0x1 << 10);
+
+  /* I2C_IRQENABLE_SET:   ARDY_IE = 0x1 - register access int */
+  HWREG32(I2C1_BASE + 0x2C) = (0x1 << 2);
+}
+
+void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
+{
+
+  /* Use cycle counts as timestamp (for debugging) */
+//  p->state[bi][si].timeStamp = HWREG32(PRU_CTRL_BASE + 0xC);
+
+  /* I2C_SA: SA = 0x1 - slave address */
+  HWREG32(I2C1_BASE + 0xAC) = 0x68;
+
+  /* I2C_CNT: DCOUNT = 0x1 - number of bytes to Tx/Rx */
+  HWREG32(I2C1_BASE + 0x98) = 0x1;
+
+  /* IC2_IRQSTATUS_RAW: Poll for Bus busy */
+  while( (HWREG32(I2C1_BASE + 0x24) & (0x1 << 12) != 0)){}
+
+  /* I2C_CON: STP = 0x1 - stop condition
+   *          STT = 0x1 - start condition */
+  HWREG32(I2C1_BASE + 0xA4) |= (0x1 << 1) | (0x1);
+
+  /* I2C_DATA: DATA = data to send */
+  HWREG32(I2C1_BASE + 0x9C) = 0x0;
+
+  /* Read Data */
+  uint32_t data = HWREG32(I2C1_BASE + 0x9C);
+  p->state[bi][si].timeStamp = data;
+
+  sampleAdc(p->state[bi][si].adc);
+
+//  p->state[bi][si].anklePos = sampleEncoder();
+  p->state[bi][si].ankleVel = 0xbeaf;
+  p->state[bi][si].gaitPhase = 0xAAAA;
+
+  p->state[bi][si].imu[0] = 0xFF;
+  p->state[bi][si].imu[1] = 0x1;
+  p->state[bi][si].imu[2] = 0x1;
+  p->state[bi][si].imu[3] = 0x1;
+  p->state[bi][si].imu[4] = 0x1;
+  p->state[bi][si].imu[5] = 0x1;
+  p->state[bi][si].imu[6] = 0x1;
+  p->state[bi][si].imu[7] = 0x1;
+  p->state[bi][si].imu[8] = 0x1;
+  p->state[bi][si].imu[9] = 0xAA;
+
+}
 void spiInit(void)
 {
   /* TODO: param */
   uint16_t clkdiv = 200;
 
-  /* CM_PER_SPI1_CLKCTRL: IDLEST = 0x0
-   *                      MODULEMODE = 0x2
+  /* CM_PER_SPI1_CLKCTRL: MODULEMODE = 0x2
    * This just enables the SPI1 module */
-  HWREG32(0x44E00050) = (0x2) | (0x0 << 16);
+  HWREG32(0x44E00050) = (0x2);
 
   /* MCSPI_SYSCONFIG:  Reset Module */
   HWREG32(SPI1_BASE + 0x110) = (0x1 << 1);
@@ -259,28 +342,7 @@ uint16_t sampleEncoder(void)
 
 }
 
-void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
-{
-  sampleAdc(p->state[bi][si].adc);
 
-  p->state[bi][si].timeStamp = cnt;
-
-  p->state[bi][si].anklePos = sampleEncoder();
-  p->state[bi][si].ankleVel = 0xbeaf;
-  p->state[bi][si].gaitPhase = 0xAAAA;
-
-  p->state[bi][si].imu[0] = 0xFF;
-  p->state[bi][si].imu[1] = 0x1;
-  p->state[bi][si].imu[2] = 0x1;
-  p->state[bi][si].imu[3] = 0x1;
-  p->state[bi][si].imu[4] = 0x1;
-  p->state[bi][si].imu[5] = 0x1;
-  p->state[bi][si].imu[6] = 0x1;
-  p->state[bi][si].imu[7] = 0x1;
-  p->state[bi][si].imu[8] = 0x1;
-  p->state[bi][si].imu[9] = 0xAA;
-
-}
 
 void sampleAdc(volatile uint16_t adc[8])
 {
@@ -452,9 +514,7 @@ void adcInit(void)
   HWREG32(ADC_BASE + 0x28) = 0x7FF;
 }
 
-void i2cInit(void)
-{
-}
+
 void iepTimerInit(uint32_t count)
 {
   /*** IEP Timer Setup ***/

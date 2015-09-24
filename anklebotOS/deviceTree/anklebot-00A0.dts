@@ -30,7 +30,6 @@
 
     /**** PWM pins ****/
     "P8.45",  /* ehrpwm2A */
-    "P8.46",  /* ehrpwm2B */
 
     /**** ADC pins ****/
     "P9.39",  /* AIN0 */
@@ -41,17 +40,21 @@
     "P9.36",  /* AIN5 */
     "P9.35",  /* AIN6 */
 
-    /**** SPI pins ****/
+    /**** SPI1 pins ****/
     "P9.28",  /* SPI1_CS0 */
     "P9.29",  /* SPI1_D0 */
     "P9.30",  /* SPI1_D1 */
     "P9.31",  /* SPI1_SCLK */
 
+    /**** I2C1 pins ****/
+    "P9.17",  /* I2C1_SCL */
+    "P9.18",  /* I2C1_SDA */
+
     /* the hardware IP uses */
     "ehrpwm2A",
-    "ehrpwm2B",
     "tscadc",
     "spi1",
+    "i2c1",
     "pruss";
 
   /*----- pin mux -----*/
@@ -69,7 +72,6 @@
       pwm_pins: pinmux_pwm_pins {
         pinctrl-single,pins = <
           0x0A0 0x03  /* P8.45 - ehrpwm2A, MODE3 */
-          0x0A4 0x03  /* P8.46 - ehrpwm2B, MODE3 */
         >;
       };
 
@@ -86,6 +88,13 @@
           0x194 0x33  /* P9.29 - spi1_d0, MODE3 | INPUT_PULLUP */
           0x198 0x13  /* P9.30 - spi1_d1, MODE3 | OUTPUT_PULLUP */
           0x190 0x33  /* P9.31 - spi1_sclk, MODE3 | INPUT_PULLUP */
+        >;
+      };
+
+      i2c1_pins: pinmux_i2c1_pins{
+        pinctrl-single,pins = <
+          0x15C 0x72  /* P9.17 - i2c1_scl, MODE2 | INPUT_PULLUP (bi-dir)*/
+          0x158 0x72  /* P9.18 - i2c1_sda, MODE2 | INPUT_PULLUP (bi-dir)*/
         >;
       };
     };
@@ -168,9 +177,23 @@
     };
   };
 
-  /*------ ADC settings ------*/
+
+  /*----- I2C1 ------*/
 
   fragment@6 {
+    target = <&i2c1>;
+    __overlay__ {
+      #address-cells = <1>;
+      #size-cells = <0>;
+      status = "okay";
+      pinctrl-names = "default";
+      pinctrl-0 = <&i2c1_pins>;
+    };
+  };
+
+  /*------ ADC settings ------*/
+
+  fragment@7 {
     target = <&ocp>;
     __overlay__ {
 

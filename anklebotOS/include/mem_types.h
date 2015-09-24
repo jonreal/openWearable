@@ -5,6 +5,7 @@
 #define PRU_CLK         (200000000)
 #define PWM_CLK         (100000000)
 #define SPI_CLK         (48000000)
+#define I2C1_CLK        (48000000)
 
 #define HOST0_MASK    (0x40000000)
 #define HOST1_MASK    (0x80000000)
@@ -19,10 +20,13 @@
 #define NUM_IMU     10
 
 /* Global Addresses to modules */
+#define PRU_CTRL_BASE 0x00022000
 #define ADC_BASE      0x44E0D000
 #define SPI1_BASE     0x481A0000
 #define PWM_SS2_BASE  0x48304000
 #define EPWM2_BASE    0x48304200
+#define I2C1_BASE     0x4802A000
+
 
 /* Pru debug pins */
 #define PRU0_DEBUG_PIN  5
