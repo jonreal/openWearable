@@ -180,16 +180,18 @@
 
   /*----- I2C1 ------*/
 
+
   fragment@6 {
     target = <&i2c1>;
     __overlay__ {
       #address-cells = <1>;
-      #size-cells = <0>;
+      #size-cells = <1>;
       status = "okay";
       pinctrl-names = "default";
       pinctrl-0 = <&i2c1_pins>;
     };
-  };
+ };
+
 
   /*------ ADC settings ------*/
 

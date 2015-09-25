@@ -27,7 +27,6 @@
 #define EPWM2_BASE    0x48304200
 #define I2C1_BASE     0x4802A000
 
-
 /* Pru debug pins */
 #define PRU0_DEBUG_PIN  5
 #define PRU1_DEBUG_PIN  8
