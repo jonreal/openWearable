@@ -137,7 +137,7 @@ int main(void)
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 {
 
-  setDuty(100, &(p->state[bi][si].motorDuty));
+  setDuty(50.0, &(p->state[bi][si].motorDuty));
 
 }
 
