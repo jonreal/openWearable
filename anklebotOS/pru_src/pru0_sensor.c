@@ -21,6 +21,7 @@ uint8_t spiXfer(uint8_t tx);
 uint16_t sampleEncoder(void);
 void adcInit(void);
 void i2cInit(void);
+void i2cClearInterrupts(void);
 void sampleAdc(volatile uint16_t adc[8]);
 void adcDisable(void);
 
@@ -153,6 +154,9 @@ int main(void)
 void i2cInit(void)
 {
   /* TODO: Notes on clock here */
+  uint32_t internal_clk = 12000000;
+  uint32_t output_clk = 400000;
+  uint32_t divider = 0;
 
   /* CM_PER_I2C1_CLKCTRL: MODULEMODE = 0x2 - enable */
   HWREG32(0x44E00000 + 0x48) = 0x2;
@@ -163,29 +167,42 @@ void i2cInit(void)
   /* Wait for reset */
   while( (HWREG32(I2C1_BASE + 0x90) & (0x1 << 1) == 0)){}
 
-  /* I2C_PSC:  PSC = 0x4 - clock prescaler 48MHz/4 = 12Mhz */
-  HWREG32(I2C1_BASE + 0xB0) = 0x4;
+  /* I2C_CON: I2C_EN = 0x0 - disable */
+  HWREG32(I2C1_BASE + 0xA4) &= ~(0x1 << 15);
 
-  /* I2C_SCLL: SCLL = 0x43 */
-  HWREG32(I2C1_BASE + 0xB4) = 0x43;
+  /* I2C_SYSC: AUTOIDLE = 0x0 - disable AutoIdle */
+  HWREG32(I2C1_BASE + 0x10) &= ~(0x1);
+
+  /* I2C_PSC:  PSC = clock prescaler = I2C1_CLK / internal_clk */
+  HWREG32(I2C1_BASE + 0xB0) = (I2C1_CLK/internal_clk) - 1;
+
+  /* I2C_SCLL: SCLL = divider - 7 */
+  divider = (internal_clk/output_clk)/2;
+  HWREG32(I2C1_BASE + 0xB4) = (divider - 7);
 
   /* I2C_SCHL: SCHL = 0x43 */
-  HWREG32(I2C1_BASE + 0xB8) = 0x43;
+  HWREG32(I2C1_BASE + 0xB8) = (divider - 5);
 
-  /* I2C_OA: OA = 0x7F - Own address */
-  HWREG32(I2C1_BASE + 0xA8) = 0x01;
+  /* I2C_SA: SA = 0x68 - default imu address */
+  HWREG32(I2C1_BASE + 0xAC) = 0x68;
 
-  /* I2C_CON:   I2C_EN = 0x1 - enable */
-  HWREG32(I2C1_BASE + 0xA4) = (0x1 << 15);
-
-  /* I2C_IRQENABLE_CLR:  clear all interrupts */
-  HWREG32(I2C1_BASE + 0x30) = 0x7FFF;
-
-  /* I2C_IRQENABLE_SET:   BF_IE = 0x1 - buss free interrupt
-   *                      XRDY_IE = 0x1 - Tx data ready
-   *                      RRDY_IE = 0x1 - Rx data ready */
-  HWREG32(I2C1_BASE + 0x2C) = (0x1 << 8) | (0x1 << 4) | (0x1 << 3);
+  /* I2C_CON: I2C_EN = 0x1 - Enable module */
+  HWREG32(I2C1_BASE + 0xA4) |= (0x1 << 15);
 }
+
+void i2cClearInterrupts(void)
+{
+  /* I2C_IRQENABLE_SET: Enable all */
+  HWREG32(I2C1_BASE + 0x2C) |= 0x7FF;
+
+  /* I2C_IRQSTATUS: Clear all */
+  HWREG32(I2C1_BASE + 0x28) |= 0x7FF;
+
+  /* I2C_IRQENABLE_CLR: Clear all */
+  HWREG32(I2C1_BASE + 0x30) |= 0x7FF;
+}
+
+
 
 void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 {
@@ -194,40 +211,59 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
   /* Use cycle counts as timestamp (for debugging) */
 //  p->state[bi][si].timeStamp = HWREG32(PRU_CTRL_BASE + 0xC);
 
-  /* I2C_BUF:   RXFIFO_CLR = 0x1 - reset FIFO
-   *            RXTRSH = 0x2 - RX threshold
-   *            TXFIFO_CLR = 0x1 - reset FIFO
-   *            TXTRSH = 0x2 - threshold */
-//  HWREG32(I2C1_BASE + 0x94) = (0x1 << 14) | (0x2 << 8) | (0x1 << 6) | (0x2);
+  i2cClearInterrupts();
 
-  /* I2C_SA: SA = 0x1 - slave address */
-//  HWREG32(I2C1_BASE + 0xAC) = 0x68;
+  /* I2C_CON: I2C_EN = 0x1 - enable
+   *          MST = 0x1 - master mode
+   *          TRX = 0x1 - TX mode */
+  HWREG32(I2C1_BASE + 0xA4) |= (0x1 << 15) | (0x1 << 10) | (0x1 << 9);
 
-  /* I2C_CNT: DCOUNT = 0x2 - number of bytes to Tx/Rx */
-//  HWREG32(I2C1_BASE + 0x98) = 0x2;
+  /* I2C_IRQENABLE_SET: XRDY_IE = 0x1 - TX data ready
+   *                    RRDY_IE = 0x1 - RX data ready
+   *                    ARDY_IE = 0x1 - Register access ready */
+  HWREG32(I2C1_BASE + 0x2C) = (0x1 << 4) | (0x1 << 3) | (0x1 << 2);
 
-  /* I2C_DATA: DATA = data to send */
-//   HWREG32(I2C1_BASE + 0x9C) = 0x3A;
+  /* I2C_SA: Slave address */
+  HWREG32(I2C1_BASE + 0xAC) = 0x68;
+
+  /* I2C_CNT: Number of bytes */
+  HWREG32(I2C1_BASE + 0x98) = 0x2;
+
+  /* I2C_IRQSTATUS_RAW: Poll of bus busy */
+  while( (HWREG32(I2C1_BASE + 0x24) & (0x1 << 12)) != 0){}
+
+  /* I2C_CON:   STT = 0x1 - start condition
+   *            STP = 0x1 - stop condition */
+  HWREG32(I2C1_BASE + 0xA4) |= (0x1 << 1) | (0x1);
 
   /* I2C_IRQSTATUS: Poll for XRDY */
-//   HWREG32(I2C1_BASE + 0x28) |= (0x1 << 4);
+  while( (HWREG32(I2C1_BASE + 0x28) & (0x1 << 4)) == 0){}
 
-  /* IC2_IRQSTATUS_RAW: Poll for Bus busy */
-//  while( (HWREG32(I2C1_BASE + 0x24) & (0x1 << 12) != 0)){}
+  /* Clear XRDY Interrupt */
+  HWREG32(I2C1_BASE + 0x28) |= (0x1 << 4);
 
-  /* I2C_CON: TRX = 0x1 - tx mode
-   *          STT = 0x1 - start condition
-   *          */
-//  HWREG32(I2C1_BASE + 0xA4) |= (0x1 << 9) | (0x1);
+  /* I2C_DATA: write data to fifo */
+  HWREG32(I2C1_BASE + 0x9C) = 0x75;
 
-  __delay_cycles(1000);
+  /* I2C_CON: I2C_EN = 0x1 - enable
+   *          MST = 0x1 - master mode
+   *          TRX = 0x0 - RX mode */
+  HWREG32(I2C1_BASE + 0xA4) &=  ~(0x1 << 9);
 
+  /* I2C_IRQSTATUS: Poll for RRDY */
+  while( (HWREG32(I2C1_BASE + 0x28) & (0x1 << 3)) == 0){}
 
-  p->state[bi][si].timeStamp = HWREG32(I2C1_BASE + 0xBC);
+  /* Clear RRDY Interrupt */
+  HWREG32(I2C1_BASE + 0x28) |= (0x1 << 3);
+
+  uint32_t data = HWREG32(I2C1_BASE + 0x9C);
+
+  p->state[bi][si].timeStamp = ( (data & 0x7E) >> 1);
 
   sampleAdc(p->state[bi][si].adc);
 
 //  p->state[bi][si].anklePos = sampleEncoder();
+
   p->state[bi][si].ankleVel = 0xbeaf;
   p->state[bi][si].gaitPhase = 0xAAAA;
 
