@@ -18,7 +18,7 @@
 #define DEBUG_PIN "P8_15"
 
 volatile int doneFlag = 0;
-float freq_hz = 20.0;
+float freq_hz = 100.0;
 int debug;
 FILE* fid;
 
@@ -135,6 +135,14 @@ int main(int argc, char **argv)
 
   disable();
   writeState(buffIndx);
+
+  if(buffIndx == 1){
+    writeState(0);
+  }
+  else{
+    writeState(1);
+  }
+
   fclose(fid);
 
   /* Cleanup */

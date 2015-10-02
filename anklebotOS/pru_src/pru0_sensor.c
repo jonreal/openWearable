@@ -9,7 +9,7 @@
 #include "mem_types.h"
 
 /* Prototypes -------------------------------------------------------------- */
-void updateState(uint32_t cnt, uint8_t bi, uint8_t si);
+int8_t updateState(uint32_t cnt, uint8_t bi, uint8_t si);
 void iepTimerInit(uint32_t count);
 void iepInterruptInit(void);
 void startTimer(void);
@@ -22,8 +22,12 @@ uint16_t sampleEncoder(void);
 void adcInit(void);
 void i2cInit(void);
 void i2cClearInterrupts(void);
-uint8_t i2cRxByte(uint8_t addr, uint8_t devReg);
-void i2cTxByte(uint8_t addr, uint8_t devReg, uint8_t Tx);
+int8_t i2cRxByte(uint8_t addr, uint8_t devReg, volatile uint8_t *buffer);
+int8_t i2cTxByte(uint8_t addr, uint8_t devReg, uint8_t tx);
+int8_t i2cRxBurst(uint8_t addr, uint8_t devReg, uint32_t numBytes,
+                volatile uint8_t *buf);
+void i2cDisable(void);
+int8_t imuInit(void);
 void sampleAdc(volatile uint16_t adc[8]);
 void adcDisable(void);
 
@@ -46,6 +50,8 @@ shared_mem_t *p;
 
 /* Param pointer */
 pru0_param_mem_t *param;
+
+volatile uint8_t buffer[1024] = {0};
 
 /* Main ---------------------------------------------------------------------*/
 int main(void)
@@ -84,12 +90,20 @@ int main(void)
   adcInit();
   spiInit();
   i2cInit();
-
+  if(imuInit() != 0){
+    return -1;
+  }
 
   /*** Wait for host interrupt ***/
   while( (__R31 & HOST0_MASK) == 0){}
 
   clearIepInterrupt();
+
+  /* Clear Buffer */
+  if(i2cRxBurst(0x68, 0x74, 1024, buffer) != 0){
+    return -1;
+  }
+
   startTimer();
 
   /*** Sensor Loop ***/
@@ -104,7 +118,8 @@ int main(void)
     __R30 |= (1 << PRU0_DEBUG_PIN);
 
     /* Update State */
-    updateState(cnt, buffIndx, stateIndx);
+    if(updateState(cnt, buffIndx, stateIndx) != 0)
+      return -1;
 
     /* Increment state index */
     cnt++;
@@ -141,6 +156,7 @@ int main(void)
   CT_INTC.SECR0 = 0xFFFFFFFF;
   CT_INTC.SECR1 = 0xFFFFFFFF;
   adcDisable();
+  i2cDisable();
 
   /* Wait for Host interrupt */
 //  while( (__R31 & HOST0_MASK) == 0){}
@@ -150,6 +166,15 @@ int main(void)
 
   __halt();
   return 0;
+}
+
+void i2cDisable(void)
+{
+  /* I2C_CON : reset */
+  HWREG32(I2C1_BASE + 0xA4) = 0x00000000;
+
+  /* I2C_SYSC : soft reset */
+  HWREG32(I2C1_BASE + 0x10) = (0x1 << 1);
 }
 
 
@@ -172,8 +197,9 @@ void i2cInit(void)
   /* I2C_CON: I2C_EN = 0x0 - disable */
   HWREG32(I2C1_BASE + 0xA4) &= ~(0x1 << 15);
 
-  /* I2C_SYSC: AUTOIDLE = 0x0 - disable AutoIdle */
-  HWREG32(I2C1_BASE + 0x10) &= ~(0x1);
+  /* I2C_SYSC:  CLKACTIVITY = 0x3 - both clks kept active
+   *            IDLEMODE = 0x1 - no idle mode */
+  HWREG32(I2C1_BASE + 0x10)  = (0x3 << 8) | (0x1 << 3);
 
   /* I2C_PSC:  PSC = clock prescaler = I2C1_CLK / internal_clk */
   HWREG32(I2C1_BASE + 0xB0) = (I2C1_CLK/internal_clk) - 1;
@@ -185,26 +211,20 @@ void i2cInit(void)
   /* I2C_SCHL: SCHL = 0x43 */
   HWREG32(I2C1_BASE + 0xB8) = (divider - 5);
 
-  /* I2C_SA: SA = 0x68 - default imu address */
-  HWREG32(I2C1_BASE + 0xAC) = 0x68;
-
   /* I2C_CON: I2C_EN = 0x1 - Enable module */
   HWREG32(I2C1_BASE + 0xA4) |= (0x1 << 15);
 }
 
 void i2cClearInterrupts(void)
 {
-  /* I2C_IRQENABLE_SET: Enable all */
-  HWREG32(I2C1_BASE + 0x2C) |= 0x7FF;
-
   /* I2C_IRQSTATUS: Clear all */
-  HWREG32(I2C1_BASE + 0x28) |= 0x7FF;
+  HWREG32(I2C1_BASE + 0x28) = 0x7FFF;
 
   /* I2C_IRQENABLE_CLR: Clear all */
-  HWREG32(I2C1_BASE + 0x30) |= 0x7FF;
+  HWREG32(I2C1_BASE + 0x30) = 0x7FFF;
 }
 
-uint8_t i2cRxByte(uint8_t addr, uint8_t devReg)
+int8_t i2cRxByte(uint8_t addr, uint8_t devReg, volatile uint8_t *buffer)
 {
   i2cClearInterrupts();
 
@@ -214,8 +234,9 @@ uint8_t i2cRxByte(uint8_t addr, uint8_t devReg)
 
   /* I2C_IRQENABLE_SET: XRDY_IE = 0x1 - TX data ready
    *                    RRDY_IE = 0x1 - RX data ready
-   *                    ARDY_IE = 0x1 - Register access ready */
-  HWREG32(I2C1_BASE + 0x2C) = (0x1 << 4) | (0x1 << 3) | (0x1 << 2);
+   *                    ARDY_IE = 0x1 - Register access ready
+   *                    NACK_IE = 0x1 - No acknowledgment */
+  HWREG32(I2C1_BASE + 0x2C) = (0x1 << 4) | (0x1 << 3) | (0x1 << 2) | (0x1 << 1);
 
   /* I2C_SA: Slave address */
   HWREG32(I2C1_BASE + 0xAC) = addr;
@@ -229,11 +250,24 @@ uint8_t i2cRxByte(uint8_t addr, uint8_t devReg)
   /* I2C_CON:  STT = 0x1 - start condition */
   HWREG32(I2C1_BASE + 0xA4) |= (0x1);
 
-  /* I2C_IRQSTATUS: Poll for XRDY */
-  while( (HWREG32(I2C1_BASE + 0x28) & (0x1 << 4)) == 0){}
+  /* I2C_IRQSTATUS: Poll for XRDY or ARDY */
+  while( !(HWREG32(I2C1_BASE + 0x28) & ((0x1 << 4) | (0x1 << 2))) );
+
+  /* I2C_IRQSTATUS: Check for NACK */
+  if(HWREG32(I2C1_BASE + 0x28) & (0x1 << 1)){
+
+    /* I2C_CON: Send stop condition */
+    HWREG32(I2C1_BASE + 0xA4) |= (0x1 << 1);
+
+    /* Clear interrupts */
+    i2cClearInterrupts();
+
+    /* Return Error */
+    return -1;
+  }
 
   /* Clear XRDY Interrupt */
-  HWREG32(I2C1_BASE + 0x28) |= (0x1 << 4);
+  HWREG32(I2C1_BASE + 0x28) = (0x1 << 4);
 
   /* I2C_DATA: write device register to read from to fifo */
   HWREG32(I2C1_BASE + 0x9C) = devReg;
@@ -241,8 +275,21 @@ uint8_t i2cRxByte(uint8_t addr, uint8_t devReg)
   /* I2C_IRQSTATUS: Poll for ARDY */
   while( (HWREG32(I2C1_BASE + 0x28) & (0x1 << 2)) == 0){}
 
+  /* I2C_IRQSTATUS: Check for NACK */
+  if(HWREG32(I2C1_BASE + 0x28) & (0x1 << 1)){
+
+    /* I2C_CON: Send stop condition */
+    HWREG32(I2C1_BASE + 0xA4) |= (0x1 << 1);
+
+    /* Clear interrupts */
+    i2cClearInterrupts();
+
+    /* Return Error */
+    return -1;
+  }
+
   /* Clear ARDY interrupt */
-  HWREG32(I2C1_BASE + 0x28) |= (0x1 << 2);
+  HWREG32(I2C1_BASE + 0x28) = (0x1 << 2);
 
   /* I2C_CNT: Number of bytes */
   HWREG32(I2C1_BASE + 0x98) = 0x1;
@@ -256,45 +303,366 @@ uint8_t i2cRxByte(uint8_t addr, uint8_t devReg)
                STP = 0x1 - stop condition */
   HWREG32(I2C1_BASE + 0xA4) |= (0x1 << 1) | (0x1);
 
-  /* I2C_IRQSTATUS: Poll for RRDY */
-  while( (HWREG32(I2C1_BASE + 0x28) & (0x1 << 3)) == 0){}
+  /* I2C_IRQSTATUS: Poll for RRDY or ARDY */
+  while( !(HWREG32(I2C1_BASE + 0x28) & ((0x1 << 3) | (0x1 << 2))) );
+
+  /* I2C_IRQSTATUS: Check for NACK */
+  if(HWREG32(I2C1_BASE + 0x28) & (0x1 << 1)){
+
+    /* I2C_CON: Send stop condition */
+    HWREG32(I2C1_BASE + 0xA4) |= (0x1 << 1);
+
+    /* Clear interrupts */
+    i2cClearInterrupts();
+
+    /* Return Error */
+    return -1;
+  }
 
   /* Clear RRDY Interrupt */
-  HWREG32(I2C1_BASE + 0x28) |= (0x1 << 3);
+  HWREG32(I2C1_BASE + 0x28) = (0x1 << 3);
 
   i2cClearInterrupts();
 
-  /* Return byte from fifo */
-  return (uint8_t) HWREG32(I2C1_BASE + 0x9C);
+  /* Store result */
+  buffer[0] = (uint8_t) HWREG32(I2C1_BASE + 0x9C);
+
+  return 0;
 }
 
-i2cTxByte
-
-void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
+int8_t i2cRxBurst(uint8_t addr, uint8_t devReg, uint32_t numBytes,
+                volatile uint8_t *buffer)
 {
+  i2cClearInterrupts();
+
+  p->state[0][0].timeStamp = 0xDEADBEAF;
+
+  /* I2C_CON: MST = 0x1 - master mode
+   *          TRX = 0x1 - TX mode */
+  HWREG32(I2C1_BASE + 0xA4) |= (0x1 << 10) | (0x1 << 9);
+
+  /* I2C_IRQENABLE_SET: XRDY_IE = 0x1 - TX data ready
+   *                    RRDY_IE = 0x1 - RX data ready
+   *                    ARDY_IE = 0x1 - Register access ready
+   *                    NACK_IE = 0x1 = No acknowledgment */
+  HWREG32(I2C1_BASE + 0x2C) = (0x1 << 4) | (0x1 << 3) | (0x1 << 2) | (0x1 << 1);
+
+  /* I2C_SA: Slave address */
+  HWREG32(I2C1_BASE + 0xAC) = addr;
+
+  /* I2C_CNT: Number of bytes */
+  HWREG32(I2C1_BASE + 0x98) = 0x1;
+
+  /* I2C_IRQSTATUS_RAW: Poll of bus busy */
+  while( (HWREG32(I2C1_BASE + 0x24) & (0x1 << 12)) != 0){}
+
+  /* I2C_CON:  STT = 0x1 - start condition */
+  HWREG32(I2C1_BASE + 0xA4) |= (0x1);
+
+  /* I2C_IRQSTATUS: Poll for XRDY or ARDY */
+  while( !(HWREG32(I2C1_BASE + 0x28) & ((0x1 << 4) | (0x1 << 2))) );
+
+  /* I2C_IRQSTATUS: Check for NACK */
+  if(HWREG32(I2C1_BASE + 0x28) & (0x1 << 1)){
+
+    /* I2C_CON: Send stop condition */
+    HWREG32(I2C1_BASE + 0xA4) |= (0x1 << 1);
+
+    /* Clear interrupts */
+    i2cClearInterrupts();
+
+    /* Return Error */
+    return -1;
+  }
+
+  /* Clear XRDY Interrupt */
+  HWREG32(I2C1_BASE + 0x28) = (0x1 << 4);
+
+  /* I2C_DATA: write device register to read from to fifo */
+  HWREG32(I2C1_BASE + 0x9C) = devReg;
+
+  /* I2C_IRQSTATUS: Poll for ARDY */
+  while( (HWREG32(I2C1_BASE + 0x28) & (0x1 << 2)) == 0){}
+
+  /* Clear ARDY interrupt */
+  HWREG32(I2C1_BASE + 0x28) = (0x1 << 2);
+
+  /* I2C_CNT: Number of bytes */
+  HWREG32(I2C1_BASE + 0x98) = numBytes;
+
+  /* I2C_CON: I2C_EN = 0x1 - enable
+   *          MST = 0x1 - master mode
+   *          TRX = 0x0 - RX mode */
+  HWREG32(I2C1_BASE + 0xA4) &=  ~(0x1 << 9);
+
+  /* I2C_CON:  STT = 0x1 - start condition
+               STP = 0x1 - stop condition */
+  HWREG32(I2C1_BASE + 0xA4) |= (0x1 << 1) | (0x1);
+
+  p->state[0][0].timeStamp = HWREG32(I2C1_BASE + 0x98);
+
+  uint32_t i = 0;
+  while(HWREG32(I2C1_BASE + 0x98) != 0){
+
+    /* I2C_IRQSTATUS: Poll for RRDY or ARDY */
+    while( !(HWREG32(I2C1_BASE + 0x28) & ((0x1 << 3) | (0x1 << 2))) );
+
+    /* I2C_IRQSTATUS: Check for NACK */
+    if(HWREG32(I2C1_BASE + 0x28) & (0x1 << 1)){
+
+      /* I2C_CON: Send stop condition */
+      HWREG32(I2C1_BASE + 0xA4) |= (0x1 << 1);
+
+      /* Clear interrupts */
+      i2cClearInterrupts();
+
+      /* Return Error */
+      return -1;
+    }
+
+    /* Clear RRDY Interrupt */
+    HWREG32(I2C1_BASE + 0x28) = (0x1 << 3);
+
+    /* Return byte from fifo */
+    buffer[i] = (uint8_t) HWREG32(I2C1_BASE + 0x9C);
+
+  //  p->state[0][0].timeStamp = i;
+    i++;
+  }
+
+  i2cClearInterrupts();
+  return 0;
+}
+
+
+
+int8_t i2cTxByte(uint8_t addr, uint8_t devReg, uint8_t tx)
+{
+  i2cClearInterrupts();
+
+  /* I2C_CON: MST = 0x1 - master mode
+   *          TRX = 0x1 - TX mode */
+  HWREG32(I2C1_BASE + 0xA4) |= (0x1 << 10) | (0x1 << 9);
+
+  /* I2C_IRQENABLE_SET: XRDY_IE = 0x1 - TX data ready
+   *                    RRDY_IE = 0x1 - RX data ready
+   *                    ARDY_IE = 0x1 - Register access ready
+   *                    NACK_IE = 0x1 = No acknowledgment */
+  HWREG32(I2C1_BASE + 0x2C) = (0x1 << 4) | (0x1 << 3) | (0x1 << 2) | (0x1 << 1);
+
+  /* I2C_SA: Slave address */
+  HWREG32(I2C1_BASE + 0xAC) = addr;
+
+  /* I2C_CNT: Number of bytes */
+  HWREG32(I2C1_BASE + 0x98) = 0x2;
+
+  /* I2C_IRQSTATUS_RAW: Poll of bus busy */
+  while( (HWREG32(I2C1_BASE + 0x24) & (0x1 << 12)) != 0){}
+
+  /* I2C_CON:   STP = 0x1 - stop condition
+   *            STT = 0x1 - start condition */
+  HWREG32(I2C1_BASE + 0xA4) |= (0x1 << 1) | (0x1);
+
+  /* I2C_IRQSTATUS: Poll for XRDY or ARDY */
+  while( !(HWREG32(I2C1_BASE + 0x28) & ((0x1 << 4) | (0x1 << 2))) );
+
+  /* I2C_IRQSTATUS: Check for NACK */
+  if(HWREG32(I2C1_BASE + 0x28) & (0x1 << 1)){
+
+    /* I2C_CON: Send stop condition */
+    HWREG32(I2C1_BASE + 0xA4) |= (0x1 << 1);
+
+    /* Clear interrupts */
+    i2cClearInterrupts();
+
+    /* Return Error */
+    return -1;
+  }
+
+  /* Clear XRDY Interrupt */
+  HWREG32(I2C1_BASE + 0x28) = (0x1 << 4);
+
+  /* I2C_DATA: write device register to Tx to to fifo */
+  HWREG32(I2C1_BASE + 0x9C) = devReg;
+
+  /* I2C_IRQSTATUS: Poll for XRDY or ARDY */
+  while( !(HWREG32(I2C1_BASE + 0x28) & ((0x1 << 4) | (0x1 << 2))) );
+
+  /* I2C_IRQSTATUS: Check for NACK */
+  if(HWREG32(I2C1_BASE + 0x28) & (0x1 << 1)){
+
+    /* I2C_CON: Send stop condition */
+    HWREG32(I2C1_BASE + 0xA4) |= (0x1 << 1);
+
+    /* Clear interrupts */
+    i2cClearInterrupts();
+
+    /* Return Error */
+    return -1;
+  }
+
+  /* Clear XRDY Interrupt */
+  HWREG32(I2C1_BASE + 0x28) = (0x1 << 4);
+
+  /* I2C_DATA: write payload */
+  HWREG32(I2C1_BASE + 0x9C) = tx;
+
+  /* I2C_IRQSTATUS: Poll for ARDY */
+  while( (HWREG32(I2C1_BASE + 0x28) & (0x1 << 2)) == 0){}
+
+  /* I2C_IRQSTATUS: Check for NACK */
+  if(HWREG32(I2C1_BASE + 0x28) & (0x1 << 1)){
+
+    /* I2C_CON: Send stop condition */
+    HWREG32(I2C1_BASE + 0xA4) |= (0x1 << 1);
+
+    /* Clear interrupts */
+    i2cClearInterrupts();
+
+    /* Return Error */
+    return -1;
+  }
+
+  i2cClearInterrupts();
+
+  return 0;
+}
+
+int8_t imuInit(void)
+{
+  /* PWR_MGMT_1 (0x6B) :  SLEEP = 0x0 (no sleep)
+   *                      TEMP_DIS = 0x1 (disable temp sensor)
+   *                      CLKSEL = 0x1 (x-gyro clk)
+   *                      ------------
+   *                      = 0x09 */
+  if(i2cTxByte(0x68, 0x6B, 0x9) != 0){
+    p->state[0][0].timeStamp = 0xFFFFFFFF;
+    return -1;
+  }
+
+  /* SMPRT_DIV (0x19) : SMPLRT_DIV = 80 (100 Hz) */
+  if(i2cTxByte(0x68, 0x19, 0xF) != 0){
+    p->state[0][0].timeStamp = 0xFFFFFFFF;
+    return -1;
+  }
+
+  /* GYRO_CONFIG (0x1B) : FS_SEL = 0x0 - +/- 250 deg/s */
+  if(i2cTxByte(0x68, 0x1B, 0x00) != 0){
+    p->state[0][0].timeStamp = 0xFFFFFFFF;
+    return -1;
+  }
+
+  /* ACCEL_CONFIG (0x1C) : AFS_SEL = 0x0 - +/- 2g */
+  if(i2cTxByte(0x68, 0x1C, 0x00) != 0){
+    p->state[0][0].timeStamp = 0xFFFFFFFF;
+    return -1;
+  }
+
+  /* FIFO_EN (0x23) : XG_FIFO_EN = 0x1
+   *                  YG_FIFO_EN = 0x1
+   *                  ZG_FIFO_EN = 0x1
+   *                  ACCEL_FIFO_EN = 0x1
+   *                  ------------------
+   *                  = 0x78 */
+  if(i2cTxByte(0x68, 0x23, 0x78) != 0){
+    p->state[0][0].timeStamp = 0xFFFFFFFF;
+    return -1;
+  }
+
+  /* INT_ENABLE (0x38) : DATA_RDY_EN = 0x1 */
+  if(i2cTxByte(0x68, 0x38, 0x1) != 0){
+    p->state[0][0].timeStamp = 0xFFFFFFFF;
+    return -1;
+  }
+
+  /* INT_PIN_CFG (0x37) : LATCH_INT_EN = 0x1 - pin held high util int clear */
+  if(i2cTxByte(0x68, 0x37, 0x20) != 0){
+    p->state[0][0].timeStamp = 0xFFFFFFFF;
+    return -1;
+  }
+
+
+  /* USER_CTRL (0x6A) : FIFO_RESET = 0x1 */
+  if(i2cTxByte(0x68, 0x6A, 0x04) != 0){
+    p->state[0][0].timeStamp = 0xFFFFFFFF;
+    return -1;
+  }
+  __delay_cycles(10000);
+
+  /* USER_CTRL (0x6A) : FIFO_EN = 0x1 */
+  if(i2cTxByte(0x68, 0x6A, 0x40) != 0){
+    p->state[0][0].timeStamp = 0xFFFFFFFF;
+    return -1;
+  }
+
+  return 0;
+}
+
+
+int8_t updateState(uint32_t cnt, uint8_t bi, uint8_t si)
+{
+  uint8_t fifo_cnt_h = 0;
+  uint8_t fifo_cnt_l = 0;
+
   /* Use cycle counts as timestamp (for debugging) */
 //  p->state[bi][si].timeStamp = HWREG32(PRU_CTRL_BASE + 0xC);
 
-  p->state[bi][si].timeStamp = cnt;
+  p->state[bi][si].timeStamp = cnt;//HWREG32(I2C1_BASE + 0x24);
 
   sampleAdc(p->state[bi][si].adc);
 
 //  p->state[bi][si].anklePos = sampleEncoder();
 
-  p->state[bi][si].ankleVel = 0xbeaf;
-  p->state[bi][si].gaitPhase = 0xAAAA;
+  p->state[bi][si].ankleVel = 0xAAAA;
 
-  p->state[bi][si].imu[0] = (i2cReadByte(0x68, 0x75) >> 1);
-  p->state[bi][si].imu[1] = 0;
-  p->state[bi][si].imu[2] = 0;
-  p->state[bi][si].imu[3] = 0x1;
-  p->state[bi][si].imu[4] = 0x1;
-  p->state[bi][si].imu[5] = 0x1;
-  p->state[bi][si].imu[6] = 0x1;
-  p->state[bi][si].imu[7] = 0x1;
-  p->state[bi][si].imu[8] = 0x1;
-  p->state[bi][si].imu[9] = 0xAA;
+  if(i2cRxByte(0x68, 0x72, buffer) != 0){
+    p->state[bi][si].timeStamp = 0xFFFFFFFF;
+    return -1;
+  }
+  __delay_cycles(10000);
+  fifo_cnt_h = buffer[0];
 
+  p->state[bi][si].gaitPhase = 0xFFFF;
+
+  if(i2cRxByte(0x68, 0x73, buffer) != 0){
+    p->state[bi][si].timeStamp = 0xFFFFFFFF;
+    return -1;
+  }
+  __delay_cycles(10000);
+  fifo_cnt_l = buffer[0];
+
+  p->state[bi][si].imu[0] = 0xAA;
+
+  p->state[bi][si].imu[1] = ( (fifo_cnt_h << 8) | fifo_cnt_l) & 0x7FF;
+
+
+  if(i2cRxBurst(0x68, 0x74, 0x12, buffer) != 0){
+    p->state[bi][si].timeStamp = 0xFFFFFFFF;
+    return -1;
+  }
+  __delay_cycles(10000);
+
+  if(i2cRxByte(0x68, 0x72, buffer) != 0){
+    p->state[bi][si].timeStamp = 0xFFFFFFFF;
+    return -1;
+  }
+  fifo_cnt_h = buffer[0];
+
+  p->state[bi][si].gaitPhase = 0xFFFF;
+
+  __delay_cycles(10000);
+  if(i2cRxByte(0x68, 0x73, buffer) != 0){
+    p->state[bi][si].timeStamp = 0xFFFFFFFF;
+    return -1;
+  }
+  __delay_cycles(10000);
+  fifo_cnt_l = buffer[0];
+
+  p->state[bi][si].imu[2] = ( (fifo_cnt_h << 8) | fifo_cnt_l) & 0x7FF;
+
+  p->state[bi][si].imu[9] = 0xFF;
+
+  return 0;
 }
 void spiInit(void)
 {
