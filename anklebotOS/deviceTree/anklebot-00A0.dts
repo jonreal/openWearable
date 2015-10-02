@@ -93,8 +93,8 @@
 
       i2c1_pins: pinmux_i2c1_pins{
         pinctrl-single,pins = <
-          0x15C 0x72  /* P9.17 - i2c1_scl, MODE2 | INPUT_PULLUP (bi-dir)*/
-          0x158 0x72  /* P9.18 - i2c1_sda, MODE2 | INPUT_PULLUP (bi-dir)*/
+          0x15C 0x2A  /* P9.17 - i2c1_scl, MODE2 | INPUT_PULLUP (bi-dir)*/
+          0x158 0x2A  /* (0x72) P9.18 - i2c1_sda, MODE2 | INPUT_PULLUP (bi-dir)*/
         >;
       };
     };
