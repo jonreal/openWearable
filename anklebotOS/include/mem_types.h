@@ -53,7 +53,7 @@ typedef struct{
   volatile uint16_t gaitPhase;
   volatile uint16_t motorDuty;
   volatile uint16_t adc[NUM_ADC];
-  volatile uint16_t imu[NUM_IMU];
+  volatile int16_t imu[NUM_IMU];
 } state_t;
 
 /* Shared Memory */

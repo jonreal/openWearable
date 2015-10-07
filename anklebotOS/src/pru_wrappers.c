@@ -325,6 +325,17 @@ void writeState(uint8_t bi)
     printf("%i\t", p->state[bi][i].adc[6]);
     printf("%i\t", p->state[bi][i].adc[7]);
 
+//    printf("%f\t", ((float)p->state[bi][i].imu[0])*2.0/32768.0);
+//    printf("%f\t", ((float)p->state[bi][i].imu[1])*2.0/32768.0);
+//    printf("%f\t", ((float)p->state[bi][i].imu[2])*2.0/32768.0);
+//    printf("%f\t", ((float)p->state[bi][i].imu[3])*250.0/32768.0);
+//    printf("%f\t", ((float)p->state[bi][i].imu[4])*250.0/32768.0);
+//    printf("%f\t", ((float)p->state[bi][i].imu[5])*250.0/32768.0);
+//    printf("%i\t", (float)p->state[bi][i].imu[6]);
+//    printf("%i\t", (float)p->state[bi][i].imu[7]);
+//    printf("%i\t", (float)p->state[bi][i].imu[8]);
+//    printf("0x%X\t", p->state[bi][i].imu[9]);
+
     printf("0x%X\t", p->state[bi][i].imu[0]);
     printf("0x%X\t", p->state[bi][i].imu[1]);
     printf("0x%X\t", p->state[bi][i].imu[2]);
@@ -335,6 +346,7 @@ void writeState(uint8_t bi)
     printf("0x%X\t", p->state[bi][i].imu[7]);
     printf("0x%X\t", p->state[bi][i].imu[8]);
     printf("0x%X\t", p->state[bi][i].imu[9]);
+
 
     printf("\n");
 
