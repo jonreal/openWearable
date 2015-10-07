@@ -5,8 +5,8 @@
 # -----------------------------------------------------------------------------
 
 TARGET = main
-PRU_TARGET_0 = pru0_sensor
-PRU_TARGET_1 = pru1_control
+PRU0_TARGET = pru0_main
+PRU1_TARGET = pru1_main
 
 # C Source Directories
 CSRC_DIR = ./src
@@ -39,12 +39,17 @@ PRU_HEX = hexpru
 SOURCES = $(filter-out $(CSRC_DIR)/$(TARGET).c, $(wildcard $(CSRC_DIR)/*.c))
 OBJECTS = $(patsubst $(CSRC_DIR)/%,$(BUILD_DIR)/%,$(SOURCES:.c=.o))
 
+PRU0_SOURCE = $(filter-out $(PRU_CSRC_DIR)/pru0/$(PRU0_TARGET).c, $(wildcard $(PRU_CSRC_DIR)/pru0/*.c))
+PRU0_OBJECTS = $(patsubst $(PRU_CSRC_DIR)/pru0/%,$(BUILD_DIR)/%,$(PRU0_SOURCE:.c=.o))
+
+PRU1_SOURCE = $(filter-out $(PRU_CSRC_DIR)/pru1/$(PRU1_TARGET).c, $(wildcard $(PRU_CSRC_DIR)/pru1/*.c))
+PRU1_OBJECTS = $(patsubst $(PRU_CSRC_DIR)/pru1/%,$(BUILD_DIR)/%,$(PRU1_SOURCES:.c=.o))
 # -----------------------------------------------------------------------------
 # Application
 # -----------------------------------------------------------------------------
 
 # Link C
-$(TARGET): $(OBJECTS) $(BUILD_DIR)/$(TARGET).o $(PRU_TARGET_0) $(PRU_TARGET_1)
+$(TARGET): $(OBJECTS) $(BUILD_DIR)/$(TARGET).o $(PRU0_OBJECTS) $(PRU1_OBJECTS) $(PRU0_TARGET) $(PRU1_TARGET)
 	@echo "\n Linking application... \n";
 	@mkdir -p $(TARGET_DIR)
 	$(CC) $(OBJECTS) $(CSRC_DIR)/$(TARGET).c -I$(CINC_DIR) -o $(TARGET_DIR)/$(TARGET) $(CLIB) -lm
@@ -62,50 +67,50 @@ $(BUILD_DIR)/%.o: $(CSRC_DIR)/%.c
 	$(CC) $(CFLAGS) -I$(CINC_DIR) -c -o $@ $< $(CLIB) -lm
 
 # -----------------------------------------------------------------------------
-#  PRU 0
+#  PRU0
 # -----------------------------------------------------------------------------
 
-# Hex PRU
-$(PRU_TARGET_0): $(PRU_TARGET_0).elf
+# Hex PRU0
+$(PRU0_TARGET): $(PRU0_TARGET).elf
 	@echo "\n Running hexpru for pru0... \n"
 	@mkdir -p $(TARGET_DIR)
-	$(PRU_HEX) $(PRU_CSRC_DIR)/bin.cmd $(BUILD_DIR)/$(PRU_TARGET_0).elf
-	@mv text.bin $(TARGET_DIR)/$(PRU_TARGET_0)_text.bin
-	@mv data.bin $(TARGET_DIR)/$(PRU_TARGET_0)_data.bin
+	$(PRU_HEX) $(PRU_CSRC_DIR)/bin.cmd $(BUILD_DIR)/$(PRU0_TARGET).elf
+	@mv text.bin $(TARGET_DIR)/$(PRU0_TARGET)_text.bin
+	@mv data.bin $(TARGET_DIR)/$(PRU0_TARGET)_data.bin
 
-# Link PRU
-$(PRU_TARGET_0).elf: $(BUILD_DIR)/$(PRU_TARGET_0).o
+# Link PRU0
+$(PRU0_TARGET).elf: $(PRU0_OBJECTS) $(BUILD_DIR)/$(PRU0_TARGET).o
 	@echo "\n Linking pru0... \n"
 	@mkdir -p $(TARGET_DIR)
-	$(PRU_CC) $(PRU_CFLAGS) -z $^ -llibc.a -m $(BUILD_DIR)/$(PRU_TARGET_0).map -o $(BUILD_DIR)/$(PRU_TARGET_0).elf $(PRU_CSRC_DIR)/AM335x_PRU.cmd
+	$(PRU_CC) $(PRU_CFLAGS) -z $^ -llibc.a -m $(BUILD_DIR)/$(PRU0_TARGET).map -o $(BUILD_DIR)/$(PRU0_TARGET).elf $(PRU_CSRC_DIR)/AM335x_PRU.cmd
 
-# Build PRU dependencies
-$(BUILD_DIR)/$(PRU_TARGET_0).o: $(PRU_CSRC_DIR)/$(PRU_TARGET_0).c
-	@echo "\n Building pru0... \n";
+# Build PRU0 dependencies
+$(BUILD_DIR)/%.o: $(PRU_CSRC_DIR)/pru0/%.c
+	@echo "\n Building pru0 dependencies... \n";
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -c -fe $@ $<
 
 # -----------------------------------------------------------------------------
-#  PRU 1
+#  PRU1
 # -----------------------------------------------------------------------------
 
 # Hex PRU
-$(PRU_TARGET_1): $(PRU_TARGET_1).elf
+$(PRU1_TARGET): $(PRU1_TARGET).elf
 	@echo "\n Running hexpru for pru1... \n"
 	@mkdir -p $(TARGET_DIR)
-	$(PRU_HEX) $(PRU_CSRC_DIR)/bin.cmd $(BUILD_DIR)/$(PRU_TARGET_1).elf
-	@mv text.bin $(TARGET_DIR)/$(PRU_TARGET_1)_text.bin
-	@mv data.bin $(TARGET_DIR)/$(PRU_TARGET_1)_data.bin
+	$(PRU_HEX) $(PRU_CSRC_DIR)/bin.cmd $(BUILD_DIR)/$(PRU1_TARGET).elf
+	@mv text.bin $(TARGET_DIR)/$(PRU1_TARGET)_text.bin
+	@mv data.bin $(TARGET_DIR)/$(PRU1_TARGET)_data.bin
 
 # Link PRU
-$(PRU_TARGET_1).elf: $(BUILD_DIR)/$(PRU_TARGET_1).o
+$(PRU1_TARGET).elf: $(PRU1_OBJECTS) $(BUILD_DIR)/$(PRU1_TARGET).o
 	@echo "\n Linking pru1... \n"
 	@mkdir -p $(TARGET_DIR)
-	$(PRU_CC) $(PRU_CFLAGS) -z $^ -llibc.a -m $(BUILD_DIR)/$(PRU_TARGET_1).map -o $(BUILD_DIR)/$(PRU_TARGET_1).elf $(PRU_CSRC_DIR)/AM335x_PRU.cmd
+	$(PRU_CC) $(PRU_CFLAGS) -z $^ -llibc.a -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $(BUILD_DIR)/$(PRU1_TARGET).elf $(PRU_CSRC_DIR)/AM335x_PRU.cmd
 
-# Build PRU dependencies
-$(BUILD_DIR)/$(PRU_TARGET_1).o: $(PRU_CSRC_DIR)/$(PRU_TARGET_1).c
-	@echo "\n Building pru1... \n";
+# Build PRU0 dependencies
+$(BUILD_DIR)/%.o: $(PRU_CSRC_DIR)/pru1/%.c
+	@echo "\n Building pru0 dependencies... \n";
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -c -fe $@ $<
 

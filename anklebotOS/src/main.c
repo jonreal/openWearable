@@ -18,7 +18,7 @@
 #define DEBUG_PIN "P8_15"
 
 volatile int doneFlag = 0;
-float freq_hz = 100.0;
+float freq_hz = 50.0;
 int debug;
 FILE* fid;
 
@@ -93,13 +93,13 @@ int main(int argc, char **argv)
   writePruConrtolParams(10, 10, 10, feedForward);
 
  /* Run PRU0 software */
-  if( (rtn = pru_run(PRU_SENSOR, "./bin/pru0_sensor_text.bin")) != 0){
+  if( (rtn = pru_run(PRU_SENSOR, "./bin/pru0_main_text.bin")) != 0){
     printf("pru_run() failed (PRU_SENSOR)");
     return -1;
   }
 
   /* Run PRU1 software */
-  if( (rtn = pru_run(PRU_CONTROL, "./bin/pru1_control_text.bin")) != 0){
+  if( (rtn = pru_run(PRU_CONTROL, "./bin/pru1_main_text.bin")) != 0){
     printf("pru_run() failed (PRU_CONTROL)");
     return -1;
   }
