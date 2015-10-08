@@ -59,10 +59,11 @@
 
   /*----- pin mux -----*/
 
-  /* Bit 0-2 : Mode
-   * Bit 3   : 1-pull disabled, 0-pull enabled
-   * Bit 4   : 1-pullup, 0-pulldown
-   * Bit 5   : 1-input, 0-output
+  /* Bit 6 - SLEWCTRL - 0 (fast) | 1 (slow)
+   * Bit 5 - RXACTIVE - 0 (reciever disable) | 1 (reciever enable)
+   * Bit 4 - PULLTYPESEL - 0 (pulldown) | 1 (pullup)
+   * Bit 3 - PULLUDEN - 0 (enable) | 1 (disable)
+   * Bit 2-0 - MUXMODE
    */
 
   fragment@0 {
@@ -93,8 +94,8 @@
 
       i2c1_pins: pinmux_i2c1_pins{
         pinctrl-single,pins = <
-          0x15C 0x2A  /* P9.17 - i2c1_scl, MODE2 | INPUT_PULLUP (bi-dir)*/
-          0x158 0x2A  /* (0x72) P9.18 - i2c1_sda, MODE2 | INPUT_PULLUP (bi-dir)*/
+          0x15C 0x72  /* P9.17 - i2c1_scl, MODE2 | INPUT_PULLUP (bi-dir)*/
+          0x158 0x72  /* P9.18 - i2c1_sda, MODE2 | INPUT_PULLUP (bi-dir)*/
         >;
       };
     };

@@ -24,11 +24,11 @@ uint16_t sampleEncoder(void);
 void adcInit(void);
 void i2cInit(void);
 void i2cClearInterrupts(void);
-int8_t i2cRxByte(uint8_t addr, uint8_t devReg);
-int8_t i2cTxByte(uint8_t addr, uint8_t devReg, uint8_t tx);
-int8_t i2cRxBurst(uint8_t addr, uint8_t devReg, uint16_t numBytes,
-                volatile uint8_t *buf);
+uint8_t i2cRxByte(uint8_t addr, uint8_t reg);
+void i2cTxByte(uint8_t addr, uint8_t reg, uint8_t tx);
+void i2cRxBurst(uint8_t addr, uint8_t reg, uint16_t len, uint8_t *buffer);
 void i2cDisable(void);
+void sampleImu(volatile int16_t imu[10]);
 void imuInit(void);
 void sampleAdc(volatile uint16_t adc[8]);
 void adcDisable(void);
@@ -187,7 +187,7 @@ void i2cInit(void)
   I2CAutoIdleDisable(I2C1_BASE);
 
   /* Bus speed 400 kHz */
-  I2CMasterInitExpClk(I2C1_BASE, 48000000, 12000000, 100000);
+  I2CMasterInitExpClk(I2C1_BASE, 48000000, 12000000, 400000);
 
   /* Enable */
   I2CMasterEnable(I2C1_BASE);
@@ -202,8 +202,10 @@ void i2cClearInterrupts(void)
   HWREG32(I2C1_BASE + 0x30) = 0x7FFF;
 }
 
-int8_t i2cRxByte(uint8_t addr, uint8_t devReg)
+uint8_t i2cRxByte(uint8_t addr, uint8_t reg)
 {
+  uint8_t rtn = 0;
+
   i2cClearInterrupts();
 
   /* Slave address */
@@ -229,11 +231,11 @@ int8_t i2cRxByte(uint8_t addr, uint8_t devReg)
   /* Wait for transmit ready */
   while(!(I2CMasterIntStatusEx(I2C1_BASE, I2C_INT_TRANSMIT_READY)));
 
+  /* Write devive register (devReg) to fifo */
+  I2CMasterDataPut(I2C1_BASE, reg);
+
   /* Clear int */
   I2CMasterIntClearEx(I2C1_BASE, I2C_INT_TRANSMIT_READY);
-
-  /* Write devive register (devReg) to fifo */
-  I2CMasterDataPut(I2C1_BASE, devReg);
 
   /* Wait for registers ready int */
   while(!(I2CMasterIntStatusEx(I2C1_BASE, I2C_INT_ADRR_READY_ACESS)));
@@ -253,6 +255,8 @@ int8_t i2cRxByte(uint8_t addr, uint8_t devReg)
   /* Wait for receive ready */
   while(!(I2CMasterIntStatusEx(I2C1_BASE, I2C_INT_RECV_READY)));
 
+  rtn = I2CMasterDataGet(I2C1_BASE);
+
   /* Clear int */
   I2CMasterIntClearEx(I2C1_BASE, I2C_INT_RECV_READY);
 
@@ -262,11 +266,10 @@ int8_t i2cRxByte(uint8_t addr, uint8_t devReg)
   i2cClearInterrupts();
 
   /* Get data from fifo */
-  return (uint8_t) I2CMasterDataGet(I2C1_BASE);
+  return rtn;
 }
 
-int8_t i2cRxBurst(uint8_t addr, uint8_t devReg, uint16_t numBytes,
-                volatile uint8_t *buffer)
+void i2cRxBurst(uint8_t addr, uint8_t reg, uint16_t len, uint8_t *buffer)
 {
   uint16_t i = 0;
 
@@ -295,11 +298,11 @@ int8_t i2cRxBurst(uint8_t addr, uint8_t devReg, uint16_t numBytes,
   /* Wait for transmit ready */
   while(!(I2CMasterIntStatusEx(I2C1_BASE, I2C_INT_TRANSMIT_READY)));
 
+  /* Write devive register (devReg) to fifo */
+  I2CMasterDataPut(I2C1_BASE, reg);
+
   /* Clear int */
   I2CMasterIntClearEx(I2C1_BASE, I2C_INT_TRANSMIT_READY);
-
-  /* Write devive register (devReg) to fifo */
-  I2CMasterDataPut(I2C1_BASE, devReg);
 
   /* Wait for registers ready int */
   while(!(I2CMasterIntStatusEx(I2C1_BASE, I2C_INT_ADRR_READY_ACESS)));
@@ -311,27 +314,20 @@ int8_t i2cRxBurst(uint8_t addr, uint8_t devReg, uint16_t numBytes,
   I2CMasterControl(I2C1_BASE, I2C_CFG_MST_RX);
 
   /* Rx bytes (num of data bytes) */
-  I2CSetDataCount(I2C1_BASE, numBytes);
+  I2CSetDataCount(I2C1_BASE, len);
 
   /* Start condition */
   I2CMasterStart(I2C1_BASE);
 
-  uint16_t j = 0;
   while(I2CDataCountGet(I2C1_BASE) != 0){
 
     /* Wait for receive ready */
     while(!(I2CMasterIntStatusEx(I2C1_BASE, I2C_INT_RECV_READY)));
 
+    buffer[i++] = I2CMasterDataGet(I2C1_BASE);
+
     /* Clear int */
     I2CMasterIntClearEx(I2C1_BASE, I2C_INT_RECV_READY);
-
-    /* Store data in buffer */
-    uint8_t temp = I2CMasterDataGet(I2C1_BASE);
-    temp = I2CMasterDataGet(I2C1_BASE);
-
-    buffer[i++] = I2CDataCountGet(I2C1_BASE);
-
-    p->state[0][j++].timeStamp = HWREG(I2C1_BASE + 0xA4);
   }
 
   /* Wait for registers ready */
@@ -344,13 +340,11 @@ int8_t i2cRxBurst(uint8_t addr, uint8_t devReg, uint16_t numBytes,
   I2CMasterStop(I2C1_BASE);
 
   i2cClearInterrupts();
-
-  return 0;
 }
 
 
 
-int8_t i2cTxByte(uint8_t addr, uint8_t devReg, uint8_t tx)
+void i2cTxByte(uint8_t addr, uint8_t reg, uint8_t tx)
 {
   i2cClearInterrupts();
 
@@ -377,20 +371,20 @@ int8_t i2cTxByte(uint8_t addr, uint8_t devReg, uint8_t tx)
   /* Wait for transmit ready */
   while(!(I2CMasterIntStatusEx(I2C1_BASE, I2C_INT_TRANSMIT_READY)));
 
+  /* Write devive register (devReg) to fifo */
+  I2CMasterDataPut(I2C1_BASE, reg);
+
   /* Clear int */
   I2CMasterIntClearEx(I2C1_BASE, I2C_INT_TRANSMIT_READY);
-
-  /* Write devive register (devReg) to fifo */
-  I2CMasterDataPut(I2C1_BASE, devReg);
 
   /* Wait for transmit ready */
   while(!(I2CMasterIntStatusEx(I2C1_BASE, I2C_INT_TRANSMIT_READY)));
 
-  /* Clear int */
-  I2CMasterIntClearEx(I2C1_BASE, I2C_INT_TRANSMIT_READY);
-
   /* Write payload to fifo */
   I2CMasterDataPut(I2C1_BASE, tx);
+
+  /* Clear int */
+  I2CMasterIntClearEx(I2C1_BASE, I2C_INT_TRANSMIT_READY);
 
   /* Wait for registers ready */
   while(!(I2CMasterIntStatusEx(I2C1_BASE, I2C_INT_ADRR_READY_ACESS)));
@@ -402,8 +396,6 @@ int8_t i2cTxByte(uint8_t addr, uint8_t devReg, uint8_t tx)
   I2CMasterStop(I2C1_BASE);
 
   i2cClearInterrupts();
-
-  return 0;
 }
 
 void imuInit(void)
@@ -414,6 +406,11 @@ void imuInit(void)
    *                      ------------
    *                      = 0x09 */
   i2cTxByte(0x68, 0x6B, 0x9);
+  __delay_cycles(10000);
+
+  /* SIGNAL_PATH_RESET (0x68) : GYRO_RESET = 0x1
+   *                            ACCEL_RESET = 0x1 */
+  i2cTxByte(0x68, 0x68, 0x6);
   __delay_cycles(10000);
 
   /* SMPRT_DIV (0x19) : SMPLRT_DIV = 0x7 (1000 Hz) */
@@ -429,46 +426,36 @@ void imuInit(void)
   __delay_cycles(10000);
 }
 
-int8_t updateState(uint32_t cnt, uint8_t bi, uint8_t si)
+void sampleImu(volatile int16_t imu[10])
 {
   uint8_t buffer[14] = {0};
 
+  i2cRxBurst(0x68, 0x3B, 14, buffer);
+
+  /* Acc */
+  imu[0] = (buffer[0] << 8) | buffer[1];
+  imu[1] = (buffer[2] << 8) | buffer[3];
+  imu[2] = (buffer[4] << 8) | buffer[5];
+
+  /* Gyro */
+  imu[3] = (buffer[8] << 8) | buffer[9];
+  imu[4] = (buffer[10] << 8) | buffer[11];
+  imu[5] = (buffer[12] << 8) | buffer[13];
+}
+
+
+int8_t updateState(uint32_t cnt, uint8_t bi, uint8_t si)
+{
   /* Use cycle counts as timestamp (for debugging) */
 //  p->state[bi][si].timeStamp = HWREG32(PRU_CTRL_BASE + 0xC);
 
-  p->state[bi][si].timeStamp = HWREG(I2C1_BASE + 0x94);
+  p->state[bi][si].timeStamp = cnt;
 
   sampleAdc(p->state[bi][si].adc);
+  sampleImu(p->state[bi][si].imu);
 
 //  p->state[bi][si].anklePos = sampleEncoder();
   p->state[bi][si].ankleVel = 0xAAAA;
-
-  i2cRxBurst(0x68, 0x3B, 3, buffer);
-
-  p->state[bi][si].imu[0] = buffer[0];
-  p->state[bi][si].imu[1] = buffer[1];
-  p->state[bi][si].imu[2] = buffer[2];
-  p->state[bi][si].imu[3] = buffer[3];
-  p->state[bi][si].imu[4] = buffer[4];
-  p->state[bi][si].imu[5] = buffer[5];
-  p->state[bi][si].imu[6] = buffer[6];
-  p->state[bi][si].imu[7] = buffer[7];
-  p->state[bi][si].imu[8] = buffer[8];
-  p->state[bi][si].imu[9] = buffer[9];
-
-
-
-
-
-//  p->state[bi][si].imu[0] = (((int16_t)buffer[0]) << 8) | buffer[1];
-//  p->state[bi][si].imu[1] = (((int16_t)buffer[2]) << 8) | buffer[3];
-//  p->state[bi][si].imu[2] = (((int16_t)buffer[4]) << 8) | buffer[5];
-
-//  p->state[bi][si].imu[3] = (((int16_t)buffer[8]) << 8) | buffer[9];
-//  p->state[bi][si].imu[4] = (((int16_t)buffer[10]) << 8) | buffer[11];
-//  p->state[bi][si].imu[5] = (((int16_t)buffer[12]) << 8) | buffer[13];
-
-  p->state[bi][si].imu[9] = 0xFF;
 
   return 0;
 }
@@ -539,7 +526,7 @@ void spiInit(void)
 
 uint8_t spiXfer(uint8_t tx)
 {
-  uint32_t temp = 0;
+  uint8_t rtn = 0;
 
   /* MCSPI_CH0CTRL: Enable SPI ch0 */
   HWREG32(SPI1_BASE + 0x134) |= 0x1;
@@ -551,12 +538,12 @@ uint8_t spiXfer(uint8_t tx)
   while( (HWREG32(SPI1_BASE + 0x130) & (1 << 2)) == 0) {}
 
   /* MCSPI_RX0: Read word */
-  temp = HWREG32(SPI1_BASE + 0x13C);
+  rtn = (uint8_t) HWREG32(SPI1_BASE + 0x13C);
 
   /* MCSPI_CH0CTRL: Disable spi ch0 */
   HWREG32(SPI1_BASE + 0x134) &= ~(0x1);
 
-  return (uint8_t) temp;
+  return rtn;
 }
 
 uint16_t sampleEncoder(void)
