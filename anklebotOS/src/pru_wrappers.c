@@ -26,6 +26,23 @@ pru0_param_mem_t *pru0_param;
 /* Pointer to controller pru params */
 pru1_param_mem_t *pru1_param;
 
+
+void initDebugBuffer(void)
+{
+  for(int i=0; i<10; i++){
+    pru0_param->debugBuffer[i] = 0;
+  }
+}
+void printDebugBuffer(void)
+{
+  printf("\n\n---- Debug Buffer ----\n");
+  for(int i=0; i<10; i++)
+  {
+    printf("0x%X\n", pru0_param->debugBuffer[i]);
+  }
+}
+
+
 /* ----------------------------------------------------------------------------
  * Function: int pru_run(const int pruNum, const char *const path)
  *
@@ -325,27 +342,23 @@ void writeState(uint8_t bi)
     printf("%i\t", p->state[bi][i].adc[6]);
     printf("%i\t", p->state[bi][i].adc[7]);
 
-//    printf("%f\t", ((float)p->state[bi][i].imu[0])*2.0/32768.0);
-//    printf("%f\t", ((float)p->state[bi][i].imu[1])*2.0/32768.0);
-//    printf("%f\t", ((float)p->state[bi][i].imu[2])*2.0/32768.0);
-//    printf("%f\t", ((float)p->state[bi][i].imu[3])*250.0/32768.0);
-//    printf("%f\t", ((float)p->state[bi][i].imu[4])*250.0/32768.0);
-//    printf("%f\t", ((float)p->state[bi][i].imu[5])*250.0/32768.0);
-//    printf("%i\t", (float)p->state[bi][i].imu[6]);
-//    printf("%i\t", (float)p->state[bi][i].imu[7]);
-//    printf("%i\t", (float)p->state[bi][i].imu[8]);
-//    printf("0x%X\t", p->state[bi][i].imu[9]);
+    printf("%f\t", ((float)p->state[bi][i].imu[0])*2.0/32768.0);
+    printf("%f\t", ((float)p->state[bi][i].imu[1])*2.0/32768.0);
+    printf("%f\t", ((float)p->state[bi][i].imu[2])*2.0/32768.0);
+    printf("%f\t", ((float)p->state[bi][i].imu[3])*250.0/32768.0);
+    printf("%f\t", ((float)p->state[bi][i].imu[4])*250.0/32768.0);
+    printf("%f\t", ((float)p->state[bi][i].imu[5])*250.0/32768.0);
 
-    printf("0x%X\t", p->state[bi][i].imu[0]);
-    printf("0x%X\t", p->state[bi][i].imu[1]);
-    printf("0x%X\t", p->state[bi][i].imu[2]);
-    printf("0x%X\t", p->state[bi][i].imu[3]);
-    printf("0x%X\t", p->state[bi][i].imu[4]);
-    printf("0x%X\t", p->state[bi][i].imu[5]);
-    printf("0x%X\t", p->state[bi][i].imu[6]);
-    printf("0x%X\t", p->state[bi][i].imu[7]);
-    printf("0x%X\t", p->state[bi][i].imu[8]);
-    printf("0x%X\t", p->state[bi][i].imu[9]);
+//    printf("0x%X\t", p->state[bi][i].imu[0]);
+//    printf("0x%X\t", p->state[bi][i].imu[1]);
+//    printf("0x%X\t", p->state[bi][i].imu[2]);
+//    printf("0x%X\t", p->state[bi][i].imu[3]);
+//    printf("0x%X\t", p->state[bi][i].imu[4]);
+//    printf("0x%X\t", p->state[bi][i].imu[5]);
+//    printf("0x%X\t", p->state[bi][i].imu[6]);
+//    printf("0x%X\t", p->state[bi][i].imu[7]);
+//    printf("0x%X\t", p->state[bi][i].imu[8]);
+//    printf("0x%X\t", p->state[bi][i].imu[9]);
 
 
     printf("\n");

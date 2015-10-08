@@ -18,7 +18,7 @@
 #define DEBUG_PIN "P8_15"
 
 volatile int doneFlag = 0;
-float freq_hz = 50.0;
+float freq_hz = 1000.0;
 int debug;
 FILE* fid;
 
@@ -86,6 +86,9 @@ int main(int argc, char **argv)
     return -1;
   }
 
+  /* Init debug buffer */
+  initDebugBuffer();
+
   /* Init sensor params */
   writePruSensorParams(freq_hz, 0xDEADBEAF, 0xBEAFDEAD, 0xFFFFFFFF);
 
@@ -142,6 +145,8 @@ int main(int argc, char **argv)
   else{
     writeState(1);
   }
+
+  printDebugBuffer();
 
   fclose(fid);
 

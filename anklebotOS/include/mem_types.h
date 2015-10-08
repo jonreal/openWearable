@@ -14,10 +14,10 @@
 #define PRU1_ARM_INT  (20 + 16)
 
 #define NUM_OF_BUFFS    2
-#define SIZE_OF_BUFFS   15
+#define SIZE_OF_BUFFS   18
 
 #define NUM_ADC     8
-#define NUM_IMU     10
+#define NUM_IMU     6
 
 /* Global Addresses to modules */
 #define PRU_CTRL_BASE 0x00022000
@@ -36,7 +36,6 @@
 #define HWREG16(x) (*((volatile uint16_t *)(x)))
 
 /* Enums --------------------------------------------------------------------*/
-
 enum{
   LOAD = 0,
   UNLOAD,
@@ -83,6 +82,8 @@ typedef struct{
   volatile uint16_t gaitPhase_threshold_1;
   volatile uint16_t gaitPhase_threshold_2;
   volatile uint16_t gaitPhase_threshold_3;
+  volatile uint16_t pad;
+  volatile uint32_t debugBuffer[10];
 } pru0_param_mem_t;
 
 /* pru1 (control) param memory */

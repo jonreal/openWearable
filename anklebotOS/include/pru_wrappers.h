@@ -9,6 +9,8 @@ extern int debug;
 extern FILE* fid;
 
 /* Prototypes ---------------------------------------------------------------*/
+void printDebugBuffer(void);
+void initDebugBuffer(void);
 int pru_run(const int pruNum, const char *const path);
 int pru_init(void);
 int pru_cleanup(void);
