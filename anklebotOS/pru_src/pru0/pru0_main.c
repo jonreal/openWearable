@@ -20,7 +20,7 @@ void clearIepInterrupt(void);
 void pru0ToArmInterrupt(void);
 void spiInit(void);
 uint8_t spiXfer(uint8_t tx);
-uint16_t sampleEncoder(void);
+void sampleEncoder(volatile uint16_t *pos);
 void adcInit(void);
 void i2cInit(void);
 void i2cClearInterrupts(void);
@@ -453,8 +453,8 @@ int8_t updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 
   sampleAdc(p->state[bi][si].adc);
   sampleImu(p->state[bi][si].imu);
+ // sampleEncoder(p->state[bi][si].anklePos);
 
-//  p->state[bi][si].anklePos = sampleEncoder();
   p->state[bi][si].ankleVel = 0xAAAA;
 
   return 0;
@@ -546,32 +546,25 @@ uint8_t spiXfer(uint8_t tx)
   return rtn;
 }
 
-uint16_t sampleEncoder(void)
+void sampleEncoder(volatile uint16_t *pos)
 {
   uint8_t rx = 0;
   uint8_t MSB = 0;
   uint8_t LSB = 0;
 
-  uint8_t cnt = 0;
   /* Issue read command (0x10) */
   rx = spiXfer(0x10);
-  cnt++;
 
   /* Wait till recieve ack. (0x10) */
   while(rx != 0x10){
     rx = spiXfer(0x00);
-    cnt++;
   }
 
   /* RX data */
   MSB = spiXfer(0x00);
   LSB = spiXfer(0x00);
-  cnt++;
-  cnt++;
 
-  //return (uint16_t) ((MSB << 8) | (LSB & 0xFF));
-  return cnt;
-
+  *pos =  (uint16_t) ((MSB << 8) | (LSB & 0xFF));
 }
 
 

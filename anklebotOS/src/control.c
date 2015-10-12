@@ -10,12 +10,12 @@
 
 #include "common.h"
 #include "pinconfig.h"
-#include "motor.h"
-#include "spi.h"
-#include "adc.h"
+//#include "motor.h"
+//#include "spi.h"
+//#include "adc.h"
 #include "control.h"
 
-#include "pruio.h"
+//#include "pruio.h"
 
 /* Controller Structures */
 anklestate_t *s_ptr;
@@ -294,11 +294,12 @@ int update_control(void)
   }
 
   /* Send cmd */
+  /*
   if(set_motor_duty(s_ptr->cmd) !=0){
     printf("pwm update failed.\n");
     return -1;
   }
-
+*/
   return 0;
 }
 
@@ -307,18 +308,19 @@ int update_control(void)
  * ------------------------------------------------------------------------- */
 int read_pos(void)
 {
-  /* send cmd */
-  uint8_t msb[1] = {0x00};
-  uint8_t lsb[1] = {0x00};
 
+  /* send cmd */
+/*  uint8_t msb[1] = {0x00};
+  uint8_t lsb[1] = {0x00};
+*/
   /* Send request 0x10 */
-  uint8_t tx[1] = {0x10};
+/*  uint8_t tx[1] = {0x10};
   uint8_t rx[ARRAY_SIZE(tx)] = {0x00,};
   if(spi_transfer(tx, rx) != 0){
     printf("spi transfer failed\n");
     return -1;
   }
-
+*/
   /*
   printf("Send Request.\n");
   printf("tx: %x\n", tx[0]);
@@ -327,13 +329,13 @@ int read_pos(void)
   */
 
   /* send 0x00 till acknowledgement */
-  tx[0] = 0x00;
+/*  tx[0] = 0x00;
   while(rx[0] != 0x10){
     if(spi_transfer(tx, rx) != 0){
       printf("spi transfer failed\n");
       return -1;
     }
-
+*/
     /*
     printf("Wait for acknowledge.\n");
     printf("tx: %x\n", tx[0]);
@@ -341,26 +343,26 @@ int read_pos(void)
     printf("\n");
     */
 
-  }
+  //}
 
   /* receive position */
-  if(spi_transfer(tx, msb) != 0){
+/*  if(spi_transfer(tx, msb) != 0){
     printf("spi transfer failed\n");
     return -1;
   }
-
+*/
   /*
   printf("MSB.\n");
   printf("tx: %x\n", tx[0]);
   printf("rx: %x\n", msb[0]);
   printf("\n");
   */
-
+/*
   if(spi_transfer(tx, lsb) != 0){
     printf("spi transfer failed\n");
     return -1;
   }
-
+*/
   /*
   printf("LSB.\n");
   printf("tx: %x\n", tx[0]);
@@ -368,7 +370,7 @@ int read_pos(void)
   printf("\n");
   */
 
-  s_ptr->pos = encoder_to_angle(msb[0],lsb[0]);
+ // s_ptr->pos = encoder_to_angle(msb[0],lsb[0]);
   return 0;
 }
 
