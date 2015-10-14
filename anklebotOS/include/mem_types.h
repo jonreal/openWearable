@@ -31,10 +31,6 @@
 #define PRU0_DEBUG_PIN  5
 #define PRU1_DEBUG_PIN  8
 
-/* Macros */
-#define HWREG32(x) (*((volatile uint32_t *)(x)))
-#define HWREG16(x) (*((volatile uint16_t *)(x)))
-
 /* Enums --------------------------------------------------------------------*/
 enum{
   LOAD = 0,
