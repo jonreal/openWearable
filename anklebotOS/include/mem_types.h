@@ -51,7 +51,7 @@ typedef struct{
   volatile int16_t imu[NUM_IMU];
 } state_t;
 
-/* Shared Memory */
+/* Shared Memory -> mapped to SRAM */
 typedef struct{
 
   /* Ping pong buffers */
@@ -59,36 +59,37 @@ typedef struct{
 
   /* Flow control */
   union{
-    volatile uint8_t flow_control;
+    volatile uint8_t cntrl;
 
     volatile struct{
-      unsigned enable : 1;        // bit 0 (set by ARM, read by pru0)
-      unsigned sensorDone : 1;    // bit 1 (set by pru0, read/reset by pru1)
-      unsigned bufferFull: 1;     // bit 2 (set by pru1, read/reset by ARM)
-      unsigned exit : 1;          // bit 3 (set by pru0, read by pru1)
-      unsigned rsvd : 4;          // bits 4-7 reserved
-   } flow_control_bit;
+      unsigned enable : 1;        // bit 0 (set by ARM and shadowed */
+      unsigned pru0_done : 1;     // bit 1 (set by pru0, read/reset by pru1)
+      unsigned pru1_done : 1;     // bit 2 (set by pru1, read/reset by pru0)
+      unsigned bufferFull : 1;    // bit 3 (set by pru0, read/reset by ARM)
+      unsigned shdw_enable : 1;   // bit 4 (shawdow reg. for enable)
+      unsigned rsvd : 3;          // bits 5-7 reserved
+   } cntrl_bit;
   };
 
 } shared_mem_t;
 
-/* pru0 (sensors) param memory */
+
+/* Parameter Struct -> mapped to pr0 DRAM */
 typedef struct{
   volatile uint32_t frq_clock_ticks;
   volatile uint16_t gaitPhase_threshold_1;
   volatile uint16_t gaitPhase_threshold_2;
   volatile uint16_t gaitPhase_threshold_3;
-  volatile uint16_t pad;
-  volatile uint32_t debugBuffer[10];
-} pru0_param_mem_t;
-
-/* pru1 (control) param memory */
-typedef struct{
   volatile uint16_t Kp;
   volatile uint16_t Kd;
-  volatile uint16_t ankle_pos_0;
+  volatile uint16_t anklePos0;
+  volatile uint32_t debugBuffer[10];
+} param_mem_t;
+
+/* Feedforward lookup table -> mapped to pru1 DRAM */
+typedef struct{
   volatile uint16_t ff_traj[100];
-} pru1_param_mem_t;
+} ff_mem_t;
 
 #endif
 

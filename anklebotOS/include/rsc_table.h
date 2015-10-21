@@ -79,6 +79,7 @@
 //#define PRU_DRAM		(0x00000000)
 //#define PRU_L_SHARED_DRAM	(0x00002000)
 #define PRU_DRAM            (0x00000000)
+#define PRU_OTHER_DRAM      (0x00002000)
 #define PRU_L_SHARED_DRAM   (0x00010000)
 
 
