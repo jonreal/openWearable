@@ -21,16 +21,16 @@
 shared_mem_t *p;
 
 /* Pointer to sensor pru params */
-pru0_param_mem_t *pru0_param;
+param_mem_t *param;
 
 /* Pointer to controller pru params */
-pru1_param_mem_t *pru1_param;
+ff_mem_t *ff;
 
 
 void initDebugBuffer(void)
 {
   for(int i=0; i<10; i++){
-    pru0_param->debugBuffer[i] = 0;
+    param->debugBuffer[i] = 0;
   }
 }
 void printDebugBuffer(void)
@@ -38,7 +38,7 @@ void printDebugBuffer(void)
   printf("\n\n---- Debug Buffer ----\n");
   for(int i=0; i<10; i++)
   {
-    printf("0x%X\n", pru0_param->debugBuffer[i]);
+    printf("0x%X\n", param->debugBuffer[i]);
   }
 }
 
@@ -153,7 +153,7 @@ int pru_cleanup(void)
     rtn = -1;
   }
 
-  sleep(2);
+  sleep(1);
 
   /* halt and disable the PRU (if running) */
   if( (rtn = prussdrv_pru_disable(PRU_SENSOR)) != 0) {
@@ -188,21 +188,21 @@ int pru_mem_init(void)
   int rtn = 0;
   void *ptr = NULL;
 
-  /* Memory Map for pru0 DRAM */
+  /* Memory Map for params (pru0 DRAM)*/
   ptr = NULL;
   if( (rtn = prussdrv_map_prumem(PRUSS0_PRU0_DATARAM, &ptr)) != 0){
     printf("prussdrv_map_prumem() failed with %i\n", rtn);
     return -1;
   }
-  pru0_param = (pru0_param_mem_t *) ptr;
+  param = (param_mem_t *) ptr;
 
-  /* Memory Map for pru1 DRAM */
+  /* Memory Map for feedforward lookup table (pru1 DRAM) */
   ptr = NULL;
   if( (rtn = prussdrv_map_prumem(PRUSS0_PRU1_DATARAM, &ptr)) != 0){
     printf("prussdrv_map_prumem() failed with %i\n", rtn);
     return -1;
   }
-  pru1_param = (pru1_param_mem_t *) ptr;
+  ff = (ff_mem_t *) ptr;
 
   /* Memory Map for shared memory */
   ptr = NULL;
@@ -213,9 +213,12 @@ int pru_mem_init(void)
   p = (shared_mem_t *) ptr;
 
   printf("Memory Allocation:\n");
-  printf("\tSize of pru0 param memory: %i bytes.\n", sizeof(*pru0_param)*CHAR_BIT);
-  printf("\tSize of pru1 param memory: %i bytes.\n", sizeof(*pru1_param)*CHAR_BIT);
-  printf("\tSize of shared memory: %i bytes.\n", sizeof(*p)*CHAR_BIT);
+  printf("\tSize of parameter memory (pru0 DRAM): %i bytes.\n",
+          sizeof(*param));
+  printf("\tSize of feedforward lookup table (pru1 DRAM): %i bytes.\n",
+          sizeof(*ff));
+  printf("\tSize of shared memory (SRAM): %i bytes.\n",
+          sizeof(*p));
 
   /* Zero State Buffers */
   for(int i=0; i<NUM_OF_BUFFS; i++){
@@ -288,10 +291,10 @@ int armToPru1Interrupt(void)
 void writePruSensorParams(float frq_hz, uint32_t gp_thr_1,
                           uint32_t gp_thr_2, uint32_t gp_thr_3)
 {
-  pru0_param->frq_clock_ticks = hzToPruTicks(frq_hz);
-  pru0_param->gaitPhase_threshold_1 = gp_thr_1;
-  pru0_param->gaitPhase_threshold_2 = gp_thr_2;
-  pru0_param->gaitPhase_threshold_3 = gp_thr_3;
+  param->frq_clock_ticks = hzToPruTicks(frq_hz);
+  param->gaitPhase_threshold_1 = gp_thr_1;
+  param->gaitPhase_threshold_2 = gp_thr_2;
+  param->gaitPhase_threshold_3 = gp_thr_3;
 }
 
 /* ----------------------------------------------------------------------------
@@ -305,12 +308,12 @@ void writePruSensorParams(float frq_hz, uint32_t gp_thr_1,
 void writePruConrtolParams(uint32_t Kp, uint32_t Kd, uint32_t pos0,
                           uint32_t ff_traj[100])
 {
-  pru1_param->Kp = Kp;
-  pru1_param->Kd = Kd;
-  pru1_param->ankle_pos_0 = pos0;
+  param->Kp = Kp;
+  param->Kd = Kd;
+  param->anklePos0 = pos0;
 
   for(int i=0; i<100; i++){
-    pru1_param->ff_traj[i] = ff_traj[i];
+    ff->ff_traj[i] = ff_traj[i];
   }
 }
 
@@ -406,27 +409,27 @@ void writeState(uint8_t bi)
 
 void clearFlowBitFeild(void)
 {
-  p->flow_control = 0x00;
+  p->cntrl = 0x00;
 }
 
 void enable(void)
 {
-  p->flow_control_bit.enable = 1;
+  p->cntrl_bit.enable = 1;
 }
 
 void disable(void)
 {
-  p->flow_control_bit.enable = 0;
+  p->cntrl_bit.enable = 0;
 }
 
 int isBufferFull(void)
 {
-  return (int) p->flow_control_bit.bufferFull;
+  return (int) p->cntrl_bit.bufferFull;
 }
 
 void resetBufferFullFlag(void)
 {
-  p->flow_control_bit.bufferFull = 0;
+  p->cntrl_bit.bufferFull = 0;
 }
 
 /* ----------------------------------------------------------------------------

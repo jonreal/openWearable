@@ -13,7 +13,7 @@
 
 
 /* Prototypes -------------------------------------------------------------- */
-int8_t updateState(uint32_t cnt, uint8_t bi, uint8_t si);
+void updateState(uint32_t cnt, uint8_t bi, uint8_t si);
 void iepTimerInit(uint32_t count);
 void iepInterruptInit(void);
 void startTimer(void);
@@ -45,9 +45,11 @@ volatile far pruIep CT_IEP
 shared_mem_t *p;
 
 /* Param pointer */
-pru0_param_mem_t *param;
+param_mem_t *param;
 
+/* Debug Buffer */
 volatile uint32_t *debugBuffer;
+
 /* Main ---------------------------------------------------------------------*/
 int main(void)
 {
@@ -74,9 +76,9 @@ int main(void)
   ptr = (void *)PRU_L_SHARED_DRAM;
   p = (shared_mem_t *) ptr;
 
-  /* Memory map for dram (params) */
+  /* Memory map for parameters (pru0 DRAM) */
   ptr = (void *) PRU_DRAM;
-  param = (pru0_param_mem_t *) ptr;
+  param = (param_mem_t *) ptr;
 
   /* Point global debug buffer */
   debugBuffer = &(param->debugBuffer[0]);
@@ -96,20 +98,35 @@ int main(void)
   clearIepInterrupt();
   startTimer();
 
-  /*** Sensor Loop ***/
+  /*** Loop ***/
   while(1){
 
     /* Poll for IEP timer interrupt */
-    while ( (CT_INTC.SECR0 & (1 << 7)) == 0){}
+    while((CT_INTC.SECR0 & (1 << 7)) == 0){}
 
     clearTimerFlag();
 
     /* Pin High */
     __R30 |= (1 << PRU0_DEBUG_PIN);
 
+    /* Shawdow enable bit */
+    p->cntrl_bit.shdw_enable = p->cntrl_bit.enable;
+
     /* Update State */
-    if(updateState(cnt, buffIndx, stateIndx) != 0)
-      return -1;
+    __delay_cycles(10000);
+
+    /* Update State */
+   // if(updateState(cnt, buffIndx, stateIndx) != 0)
+   //   return -1;
+
+    /* Set done bit (update state done) */
+    p->cntrl_bit.pru0_done = 1;
+
+    /* Poll for pru1 to be done (control update done) */
+    while(!(p->cntrl_bit.pru1_done));
+
+    /* Reset done bit */
+    p->cntrl_bit.pru1_done = 0;
 
     /* Increment state index */
     cnt++;
@@ -117,20 +134,15 @@ int main(void)
     if(stateIndx == SIZE_OF_BUFFS){
       stateIndx = 0;
       buffIndx++;
+      p->cntrl_bit.bufferFull = 1;
       if(buffIndx == NUM_OF_BUFFS){
         buffIndx = 0;
       }
     }
 
-    /* Set done bit to start control and check enable bit */
-    if(!(p->flow_control_bit.enable)){
-      p->flow_control_bit.sensorDone = 1;
-      p->flow_control_bit.exit = 1;
-      break;
-    }
-    else{
-      p->flow_control_bit.sensorDone = 1;
-    }
+    /* Check enable bit */
+    if(!(p->cntrl_bit.shdw_enable))
+        break;
 
     clearIepInterrupt();
 
@@ -158,7 +170,7 @@ int main(void)
   return 0;
 }
 
-int8_t updateState(uint32_t cnt, uint8_t bi, uint8_t si)
+void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 {
   /* Use cycle counts as timestamp (for debugging) */
 //  p->state[bi][si].timeStamp = HWREG(PRU_CTRL_BASE + 0xC);
@@ -171,10 +183,7 @@ int8_t updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 
   sampleEncoder(&p->state[bi][si].anklePos);
 
-
   p->state[bi][si].ankleVel = 0xAAAA;
-
-  return 0;
 }
 
 //void spiInit(void)
