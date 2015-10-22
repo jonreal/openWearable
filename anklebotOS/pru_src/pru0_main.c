@@ -8,12 +8,22 @@
 #include "rsc_table.h"
 #include "mem_types.h"
 #include "hw_types.h"
+
 #include "imu_mpu9150.h"
-#include "spidriver.h"
+//#include "encoder.h"
 
 
 /* Prototypes -------------------------------------------------------------- */
+void initialize(void);
+void initMemory(void);
 void updateState(uint32_t cnt, uint8_t bi, uint8_t si);
+void updateControl(uint32_t cnt, uint8_t bi, uint8_t si);
+void updateCounters(uint32_t *cnt, uint8_t *bi, uint8_t *si);
+void cleanup(void);
+void debugPinHigh(void);
+void debugPinLow(void);
+
+
 void iepTimerInit(uint32_t count);
 void iepInterruptInit(void);
 void startTimer(void);
@@ -22,7 +32,7 @@ void clearIepInterrupt(void);
 void pru0ToArmInterrupt(void);
 //void spiInit(void);
 //uint8_t spiXfer(uint8_t tx);
-void sampleEncoder(volatile uint16_t *pos);
+//void sampleEncoder(volatile uint16_t *pos);
 void adcInit(void);
 void sampleAdc(volatile uint16_t adc[8]);
 void adcDisable(void);
@@ -47,50 +57,20 @@ shared_mem_t *p;
 /* Param pointer */
 param_mem_t *param;
 
+/* FF pointer */
+ff_mem_t *ff;
+
 /* Debug Buffer */
 volatile uint32_t *debugBuffer;
 
 /* Main ---------------------------------------------------------------------*/
 int main(void)
 {
-  void *ptr = NULL;
+  uint32_t cnt = 0;
+  uint8_t stateIndx = 0;
+  uint8_t buffIndx = 0;
 
-  volatile uint32_t cnt = 0;
-  volatile uint8_t stateIndx = 0;
-  volatile uint8_t buffIndx = 0;
-
-  /*** Init Pru ***/
-
-  /* CFG - SYSCFG: STANDBY_INIT = 0x0 - enable OCP master port */
-  CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
-
-  /* PRU CTRL: CTR_EN = 0x1 - enable cycle counter */
-  HWREG(PRU_CTRL_BASE) |= (1 << 3);
-
-  /* Pin Mux */
-  CT_CFG.GPCFG0 = 0;
-
-  /*** Memory Setup ***/
-
-  /* Memory map for shared memory */
-  ptr = (void *)PRU_L_SHARED_DRAM;
-  p = (shared_mem_t *) ptr;
-
-  /* Memory map for parameters (pru0 DRAM) */
-  ptr = (void *) PRU_DRAM;
-  param = (param_mem_t *) ptr;
-
-  /* Point global debug buffer */
-  debugBuffer = &(param->debugBuffer[0]);
-
-  /*** Init ***/
-  iepInterruptInit();
-  iepTimerInit(param->frq_clock_ticks);
-  clearIepInterrupt();
-  adcInit();
-  spiInit();
-//  i2cInit();
-  imuInit();
+  initialize();
 
   /*** Wait for host interrupt ***/
   while( (__R31 & HOST0_MASK) == 0){}
@@ -106,18 +86,13 @@ int main(void)
 
     clearTimerFlag();
 
-    /* Pin High */
-    __R30 |= (1 << PRU0_DEBUG_PIN);
+    debugPinHigh();
 
-    /* Shawdow enable bit */
+    /* Shadow enable bit */
     p->cntrl_bit.shdw_enable = p->cntrl_bit.enable;
 
     /* Update State */
-    __delay_cycles(10000);
-
-    /* Update State */
-   // if(updateState(cnt, buffIndx, stateIndx) != 0)
-   //   return -1;
+    updateState(cnt, buffIndx, stateIndx);
 
     /* Set done bit (update state done) */
     p->cntrl_bit.pru0_done = 1;
@@ -129,16 +104,7 @@ int main(void)
     p->cntrl_bit.pru1_done = 0;
 
     /* Increment state index */
-    cnt++;
-    stateIndx++;
-    if(stateIndx == SIZE_OF_BUFFS){
-      stateIndx = 0;
-      buffIndx++;
-      p->cntrl_bit.bufferFull = 1;
-      if(buffIndx == NUM_OF_BUFFS){
-        buffIndx = 0;
-      }
-    }
+    updateCounters(&cnt ,&buffIndx, &stateIndx);
 
     /* Check enable bit */
     if(!(p->cntrl_bit.shdw_enable))
@@ -146,29 +112,61 @@ int main(void)
 
     clearIepInterrupt();
 
-    /* Pin Low */
-    __R30 &= ~(1 << PRU0_DEBUG_PIN);
+    debugPinLow();
  }
 
-  /* Pin Low */
-  __R30 &= ~(1 << PRU0_DEBUG_PIN);
-
-  /* Clear all interrupts */
-  clearIepInterrupt();
-  CT_INTC.SECR0 = 0xFFFFFFFF;
-  CT_INTC.SECR1 = 0xFFFFFFFF;
-  adcDisable();
-  imuCleanUp();
-
-  /* Wait for Host interrupt */
-//  while( (__R31 & HOST0_MASK) == 0){}
-
-  /* Send acknowledgement */
-//  pru0ToArmInterrupt();
-
+  debugPinLow();
+  cleanup();
   __halt();
   return 0;
 }
+
+void initialize(void)
+{
+  /*** Init Pru ***/
+
+  /* Clear SYSCFG[STANDBY_INIT] to enable OCP master port */
+  CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
+
+  /* PRU CTRL: CTR_EN = 0x1 - enable cycle counter */
+  HWREG(PRU_CTRL_BASE) |= (1 << 3);
+
+  /* Pin Mux */
+  CT_CFG.GPCFG0 = 0;
+
+  /*** Memory ***/
+  initMemory();
+
+  /* Add pru dependent peripheral init methods here */
+  iepInterruptInit();
+  iepTimerInit(param->frq_clock_ticks);
+  clearIepInterrupt();
+  adcInit();
+//  spiInit();
+//  encoderInit();
+  imuInit();
+}
+
+void initMemory(void)
+{
+  void *ptr = NULL;
+
+  /* Memory map for shared memory */
+  ptr = (void *)PRU_L_SHARED_DRAM;
+  p = (shared_mem_t *) ptr;
+
+  /* Memory map for parameters (pru0 DRAM)*/
+  ptr = (void *) PRU_DRAM;
+  param = (param_mem_t *) ptr;
+
+  /* Memory map for feedforward lookup table (pru1 DRAM)*/
+  ptr = (void *) PRU_OTHER_DRAM;
+  ff = (ff_mem_t *) ptr;
+
+  /* Point global debug buffer */
+  debugBuffer = &(param->debugBuffer[0]);
+}
+
 
 void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 {
@@ -181,9 +179,58 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 
   imuSample(p->state[bi][si].imu);
 
-  sampleEncoder(&p->state[bi][si].anklePos);
+  //encoderSample(&p->state[bi][si].anklePos);
 
   p->state[bi][si].ankleVel = 0xAAAA;
+}
+
+void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
+{
+
+}
+
+void updateCounters(uint32_t *cnt, uint8_t *bi, uint8_t *si)
+{
+  (*cnt)++;
+  (*si)++;
+  if(*si == SIZE_OF_BUFFS){
+    *si = 0;
+
+    /* Set buffer full bit */
+    if(*bi == 0)
+      p->cntrl_bit.buffer0_full = 1;
+    else
+      p->cntrl_bit.buffer1_full = 1;
+
+    (*bi)++;
+    if(*bi == NUM_OF_BUFFS){
+      *bi = 0;
+    }
+  }
+}
+
+void cleanup(void)
+{
+  /* Add pru dependent peripheral cleanup methods here */
+  adcDisable();
+  imuCleanUp();
+//  spiCleanUp();
+//  encoderCleanUp();
+
+  /* Clear all interrupts */
+  clearIepInterrupt();
+  CT_INTC.SECR0 = 0xFFFFFFFF;
+  CT_INTC.SECR1 = 0xFFFFFFFF;
+}
+
+void debugPinHigh(void)
+{
+  __R30 |= (1 << PRU0_DEBUG_PIN);
+}
+
+void debugPinLow(void)
+{
+  __R30 &= ~(1 << PRU0_DEBUG_PIN);
 }
 
 //void spiInit(void)
@@ -273,26 +320,7 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 //  return rtn;
 //}
 
-void sampleEncoder(volatile uint16_t *pos)
-{
-  uint8_t rx = 0;
-  uint8_t MSB = 0;
-  uint8_t LSB = 0;
 
-  /* Issue read command (0x10) */
-  rx = spiXfer(0x10);
-
-  /* Wait till recieve ack. (0x10) */
-  while(rx != 0x10){
-    rx = spiXfer(0x00);
-  }
-
-  /* RX data */
-  MSB = spiXfer(0x00);
-  LSB = spiXfer(0x00);
-
-  *pos =  (uint16_t) ((MSB << 8) | (LSB & 0xFF));
-}
 
 
 

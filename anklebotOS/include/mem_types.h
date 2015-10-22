@@ -65,9 +65,10 @@ typedef struct{
       unsigned enable : 1;        // bit 0 (set by ARM and shadowed */
       unsigned pru0_done : 1;     // bit 1 (set by pru0, read/reset by pru1)
       unsigned pru1_done : 1;     // bit 2 (set by pru1, read/reset by pru0)
-      unsigned bufferFull : 1;    // bit 3 (set by pru0, read/reset by ARM)
-      unsigned shdw_enable : 1;   // bit 4 (shawdow reg. for enable)
-      unsigned rsvd : 3;          // bits 5-7 reserved
+      unsigned buffer0_full : 1;  // bit 3 (set by pru0, read/reset by ARM)
+      unsigned buffer1_full : 1;  // bit 4 (set by pru0, read/reset by ARM)
+      unsigned shdw_enable : 1;   // bit 5 (shawdow reg. for enable)
+      unsigned rsvd : 2;          // bits 5-7 reserved
    } cntrl_bit;
   };
 

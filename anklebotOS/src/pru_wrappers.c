@@ -422,15 +422,26 @@ void disable(void)
   p->cntrl_bit.enable = 0;
 }
 
-int isBufferFull(void)
+int isBuffer0Full(void)
 {
-  return (int) p->cntrl_bit.bufferFull;
+  return (int)p->cntrl_bit.buffer0_full;
 }
 
-void resetBufferFullFlag(void)
+int isBuffer1Full(void)
 {
-  p->cntrl_bit.bufferFull = 0;
+  return (int)p->cntrl_bit.buffer1_full;
 }
+
+void resetBuffer0FullFlag(void)
+{
+  p->cntrl_bit.buffer0_full = 0;
+}
+
+void resetBuffer1FullFlag(void)
+{
+  p->cntrl_bit.buffer1_full = 0;
+}
+
 
 /* ----------------------------------------------------------------------------
  *
