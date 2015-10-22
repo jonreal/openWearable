@@ -39,11 +39,11 @@ PRU_HEX = hexpru
 SOURCES = $(filter-out $(CSRC_DIR)/$(TARGET).c, $(wildcard $(CSRC_DIR)/*.c))
 OBJECTS = $(patsubst $(CSRC_DIR)/%,$(BUILD_DIR)/%,$(SOURCES:.c=.o))
 
-PRU0_SOURCE = $(filter-out $(PRU_CSRC_DIR)/pru0/$(PRU0_TARGET).c, $(wildcard $(PRU_CSRC_DIR)/pru0/*.c))
-PRU0_OBJECTS = $(patsubst $(PRU_CSRC_DIR)/pru0/%,$(BUILD_DIR)/%,$(PRU0_SOURCE:.c=.o))
+PRU0_SOURCE = $(filter-out $(PRU_CSRC_DIR)/$(PRU0_TARGET).c $(PRU_CSRC_DIR)/$(PRU1_TARGET).c, $(wildcard $(PRU_CSRC_DIR)/*.c))
+PRU0_OBJECTS = $(patsubst $(PRU_CSRC_DIR)/%,$(BUILD_DIR)/%,$(PRU0_SOURCE:.c=.o))
 
-PRU1_SOURCE = $(filter-out $(PRU_CSRC_DIR)/pru1/$(PRU1_TARGET).c, $(wildcard $(PRU_CSRC_DIR)/pru1/*.c))
-PRU1_OBJECTS = $(patsubst $(PRU_CSRC_DIR)/pru1/%,$(BUILD_DIR)/%,$(PRU1_SOURCES:.c=.o))
+PRU1_SOURCE = $(filter-out $(PRU_CSRC_DIR)/$(PRU0_TARGET).c $(PRU_CSRC_DIR)/$(PRU1_TARGET).c, $(wildcard $(PRU_CSRC_DIR)/*.c))
+PRU1_OBJECTS = $(patsubst $(PRU_CSRC_DIR)/%,$(BUILD_DIR)/%,$(PRU1_SOURCES:.c=.o))
 # -----------------------------------------------------------------------------
 # Application
 # -----------------------------------------------------------------------------
@@ -85,7 +85,7 @@ $(PRU0_TARGET).elf: $(PRU0_OBJECTS) $(BUILD_DIR)/$(PRU0_TARGET).o
 	$(PRU_CC) $(PRU_CFLAGS) -z $^ -llibc.a -m $(BUILD_DIR)/$(PRU0_TARGET).map -o $(BUILD_DIR)/$(PRU0_TARGET).elf $(PRU_CSRC_DIR)/AM335x_PRU.cmd
 
 # Build PRU0 dependencies
-$(BUILD_DIR)/%.o: $(PRU_CSRC_DIR)/pru0/%.c
+$(BUILD_DIR)/%.o: $(PRU_CSRC_DIR)/%.c
 	@echo "\n Building pru0 dependencies... \n";
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -c -fe $@ $<
@@ -109,8 +109,8 @@ $(PRU1_TARGET).elf: $(PRU1_OBJECTS) $(BUILD_DIR)/$(PRU1_TARGET).o
 	$(PRU_CC) $(PRU_CFLAGS) -z $^ -llibc.a -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $(BUILD_DIR)/$(PRU1_TARGET).elf $(PRU_CSRC_DIR)/AM335x_PRU.cmd
 
 # Build PRU0 dependencies
-$(BUILD_DIR)/%.o: $(PRU_CSRC_DIR)/pru1/%.c
-	@echo "\n Building pru0 dependencies... \n";
+$(BUILD_DIR)/%.o: $(PRU_CSRC_DIR)/%.c
+	@echo "\n Building pru1 dependencies... \n";
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -c -fe $@ $<
 

@@ -9,14 +9,25 @@
 #include "mem_types.h"
 #include "hw_types.h"
 
+#include "encoder.h"
+
 #define PWM_SS2_BASE      0x48304000
 #define EPWM2_BASE        0x48304200
 
 /* Prototypes -------------------------------------------------------------- */
+void initialize(void);
+void initMemory(void);
+void updateState(uint32_t cnt, uint8_t bi, uint8_t si);
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si);
+void updateCounters(uint32_t *cnt, uint8_t *bi, uint8_t *si);
+void cleanup(void);
+void debugPinHigh(void);
+void debugPinLow(void);
+
 void interruptInit(void);
 void clearInterrupt(void);
 void pru1ToArmInterrupt(void);
+
 void pwmInit(void);
 void disablePwm(void);
 void setDuty(float duty, volatile uint16_t *motorDuty);
@@ -49,12 +60,63 @@ volatile uint32_t *debugBuffer;
 /* Main ---------------------------------------------------------------------*/
 int main(void)
 {
-  void *ptr = NULL;
-
   uint32_t cnt = 0;
   uint8_t stateIndx = 0;
   uint8_t buffIndx = 0;
 
+  initialize();
+
+  /*** Wait for host interrupt ***/
+  while( (__R31 & HOST1_MASK) == 0){}
+
+  clearInterrupt();
+
+  /*** Loop ***/
+  while(1){
+
+    /* Poll of IEP timer interrupt */
+    while((CT_INTC.SECR0 & (1 << 7)) == 0);
+
+    debugPinHigh();
+
+    /* Update State */
+    updateState(cnt, buffIndx, stateIndx);
+
+    /* Poll for pru0 done bit (updating state)*/
+    while(!(p->cntrl_bit.pru0_done));
+
+    /* Reset pru0 done bit */
+    p->cntrl_bit.pru0_done = 0;
+
+    /* Update Control */
+    updateControl(cnt, buffIndx, stateIndx);
+
+    /* Set done bit (control update done) */
+    p->cntrl_bit.pru1_done = 1;
+
+    /* Increment state index */
+    updateCounters(&cnt, &buffIndx, &stateIndx);
+
+    /* Check enable bit */
+    if(!(p->cntrl_bit.shdw_enable))
+        break;
+
+    /* Wait till interrupt is cleared */
+    while(CT_INTC.SECR0 & (1 << 7));
+
+    debugPinLow();
+  }
+
+  debugPinLow();
+  cleanup();
+  __halt();
+  return 0;
+}
+
+
+
+void initialize(void)
+{
   /*** Init Pru ***/
 
   /* Clear SYSCFG[STANDBY_INIT] to enable OCP master port */
@@ -63,7 +125,65 @@ int main(void)
   /* Pin Mux */
   CT_CFG.GPCFG0 = 0;
 
-  /*** Memory Setup ***/
+  /*** Memory ***/
+  initMemory();
+
+  /* Add pru dependent peripheral init methods here */
+  encoderInit();
+  pwmInit();
+  interruptInit();
+}
+
+void updateCounters(uint32_t *cnt, uint8_t *bi, uint8_t *si)
+{
+  (*cnt)++;
+  (*si)++;
+  if(*si == SIZE_OF_BUFFS){
+    *si = 0;
+    (*bi)++;
+    if(*bi == NUM_OF_BUFFS){
+      *bi = 0;
+    }
+  }
+}
+
+void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
+{
+
+  setDuty(50.0, &(p->state[bi][si].motorDuty));
+
+}
+
+void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
+{
+  encoderSample(&p->state[bi][si].anklePos);
+}
+
+void cleanup(void)
+{
+  /* Add pru dependent peripheral cleanup methods here */
+  disablePwm();
+  encoderCleanUp();
+
+  /* Clear all interrupts */
+  clearInterrupt();
+  CT_INTC.SECR0 = 0xFFFFFFFF;
+  CT_INTC.SECR1 = 0xFFFFFFFF;
+}
+
+void debugPinHigh(void)
+{
+  __R30 |= (1 << PRU1_DEBUG_PIN);
+}
+
+void debugPinLow(void)
+{
+  __R30 &= ~(1 << PRU1_DEBUG_PIN);
+}
+
+void initMemory(void)
+{
+  void *ptr = NULL;
 
   /* Memory map for shared memory */
   ptr = (void *)PRU_L_SHARED_DRAM;
@@ -79,91 +199,6 @@ int main(void)
 
   /* Point global debug buffer */
   debugBuffer = &(param->debugBuffer[0]);
-
-  /* Init */
-  interruptInit();
-  pwmInit();
-
-  /*** Wait for host interrupt ***/
-  while( (__R31 & HOST1_MASK) == 0){}
-
-  clearInterrupt();
-
-  /*** Loop ***/
-  while(1){
-
-    /* Poll of IEP timer interrupt */
-    while((CT_INTC.SECR0 & (1 << 7)) == 0);
-
-    /* Pin High */
-    __R30 |= (1 << PRU1_DEBUG_PIN);
-
-    /* Update State */
-    //updateState(cnt, buffIndx, stateIndx);
-    __delay_cycles(10000);
-
-    /* Poll for pru0 done bit (updating state)*/
-    while(!(p->cntrl_bit.pru0_done));
-
-    /* Reset pru0 done bit */
-    p->cntrl_bit.pru0_done = 0;
-
-    /* Update Control */
-    updateControl(cnt, buffIndx, stateIndx);
-
-    /* Set done bit (control update done) */
-    p->cntrl_bit.pru1_done = 1;
-
-    /* Increment state index */
-    cnt++;
-    stateIndx++;
-    if(stateIndx == SIZE_OF_BUFFS){
-      stateIndx = 0;
-      buffIndx++;
-      if(buffIndx == NUM_OF_BUFFS){
-        buffIndx = 0;
-      }
-    }
-
-    /* Check enable bit */
-    if(!(p->cntrl_bit.shdw_enable))
-        break;
-
-    /* Wait till interrupt is cleared */
-    while(CT_INTC.SECR0 & (1 << 7));
-
-    /* Pin Low */
-    __R30 &= ~(1 << PRU1_DEBUG_PIN);
-  }
-
-  /* Pin Low */
-  __R30 &= ~(1 << PRU1_DEBUG_PIN);
-
-  /* Disable pwm */
-  disablePwm();
-
-  /* Clear all interrupts */
-  clearInterrupt();
-  CT_INTC.SECR0 = 0xFFFFFFFF;
-  CT_INTC.SECR1 = 0xFFFFFFFF;
-
-  /* Wait for Host Interrupt */
-//  while( (__R31 & HOST1_MASK) == 0){}
-
-//  __delay_cycles(1000);
-
-  /* Send interrupt to ARM */
-//  pru1ToArmInterrupt();
-
-  __halt();
-  return 0;
-}
-
-void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
-{
-
-  setDuty(50.0, &(p->state[bi][si].motorDuty));
-
 }
 
 

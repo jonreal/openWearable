@@ -93,3 +93,12 @@ uint8_t spiXfer(uint8_t tx)
   return rtn;
 }
 
+void spiCleanUp(void)
+{
+  /* Release clock */
+  HWREG(0x44E00050) = (0x0);
+}
+
+
+
+
