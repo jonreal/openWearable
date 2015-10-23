@@ -385,7 +385,7 @@ void writeState(uint8_t bi)
     fprintf(fid,"%i\t", p->state[bi][i].imu[2]);
     fprintf(fid,"%i\t", p->state[bi][i].imu[3]);
     fprintf(fid,"%i\t", p->state[bi][i].imu[4]);
-    fprintf(fid,"%i\t", p->state[bi][i].imu[5]);
+    fprintf(fid,"%i", p->state[bi][i].imu[5]);
     fprintf(fid,"\n");
 
     /* Zero State */

@@ -10,9 +10,8 @@
 #include "hw_types.h"
 
 #include "encoder.h"
+#include "maxonmotor.h"
 
-#define PWM_SS2_BASE      0x48304000
-#define EPWM2_BASE        0x48304200
 
 /* Prototypes -------------------------------------------------------------- */
 void initialize(void);
@@ -20,17 +19,12 @@ void initMemory(void);
 void updateState(uint32_t cnt, uint8_t bi, uint8_t si);
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si);
 void updateCounters(uint32_t *cnt, uint8_t *bi, uint8_t *si);
-void cleanup(void);
+void cleanUp(void);
 void debugPinHigh(void);
 void debugPinLow(void);
 
 void interruptInit(void);
 void clearInterrupt(void);
-void pru1ToArmInterrupt(void);
-
-void pwmInit(void);
-void disablePwm(void);
-void setDuty(float duty, volatile uint16_t *motorDuty);
 
 /* Globals ----------------------------------------------------------------- */
 volatile register uint32_t __R30;
@@ -108,12 +102,10 @@ int main(void)
   }
 
   debugPinLow();
-  cleanup();
+  cleanUp();
   __halt();
   return 0;
 }
-
-
 
 void initialize(void)
 {
@@ -130,7 +122,7 @@ void initialize(void)
 
   /* Add pru dependent peripheral init methods here */
   encoderInit();
-  pwmInit();
+  motorInit();
   interruptInit();
 }
 
@@ -149,9 +141,7 @@ void updateCounters(uint32_t *cnt, uint8_t *bi, uint8_t *si)
 
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 {
-
-  setDuty(50.0, &(p->state[bi][si].motorDuty));
-
+  motorSetDuty(50.0, &(p->state[bi][si].motorDuty));
 }
 
 void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
@@ -159,11 +149,11 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
   encoderSample(&p->state[bi][si].anklePos);
 }
 
-void cleanup(void)
+void cleanUp(void)
 {
   /* Add pru dependent peripheral cleanup methods here */
-  disablePwm();
   encoderCleanUp();
+  motorCleanUp();
 
   /* Clear all interrupts */
   clearInterrupt();
@@ -201,89 +191,6 @@ void initMemory(void)
   debugBuffer = &(param->debugBuffer[0]);
 }
 
-
-
-void pwmInit(void)
-{
-  /* T_tbclk = PWM_CLK/CLK_DIV
-   *
-   * For up-down-count mode
-   *    T_pwm = 2 x TBPRD x T_tbclk
-   *    F_pwm = 1 / T_pwm
-   *
-   * PWM resolution
-   *    Res (%) = F_pwm/F_sysclkout X 100
-   *    Res (bits) = log2(F_pwm/F_sysclkout) */
-
-  /* TODO: make this a param */
-  uint16_t pwm_prd = 10000;
-
-  /* Disable Global enable interrupts */
-  CT_INTC.GER = 0;
-
-  /**** PWM SS 2 registers *****/
-
-  /* CLKCONFIG: ePWMCLK_EN = 0x1 - enable pwm clk
-   *            eQEPCLKSTOP_REQ = 0x1 - disable qep clk
-   *            eCAPCLKSTOP_REQ = 0x1 - disable cap clk */
-  HWREG(PWM_SS2_BASE + 0x8) = (0x1 << 8) | (0x1 << 5) | (0x1 << 1);
-
-  /**** EPWM registers *****/
-
-  /* CMPCTL: SHDWAMODE = 0x1 - no shadow mode */
-  HWREGH(EPWM2_BASE + 0xE) = (0x1 << 4);
-
-  /* CMPA: compare reg */
-  HWREGH(EPWM2_BASE + 0x12) = pwm_prd;
-
-  /* CMPAHR: high res compare reg */
-  HWREGH(EPWM2_BASE + 0x10) = 0x1;
-
-  /* AQCTLA:  CAD = 0x1 - when cnt = compare (increasing) force EPWMxA high
-   *          CAU = 0x2 - when cnt = compare (decreasing) force EPWMxA high */
-  HWREGH(EPWM2_BASE + 0x16) = (0x1 << 6) | (0x2 << 4);
-
-  /* TBCTL: PRDLD = 0x1 - shadow prd off
-   *        CTRMODE = 0x2 - up-down-cnt mode */
-  HWREGH(EPWM2_BASE) = (0x1 << 3) | 0x2;
-
-  /* TBPRD: set period */
-  HWREGH(EPWM2_BASE + 0xA) = pwm_prd;
-
-  /*ETCLR: clear interrupts */
-  HWREGH(EPWM2_BASE + 0x38) = 0x1;
-
-  /*ETSEL: INTEN = 0x1 -  enable pwm interrupt */
-  HWREGH(EPWM2_BASE + 0x32) = (0x1 << 3);
-
-  /* Globaly enable interrupts */
-  CT_INTC.GER = 1;
-}
-
-void setDuty(float duty, volatile uint16_t *motorDuty)
-{
-  /* Store duty command */
-  *motorDuty = (uint16_t) (duty * 10.0);
-
-  /* Calculate compare value */
-  uint16_t cmpvalue = (uint16_t) (-100.0*duty + 10000.0);
-
-  /* CMPA: compare register */
-  HWREGH(EPWM2_BASE + 0x12) = cmpvalue;
-}
-
-void disablePwm(void)
-{
-  /* TODO: fix this */
-
-  /* TBPRD: period = 0 */
-  HWREGH(EPWM2_BASE + 0xA) = 0x1;
-
-  /* CMPA: compare reg */
-  HWREGH(EPWM2_BASE + 0x12) = 0x1;
-}
-
-
 void interruptInit(void)
 {
   /* Disable Global enable interrupts */
@@ -300,13 +207,10 @@ void interruptInit(void)
   CT_INTC.GER = 1;
 }
 
-void pru1ToArmInterrupt(void)
-{
-  __R31 = PRU1_ARM_INT;
-}
-
 void clearInterrupt(void)
 {
-    __R31 = 0x00000000;
+  CT_INTC.SECR0 = 0xFFFFFFFF;
+  CT_INTC.SECR1 = 0xFFFFFFFF;
+   __R31 = 0x00000000;
 }
 

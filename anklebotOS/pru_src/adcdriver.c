@@ -1,0 +1,180 @@
+#include <stdint.h>
+
+#include "soc_AM33XX.h"
+#include "hw_types.h"
+#include "adcdriver.h"
+
+void adcInit(void)
+{
+  /* TODO make these params */
+  uint8_t sampleDelay = 10;
+  uint16_t openDelay = 100;
+  uint8_t avrg = 0x2;
+  uint16_t adc_clk_div = 0x2;
+
+  /* CTRL:  StepConfig_WriteProtext_n_active_low = 0x1 - enable step config
+   *        Step_ID_tag = 0x1 - store ch id tag in FIFO
+   *        Enable = 0x0 - Disable ADC */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x40) = (0x1 << 2) | (0x1 << 1) | (0x0);
+
+  /* FIFO0THRESHOLD: FIFO0_threshold_Level = 7 (8-1) */
+  HWREG(SOC_ADC_TSC_0_REGS + 0xE8) = 0x7;
+
+  /* STEPENABLE: Disable all steps */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x54) = 0x0000;
+
+  /**** Step configs - All steps configured for fifo0 ****/
+
+  /* STEPCONFIG1: FIFO_select = 0x0
+   *              SEL_INP_SWC_3_0 = 0x0 - ch1
+   *              Averaging = 0x2 - 4 samples
+   *              Mode = 0x0 - SW enabled, one-shot */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x64) = (0x0 << 26) | (0x0 << 19) | (avrg << 2) | (0x0);
+
+  /* STEPDELAY1:  SampleDelay = sampleDelay - number of clks to sample
+   *              OpenDelay = openDelay - clks to wait */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x68) = (sampleDelay << 24) | openDelay;
+
+  /* STEPCONFIG2: FIFO_select = 0x0
+   *              SEL_INP_SWC_3_0 = 0x1 - ch2
+   *              Averaging = 0x2 - 4 samples
+   *              Mode = 0x0 - SW enabled, one-shot */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x6C) = (0x0 << 26) | (0x1 << 19) | (avrg << 2) | (0x0);
+
+  /* STEPDELAY2:  SampleDelay = sampleDelay - number of clks to sample
+   *              OpenDelay = openDelay - clks to wait */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x70) = (sampleDelay << 24) | openDelay;
+
+  /* STEPCONFIG3: FIFO_select = 0x0
+   *              SEL_INP_SWC_3_0 = 0x2 - ch3
+   *              Averaging = 0x2 - 4 samples
+   *              Mode = 0x0 - SW enabled, one-shot */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x74) = (0x0 << 26) | (0x2 << 19) | (avrg << 2) | (0x0);
+
+  /* STEPDELAY3:  SampleDelay = sampleDelay - number of clks to sample
+   *              OpenDelay = openDelay - clks to wait */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x78) = (sampleDelay << 24) | openDelay;
+
+  /* STEPCONFIG4: FIFO_select = 0x0
+   *              SEL_INP_SWC_3_0 = 0x3 - ch4
+   *              Averaging = 0x2 - 4 samples
+   *              Mode = 0x0 - SW enabled, one-shot */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x7C) = (0x0 << 26) | (0x3 << 19) | (avrg << 2) | (0x0);
+
+  /* STEPDELAY4:  SampleDelay = sampleDelay - number of clks to sample
+   *              OpenDelay = openDelay - clks to wait */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x80) = (sampleDelay << 24) | openDelay;
+
+  /* STEPCONFIG5: FIFO_select = 0x0
+   *              SEL_INP_SWC_3_0 = 0x4 - ch5
+   *              Averaging = 0x2 - 4 samples
+   *              Mode = 0x0 - SW enabled, one-shot */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x84) = (0x0 << 26) | (0x4 << 19) | (avrg << 2) | (0x0);
+
+  /* STEPDELAY5:  SampleDelay = sampleDelay - number of clks to sample
+   *              OpenDelay = openDelay - clks to wait */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x88) = (sampleDelay << 24) | openDelay;
+
+  /* STEPCONFIG6: FIFO_select = 0x0
+   *              SEL_INP_SWC_3_0 = 0x5 - ch6
+   *              Averaging = 0x2 - 4 samples
+   *              Mode = 0x0 - SW enabled, one-shot */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x8C) = (0x0 << 26) | (0x5 << 19) | (avrg << 2) | (0x0);
+
+  /* STEPDELAY6:  SampleDelay = sampleDelay - number of clks to sample
+   *              OpenDelay = openDelay - clks to wait */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x90) = (sampleDelay << 24) | openDelay;
+
+  /* STEPCONFIG7: FIFO_select = 0x0
+   *              SEL_INP_SWC_3_0 = 0x6 - ch7
+   *              Averaging = 0x2 - 4 samples
+   *              Mode = 0x0 - SW enabled, one-shot */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x94) = (0x0 << 26) | (0x6 << 19) | (avrg << 2) | (0x0);
+
+  /* STEPDELAY7:  SampleDelay = sampleDelay - number of clks to sample
+   *              OpenDelay = openDelay - clks to wait */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x98) = (sampleDelay << 24) | openDelay;
+
+  /* STEPCONFIG8: FIFO_select = 0x0
+   *              SEL_INP_SWC_3_0 = 0x7 - ch7
+   *              Averaging = 0x2 - 4 samples
+   *              Mode = 0x0 - SW enabled, one-shot */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x9C) = (0x0 << 26) | (0x7 << 19) | (avrg << 2) | (0x0);
+
+  /* STEPDELAY8:  SampleDelay = sampleDelay - number of clks to sample
+   *              OpenDelay = openDelay - clks to wait */
+  HWREG(SOC_ADC_TSC_0_REGS + 0xA0) = (sampleDelay << 24) | openDelay;
+
+  /**** Turn off other steps ****/
+
+  /* STEPCONFIG9: off */
+  HWREG(SOC_ADC_TSC_0_REGS + 0xA4) = 0x0;
+
+  /* STEPCONFIG10: off */
+  HWREG(SOC_ADC_TSC_0_REGS + 0xAC) = 0x0;
+
+  /* STEPCONFIG11: off */
+  HWREG(SOC_ADC_TSC_0_REGS + 0xB4) = 0x0;
+
+  /* STEPCONFIG12: off */
+  HWREG(SOC_ADC_TSC_0_REGS + 0xBC) = 0x0;
+
+  /* STEPCONFIG13: off */
+  HWREG(SOC_ADC_TSC_0_REGS + 0xC4) = 0x0;
+
+  /* STEPCONFIG14: off */
+  HWREG(SOC_ADC_TSC_0_REGS + 0xCC) = 0x0;
+
+  /* STEPCONFIG15: off */
+  HWREG(SOC_ADC_TSC_0_REGS + 0xD4) = 0x0;
+
+  /* STEPCONFIG16: off */
+  HWREG(SOC_ADC_TSC_0_REGS + 0xDC) = 0x0;
+
+  /* SYSCONFIG: IdleMode = 0x2 - Smart-Idel Mode */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x10) = (0x2 << 2);
+
+  /* IRQENABLE_SET: FIFO0_Threshold = 0x1 - enable FIFO int */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x2C) = (1 << 2);
+
+  /* ADC_CLKDIV: ADC_ClkDiv = 0x3 (divide by 4 (4-1 = 3)  */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x4C) = adc_clk_div;
+
+  /* CTRL: Enable = 0x1 */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x40) |= 0x1;
+
+  /* IRQSTATUS: Clear all interrupts */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x28) = 0x7FF;
+}
+
+void adcSample(volatile uint16_t adc[8])
+{
+  volatile uint32_t *FIFO =  (uint32_t *) (SOC_ADC_TSC_0_REGS + 0x100);
+
+  /* STEPENABLE: Enable STEP1-8 */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x54) = (1 << 8) | (1 << 7) | (1 << 6) | (1 << 5)
+      | (1 << 4) | (1 << 3) | (1 << 2) | (1 << 1);
+
+  /* IRQSTATUS: poll for interrupt */
+  while( (HWREG(SOC_ADC_TSC_0_REGS + 0x28) & (1 << 2)) == 0){}
+
+  /* Write to memory */
+  adc[0] = FIFO[0] & 0xFFF;
+  adc[1] = FIFO[1] & 0xFFF;
+  adc[2] = FIFO[2] & 0xFFF;
+  adc[3] = FIFO[3] & 0xFFF;
+  adc[4] = FIFO[4] & 0xFFF;
+  adc[5] = FIFO[5] & 0xFFF;
+  adc[6] = FIFO[6] & 0xFFF;
+  adc[7] = FIFO[7] & 0xFFF;
+
+  /* IRQSTATUS: Clear all interrupts */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x28) = 0x7FF;
+}
+
+void adcCleanUp(void)
+{
+  /* Set to disable */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x40) &= ~0x1;
+}
+
