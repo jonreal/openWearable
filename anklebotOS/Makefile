@@ -103,7 +103,7 @@ $(PRU1_TARGET): $(PRU1_TARGET).elf
 	@mv data.bin $(TARGET_DIR)/$(PRU1_TARGET)_data.bin
 
 # Link PRU
-$(PRU1_TARGET).elf: $(PRU1_OBJECTS) $(BUILD_DIR)/$(PRU1_TARGET).o
+$(PRU1_TARGET).elf: $(PRU0_OBJECTS) $(BUILD_DIR)/$(PRU1_TARGET).o
 	@echo "\n Linking pru1... \n"
 	@mkdir -p $(TARGET_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) -z $^ -llibc.a -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $(BUILD_DIR)/$(PRU1_TARGET).elf $(PRU_CSRC_DIR)/AM335x_PRU.cmd

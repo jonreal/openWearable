@@ -31,6 +31,10 @@
     /**** PWM pins ****/
     "P8.45",  /* ehrpwm2A */
 
+    /**** Motor pins ***/
+    "P8.28", /* pr1_pru1_pru_r30_10 - motor dir */
+    "P8.29", /* pr1_pru1_pru_r30_9 - motor enb */
+
     /**** ADC pins ****/
     "P9.39",  /* AIN0 */
     "P9.40",  /* AIN1 */
@@ -78,8 +82,10 @@
 
       pruss_pins: pinmux_pruss_pins {
         pinctrl-single,pins = <
-          0x1A4 0x0D  /* P9.27 - pr1_pru0_pru_r30_5, MODE5 | OUTPUT */
-          0x0E0 0x0D  /* P8.27 - pr1_pru1_pru_r30_8, MODE5 | OUTPUT */
+          0x1A4 0x15  /* P9.27 - pr1_pru0_pru_r30_5, MODE5 | OUTPUT | PU */
+          0x0E0 0x15  /* P8.27 - pr1_pru1_pru_r30_8, MODE5 | OUTPUT | PU */
+          0x0E8 0x15  /* P8.28 - pr1_pru1_pru_r30_10, MODE5 | OUTPUT | PU */
+          0x0E4 0x15  /* P8.29 - pr1_pru1_pru_r30_9, MODE5 | OUTPUT | PU */
         >;
       };
 

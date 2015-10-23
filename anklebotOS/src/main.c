@@ -18,7 +18,7 @@
 #define DEBUG_PIN "P8_15"
 
 volatile int doneFlag = 0;
-float freq_hz = 50.0;
+float freq_hz = 1000.0;
 int debug;
 FILE* fid;
 
@@ -125,7 +125,6 @@ int main(int argc, char **argv)
 
     if(isBuffer0Full()){
       resetBuffer0FullFlag();
-
       gpio_set_value(gpio_debug, HIGH);
       writeState(0);
       lastBufferRead = 0;

@@ -160,8 +160,8 @@ extern "C" {
 #define SOC_EDMA30CC_0_REGS                  (0x49000000)
 
 /** @brief Base address of DCAN module memory mapped registers                */
-#define SOC_DCAN_0_REGS                      (0x481CC000) 
-#define SOC_DCAN_1_REGS                      (0x481D0000) 
+#define SOC_DCAN_0_REGS                      (0x481CC000)
+#define SOC_DCAN_1_REGS                      (0x481D0000)
 
 /******************************************************************************\
 *  Parameterizable Configuration:- These are fed directly from the RTL
