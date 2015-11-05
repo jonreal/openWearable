@@ -23,3 +23,8 @@ ntpdate -s us.pool.ntp.org
 service ntp start
 date
 echo 'Date should be correct now.'
+ip addr show
+
+
+
+
