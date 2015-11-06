@@ -1,6 +1,11 @@
 #ifndef _ADCDRIVER_H_
 #define _ADCDRIVER_H_
 
+#define MUX_SEL_PIN     7
+
+/* --- Digital output reg. */
+volatile register uint32_t __R30;
+
 /* ---- Global ---- */
 extern volatile uint32_t *debugBuffer;
 
