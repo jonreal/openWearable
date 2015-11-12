@@ -4,8 +4,9 @@
 #include "fix16.h"
 #include "mem_types.h"
 
-#define LOGSIZE     (1e9 + 1)
-
+#define LOGSIZE         (1e9 + 1)
+#define TEMP_BUFF_SIZE  255
+#define WRITE_BUFF_SIZE 65536
 // Stuct ---------------------------------------------------------------------
 
 // Log File Struct
@@ -13,13 +14,14 @@ typedef struct{
   uint32_t fd;
   uint32_t location;
   char* addr;
-  char writeBuffer[65536];
+  char writeBuffer[WRITE_BUFF_SIZE];
 } log_t;
 
 // Circular Buffer Struct
 typedef struct{
   uint32_t start;
   uint32_t end;
+  char tempBuffer[TEMP_BUFF_SIZE];
 } circbuff_t;
 
 // External Globals ----------------------------------------------------------
