@@ -372,7 +372,7 @@ void printStateHeader(FILE *fp)
           "u_fb\t"
           "u_ff\t"
           "mtrCurr\t"
-          "mtrVel\t"
+          "mtrCurr_d\t"
           "l_s1\t"
           "l_s2\t"
           "l_s3\t"
@@ -587,10 +587,9 @@ void sprintState(uint8_t si, char* buffer)
 void writeState(void)
 {
   int len = 0;
-  char temp[4096];
   int size = 0;
 
-  dataLog.writeBuffer[0] = '\0';
+  memset(dataLog.writeBuffer, 0, WRITE_BUFF_SIZE);
 
   // Debug Mode, print first state if its new
   if(debug){
@@ -605,8 +604,9 @@ void writeState(void)
     size = ((SIZE_STATE_BUFF + cbuff.end - cbuff.start) % SIZE_STATE_BUFF);
 
     for(int i=cbuff.start; i<cbuff.start+size; i++){
-      sprintState(i % SIZE_STATE_BUFF, temp);
-      strcat(dataLog.writeBuffer, temp);
+      memset(cbuff.tempBuffer, 0, TEMP_BUFF_SIZE);
+      sprintState(i % SIZE_STATE_BUFF, cbuff.tempBuffer);
+      strcat(dataLog.writeBuffer, cbuff.tempBuffer);
     }
 
     cbuff.start = (cbuff.start + size) % SIZE_STATE_BUFF;
