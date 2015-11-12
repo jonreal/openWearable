@@ -83,7 +83,6 @@ void tui_menu(void)
           "      j - Load Feedforward lookup table\n"
           "      k - Toggle feedforward control\n"
           "      l - Enter new FFgain\n"
-          "      o - Tare encoder angle\n"
           "      p - Test Feedforward\n"
           "      q - Step Response\n"
           "      e - exit\n"
@@ -327,15 +326,6 @@ int start_tui(void)
           ptui->io_ready = 0;
           break;
 
-        // ---- Tare encoder -----------------------------------------------
-        case 'o' :
-          setTareEncoderBit();
-          printf("\t\tEncoder angle zeroed.\n");
-          fflush(stdout);
-          ptui->io_ready = 0;
-          tui_menu();
-          break;
-
         // ---- Test FF -----------------------------------------------
         case 'p' :
           printf("\t\tEnter trial name: ");
@@ -354,7 +344,6 @@ int start_tui(void)
           // Init
           logFileInit(logFile);
           circBuffInit();
-
 
           // Wait for enter to start saving data
           printf("\t\tPress enter to start collection...\n");

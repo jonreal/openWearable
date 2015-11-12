@@ -34,44 +34,6 @@ void motorSetDuty(fix16_t u, volatile fix16_t *motorDuty)
   *motorDuty = duty;
 }
 
-
-
-//void motorSetDuty(fix16_t u, volatile int32_t *motorDuty)
-//{
-//  /* Convert current -> duty
-//   * 10% -- -20 A
-//   * 90% -- 20 A
-//   * duty = +-80/15 * i + 10
-//   */
-//  fix16_t duty, absDuty;
-//  int16_t sign = 0;
-//
-//  if (u >= 0){
-//    sign = 1;
-//    motorSetDir(0);
-//  }
-//  else{
-//    sign = -1;
-//    motorSetDir(1);
-//  }
-//
-//  // Use fix point math to convert current to duty
-//  if (sign == 1)
-//    duty = fix16_sadd(fix16_smul(FIX16_K, u), FIX16_10);
-//  else
-//    duty = fix16_sadd(fix16_smul(-FIX16_K, u), FIX16_10);
-//
-//  absDuty = (duty < 0 ? -duty : duty);
-//
-//  if (absDuty <= FIX16_MIN_DUTY)
-//    absDuty = FIX16_MIN_DUTY;
-//  else if (absDuty >= FIX16_MAX_DUTY)
-//    absDuty = FIX16_MAX_DUTY;
-//
-//  pwmSetCmpValue(duty2cmpval(absDuty));
-//  *motorDuty = sign * fix16_to_int(duty);
-//}
-
 void motorEnable(void)
 {
   // Active Low
@@ -83,18 +45,6 @@ void motorDisable(void)
   // Active Low
   __R30 |= (1 << ENABLE_PIN);
 }
-
-//void motorSetDir(uint8_t dorsiflex)
-//{
-//  /* High -> CW motor rotation -> plantarflex */
-//
-//  if(dorsiflex){
-//    __R30 &= ~(1 << DIR_PIN);
-//  }
-//  else{
-//     __R30 |= (1 << DIR_PIN);
-//  }
-//}
 
 uint16_t duty2cmpval(fix16_t duty)
 {

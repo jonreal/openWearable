@@ -14,6 +14,8 @@
 #include "maxonmotor.h"
 #include "fix16.h"
 
+#include "pwmdriver.h"
+
 #define FIX16_1000  0x3E80000
 
 
@@ -29,6 +31,8 @@ void debugPinLow(void);
 
 void interruptInit(void);
 void clearInterrupt(void);
+
+void calibratePWMcmp2current(uint32_t cnt, uint32_t si, uint16_t *cmpValue);
 
 // Globals -------------------------------------------------------------------
 volatile register uint32_t __R30;
@@ -60,8 +64,12 @@ int main(void)
 {
   uint32_t cnt = 0;
   uint32_t stateIndx = 0;
+  uint16_t cmpValue = 0;
 
   initialize();
+
+  // Uncomment, make, run, recomment to tare.
+  //encoderSetZeroAngle();
 
   // Wait for host interrupt
   while( (__R31 & HOST1_MASK) == 0){}
@@ -90,7 +98,8 @@ int main(void)
     s->cntrl_bit.pru0_done = 0;
 
     // Update Control
-    updateControl(cnt, stateIndx);
+    calibratePWMcmp2current(cnt, stateIndx, &cmpValue);
+//    updateControl(cnt, stateIndx);
 
     // Set done bit (control update done)
     s->cntrl_bit.pru1_done = 1;
@@ -306,5 +315,31 @@ void clearInterrupt(void)
   CT_INTC.SECR0 = 0xFFFFFFFF;
   CT_INTC.SECR1 = 0xFFFFFFFF;
    __R31 = 0x00000000;
+}
+
+
+void calibratePWMcmp2current(uint32_t cnt, uint32_t si, uint16_t *cmpValue)
+{
+  // Wait 10s before starting cmpValue sweep
+  if (cnt > 10000){
+
+    // Increase cmpValues every sec.
+    if ((cnt % 1000) == 0){
+      (*cmpValue) = (*cmpValue) + 100;
+      if (*cmpValue >= 10000)
+        (*cmpValue) = 0;
+    }
+
+    pwmSetCmpValue(*cmpValue);
+    s->state[si].motorDuty = fix16_from_int(*cmpValue);
+
+    uint16_t val = 10000;
+    s->state[si].motorDuty = fix16_from_int(val);
+    pwmSetCmpValue(val);
+  }
+  else
+    s->state[si].motorDuty = 0;
+
+
 }
 
