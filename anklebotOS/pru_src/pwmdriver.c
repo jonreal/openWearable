@@ -73,14 +73,8 @@ void pwmCleanUp(void)
   HWREGH(SOC_EPWM_2_REGS + 0x12) = 0x1;
 }
 
-//void pwmSetCmpValue(float duty, volatile uint16_t *motorDuty)
-void pwmSetCmpValue(uint16_t cmpvalue)
+void pwmSetCmpValue(uint16_t cmpvalue) 
 {
-  /* Store duty command */
-//  *motorDuty = (uint16_t) (duty * 10.0);
-
-  /* Calculate compare value */
-//  uint16_t cmpvalue = (uint16_t) (-100.0*duty + 10000.0);
 
   /* CMPA: compare register */
   HWREGH(SOC_EPWM_2_REGS + 0x12) = cmpvalue;
