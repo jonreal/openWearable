@@ -14,13 +14,13 @@
 #include "gpio.h"
 #include "common.h"
 #include "control.h"
+#include "tui.h"
 
-#define DEBUG_PIN "P8_15"
 
 volatile int doneFlag = 0;
-float freq_hz = 1000.0;
+float freq_hz = 100.0;
 int debug;
-FILE* fid;
+//FILE* fid;
 
 void sigintHandler(int sig)
 {
@@ -28,58 +28,38 @@ void sigintHandler(int sig)
   doneFlag = 1;
 }
 
-int logFileInit(void)
-{
-  char logstr[256] = "datalog/log_BB_";
-  char timestr[256];
 
-  time_t now = time(NULL);
-  struct tm *t = localtime(&now);
-
-  /* Create log file */
-  strftime(timestr, sizeof(timestr)-1, "%Y_%m_%d_%H-%M", t);
-  strcat(logstr, timestr);
-  strcat(logstr, ".txt");
-  fid = fopen(logstr, "w");
-  printf("Log file: \n\t%s\n",logstr);
-
-  /* Create header */
-  fprintf(fid,"%% anklebot \n");
-  fprintf(fid,"%% Date: %s\n", timestr);
-  fprintf(fid,"%% Sample frequency = %f\n", freq_hz);
-
-  return 0;
-}
 
 int main(int argc, char **argv)
 {
   int rtn = 0;
-  uint8_t buffIndx = 0;
-  uint32_t gpio_debug;
-
-  /* Inputs */
   uint32_t feedForward[100] = {0,};
+  //uint32_t gpio_debug;
 
-  signal(SIGINT, sigintHandler);
+  /* Command Line Inputs */
+  if(argc != 1){
+    if(strcmp(argv[1], "-v") == 0){
+      debug = 1;
+    }
+  }
+  else{
+    debug = 0;
+  }
 
 
-  printf("\n---------------------\n");
-  printf("Welcome to AnklebotOS\n");
-  printf("---------------------\n");
-
-  logFileInit();
+  if(!(debug)){
+    printf("\n---------------------\n");
+    printf("Welcome to AnklebotOS\n");
+    printf("---------------------\n");
+  }
+  else{
+    printf("\n---------------------\n");
+    printf(" DEBUG MODE \n");
+    printf("---------------------\n");
+    signal(SIGINT, sigintHandler);
+  }
 
   printf("Control loop: \n\t%.2f (Hz), (0x%x)\n", freq_hz,  hzToPruTicks(freq_hz));
-
-
-  /* Debug pin */
-  /* set enable pins */
-  if(get_gpio_number(DEBUG_PIN, &gpio_debug) != 0){
-    printf("Error getting gpio number.\n");
-    return -1;
-  }
-  gpio_export(gpio_debug);
-  gpio_set_direction(gpio_debug, OUTPUT);
 
   /* initialize the library, PRU and interrupt */
   if((rtn = pru_init()) != 0){
@@ -93,7 +73,7 @@ int main(int argc, char **argv)
   writePruSensorParams(freq_hz, 0xDEADBEAF, 0xBEAFDEAD, 0xFFFFFFFF);
 
   /* Init control params */
-  writePruConrtolParams(10, 10, 10, feedForward);
+  writePruConrtolParams(1, 0, 0, feedForward);
 
  /* Run PRU0 software */
   if( (rtn = pru_run(PRU_SENSOR, "./bin/pru0_main_text.bin")) != 0){
@@ -109,7 +89,7 @@ int main(int argc, char **argv)
 
   clearFlowBitFeild();
 
-  printf("\nPress enter to begin data collection:\n ");
+  printf("Press enter to start");
   getchar();
 
   /* Enable pru sensor/control */
@@ -120,42 +100,58 @@ int main(int argc, char **argv)
   armToPru0Interrupt();
 
 
-  uint8_t lastBufferRead = 0;
-  while(!(doneFlag)){
+  if(debug){
 
-    if(isBuffer0Full()){
-      resetBuffer0FullFlag();
-      gpio_set_value(gpio_debug, HIGH);
+    uint8_t lastBufferRead = 0;
+    while(!(doneFlag)){
+
+      if(isBuffer0Full()){
+        resetBuffer0FullFlag();
+        //  gpio_set_value(gpio_debug, HIGH);
+        writeState(0);
+        lastBufferRead = 0;
+        //  gpio_set_value(gpio_debug, LOW);
+      }
+
+      if(isBuffer1Full()){
+        resetBuffer1FullFlag();
+        //  gpio_set_value(gpio_debug, HIGH);
+        writeState(1);
+        lastBufferRead = 1;
+        //   gpio_set_value(gpio_debug, LOW);
+      }
+    }
+    disable();
+    if(lastBufferRead == 1){
       writeState(0);
-      lastBufferRead = 0;
-      gpio_set_value(gpio_debug, LOW);
     }
-
-    if(isBuffer1Full()){
-      resetBuffer1FullFlag();
-      gpio_set_value(gpio_debug, HIGH);
+    else{
       writeState(1);
-      lastBufferRead = 1;
-      gpio_set_value(gpio_debug, LOW);
+    }
+    printDebugBuffer();
+
+    /* Cleanup */
+    pru_cleanup();
+    printf("pru0 and pru1 cleaned up.\n");
+  }
+  else {
+
+    if(init_tui() != 0){
+      printf("TUI init fail.");
+    }
+
+
+    /* UI loop */
+    if(start_tui() == 1){
+        disable();
+        printDebugBuffer();
+
+        /* Cleanup */
+        pru_cleanup();
+        printf("pru0 and pru1 cleaned up.\n");
+        raise(SIGINT);
     }
   }
-
-  disable();
-  if(lastBufferRead == 1){
-    writeState(0);
-  }
-  else{
-    writeState(1);
-  }
-
-  printDebugBuffer();
-
-  fclose(fid);
-
-  /* Cleanup */
-  pru_cleanup();
-  printf("pru0 and pru1 cleaned up.\n");
-
   return 0;
 }
 

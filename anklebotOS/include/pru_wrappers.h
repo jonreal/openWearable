@@ -6,7 +6,10 @@
 
 /* Globals ------------------------------------------------------------------*/
 extern int debug;
-extern FILE* fid;
+
+/* Local Globals- */
+FILE* fid;
+uint32_t collectionFlag;
 
 /* Prototypes ---------------------------------------------------------------*/
 void printDebugBuffer(void);
@@ -33,6 +36,17 @@ int whichBuffer(void);
 uint32_t hzToPruTicks(float freq_hz);
 float pruTicksToHz(uint32_t ticks);
 
+void setKp(float Kp);
+void setKd(float Kd);
+void setAnklePos0(float pos0);
+uint16_t getKp(void);
+uint16_t getKd(void);
+int16_t getAnklePos0(void);
+int logFileInit(char* fileName);
+void closeLogFile(void);
+
+void clearBufferFlags(void);
+void setTareEncoderBit(void);
 #endif
 
 
