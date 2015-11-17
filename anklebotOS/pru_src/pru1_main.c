@@ -65,6 +65,7 @@ int main(void)
 
   clearInterrupt();
 
+
   /*** Loop ***/
   while(1){
 
@@ -72,6 +73,11 @@ int main(void)
     while((CT_INTC.SECR0 & (1 << 7)) == 0);
 
     debugPinHigh();
+
+    if(p->cntrl_bit.encoderTare){
+      encoderSetZeroAngle();
+      p->cntrl_bit.encoderTare = 0;
+    }
 
     /* Update State */
     updateState(cnt, buffIndx, stateIndx);
@@ -120,10 +126,11 @@ void initialize(void)
   /*** Memory ***/
   initMemory();
 
+  interruptInit();
+
   /* Add pru dependent peripheral init methods here */
   encoderInit();
   motorInit();
-  interruptInit();
 }
 
 void updateCounters(uint32_t *cnt, uint8_t *bi, uint8_t *si)
@@ -141,7 +148,12 @@ void updateCounters(uint32_t *cnt, uint8_t *bi, uint8_t *si)
 
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 {
-  motorSetDuty(50.0, &(p->state[bi][si].motorDuty));
+  int16_t cmd = 0;
+
+
+  cmd = ((int16_t)param->Kp)*(param->anklePos0 - p->state[bi][si].anklePos)/100;
+
+  motorSetDuty(cmd, &p->state[bi][si].motorDuty);
 }
 
 void updateState(uint32_t cnt, uint8_t bi, uint8_t si)

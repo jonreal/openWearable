@@ -129,12 +129,14 @@ void initialize(void)
   /*** Memory ***/
   initMemory();
 
-  /* Add pru dependent peripheral init methods here */
+  /* Init timer */
   iepInterruptInit();
   iepTimerInit(param->frq_clock_ticks);
   clearIepInterrupt();
+
+  /* Add pru dependent peripheral init methods here */
   adcInit();
-  imuInit();
+  //imuInit();
 }
 
 void initMemory(void)
@@ -165,9 +167,11 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 
   p->state[bi][si].timeStamp = cnt;
 
-  adcSample(p->state[bi][si].adc);
+  adcSample_1(p->state[bi][si].adc);
 
-  imuSample(p->state[bi][si].imu);
+  adcSample_2(p->state[bi][si].adc);
+
+ // imuSample(p->state[bi][si].imu);
 
   //encoderSample(&p->state[bi][si].anklePos);
 
@@ -203,7 +207,7 @@ void cleanUp(void)
 {
   /* Add pru dependent peripheral cleanup methods here */
   adcCleanUp();
-  imuCleanUp();
+//  imuCleanUp();
 
   /* Clear all interrupts */
   clearIepInterrupt();
