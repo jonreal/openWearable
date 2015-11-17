@@ -15,10 +15,10 @@ extern volatile uint32_t *debugBuffer;
 /* ---- Prototypes ---- */
 void motorInit(void);
 void motorCleanUp(void);
-void motorSetDuty(float duty, volatile uint16_t *motorDuty);
+void motorSetDuty(int16_t duty, volatile int16_t *motorDuty);
 void motorEnable(void);
 void motorDisable(void);
 void motorSetDir(uint8_t dorsiflex);
-uint16_t duty2cmpval(float duty);
+uint16_t duty2cmpval(uint16_t duty);
 
 #endif
