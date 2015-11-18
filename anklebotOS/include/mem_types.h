@@ -33,8 +33,8 @@
 
 /* Enums --------------------------------------------------------------------*/
 enum{
-  LOAD = 0,
-  UNLOAD,
+  STANCE = 0,
+//  UNLOAD,
   SWING
 };
 
@@ -43,10 +43,12 @@ enum{
 /* Anklebot state */
 typedef struct{
   volatile uint32_t timeStamp;
+  volatile uint16_t avgPeriod;
+  volatile uint16_t gaitPhase;
   volatile int16_t anklePos;
   volatile uint16_t ankleVel;
-  volatile uint16_t gaitPhase;
   volatile int16_t motorDuty;
+  volatile uint16_t rsvd;
   volatile uint16_t adc[NUM_ADC];
   volatile int16_t imu[NUM_IMU];
 } state_t;
@@ -79,12 +81,19 @@ typedef struct{
 /* Parameter Struct -> mapped to pr0 DRAM */
 typedef struct{
   volatile uint32_t frq_clock_ticks;
-  volatile uint16_t gaitPhase_threshold_1;
-  volatile uint16_t gaitPhase_threshold_2;
-  volatile uint16_t gaitPhase_threshold_3;
-  volatile int16_t Kp;
-  volatile int16_t Kd;
+
+  volatile uint16_t gp_toe_hs;
+  volatile uint16_t gp_mid_hs;
+  volatile uint16_t gp_heel_hs;
+  volatile uint16_t gp_toe_to;
+  volatile uint16_t gp_mid_to;
+  volatile uint16_t gp_heel_to;
+  volatile uint16_t gpOnLeftFoot;
+
+  volatile uint16_t Kp;
+  volatile uint16_t Kd;
   volatile int16_t anklePos0;
+
   volatile uint32_t debugBuffer[10];
 } param_mem_t;
 

@@ -226,7 +226,7 @@ int pru_mem_init(void)
   for(int i=0; i<NUM_OF_BUFFS; i++){
     for(int j=0; j<SIZE_OF_BUFFS; j++){
       p->state[i][j].timeStamp = 0;
-
+      p->state[i][j].avgPeriod = 0;
       p->state[i][j].anklePos = 0;
       p->state[i][j].ankleVel = 0;
       p->state[i][j].gaitPhase = 0;
@@ -290,13 +290,31 @@ int armToPru1Interrupt(void)
  * Inputs:  frq_hz    -     loop freq in hz (float)
  *          gp_thr_n  -     gaitphase threshold n
  * ------------------------------------------------------------------------- */
-void writePruSensorParams(float frq_hz, uint32_t gp_thr_1,
-                          uint32_t gp_thr_2, uint32_t gp_thr_3)
+void writePruParams(float frq_hz,
+                    uint16_t toe_hs,
+                    uint16_t mid_hs,
+                    uint16_t heel_hs,
+                    uint16_t toe_to,
+                    uint16_t mid_to,
+                    uint16_t heel_to,
+                    uint16_t gpOnLeftFoot,
+                    uint16_t Kp,
+                    uint16_t Kd,
+                    int16_t anklePos0)
 {
   param->frq_clock_ticks = hzToPruTicks(frq_hz);
-  param->gaitPhase_threshold_1 = gp_thr_1;
-  param->gaitPhase_threshold_2 = gp_thr_2;
-  param->gaitPhase_threshold_3 = gp_thr_3;
+
+  param->gp_toe_hs = toe_hs;
+  param->gp_mid_hs = mid_hs;
+  param->gp_heel_hs = heel_hs;
+  param->gp_toe_to = toe_to;
+  param->gp_mid_to = mid_to;
+  param->gp_heel_to = heel_to;
+  param->gpOnLeftFoot = gpOnLeftFoot;
+
+  param->Kp = Kp;
+  param->Kd = Kd;
+  param->anklePos0 = anklePos0;
 }
 
 /* ----------------------------------------------------------------------------
@@ -332,10 +350,11 @@ void writeState(uint8_t bi)
 
   if(debug){
     printf("%i\t", p->state[bi][0].timeStamp);
+    printf("%i\t", p->state[bi][0].avgPeriod);
+    printf("%i\t", p->state[bi][0].gaitPhase);
     printf("%i\t", p->state[bi][0].anklePos);
     printf("%i\t", p->state[bi][0].ankleVel);
     printf("%i\t", p->state[bi][0].motorDuty);
-    printf("%i\t", p->state[bi][0].gaitPhase);
     printf("%i\t", p->state[bi][0].adc[0]);
     printf("%i\t", p->state[bi][0].adc[1]);
     printf("%i\t", p->state[bi][0].adc[2]);
@@ -355,10 +374,11 @@ void writeState(uint8_t bi)
   else {
     for(int i=0; i<SIZE_OF_BUFFS; i++){
       fprintf(fid,"%i\t", p->state[bi][i].timeStamp);
+      fprintf(fid,"%i\t", p->state[bi][i].avgPeriod);
+      fprintf(fid,"%i\t", p->state[bi][i].gaitPhase);
       fprintf(fid,"%i\t", p->state[bi][i].anklePos);
       fprintf(fid,"%i\t", p->state[bi][i].ankleVel);
       fprintf(fid,"%i\t", p->state[bi][i].motorDuty);
-      fprintf(fid,"%i\t", p->state[bi][i].gaitPhase);
       fprintf(fid,"%i\t", p->state[bi][i].adc[0]);
       fprintf(fid,"%i\t", p->state[bi][i].adc[1]);
       fprintf(fid,"%i\t", p->state[bi][i].adc[2]);
@@ -377,9 +397,10 @@ void writeState(uint8_t bi)
 
       /* Zero State */
       p->state[bi][i].timeStamp = 0;
+      p->state[bi][i].avgPeriod = 0;
+      p->state[bi][i].gaitPhase = 0;
       p->state[bi][i].anklePos = 0;
       p->state[bi][i].ankleVel = 0;
-      p->state[bi][i].gaitPhase = 0;
       p->state[bi][i].motorDuty = 0;
       for(int k=0; k<NUM_ADC; k++){
         p->state[bi][i].adc[k] = 0;
