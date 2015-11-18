@@ -79,8 +79,10 @@ void tui_menu(void)
   printf("      s - enter new Kd\n");
   printf("      d - enter new pos_0 (deg X 100)\n");
   printf("      f - collect trial\n");
-  printf("      g - tare encoder\n");
-  printf("      h - enable/disable feedforward control\n");
+  printf("      g - Save parameters\n");
+  printf("      h - Load parameters\n");
+  printf("      j - tare encoder\n");
+  printf("      k - enable/disable feedforward control\n");
   printf("      e - exit\n");
   printf("--------------------------\n");
 }
@@ -95,6 +97,7 @@ int start_tui(void)
   float input_float;
   char input_string[256];
   char logFile[256] = "datalog/";
+  char configFile[256] = "config/";
 
   tui_menu();
   fflush(stdout);
@@ -229,13 +232,65 @@ int start_tui(void)
           writeState(0);
         }
         closeLogFile();
+        logFile[0] = '\0';
+        strcat(logFile, "datalog/");
+        tui_menu();
+        fflush(stdout);
+        ptui->io_ready = 0;
+      }
+
+      /* Save Parameters */
+      else if(input_char == 'g'){
+
+        /* Trial Name Input */
+        printf("\t\tEnter parameter file name: ");
+        fflush(stdout);
+        ptui->io_ready = 0;
+        while(1){
+          if(ptui->io_ready){
+            scanf(" %s", input_string);
+            break;
+          }
+        }
+
+        /* Echo Trial Name */
+        strcat(configFile,input_string);
+        printf("\t\tSaving parameters to %s\n",configFile);
+        saveParameters(configFile);
+        configFile[0] = '\0';
+        strcat(configFile, "config/");
+        tui_menu();
+        fflush(stdout);
+        ptui->io_ready = 0;
+      }
+
+      /* Load Parameters */
+      else if(input_char == 'h'){
+
+        /* Trial Name Input */
+        printf("\t\tEnter parameter file name: ");
+        fflush(stdout);
+        ptui->io_ready = 0;
+        while(1){
+          if(ptui->io_ready){
+            scanf(" %s", input_string);
+            break;
+          }
+        }
+
+        /* Echo Trial Name */
+        strcat(configFile,input_string);
+        printf("\t\tLoading parameters from %s\n",configFile);
+        loadParameters(configFile);
+        configFile[0] = '\0';
+        strcat(configFile, "config/");
         tui_menu();
         fflush(stdout);
         ptui->io_ready = 0;
       }
 
       /* Encoder Tare */
-      else if(input_char == 'g'){
+      else if(input_char == 'j'){
         setTareEncoderBit();
         printf("\t\tEncoder angle reset.\n");
         fflush(stdout);

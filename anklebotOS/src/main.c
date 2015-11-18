@@ -16,10 +16,32 @@
 #include "control.h"
 #include "tui.h"
 
+/* Matlab Helper */
+#include "/Applications/MATLAB_R2013a.app/extern/include/mat.h"
 
 volatile int doneFlag = 0;
 float freq_hz = 1000.0;
 int debug;
+
+/* Default Parameters */
+param_mem_t defaults = {1000 /* Freq. (Hz) */,
+                        0 /* Freq. Clock ticks (set as zero!) */,
+                        0 /* Subject Mass */,
+                        0 /* toe_hs threshold */,
+                        0 /* mid_hs threshold */,
+                        0 /* heel_hs threshold */,
+                        0 /* toe_to threshold */,
+                        0 /* mid_to threshold */,
+                        0 /* heel_to threshold */,
+                        0 /* gpOnLeftFoot */,
+                        0 /* Kp */,
+                        0 /* Kd */,
+                        0 /* anklePos0 */};
+
+/* Default FF lookup table */
+ff_mem_t ff_defaults = {{0},};
+
+
 
 void sigintHandler(int sig)
 {
@@ -27,11 +49,15 @@ void sigintHandler(int sig)
   doneFlag = 1;
 }
 
-
-
 int main(int argc, char **argv)
 {
   int rtn = 0;
+
+  int i;
+  for(i=0; i<1000; i++){
+    printf("%i\n", ff_defaults.ff_traj[i]);
+  }
+  return;
 
   /* Command Line Inputs */
   if(argc != 1){
@@ -66,18 +92,8 @@ int main(int argc, char **argv)
   /* Init debug buffer */
   initDebugBuffer();
 
-  /* Init sensor params */
-  writePruParams(freq_hz /* Loop frq. in Hz */,
-                 500 /* toe_hs threshold */,
-                 500 /* mid_hs threshold */,
-                 500 /* heel_hs threshold */,
-                 500 /* toe_to threshold */,
-                 500 /* mid_to threshold */,
-                 500 /* heel_to threshold */,
-                 1 /* gpOnLeftFoot */,
-                 10 /* Kp */,
-                 0 /* Kd */,
-                 0 /* anklePos0 (deg X 100) */);
+  /* Init params */
+  writeParams(defaults);
 
   /* Feedforward lookup */
 //  writePruConrtolParams(1, 0, 0, feedForward);

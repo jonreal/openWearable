@@ -80,7 +80,9 @@ typedef struct{
 
 /* Parameter Struct -> mapped to pr0 DRAM */
 typedef struct{
+  volatile uint32_t frq_hz;
   volatile uint32_t frq_clock_ticks;
+  volatile uint16_t mass;
 
   volatile uint16_t gp_toe_hs;
   volatile uint16_t gp_mid_hs;
@@ -99,7 +101,7 @@ typedef struct{
 
 /* Feedforward lookup table -> mapped to pru1 DRAM */
 typedef struct{
-  volatile uint16_t ff_traj[100];
+  volatile uint16_t ff_traj[1000];
 } ff_mem_t;
 
 #endif
