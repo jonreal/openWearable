@@ -18,9 +18,8 @@
 
 
 volatile int doneFlag = 0;
-float freq_hz = 100.0;
+float freq_hz = 1000.0;
 int debug;
-//FILE* fid;
 
 void sigintHandler(int sig)
 {
@@ -33,8 +32,6 @@ void sigintHandler(int sig)
 int main(int argc, char **argv)
 {
   int rtn = 0;
-  uint32_t feedForward[100] = {0,};
-  //uint32_t gpio_debug;
 
   /* Command Line Inputs */
   if(argc != 1){
@@ -70,10 +67,20 @@ int main(int argc, char **argv)
   initDebugBuffer();
 
   /* Init sensor params */
-  writePruSensorParams(freq_hz, 0xDEADBEAF, 0xBEAFDEAD, 0xFFFFFFFF);
+  writePruParams(freq_hz /* Loop frq. in Hz */,
+                 500 /* toe_hs threshold */,
+                 500 /* mid_hs threshold */,
+                 500 /* heel_hs threshold */,
+                 500 /* toe_to threshold */,
+                 500 /* mid_to threshold */,
+                 500 /* heel_to threshold */,
+                 1 /* gpOnLeftFoot */,
+                 10 /* Kp */,
+                 0 /* Kd */,
+                 0 /* anklePos0 (deg X 100) */);
 
-  /* Init control params */
-  writePruConrtolParams(1, 0, 0, feedForward);
+  /* Feedforward lookup */
+//  writePruConrtolParams(1, 0, 0, feedForward);
 
  /* Run PRU0 software */
   if( (rtn = pru_run(PRU_SENSOR, "./bin/pru0_main_text.bin")) != 0){

@@ -11,10 +11,16 @@
 
 #include "imu_mpu9150.h"
 #include "adcdriver.h"
+#include "gaitPhaseDetection.h"
+
+/* Local Param Struct (mirror) --------------------------------------------- */
+typedef struct{
+}local_t;
 
 /* Prototypes -------------------------------------------------------------- */
 void initialize(void);
 void initMemory(void);
+void updateLocalParams(void);
 void updateState(uint32_t cnt, uint8_t bi, uint8_t si);
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si);
 void updateCounters(uint32_t *cnt, uint8_t *bi, uint8_t *si);
@@ -83,6 +89,9 @@ int main(void)
     /* Shadow enable bit */
     p->cntrl_bit.shdw_enable = p->cntrl_bit.enable;
 
+    /* Mirror params */
+    updateLocalParams();
+
     /* Update State */
     updateState(cnt, buffIndx, stateIndx);
 
@@ -137,6 +146,7 @@ void initialize(void)
   /* Add pru dependent peripheral init methods here */
   adcInit();
   //imuInit();
+  gaitPhaseInit(param);
 }
 
 void initMemory(void)
@@ -159,6 +169,10 @@ void initMemory(void)
   debugBuffer = &(param->debugBuffer[0]);
 }
 
+void updateLocalParams(void)
+{
+  gaitPhaseUpdateParams(param);
+}
 
 void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 {
@@ -173,9 +187,9 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 
  // imuSample(p->state[bi][si].imu);
 
-  //encoderSample(&p->state[bi][si].anklePos);
-
-  p->state[bi][si].ankleVel = 0xAAAA;
+  gaitPhaseDetect(cnt, &p->state[bi][si].gaitPhase,
+                  &p->state[bi][si].avgPeriod,
+                  p->state[bi][si].adc);
 }
 
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
@@ -308,3 +322,5 @@ void clearIepInterrupt(void)
     CT_INTC.SECR0 = (1<<7);
     __R31 = 0x00000000;
 }
+
+

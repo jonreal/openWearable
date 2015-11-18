@@ -13,9 +13,17 @@
 #include "maxonmotor.h"
 
 
+/* Local Params (mirror) --------------------------------------------------- */
+typedef struct{
+  volatile uint16_t Kp;
+  volatile uint16_t Kd;
+  volatile int16_t anklePos0;
+}local_t;
+
 /* Prototypes -------------------------------------------------------------- */
 void initialize(void);
 void initMemory(void);
+void updateLocalParams(void);
 void updateState(uint32_t cnt, uint8_t bi, uint8_t si);
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si);
 void updateCounters(uint32_t *cnt, uint8_t *bi, uint8_t *si);
@@ -48,6 +56,9 @@ param_mem_t *param;
 /* Feedforward lookup table pointer */
 ff_mem_t *ff;
 
+/* Local params */
+local_t loc;
+
 /* Debug Buffer */
 volatile uint32_t *debugBuffer;
 
@@ -78,6 +89,9 @@ int main(void)
       encoderSetZeroAngle();
       p->cntrl_bit.encoderTare = 0;
     }
+
+    /* Update (mirror) params */
+    updateLocalParams();
 
     /* Update State */
     updateState(cnt, buffIndx, stateIndx);
@@ -133,6 +147,13 @@ void initialize(void)
   motorInit();
 }
 
+void updateLocalParams(void)
+{
+  loc.Kp = param->Kp;
+  loc.Kd = param->Kd;
+  loc.anklePos0 = param->anklePos0;
+}
+
 void updateCounters(uint32_t *cnt, uint8_t *bi, uint8_t *si)
 {
   (*cnt)++;
@@ -151,7 +172,7 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
   int16_t cmd = 0;
 
 
-  cmd = ((int16_t)param->Kp)*(param->anklePos0 - p->state[bi][si].anklePos)/100;
+  cmd = ((int16_t)loc.Kp)*(loc.anklePos0 - p->state[bi][si].anklePos)/100;
 
   motorSetDuty(cmd, &p->state[bi][si].motorDuty);
 }

@@ -57,11 +57,13 @@ void motorDisable(void)
 
 void motorSetDir(uint8_t dorsiflex)
 {
+  /* High -> CW motor rotation -> plantarflex */
+
   if(dorsiflex){
-    __R30 |= (1 << DIR_PIN);
+    __R30 &= ~(1 << DIR_PIN);
   }
   else{
-     __R30 &= ~(1 << DIR_PIN);
+     __R30 |= (1 << DIR_PIN);
   }
 }
 
