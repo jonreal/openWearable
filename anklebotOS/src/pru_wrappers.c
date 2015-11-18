@@ -35,6 +35,7 @@ void initDebugBuffer(void)
     param->debugBuffer[i] = 0;
   }
 }
+
 void printDebugBuffer(void)
 {
   printf("\n\n---- Debug Buffer ----\n");
@@ -290,32 +291,38 @@ int armToPru1Interrupt(void)
  * Inputs:  frq_hz    -     loop freq in hz (float)
  *          gp_thr_n  -     gaitphase threshold n
  * ------------------------------------------------------------------------- */
-void writePruParams(float frq_hz,
-                    uint16_t toe_hs,
-                    uint16_t mid_hs,
-                    uint16_t heel_hs,
-                    uint16_t toe_to,
-                    uint16_t mid_to,
-                    uint16_t heel_to,
-                    uint16_t gpOnLeftFoot,
-                    uint16_t Kp,
-                    uint16_t Kd,
-                    int16_t anklePos0)
+
+void writeParams(param_mem_t inputs)
 {
-  param->frq_clock_ticks = hzToPruTicks(frq_hz);
+  param->frq_hz = inputs.frq_hz;
+  param->frq_clock_ticks = hzToPruTicks(inputs.frq_hz);
+  param->gp_toe_hs = inputs.gp_toe_hs;
+  param->gp_mid_hs = inputs.gp_mid_hs;
+  param->gp_heel_hs = inputs.gp_heel_hs;
+  param->gp_toe_to = inputs.gp_toe_to;
+  param->gp_mid_to = inputs.gp_mid_to;
+  param->gp_heel_to = inputs.gp_heel_to;
+  param->gpOnLeftFoot = inputs.gpOnLeftFoot;
 
-  param->gp_toe_hs = toe_hs;
-  param->gp_mid_hs = mid_hs;
-  param->gp_heel_hs = heel_hs;
-  param->gp_toe_to = toe_to;
-  param->gp_mid_to = mid_to;
-  param->gp_heel_to = heel_to;
-  param->gpOnLeftFoot = gpOnLeftFoot;
+  param->Kp = inputs.Kp;
+  param->Kd = inputs.Kd;
+  param->anklePos0 = inputs.anklePos0;
 
-  param->Kp = Kp;
-  param->Kd = Kd;
-  param->anklePos0 = anklePos0;
+  printf("Parameters:\n");
+  printf("\t Frq = %i (Hz)\n", param->frq_hz);
+  printf("\t Ticks = %i\n", param->frq_clock_ticks);
+  printf("\t gp_toe_hs = %i\n", param->gp_toe_hs);
+  printf("\t gp_mid_hs = %i\n", param->gp_mid_hs);
+  printf("\t gp_heel_hs = %i\n", param->gp_heel_hs);
+  printf("\t gp_toe_to = %i\n", param->gp_toe_to);
+  printf("\t gp_mid_to = %i\n", param->gp_mid_to);
+  printf("\t gp_heel_to = %i\n", param->gp_heel_to);
+  printf("\t gpOnLeftFoot = %i\n", param->gpOnLeftFoot);
+  printf("\t Kp = %i\n", param->Kp);
+  printf("\t Kd = %i\n", param->Kd);
+  printf("\t anklePos0 = %i\n", param->anklePos0);
 }
+
 
 /* ----------------------------------------------------------------------------
  * Function: void writePruConrtolParams(uint32_t Kp, uint32_t Kd, uint32_t pos0,
@@ -528,6 +535,27 @@ int logFileInit(char* fileName)
 
   collectionFlag = 0;
   return 0;
+}
+
+void saveParameters(char *file)
+{
+  FILE *f = fopen(file, "wb");
+  if(f != NULL){
+    fwrite(param, sizeof(param_mem_t), 1, f);
+    fclose(f);
+  }
+}
+
+void loadParameters(char *file)
+{
+  FILE *f = fopen(file, "rb");
+  if(file != NULL){
+    fread(param, sizeof(param_mem_t), 1, f);
+    fclose(f);
+  }
+  else {
+    printf("File doesn't exsist!");
+  }
 }
 
 void closeLogFile(void)
