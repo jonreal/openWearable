@@ -16,29 +16,27 @@
 #include "control.h"
 #include "tui.h"
 
-volatile int doneFlag = 0;
-float freq_hz = 1000.0;
+/* Global ------------------------------------------------------------------ */
 int debug;
+volatile int doneFlag = 0;
 
-void sigintHandler(int sig)
-{
-  signal(sig, SIG_IGN);
-  doneFlag = 1;
-}
+/* Protoypes --------------------------------------------------------------- */
+void sigintHandler(int sig);
+int loadPruSoftware(void);
+void startPruLoop(void);
 
+/* ------------------------------------------------------------------------- */
 int main(int argc, char **argv)
 {
-  int rtn = 0;
+  uint8_t lastBufferRead = 0;
 
   /* Command Line Inputs */
   if(argc != 1){
-    if(strcmp(argv[1], "-v") == 0){
+    if(strcmp(argv[1], "-v") == 0)
       debug = 1;
-    }
   }
-  else{
+  else
     debug = 0;
-  }
 
   if(!(debug)){
     printf("\n---------------------\n");
@@ -52,12 +50,9 @@ int main(int argc, char **argv)
     signal(SIGINT, sigintHandler);
   }
 
-  printf("Control loop: \n\t%.2f (Hz), (0x%x)\n", freq_hz,  hzToPruTicks(freq_hz));
-
   /* initialize the library, PRU and interrupt */
-  if((rtn = pru_init()) != 0){
+  if(pru_init() != 0)
     return -1;
-  }
 
   /* Init debug buffer */
   initDebugBuffer();
@@ -70,17 +65,9 @@ int main(int argc, char **argv)
   loadLookUpTable("config/uff_1");
   // printFFLookUpTable();
 
-  /* Run PRU0 software */
-  if( (rtn = pru_run(PRU_SENSOR, "./bin/pru0_main_text.bin")) != 0){
-    printf("pru_run() failed (PRU_SENSOR)");
+  /* Load Pru */
+  if(loadPruSoftware() != 0)
     return -1;
-  }
-
-  /* Run PRU1 software */
-  if( (rtn = pru_run(PRU_CONTROL, "./bin/pru1_main_text.bin")) != 0){
-    printf("pru_run() failed (PRU_CONTROL)");
-    return -1;
-  }
 
   clearFlowBitFeild();
 
@@ -91,13 +78,10 @@ int main(int argc, char **argv)
   enable();
 
   /* Start control loop */
-  armToPru1Interrupt();
-  armToPru0Interrupt();
+  startPruLoop();
 
-
+  /* Debug Loop */
   if(debug){
-
-    uint8_t lastBufferRead = 0;
     while(!(doneFlag)){
 
       if(isBuffer0Full()){
@@ -117,6 +101,7 @@ int main(int argc, char **argv)
       }
     }
     disable();
+
     if(lastBufferRead == 1){
       writeState(0);
     }
@@ -129,12 +114,14 @@ int main(int argc, char **argv)
     pru_cleanup();
     printf("pru0 and pru1 cleaned up.\n");
   }
+
+  /* TUI */
   else {
 
     if(init_tui() != 0){
       printf("TUI init fail.");
+      return -1;
     }
-
 
     /* UI loop */
     if(start_tui() == 1){
@@ -150,4 +137,34 @@ int main(int argc, char **argv)
   return 0;
 }
 
+/* Methods ----------------------------------------------------------------- */
+void sigintHandler(int sig)
+{
+  signal(sig, SIG_IGN);
+  doneFlag = 1;
+}
 
+int loadPruSoftware(void)
+{
+  int rtn = 0;
+
+  /* Run PRU0 software */
+  if( (rtn = pru_run(PRU_SENSOR, "./bin/pru0_main_text.bin")) != 0){
+    printf("pru_run() failed (PRU_SENSOR)");
+    return -1;
+  }
+
+  /* Run PRU1 software */
+  if( (rtn = pru_run(PRU_CONTROL, "./bin/pru1_main_text.bin")) != 0){
+    printf("pru_run() failed (PRU_CONTROL)");
+    return -1;
+  }
+
+  return rtn;
+}
+
+void startPruLoop(void)
+{
+  armToPru1Interrupt();
+  armToPru0Interrupt();
+}
