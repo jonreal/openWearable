@@ -26,7 +26,7 @@ shared_mem_t *p;
 param_mem_t *param;
 
 /* Pointer to controller pru params */
-ff_mem_t *ff;
+lookUp_mem_t *lookUp;
 
 
 void initDebugBuffer(void)
@@ -205,7 +205,7 @@ int pru_mem_init(void)
     printf("prussdrv_map_prumem() failed with %i\n", rtn);
     return -1;
   }
-  ff = (ff_mem_t *) ptr;
+  lookUp = (lookUp_mem_t *) ptr;
 
   /* Memory Map for shared memory */
   ptr = NULL;
@@ -219,7 +219,7 @@ int pru_mem_init(void)
   printf("\tSize of parameter memory (pru0 DRAM): %i bytes.\n",
           sizeof(*param));
   printf("\tSize of feedforward lookup table (pru1 DRAM): %i bytes.\n",
-          sizeof(*ff));
+          sizeof(*lookUp));
   printf("\tSize of shared memory (SRAM): %i bytes.\n",
           sizeof(*p));
 
@@ -282,76 +282,6 @@ int armToPru1Interrupt(void)
   return 0;
 }
 
-/* ----------------------------------------------------------------------------
- * Function: void writePruSensorParams(float frq_hz, uint32_t gp_thr_1,
- *                        uint32_t gp_thr_2, uint32_t gp_thr_3)
- *
- * This function writes params to pru0 (sensor) DRAM
- *
- * Inputs:  frq_hz    -     loop freq in hz (float)
- *          gp_thr_n  -     gaitphase threshold n
- * ------------------------------------------------------------------------- */
-
-void writeParams(param_mem_t inputs)
-{
-  param->frq_hz = inputs.frq_hz;
-  param->frq_clock_ticks = hzToPruTicks(inputs.frq_hz);
-  param->gp_toe_hs = inputs.gp_toe_hs;
-  param->gp_mid_hs = inputs.gp_mid_hs;
-  param->gp_heel_hs = inputs.gp_heel_hs;
-  param->gp_toe_to = inputs.gp_toe_to;
-  param->gp_mid_to = inputs.gp_mid_to;
-  param->gp_heel_to = inputs.gp_heel_to;
-  param->gpOnLeftFoot = inputs.gpOnLeftFoot;
-
-  param->Kp = inputs.Kp;
-  param->Kd = inputs.Kd;
-  param->anklePos0 = inputs.anklePos0;
-
-  printf("Parameters:\n");
-  printf("\t Frq = %i (Hz)\n", param->frq_hz);
-  printf("\t Ticks = %i\n", param->frq_clock_ticks);
-  printf("\t gp_toe_hs = %i\n", param->gp_toe_hs);
-  printf("\t gp_mid_hs = %i\n", param->gp_mid_hs);
-  printf("\t gp_heel_hs = %i\n", param->gp_heel_hs);
-  printf("\t gp_toe_to = %i\n", param->gp_toe_to);
-  printf("\t gp_mid_to = %i\n", param->gp_mid_to);
-  printf("\t gp_heel_to = %i\n", param->gp_heel_to);
-  printf("\t gpOnLeftFoot = %i\n", param->gpOnLeftFoot);
-  printf("\t Kp = %i\n", param->Kp);
-  printf("\t Kd = %i\n", param->Kd);
-  printf("\t anklePos0 = %i\n", param->anklePos0);
-}
-
-
-/* ----------------------------------------------------------------------------
- * Function: void writePruConrtolParams(uint32_t Kp, uint32_t Kd, uint32_t pos0,
- *                        uint32_t ff_traj[100])
- *
- * This function writes params to pru1 (control) DRAM
- *
- * Inputs:  Kp        -     proportional impedance gain
- * ------------------------------------------------------------------------- */
-void writePruConrtolParams(uint32_t Kp, uint32_t Kd, uint32_t pos0,
-                          uint32_t ff_traj[100])
-{
-  param->Kp = Kp;
-  param->Kd = Kd;
-  param->anklePos0 = pos0;
-
-  for(int i=0; i<100; i++){
-    ff->ff_traj[i] = ff_traj[i];
-  }
-}
-
-/* ----------------------------------------------------------------------------
- * Function: void writePruConrtolParams(uint32_t Kp, uint32_t Kd, uint32_t pos0,
- *                        uint32_t ff_traj[100])
- *
- * This function writes params to pru1 (control) DRAM
- *
- * Inputs:  Kp        -     proportional impedance gain
- * ------------------------------------------------------------------------- */
 void writeState(uint8_t bi)
 {
 
@@ -514,49 +444,107 @@ int16_t getAnklePos0(void)
 
 int logFileInit(char* fileName)
 {
-//  char logstr[256] = "datalog/log_BB_";
-    char timestr[256];
-
+  char timestr[256];
   time_t now = time(NULL);
   struct tm *t = localtime(&now);
 
-//  /* Create log file */
-    strftime(timestr, sizeof(timestr)-1, "%Y_%m_%d_%H-%M", t);
-//  strcat(logstr, timestr);
-//  strcat(logstr, ".txt");
-//
+  /* Create log file */
+  strftime(timestr, sizeof(timestr)-1, "%Y_%m_%d_%H-%M", t);
   fid = fopen(fileName, "w");
 
   /* Create header */
   fprintf(fid,"%% anklebot \n");
   fprintf(fid,"%% Date: %s\n", timestr);
-  fprintf(fid,"%% Sample frequency = %f\n",
-              pruTicksToHz(param->frq_clock_ticks));
-
-  collectionFlag = 0;
+  fprintf(fid,"%% Sample frequency = %u\n", param->frq_hz);
   return 0;
 }
 
 void saveParameters(char *file)
 {
-  FILE *f = fopen(file, "wb");
+  FILE *f = fopen(file, "w");
   if(f != NULL){
-    fwrite(param, sizeof(param_mem_t), 1, f);
+    fprintf(f, "%u\t// Freq.\n", param->frq_hz);
+    fprintf(f,"%u\t// Freq. Ticks\n", 0);
+    fprintf(f,"%hu\t// Subject Mass\n", param->mass);
+    fprintf(f,"%hu\t// toe_hs threshold\n", param->gp_toe_hs);
+    fprintf(f,"%hu\t// mid_hs threshold\n", param->gp_mid_hs);
+    fprintf(f,"%hu\t// heel_hs threshold\n", param->gp_heel_hs);
+    fprintf(f,"%hu\t// toe_to threshold\n", param->gp_toe_to);
+    fprintf(f,"%hu\t// mid_to threshold\n", param->gp_mid_to);
+    fprintf(f,"%hu\t// heel_to threshold\n", param->gp_heel_to);
+    fprintf(f,"%hu\t// gpOnLeftFoot\n", param->gpOnLeftFoot);
+    fprintf(f,"%hu\t// Kp\n", param->Kp);
+    fprintf(f,"%hu\t// Kd\n", param->Kd);
+    fprintf(f,"%hd\t// anklePos0\n", param->anklePos0);
     fclose(f);
+  }
+  else{
+    printf("File doesn't exsist.\n");
   }
 }
 
 void loadParameters(char *file)
 {
-  FILE *f = fopen(file, "rb");
-  if(file != NULL){
-    fread(param, sizeof(param_mem_t), 1, f);
+  FILE *f = fopen(file, "r");
+  if(f != NULL){
+    fscanf(f,"%u%*[^\n]\n", &param->frq_hz);
+    fscanf(f,"%u%*[^\n]\n", &param->frq_clock_ticks);
+    fscanf(f,"%hu%*[^\n]\n", &param->mass);
+    fscanf(f,"%hu%*[^\n]\n", &param->gp_toe_hs);
+    fscanf(f,"%hu%*[^\n]\n", &param->gp_mid_hs);
+    fscanf(f,"%hu%*[^\n]\n", &param->gp_heel_hs);
+    fscanf(f,"%hu%*[^\n]\n", &param->gp_toe_to);
+    fscanf(f,"%hu%*[^\n]\n", &param->gp_mid_to);
+    fscanf(f,"%hu%*[^\n]\n", &param->gp_heel_to);
+    fscanf(f,"%hu%*[^\n]\n", &param->gpOnLeftFoot);
+    fscanf(f,"%hu%*[^\n]\n", &param->Kp);
+    fscanf(f,"%hu%*[^\n]\n", &param->Kd);
+    fscanf(f,"%hd%*[^\n]\n", &param->anklePos0);
     fclose(f);
+
+    param->frq_clock_ticks = hzToPruTicks(param->frq_hz);
   }
   else {
     printf("File doesn't exsist!");
   }
 }
+
+void printParameters(void)
+{
+  printf("Parameters:\n");
+  printf("\t Frq = %i (Hz)\n", param->frq_hz);
+  printf("\t Ticks = %i\n", param->frq_clock_ticks);
+  printf("\t gp_toe_hs = %i\n", param->gp_toe_hs);
+  printf("\t gp_mid_hs = %i\n", param->gp_mid_hs);
+  printf("\t gp_heel_hs = %i\n", param->gp_heel_hs);
+  printf("\t gp_toe_to = %i\n", param->gp_toe_to);
+  printf("\t gp_mid_to = %i\n", param->gp_mid_to);
+  printf("\t gp_heel_to = %i\n", param->gp_heel_to);
+  printf("\t gpOnLeftFoot = %i\n", param->gpOnLeftFoot);
+  printf("\t Kp = %i\n", param->Kp);
+  printf("\t Kd = %i\n", param->Kd);
+  printf("\t anklePos0 = %i\n", param->anklePos0);
+}
+
+void loadLookUpTable(char *file)
+{
+  FILE *f = fopen(file, "r");
+  float value;
+
+  if(f != NULL){
+    for(int i=0; i<NUM_FF_LT; i++){
+      fscanf(f,"%f\n", &value);
+      lookUp->ff_ankleTorque[i] = (int16_t) (value*((float)param->mass)*100.0);
+    }
+    fclose(f);
+  }
+  else {
+    printf("File doesn't exsist!");
+  }
+
+}
+
+
 
 void closeLogFile(void)
 {

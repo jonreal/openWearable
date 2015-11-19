@@ -18,14 +18,14 @@ void gaitPhaseInit(param_mem_t* params)
   gp.heel_to = params->gp_heel_to;
 
   if(params->gpOnLeftFoot){
-    gp.toe_indx = 3;
-    gp.mid_indx = 4;
-    gp.heel_indx = 5;
+    gp.toe_indx = 2;
+    gp.mid_indx = 3;
+    gp.heel_indx = 4;
   }
   else{
-    gp.toe_indx = 6;
-    gp.mid_indx = 7;
-    gp.heel_indx = 8;
+    gp.toe_indx = 5;
+    gp.mid_indx = 6;
+    gp.heel_indx = 7;
   }
 
   gp.prevGaitPhase = 0;
@@ -35,7 +35,7 @@ void gaitPhaseInit(param_mem_t* params)
   gp.period[2] = 0;
 }
 
-void gaitPhaseUpdateParams(param_mem_t* params)
+void gaitPhaseUpdateParams(param_mem_t *params)
 {
   gp.toe_hs = params->gp_toe_hs;
   gp.mid_hs = params->gp_mid_hs;
@@ -48,7 +48,7 @@ void gaitPhaseUpdateParams(param_mem_t* params)
 void gaitPhaseDetect(volatile uint32_t cnt,
                      volatile uint16_t *gaitPhase,
                      volatile uint16_t *avgPeriod,
-                     volatile uint16_t* adc)
+                     volatile uint16_t *adc)
 {
   /* 0 - unknown
    * 1 - stance
@@ -106,6 +106,7 @@ uint16_t isHeelStrike(volatile uint16_t* adc)
 
   debugBuffer[0] = adc[gp.heel_indx];
   debugBuffer[1] = gp.heel_indx;
+  debugBuffer[2] = 100;
 
   if( (adc[gp.heel_indx] > gp.heel_hs)
         & (adc[gp.mid_indx] < gp.mid_hs)
