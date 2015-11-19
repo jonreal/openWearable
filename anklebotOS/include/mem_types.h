@@ -19,6 +19,10 @@
 #define NUM_ADC     8
 #define NUM_IMU     6
 
+#define NUM_FF_LT         1000
+#define NUM_TORQUE_LT_1   50
+#define NUM_TORQUE_LT_2   50
+
 /* Global Addresses to modules */
 #define PRU_CTRL_BASE 0x00022000
 #define ADC_BASE      0x44E0D000
@@ -101,8 +105,9 @@ typedef struct{
 
 /* Feedforward lookup table -> mapped to pru1 DRAM */
 typedef struct{
-  volatile uint16_t ff_traj[1000];
-} ff_mem_t;
+  volatile int16_t ff_ankleTorque[NUM_FF_LT];
+  volatile int16_t ankleTorqe2MotorTorque[NUM_TORQUE_LT_1][NUM_TORQUE_LT_2];
+} lookUp_mem_t;
 
 #endif
 

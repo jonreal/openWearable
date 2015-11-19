@@ -23,11 +23,9 @@ int pru_cleanup(void);
 int pru_mem_init(void);
 int armToPru0Interrupt(void);
 int armToPru1Interrupt(void);
-void writeParams(param_mem_t inputs);
-void writeFFLookupTable(ff_mem_t ff);
+//void writeParams(param_mem_t inputs);
 
-void writePruConrtolParams(uint32_t Kp, uint32_t Kd, uint32_t pos0,
-                          uint32_t ff_traj[100]);
+//void writeLookupTables(lookUp_mem_t lu);
 void writeState(uint8_t buffIndx);
 void clearFlowBitFeild(void);
 void enable(void);
@@ -36,7 +34,6 @@ int isBuffer0Full(void);
 int isBuffer1Full(void);
 void resetBuffer0FullFlag(void);
 void resetBuffer1FullFlag(void);
-int whichBuffer(void);
 uint32_t hzToPruTicks(float freq_hz);
 float pruTicksToHz(uint32_t ticks);
 
@@ -49,6 +46,7 @@ int16_t getAnklePos0(void);
 int logFileInit(char *fileName);
 void saveParameters(char *f);
 void loadParameters(char *f);
+void printParameters(void);
 void closeLogFile(void);
 
 void clearBufferFlags(void);

@@ -16,32 +16,9 @@
 #include "control.h"
 #include "tui.h"
 
-/* Matlab Helper */
-#include "/Applications/MATLAB_R2013a.app/extern/include/mat.h"
-
 volatile int doneFlag = 0;
 float freq_hz = 1000.0;
 int debug;
-
-/* Default Parameters */
-param_mem_t defaults = {1000 /* Freq. (Hz) */,
-                        0 /* Freq. Clock ticks (set as zero!) */,
-                        0 /* Subject Mass */,
-                        0 /* toe_hs threshold */,
-                        0 /* mid_hs threshold */,
-                        0 /* heel_hs threshold */,
-                        0 /* toe_to threshold */,
-                        0 /* mid_to threshold */,
-                        0 /* heel_to threshold */,
-                        0 /* gpOnLeftFoot */,
-                        0 /* Kp */,
-                        0 /* Kd */,
-                        0 /* anklePos0 */};
-
-/* Default FF lookup table */
-ff_mem_t ff_defaults = {{0},};
-
-
 
 void sigintHandler(int sig)
 {
@@ -53,12 +30,6 @@ int main(int argc, char **argv)
 {
   int rtn = 0;
 
-  int i;
-  for(i=0; i<1000; i++){
-    printf("%i\n", ff_defaults.ff_traj[i]);
-  }
-  return;
-
   /* Command Line Inputs */
   if(argc != 1){
     if(strcmp(argv[1], "-v") == 0){
@@ -68,7 +39,6 @@ int main(int argc, char **argv)
   else{
     debug = 0;
   }
-
 
   if(!(debug)){
     printf("\n---------------------\n");
@@ -92,13 +62,14 @@ int main(int argc, char **argv)
   /* Init debug buffer */
   initDebugBuffer();
 
-  /* Init params */
-  writeParams(defaults);
+  /* Load default params */
+  loadParameters("config/defaults");
+  printParameters();
 
   /* Feedforward lookup */
-//  writePruConrtolParams(1, 0, 0, feedForward);
+  loadLookUpTable("config/uff_1");
 
- /* Run PRU0 software */
+  /* Run PRU0 software */
   if( (rtn = pru_run(PRU_SENSOR, "./bin/pru0_main_text.bin")) != 0){
     printf("pru_run() failed (PRU_SENSOR)");
     return -1;

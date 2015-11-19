@@ -55,8 +55,9 @@ shared_mem_t *p;
 /* Param pointer */
 param_mem_t *param;
 
-/* FF pointer */
-ff_mem_t *ff;
+/* LookUp tables */
+//ff_mem_t *ff;
+lookUp_mem_t *lookUp;
 
 /* Debug Buffer */
 volatile uint32_t *debugBuffer;
@@ -163,7 +164,7 @@ void initMemory(void)
 
   /* Memory map for feedforward lookup table (pru1 DRAM)*/
   ptr = (void *) PRU_OTHER_DRAM;
-  ff = (ff_mem_t *) ptr;
+  lookUp = (lookUp_mem_t *) ptr;
 
   /* Point global debug buffer */
   debugBuffer = &(param->debugBuffer[0]);

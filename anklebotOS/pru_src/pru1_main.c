@@ -54,7 +54,8 @@ shared_mem_t *p;
 param_mem_t *param;
 
 /* Feedforward lookup table pointer */
-ff_mem_t *ff;
+//ff_mem_t *ff;
+lookUp_mem_t *lookUp;
 
 /* Local params */
 local_t loc;
@@ -218,7 +219,7 @@ void initMemory(void)
 
   /* Memory map for feedforward lookup table (pru1 DRAM)*/
   ptr = (void *) PRU_DRAM;
-  ff = (ff_mem_t *) ptr;
+  lookUp = (lookUp_mem_t *) ptr;
 
   /* Point global debug buffer */
   debugBuffer = &(param->debugBuffer[0]);
