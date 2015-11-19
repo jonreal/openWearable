@@ -68,6 +68,7 @@ int main(int argc, char **argv)
 
   /* Feedforward lookup */
   loadLookUpTable("config/uff_1");
+  // printFFLookUpTable();
 
   /* Run PRU0 software */
   if( (rtn = pru_run(PRU_SENSOR, "./bin/pru0_main_text.bin")) != 0){

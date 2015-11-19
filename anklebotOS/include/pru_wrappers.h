@@ -48,7 +48,8 @@ void saveParameters(char *f);
 void loadParameters(char *f);
 void printParameters(void);
 void closeLogFile(void);
-
+void loadLookUpTable(char *file);
+void printFFLookUpTable(void);
 void clearBufferFlags(void);
 void setTareEncoderBit(void);
 #endif

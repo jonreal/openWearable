@@ -287,6 +287,7 @@ void writeState(uint8_t bi)
 
   if(debug){
     printf("%i\t", p->state[bi][0].timeStamp);
+    printf("%i\t", p->state[bi][0].sync);
     printf("%i\t", p->state[bi][0].avgPeriod);
     printf("%i\t", p->state[bi][0].gaitPhase);
     printf("%i\t", p->state[bi][0].anklePos);
@@ -311,6 +312,7 @@ void writeState(uint8_t bi)
   else {
     for(int i=0; i<SIZE_OF_BUFFS; i++){
       fprintf(fid,"%i\t", p->state[bi][i].timeStamp);
+      fprintf(fid,"%i\t", p->state[bi][i].sync);
       fprintf(fid,"%i\t", p->state[bi][i].avgPeriod);
       fprintf(fid,"%i\t", p->state[bi][i].gaitPhase);
       fprintf(fid,"%i\t", p->state[bi][i].anklePos);
@@ -334,6 +336,7 @@ void writeState(uint8_t bi)
 
       /* Zero State */
       p->state[bi][i].timeStamp = 0;
+      p->state[bi][i].sync = 0;
       p->state[bi][i].avgPeriod = 0;
       p->state[bi][i].gaitPhase = 0;
       p->state[bi][i].anklePos = 0;
@@ -541,9 +544,14 @@ void loadLookUpTable(char *file)
   else {
     printf("File doesn't exsist!");
   }
-
 }
 
+void printFFLookUpTable(void)
+{
+  for(int i=0; i<NUM_FF_LT; i++){
+    printf("\t%hd\n",lookUp->ff_ankleTorque[i]);
+  }
+}
 
 
 void closeLogFile(void)

@@ -12,6 +12,8 @@
 #include "imu_mpu9150.h"
 #include "adcdriver.h"
 #include "gaitPhaseDetection.h"
+#include "viconsync.h"
+
 
 /* Local Param Struct (mirror) --------------------------------------------- */
 typedef struct{
@@ -56,7 +58,6 @@ shared_mem_t *p;
 param_mem_t *param;
 
 /* LookUp tables */
-//ff_mem_t *ff;
 lookUp_mem_t *lookUp;
 
 /* Debug Buffer */
@@ -181,6 +182,8 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 //  p->state[bi][si].timeStamp = HWREG(PRU_CTRL_BASE + 0xC);
 
   p->state[bi][si].timeStamp = cnt;
+
+  p->state[bi][si].sync = viconSync();
 
   adcSample_1(p->state[bi][si].adc);
 

@@ -47,12 +47,12 @@ enum{
 /* Anklebot state */
 typedef struct{
   volatile uint32_t timeStamp;
+  volatile uint16_t sync;
   volatile uint16_t avgPeriod;
   volatile uint16_t gaitPhase;
   volatile int16_t anklePos;
   volatile uint16_t ankleVel;
   volatile int16_t motorDuty;
-  volatile uint16_t rsvd;
   volatile uint16_t adc[NUM_ADC];
   volatile int16_t imu[NUM_IMU];
 } state_t;
@@ -65,7 +65,7 @@ typedef struct{
 
   /* Flow control */
   union{
-    volatile uint8_t cntrl;
+    volatile uint16_t cntrl;
 
     volatile struct{
       unsigned enable : 1;        // bit 0 (set by ARM and shadowed */
@@ -75,7 +75,10 @@ typedef struct{
       unsigned buffer1_full : 1;  // bit 4 (set by pru0, read/reset by ARM)
       unsigned shdw_enable : 1;   // bit 5 (shawdow reg. for enable)
       unsigned encoderTare : 1;   // bit 6 (set by arm, read/reset by pru1)
-      unsigned rsvd : 1;          // bits 5-7 reserved
+      unsigned doFeedForward : 1; // bit 7 (set by arm, read by pru1)
+      unsigned heelStrike : 1;    // bit 8 (set by pru0, reset by pru1)
+      unsigned toeOff : 1;        // bit 9 (set by pru0, reset by pru1)
+      unsigned rsvd : 6;          // bits 10-15 reserved
    } cntrl_bit;
   };
 
