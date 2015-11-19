@@ -170,12 +170,20 @@ void updateCounters(uint32_t *cnt, uint8_t *bi, uint8_t *si)
 
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 {
-  int16_t cmd = 0;
+  int16_t u_fb = 0;
+  int16_t u_ff = 0;
 
 
-  cmd = ((int16_t)loc.Kp)*(loc.anklePos0 - p->state[bi][si].anklePos)/100;
+  /* Impedance Feedback */
+  //cmd = ((int16_t)loc.Kp)*(loc.anklePos0 - p->state[bi][si].anklePos)/100;
+  //motorSetDuty(cmd, &p->state[bi][si].motorDuty);
+  //
 
-  motorSetDuty(cmd, &p->state[bi][si].motorDuty);
+  /* Feedforward */
+  if(p->cntrl_bit.doFeedForward)
+  {
+
+  }
 }
 
 void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
