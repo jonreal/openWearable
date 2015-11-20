@@ -11,7 +11,7 @@
 
 #include "encoder.h"
 #include "maxonmotor.h"
-
+#include "interp.h"
 
 /* Local Params (mirror) --------------------------------------------------- */
 typedef struct{
@@ -19,6 +19,9 @@ typedef struct{
   volatile uint16_t Kd;
   volatile int16_t anklePos0;
 }local_t;
+
+uint32_t tt = 0;
+
 
 /* Prototypes -------------------------------------------------------------- */
 void initialize(void);
@@ -173,6 +176,8 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
   int16_t u_fb = 0;
   int16_t u_ff = 0;
 
+  uint32_t Tp_cnts = 1000;
+  int t_cnts = 0;
 
   /* Impedance Feedback */
   //cmd = ((int16_t)loc.Kp)*(loc.anklePos0 - p->state[bi][si].anklePos)/100;
@@ -182,8 +187,14 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
   /* Feedforward */
   if(p->cntrl_bit.doFeedForward)
   {
-
+//    t_cnts = (((cnt % Tp_cnts)*1000)/Tp_cnts);
+    p->state[bi][si].ankleVel = t_cnts;
+    u_ff = lookUp->ff_ankleTorque[(tt%512)];
+    tt++;
   }
+  p->state[bi][si].motorDuty = u_ff;
+
+//  motorSetDuty(u_ff + u_fb, &p->state[bi][si].motorDuty);
 }
 
 void updateState(uint32_t cnt, uint8_t bi, uint8_t si)

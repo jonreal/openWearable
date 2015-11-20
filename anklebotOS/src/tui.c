@@ -74,7 +74,8 @@ void io_cb(int sig)
 void tui_menu(void)
 {
   printf("\n\n--------------------------\n");
-  printf("Kp = %d, Kd = %d, pos0 = %d\n", getKp(), getKd(), getAnklePos0());
+  printf("Kp = %d, Kd = %d, pos0 = %d, FF enabled = %d\n",
+          getKp(), getKd(), getAnklePos0(), getFFState());
   printf("Menu: a - enter new Kp\n");
   printf("      s - enter new Kd\n");
   printf("      d - enter new pos_0 (deg X 100)\n");
@@ -287,6 +288,15 @@ int start_tui(void)
         tui_menu();
         fflush(stdout);
         ptui->io_ready = 0;
+      }
+
+      /* Toggle Feedforward */
+      else if(input_char == 'k'){
+        toggleFeedforward();
+        printf("\t\tFeedforward toggeled.");
+        fflush(stdout);
+        ptui->io_ready = 0;
+        tui_menu();
       }
 
       /* Encoder Tare */

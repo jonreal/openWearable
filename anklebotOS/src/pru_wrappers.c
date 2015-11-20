@@ -534,10 +534,12 @@ void loadLookUpTable(char *file)
   FILE *f = fopen(file, "r");
   float value;
 
+
   if(f != NULL){
     for(int i=0; i<NUM_FF_LT; i++){
       fscanf(f,"%f\n", &value);
       lookUp->ff_ankleTorque[i] = (int16_t) (value*((float)param->mass)*100.0);
+      sleep(0.01);
     }
     fclose(f);
   }
@@ -549,10 +551,22 @@ void loadLookUpTable(char *file)
 void printFFLookUpTable(void)
 {
   for(int i=0; i<NUM_FF_LT; i++){
-    printf("\t%hd\n",lookUp->ff_ankleTorque[i]);
+    printf("\t%d\t%hd\n",i,lookUp->ff_ankleTorque[i]);
   }
 }
 
+void toggleFeedforward(void)
+{
+  if(p->cntrl_bit.doFeedForward == 1)
+    p->cntrl_bit.doFeedForward = 0;
+  else
+    p->cntrl_bit.doFeedForward = 1;
+}
+
+int getFFState(void)
+{
+  return p->cntrl_bit.doFeedForward;
+}
 
 void closeLogFile(void)
 {

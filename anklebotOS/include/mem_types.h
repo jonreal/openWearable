@@ -19,7 +19,7 @@
 #define NUM_ADC     8
 #define NUM_IMU     6
 
-#define NUM_FF_LT         1000
+#define NUM_FF_LT         512
 #define NUM_TORQUE_LT_1   50
 #define NUM_TORQUE_LT_2   50
 
@@ -109,7 +109,7 @@ typedef struct{
 /* Feedforward lookup table -> mapped to pru1 DRAM */
 typedef struct{
   volatile int16_t ff_ankleTorque[NUM_FF_LT];
-  volatile int16_t ankleTorqe2MotorTorque[NUM_TORQUE_LT_1][NUM_TORQUE_LT_2];
+//  volatile int16_t ankleTorqe2MotorTorque[NUM_TORQUE_LT_1][NUM_TORQUE_LT_2];
 } lookUp_mem_t;
 
 #endif
