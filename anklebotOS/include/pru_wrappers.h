@@ -52,6 +52,9 @@ void loadLookUpTable(char *file);
 void printFFLookUpTable(void);
 void clearBufferFlags(void);
 void setTareEncoderBit(void);
+void toggleFeedforward(void);
+int getFFState(void);
+
 #endif
 
 

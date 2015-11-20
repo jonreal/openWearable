@@ -62,7 +62,7 @@ int main(int argc, char **argv)
   printParameters();
 
   /* Feedforward lookup */
-  loadLookUpTable("config/sine");
+  loadLookUpTable("config/constant");
   printFFLookUpTable();
 
   /* Load Pru */
