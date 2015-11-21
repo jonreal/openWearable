@@ -20,7 +20,7 @@ typedef struct{
   volatile int16_t anklePos0;
 }local_t;
 
-uint32_t tt = 0;
+volatile uint32_t tt;
 
 
 /* Prototypes -------------------------------------------------------------- */
@@ -59,9 +59,6 @@ param_mem_t *param;
 /* Feedforward lookup table pointer */
 lookUp_mem_t *lookUp;
 
-//volatile lookUp_mem_t lookUp
-//  __attribute__((cregister("LUTAB",near), peripheral));
-
 /* Local params */
 local_t loc;
 
@@ -84,6 +81,7 @@ int main(void)
 
 
   /*** Loop ***/
+  tt = 0;
   while(1){
 
     /* Poll of IEP timer interrupt */
@@ -192,13 +190,12 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 //    t_cnts = (((cnt % Tp_cnts)*1000)/Tp_cnts);
 //    p->state[bi][si].ankleVel = t_cnts;
     u_ff = lookUp->ff_ankleTorque[tt];
-    tt++;
-    if (tt >= NUM_FF_LT)
-      tt = 0;
-
   }
   p->state[bi][si].ankleVel = tt;
   p->state[bi][si].motorDuty = u_ff;
+  tt++;
+  if (tt >= NUM_FF_LT)
+    tt = 0;
 
 //  motorSetDuty(u_ff + u_fb, &p->state[bi][si].motorDuty);
 }
