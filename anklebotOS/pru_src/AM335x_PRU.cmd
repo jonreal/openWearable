@@ -58,7 +58,6 @@ MEMORY
   RSVD10      : org = 0x48318000 len = 0x00000100 CREGISTER=10
   RSVD13      : org = 0x48310000 len = 0x00000100 CREGISTER=13
   RSVD27      : org = 0x00032000 len = 0x00000100 CREGISTER=27
-
 }
 
 /* Specify the sections allocation into memory */

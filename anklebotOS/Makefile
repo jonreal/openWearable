@@ -82,7 +82,7 @@ $(PRU0_TARGET): $(PRU0_TARGET).elf
 $(PRU0_TARGET).elf: $(PRU0_OBJECTS) $(BUILD_DIR)/$(PRU0_TARGET).o
 	@echo "\n Linking pru0... \n"
 	@mkdir -p $(TARGET_DIR)
-	$(PRU_CC) $(PRU_CFLAGS) -z $^ -llibc.a -m $(BUILD_DIR)/$(PRU0_TARGET).map -o $(BUILD_DIR)/$(PRU0_TARGET).elf $(PRU_CSRC_DIR)/AM335x_PRU.cmd
+	$(PRU_CC) $(PRU_CFLAGS) -z $^ -llibc.a -m $(BUILD_DIR)/$(PRU0_TARGET).map -o $(BUILD_DIR)/$(PRU0_TARGET).elf $(PRU_CSRC_DIR)/PRU0.cmd
 
 # Build PRU0 dependencies
 $(BUILD_DIR)/%.o: $(PRU_CSRC_DIR)/%.c
@@ -106,7 +106,7 @@ $(PRU1_TARGET): $(PRU1_TARGET).elf
 $(PRU1_TARGET).elf: $(PRU0_OBJECTS) $(BUILD_DIR)/$(PRU1_TARGET).o
 	@echo "\n Linking pru1... \n"
 	@mkdir -p $(TARGET_DIR)
-	$(PRU_CC) $(PRU_CFLAGS) -z $^ -llibc.a -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $(BUILD_DIR)/$(PRU1_TARGET).elf $(PRU_CSRC_DIR)/AM335x_PRU.cmd
+	$(PRU_CC) $(PRU_CFLAGS) -z $^ -llibc.a -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $(BUILD_DIR)/$(PRU1_TARGET).elf $(PRU_CSRC_DIR)/PRU1.cmd
 
 # Build PRU0 dependencies
 $(BUILD_DIR)/%.o: $(PRU_CSRC_DIR)/%.c
