@@ -58,7 +58,9 @@ shared_mem_t *p;
 param_mem_t *param;
 
 /* LookUp tables */
-lookUp_mem_t *lookUp;
+///lookUp_mem_t *lookUp;
+
+
 
 /* Debug Buffer */
 volatile uint32_t *debugBuffer;
@@ -148,7 +150,7 @@ void initialize(void)
   /* Add pru dependent peripheral init methods here */
   adcInit();
   //imuInit();
-  gaitPhaseInit(param);
+  //gaitPhaseInit(param);
 }
 
 void initMemory(void)
@@ -164,8 +166,8 @@ void initMemory(void)
   param = (param_mem_t *) ptr;
 
   /* Memory map for feedforward lookup table (pru1 DRAM)*/
-  ptr = (void *) PRU_OTHER_DRAM;
-  lookUp = (lookUp_mem_t *) ptr;
+//  ptr = (void *) PRU_OTHER_DRAM;
+//  lookUp = (lookUp_mem_t *) ptr;
 
   /* Point global debug buffer */
   debugBuffer = &(param->debugBuffer[0]);
@@ -191,9 +193,9 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 
  // imuSample(p->state[bi][si].imu);
 
-  gaitPhaseDetect(cnt, &p->state[bi][si].gaitPhase,
-                  &p->state[bi][si].avgPeriod,
-                  p->state[bi][si].adc);
+//  gaitPhaseDetect(cnt, &p->state[bi][si].gaitPhase,
+//                  &p->state[bi][si].avgPeriod,
+//                  p->state[bi][si].adc);
 }
 
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)

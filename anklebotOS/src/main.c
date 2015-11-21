@@ -62,8 +62,8 @@ int main(int argc, char **argv)
   printParameters();
 
   /* Feedforward lookup */
-  loadLookUpTable("config/constant");
-  printFFLookUpTable();
+  loadLookUpTable("config/sine");
+  //printFFLookUpTable();
 
   /* Load Pru */
   if(loadPruSoftware() != 0)
@@ -159,7 +159,6 @@ int loadPruSoftware(void)
     printf("pru_run() failed (PRU_CONTROL)");
     return -1;
   }
-
   return rtn;
 }
 

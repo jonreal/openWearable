@@ -35,13 +35,6 @@
 #define PRU0_DEBUG_PIN  5
 #define PRU1_DEBUG_PIN  8
 
-/* Enums --------------------------------------------------------------------*/
-enum{
-  STANCE = 0,
-//  UNLOAD,
-  SWING
-};
-
 /* Structures ---------------------------------------------------------------*/
 
 /* Anklebot state */
@@ -108,7 +101,7 @@ typedef struct{
 
 /* Feedforward lookup table -> mapped to pru1 DRAM */
 typedef struct{
-  volatile int16_t ff_ankleTorque[NUM_FF_LT];
+  int16_t ff_ankleTorque[NUM_FF_LT];
 //  volatile int16_t ankleTorqe2MotorTorque[NUM_TORQUE_LT_1][NUM_TORQUE_LT_2];
 } lookUp_mem_t;
 

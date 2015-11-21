@@ -103,11 +103,6 @@ void gaitPhaseDetect(volatile uint32_t cnt,
 
 uint16_t isHeelStrike(volatile uint16_t* adc)
 {
-
-  debugBuffer[0] = adc[gp.heel_indx];
-  debugBuffer[1] = gp.heel_indx;
-  debugBuffer[2] = 100;
-
   if( (adc[gp.heel_indx] > gp.heel_hs)
         & (adc[gp.mid_indx] < gp.mid_hs)
         & (adc[gp.toe_indx] < gp.toe_hs) ){
