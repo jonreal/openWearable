@@ -11,7 +11,7 @@
 
 #include "imu_mpu9150.h"
 #include "adcdriver.h"
-#include "gaitPhaseDetection.h"
+#include "gaitPhase.h"
 #include "viconsync.h"
 
 
@@ -59,7 +59,6 @@ param_mem_t *param;
 
 /* LookUp tables */
 ///lookUp_mem_t *lookUp;
-
 
 
 /* Debug Buffer */
@@ -150,7 +149,7 @@ void initialize(void)
   /* Add pru dependent peripheral init methods here */
   adcInit();
   //imuInit();
-  //gaitPhaseInit(param);
+  gaitPhaseInit(param);
 }
 
 void initMemory(void)
@@ -188,14 +187,14 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
   p->state[bi][si].sync = viconSync();
 
   adcSample_1(p->state[bi][si].adc);
-
+  __delay_cycles(100);
   adcSample_2(p->state[bi][si].adc);
 
  // imuSample(p->state[bi][si].imu);
 
-//  gaitPhaseDetect(cnt, &p->state[bi][si].gaitPhase,
-//                  &p->state[bi][si].avgPeriod,
-//                  p->state[bi][si].adc);
+  gaitPhaseDetect(cnt, &p->state[bi][si].gaitPhase,
+                  &p->state[bi][si].avgPeriod,
+                  p->state[bi][si].adc);
 }
 
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)

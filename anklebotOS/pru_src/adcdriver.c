@@ -7,10 +7,10 @@
 void adcInit(void)
 {
   /* TODO make these params */
-  uint8_t sampleDelay = 10;
-  uint16_t openDelay = 200;
-  uint8_t avrg = 0x2;
-  uint16_t adc_clk_div = 0x2;
+  uint8_t sampleDelay = 255;
+  uint16_t openDelay = 600;
+  uint8_t avrg = 0x1;
+  uint16_t adc_clk_div = 0x1;
 
   /* CTRL:  StepConfig_WriteProtext_n_active_low = 0x1 - enable step config
    *        Step_ID_tag = 0x1 - store ch id tag in FIFO
@@ -22,6 +22,10 @@ void adcInit(void)
 
   /* STEPENABLE: Disable all steps */
   HWREG(SOC_ADC_TSC_0_REGS + 0x54) = 0x0000;
+
+  /* IDLECONFIG */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x58) = (0x3 << 23) | (0x8 << 19) | (0x8 << 15)
+                                    | (0x3 << 12);
 
   /**** Step configs - All steps configured for fifo0 ****/
 
