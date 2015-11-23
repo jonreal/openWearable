@@ -1,5 +1,5 @@
-#ifndef _GAITPHASEDETECTION_H_
-#define _GAITPHASEDETECTION_H_
+#ifndef _GAITPHASE_H_
+#define _GAITPHASE_H_
 
 /* Global ------------------------------------------------------------------ */
 extern volatile uint32_t *debugBuffer;
@@ -14,9 +14,10 @@ typedef struct{
   volatile uint16_t heel_to;
 
   volatile uint16_t prevGaitPhase;
-  volatile uint16_t prevAvgPeriod;
-
-  volatile uint16_t period[3];
+  volatile uint16_t prevAvgPeriodCnts;
+  volatile uint16_t periodCnts[3];
+  volatile uint16_t HS_cntStamp;
+  volatile uint16_t prevHS_cntStamp;
 
   volatile uint8_t heel_indx;
   volatile uint8_t mid_indx;

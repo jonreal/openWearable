@@ -19,7 +19,7 @@
 #define NUM_ADC     8
 #define NUM_IMU     6
 
-#define NUM_FF_LT         512
+#define NUM_FF_LT         1000
 #define NUM_TORQUE_LT_1   50
 #define NUM_TORQUE_LT_2   50
 

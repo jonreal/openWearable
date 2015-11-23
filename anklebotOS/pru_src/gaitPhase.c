@@ -1,7 +1,7 @@
 #include <stdint.h>
 
 #include "mem_types.h"
-#include "gaitPhaseDetection.h"
+#include "gaitPhase.h"
 
 
 /* Stuct */
@@ -29,10 +29,12 @@ void gaitPhaseInit(param_mem_t* params)
   }
 
   gp.prevGaitPhase = 0;
-  gp.prevAvgPeriod = 0;
-  gp.period[0] = 0;
-  gp.period[1] = 0;
-  gp.period[2] = 0;
+  gp.prevAvgPeriodCnts = 0;
+  gp.periodCnts[0] = 0;
+  gp.periodCnts[1] = 0;
+  gp.periodCnts[2] = 0;
+  gp.HS_cntStamp = 0;
+  gp.prevHS_cntStamp = 0;
 }
 
 void gaitPhaseUpdateParams(param_mem_t *params)
@@ -50,6 +52,9 @@ void gaitPhaseDetect(volatile uint32_t cnt,
                      volatile uint16_t *avgPeriod,
                      volatile uint16_t *adc)
 {
+  uint16_t cntsSinceLastHS = cnt - gp.prevHS_cntStamp;
+  uint16_t debounceCnts = 100;
+
   /* 0 - unknown
    * 1 - stance
    * 2 - swing */
@@ -57,47 +62,53 @@ void gaitPhaseDetect(volatile uint32_t cnt,
   /* Unkown, wait for HS */
   if(gp.prevGaitPhase == 0){
     if(isHeelStrike(adc)){
+      gp.HS_cntStamp = cnt;
       *gaitPhase = 1;
-      *avgPeriod = gp.prevAvgPeriod;
+      *avgPeriod = gp.prevAvgPeriodCnts;
     }
     else {
-      *gaitPhase = gp.prevGaitPhase;
-      *avgPeriod = gp.prevAvgPeriod;
+      *gaitPhase = 0;
+      *avgPeriod = gp.prevAvgPeriodCnts;
     }
   }
 
   /* Stance, wait for TO */
   else if(gp.prevGaitPhase == 1){
-    if(isToeOff(adc)){
+    if(isToeOff(adc) & (cntsSinceLastHS > debounceCnts)){
       *gaitPhase = 2;
-      *avgPeriod = gp.prevAvgPeriod;
+      *avgPeriod = gp.prevAvgPeriodCnts;
     }
     else {
       *gaitPhase = gp.prevGaitPhase;
-      *avgPeriod = gp.prevAvgPeriod;
+      *avgPeriod = gp.prevAvgPeriodCnts;
     }
   }
 
   /* Swing, wait for HS */
   else if(gp.prevGaitPhase == 2){
-    if(isHeelStrike(adc)){
-      *gaitPhase = 1;
+    if(isHeelStrike(adc) & (cntsSinceLastHS > debounceCnts)){
+
+      /* Cnt Stamp */
+      gp.HS_cntStamp = cnt;
 
       /* Circular Buffer for average period */
-      gp.period[2] = gp.period[1];
-      gp.period[1] = gp.period[0];
-      gp.period[0] = cnt - gp.period[0];
+      gp.periodCnts[2] = gp.periodCnts[1];
+      gp.periodCnts[1] = gp.periodCnts[0];
+      gp.periodCnts[0] = gp.HS_cntStamp - gp.prevHS_cntStamp;
 
       /* Average Period */
-      *avgPeriod = (gp.period[0] + gp.period[1] + gp.period[2])/3;
+      *avgPeriod = (gp.periodCnts[0] + gp.periodCnts[1] + gp.periodCnts[2])/3;
+
+      *gaitPhase = 1;
     }
     else {
       *gaitPhase = gp.prevGaitPhase;
-      *avgPeriod = gp.prevAvgPeriod;
+      *avgPeriod = gp.prevAvgPeriodCnts;
     }
   }
   gp.prevGaitPhase = *gaitPhase;
-  gp.prevAvgPeriod = *avgPeriod;
+  gp.prevAvgPeriodCnts = *avgPeriod;
+  gp.prevHS_cntStamp = gp.HS_cntStamp;
 }
 
 

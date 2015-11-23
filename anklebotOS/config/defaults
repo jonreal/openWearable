@@ -1,12 +1,12 @@
 1000  // Freq
 0     // Freq. Ticks (leave as zero)
 1     // Subject Mass (kg)
-100     // toe_hs threshold
-100     // mid_hs threshold
-100     // heel_hs threshold
-100     // toe_to threshold
-100     // mid_to threshold
-100     // heel_to threshold
+300     // toe_hs threshold
+300     // mid_hs threshold
+200     // heel_hs threshold
+300     // toe_to threshold
+300     // mid_to threshold
+200     // heel_to threshold
 1     // gpOnLeftFoot
 10     // Kp
 10     // Kd
