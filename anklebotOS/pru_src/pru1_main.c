@@ -20,9 +20,6 @@ typedef struct{
   volatile int16_t anklePos0;
 }local_t;
 
-volatile uint32_t tt;
-
-
 /* Prototypes -------------------------------------------------------------- */
 void initialize(void);
 void initMemory(void);
@@ -79,9 +76,7 @@ int main(void)
 
   clearInterrupt();
 
-
   /*** Loop ***/
-  tt = 0;
   while(1){
 
     /* Poll of IEP timer interrupt */
@@ -89,6 +84,7 @@ int main(void)
 
     debugPinHigh();
 
+    /* Tare Encoder */
     if(p->cntrl_bit.encoderTare){
       encoderSetZeroAngle();
       p->cntrl_bit.encoderTare = 0;
@@ -175,9 +171,7 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 {
   int16_t u_fb = 0;
   int16_t u_ff = 0;
-
-  uint32_t Tp_cnts = 1000;
-  int t_cnts = 0;
+  uint32_t t_cnts = cnt - p->state[bi][si].heelStrikeCnt;
 
   /* Impedance Feedback */
   //cmd = ((int16_t)loc.Kp)*(loc.anklePos0 - p->state[bi][si].anklePos)/100;
@@ -185,17 +179,17 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
   //
 
   /* Feedforward */
-//  if(p->cntrl_bit.doFeedForward)
+  if(p->cntrl_bit.doFeedForward & p->cntrl_bit.gaitPhaseReady)
   {
-//    t_cnts = (((cnt % Tp_cnts)*1000)/Tp_cnts);
-//    p->state[bi][si].ankleVel = t_cnts;
-    u_ff = lookUp->ff_ankleTorque[tt];
+    t_cnts = (t_cnts % p->state[bi][si].avgPeriod);
+
+    if(t_cnts >= NUM_FF_LT)
+      t_cnts = (NUM_FF_LT-1);
+
+    u_ff = lookUp->ff_ankleTorque[t_cnts];
+    p->state[bi][si].ankleVel = t_cnts;
+    p->state[bi][si].motorDuty = u_ff;
   }
-  p->state[bi][si].ankleVel = tt;
-  p->state[bi][si].motorDuty = u_ff;
-  tt++;
-  if (tt >= NUM_FF_LT)
-    tt = 0;
 
 //  motorSetDuty(u_ff + u_fb, &p->state[bi][si].motorDuty);
 }

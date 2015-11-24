@@ -289,6 +289,7 @@ void writeState(uint8_t bi)
     printf("%i\t", p->state[bi][0].timeStamp);
     printf("%i\t", p->state[bi][0].sync);
     printf("%i\t", p->state[bi][0].avgPeriod);
+    printf("%i\t", p->state[bi][0].heelStrikeCnt);
     printf("%i\t", p->state[bi][0].gaitPhase);
     printf("%i\t", p->state[bi][0].anklePos);
     printf("%i\t", p->state[bi][0].ankleVel);
@@ -314,6 +315,7 @@ void writeState(uint8_t bi)
       fprintf(fid,"%i\t", p->state[bi][i].timeStamp);
       fprintf(fid,"%i\t", p->state[bi][i].sync);
       fprintf(fid,"%i\t", p->state[bi][i].avgPeriod);
+      fprintf(fid,"%i\t", p->state[bi][i].heelStrikeCnt);
       fprintf(fid,"%i\t", p->state[bi][i].gaitPhase);
       fprintf(fid,"%i\t", p->state[bi][i].anklePos);
       fprintf(fid,"%i\t", p->state[bi][i].ankleVel);
@@ -338,6 +340,7 @@ void writeState(uint8_t bi)
       p->state[bi][i].timeStamp = 0;
       p->state[bi][i].sync = 0;
       p->state[bi][i].avgPeriod = 0;
+      p->state[bi][i].heelStrikeCnt = 0;
       p->state[bi][i].gaitPhase = 0;
       p->state[bi][i].anklePos = 0;
       p->state[bi][i].ankleVel = 0;
@@ -560,6 +563,11 @@ void toggleFeedforward(void)
     p->cntrl_bit.doFeedForward = 0;
   else
     p->cntrl_bit.doFeedForward = 1;
+}
+
+void resetGaitPhase(void)
+{
+  p->cntrl_bit.resetGaitPhase = 1;
 }
 
 int getFFState(void)
