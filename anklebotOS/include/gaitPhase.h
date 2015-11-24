@@ -16,22 +16,25 @@ typedef struct{
   volatile uint16_t prevGaitPhase;
   volatile uint16_t prevAvgPeriodCnts;
   volatile uint16_t periodCnts[3];
-  volatile uint16_t HS_cntStamp;
-  volatile uint16_t prevHS_cntStamp;
+  volatile uint32_t HS_cntStamp;
+  volatile uint32_t prevHS_cntStamp;
 
   volatile uint8_t heel_indx;
   volatile uint8_t mid_indx;
   volatile uint8_t toe_indx;
 
+  volatile uint8_t heelStrikeCnt;
 } gp_t;
 
 /* Prototypes ---------------------------------------------------------------*/
 void gaitPhaseInit(param_mem_t* params);
 void gaitPhaseUpdateParams(param_mem_t* params);
-void gaitPhaseCleanUp(void);
+void resetGaitPhase(void);
+uint8_t isGaitPhaseReady(void);
 void gaitPhaseDetect(volatile uint32_t cnt,
                      volatile uint16_t *gaitPhase,
                      volatile uint16_t *avgPeriod,
+                     volatile uint32_t *heelStrikeCnt,
                      volatile uint16_t *adc);
 uint16_t isHeelStrike(volatile uint16_t *adc);
 uint16_t isToeOff(volatile uint16_t* adc);

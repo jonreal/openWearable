@@ -73,19 +73,20 @@ void io_cb(int sig)
  * ------------------------------------------------------------------------- */
 void tui_menu(void)
 {
-  printf("\n\n--------------------------\n");
+  printf("\n\n------------------------------------------------------------\n");
   printf("Kp = %d, Kd = %d, pos0 = %d, FF enabled = %d\n",
           getKp(), getKd(), getAnklePos0(), getFFState());
-  printf("Menu: a - enter new Kp\n");
-  printf("      s - enter new Kd\n");
-  printf("      d - enter new pos_0 (deg X 100)\n");
-  printf("      f - collect trial\n");
+  printf("Menu: a - Enter new Kp\n");
+  printf("      s - Enter new Kd\n");
+  printf("      d - Enter new pos_0 (deg X 100)\n");
+  printf("      f - Collect trial\n");
   printf("      g - Save parameters\n");
   printf("      h - Load parameters\n");
-  printf("      j - tare encoder\n");
-  printf("      k - enable/disable feedforward control\n");
+  printf("      j - Toggle feedforward control\n");
+  printf("      k - Reset gait phase detection\n");
+  printf("      l - Tare encoder angle\n");
   printf("      e - exit\n");
-  printf("--------------------------\n");
+  printf("--------------------------------------------------------------\n");
 }
 
 /* ----------------------------------------------------------------------------
@@ -291,16 +292,25 @@ int start_tui(void)
       }
 
       /* Toggle Feedforward */
-      else if(input_char == 'k'){
+      else if(input_char == 'j'){
         toggleFeedforward();
-        printf("\t\tFeedforward toggeled.");
+        printf("\t\tFeedforward toggeled.\n");
+        fflush(stdout);
+        ptui->io_ready = 0;
+        tui_menu();
+      }
+
+      /* Reset GaitPhase */
+      else if(input_char == 'k'){
+        resetGaitPhase();
+        printf("\t\tGait Phase Detection reset.\n");
         fflush(stdout);
         ptui->io_ready = 0;
         tui_menu();
       }
 
       /* Encoder Tare */
-      else if(input_char == 'j'){
+      else if(input_char == 'l'){
         setTareEncoderBit();
         printf("\t\tEncoder angle reset.\n");
         fflush(stdout);

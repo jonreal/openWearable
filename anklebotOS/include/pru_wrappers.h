@@ -12,7 +12,6 @@ extern int debug;
 
 /* Local Globals- */
 FILE* fid;
-uint32_t collectionFlag;
 
 /* Prototypes ---------------------------------------------------------------*/
 void printDebugBuffer(void);
@@ -23,9 +22,7 @@ int pru_cleanup(void);
 int pru_mem_init(void);
 int armToPru0Interrupt(void);
 int armToPru1Interrupt(void);
-//void writeParams(param_mem_t inputs);
 
-//void writeLookupTables(lookUp_mem_t lu);
 void writeState(uint8_t buffIndx);
 void clearFlowBitFeild(void);
 void enable(void);
@@ -53,6 +50,7 @@ void printFFLookUpTable(void);
 void clearBufferFlags(void);
 void setTareEncoderBit(void);
 void toggleFeedforward(void);
+void resetGaitPhase(void);
 int getFFState(void);
 
 #endif

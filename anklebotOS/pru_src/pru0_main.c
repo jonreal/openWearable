@@ -95,8 +95,19 @@ int main(void)
     /* Mirror params */
     updateLocalParams();
 
+    /* Reset Gait phase */
+    if(p->cntrl_bit.resetGaitPhase){
+      p->cntrl_bit.gaitPhaseReady = 0;
+      resetGaitPhase();
+      p->cntrl_bit.resetGaitPhase = 0;
+    }
+
     /* Update State */
     updateState(cnt, buffIndx, stateIndx);
+
+    /* Check to see if GaitPhase Ready */
+    if( !(p->cntrl_bit.gaitPhaseReady) & (isGaitPhaseReady()) )
+      p->cntrl_bit.gaitPhaseReady = 1;
 
     /* Set done bit (update state done) */
     p->cntrl_bit.pru0_done = 1;
@@ -194,6 +205,7 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 
   gaitPhaseDetect(cnt, &p->state[bi][si].gaitPhase,
                   &p->state[bi][si].avgPeriod,
+                  &p->state[bi][si].heelStrikeCnt,
                   p->state[bi][si].adc);
 }
 

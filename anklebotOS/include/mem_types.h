@@ -14,7 +14,7 @@
 #define PRU1_ARM_INT  (20 + 16)
 
 #define NUM_OF_BUFFS    2
-#define SIZE_OF_BUFFS   128
+#define SIZE_OF_BUFFS   120
 
 #define NUM_ADC     8
 #define NUM_IMU     6
@@ -42,6 +42,7 @@ typedef struct{
   volatile uint32_t timeStamp;
   volatile uint16_t sync;
   volatile uint16_t avgPeriod;
+  volatile uint32_t heelStrikeCnt;
   volatile uint16_t gaitPhase;
   volatile int16_t anklePos;
   volatile uint16_t ankleVel;
@@ -69,9 +70,11 @@ typedef struct{
       unsigned shdw_enable : 1;   // bit 5 (shawdow reg. for enable)
       unsigned encoderTare : 1;   // bit 6 (set by arm, read/reset by pru1)
       unsigned doFeedForward : 1; // bit 7 (set by arm, read by pru1)
-      unsigned heelStrike : 1;    // bit 8 (set by pru0, reset by pru1)
-      unsigned toeOff : 1;        // bit 9 (set by pru0, reset by pru1)
-      unsigned rsvd : 6;          // bits 10-15 reserved
+      unsigned resetGaitPhase: 1; // bit 8 (set by arm, read/reset by pru0)
+      unsigned gaitPhaseReady: 1; // bit 9 (set by pru0, read by pru1)
+      unsigned heelStrike : 1;    // bit 10 (set by pru0, reset by pru1)
+      unsigned toeOff : 1;        // bit 11 (set by pru0, reset by pru1)
+      unsigned rsvd : 4;          // bits 12-15 reserved
    } cntrl_bit;
   };
 
