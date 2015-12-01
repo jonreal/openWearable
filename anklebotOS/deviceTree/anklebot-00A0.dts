@@ -93,7 +93,7 @@
           0x0E8 0x15  /* P8.28 - pr1_pru1_pru_r30_10, MODE5 | OUTPUT | PU */
           0x0E4 0x15  /* P8.29 - pr1_pru1_pru_r30_9, MODE5 | OUTPUT | PU */
           0x1AC 0x15  /* P9.25 - pr1_pru0_pru_r30_7, MODE5 | OUTPUT | PU */
-          0x184 0x36  /* P9.24 - pr1_pru0_pru_r31_16, MODE6 | INPUT | PD */
+          0x184 0x26  /* P9.24 - pr1_pru0_pru_r31_16, MODE6 | INPUT | PD */
         >;
       };
 
