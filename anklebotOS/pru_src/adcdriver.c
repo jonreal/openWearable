@@ -7,8 +7,8 @@
 void adcInit(void)
 {
   /* TODO make these params */
-  uint8_t sampleDelay = 255;
-  uint16_t openDelay = 2024;
+  uint8_t sampleDelay = 250;
+  uint16_t openDelay = 2250;
   uint8_t avrg = 0x0;
   uint16_t adc_clk_div = 0x0;
 
@@ -25,7 +25,7 @@ void adcInit(void)
 
   /* IDLECONFIG */
   HWREG(SOC_ADC_TSC_0_REGS + 0x58) = (0x3 << 23) | (0x8 << 19) | (0x8 << 15)
-                                    | (0x3 << 12);
+                                   | (0x0 << 12);
 
   /**** Step configs - All steps configured for fifo0 ****/
 
@@ -193,6 +193,8 @@ void adcSample_1(volatile uint16_t adc[8])
   /* Mux pin low (Mux0) */
   __R30 &= ~(1 << MUX_SEL_PIN);
 
+  __delay_cycles(200);
+
   /* FIFO0THRESHOLD: FIFO0_threshold_Level = 4 (5-1) */
   HWREG(SOC_ADC_TSC_0_REGS + 0xE8) = 0x4;
 
@@ -224,6 +226,8 @@ void adcSample_2(volatile uint16_t adc[8])
 
   /* Mux pin high (Mux1) */
   __R30 |= (1 << MUX_SEL_PIN);
+
+  __delay_cycles(200);
 
   /* FIFO0THRESHOLD: FIFO0_threshold_Level = 3 (4-1) */
   HWREG(SOC_ADC_TSC_0_REGS + 0xE8) = 0x3;

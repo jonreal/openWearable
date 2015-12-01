@@ -537,7 +537,6 @@ void loadLookUpTable(char *file)
   FILE *f = fopen(file, "r");
   float value;
 
-
   if(f != NULL){
     for(int i=0; i<NUM_FF_LT; i++){
       fscanf(f,"%f\n", &value);

@@ -36,7 +36,9 @@ void gaitPhaseDetect(volatile uint32_t cnt,
                      volatile uint16_t *avgPeriod,
                      volatile uint32_t *heelStrikeCnt,
                      volatile uint16_t *adc);
-uint16_t isHeelStrike(volatile uint16_t *adc);
-uint16_t isToeOff(volatile uint16_t* adc);
-
+//uint16_t isHeelStrike(volatile uint16_t *adc);
+//uint16_t isToeOff(volatile uint16_t* adc);
+uint8_t isHeelContact(volatile uint16_t* adc);
+uint8_t isMidContact(volatile uint16_t* adc);
+uint8_t isToeContact(volatile uint16_t* adc);
 #endif
