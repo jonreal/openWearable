@@ -74,18 +74,14 @@ void gaitPhaseDetect(volatile uint32_t cnt,
                      volatile uint32_t *heelStrikeCnt,
                      volatile uint16_t *adc)
 {
-  uint32_t cntsSinceLastHS = cnt - gp.prevHS_cntStamp;
-  uint32_t debounceCntsStance = 800;
-  uint32_t debounceCntsSwing = 800;
-
   /* 0 - unknown
    * 1 - stance
    * 2 - preswing
    * 3 - swing */
 
-  /* Unkown, wait for HS */
+  /* Unkown, wait for heel contact */
   if(gp.prevGaitPhase == 0){
-    if(isHeelStrike(adc)){
+    if( (isHeelContact(adc)) && !(isMidContact(adc)) && !(isToeContact(adc)) ){
       gp.HS_cntStamp = cnt;
       *gaitPhase = 1;
       *avgPeriod = gp.prevAvgPeriodCnts;
@@ -98,9 +94,9 @@ void gaitPhaseDetect(volatile uint32_t cnt,
     }
   }
 
-  /* Stance, wait for TO */
+  /* GP=1 (Stance), wait for toe contact */
   else if(gp.prevGaitPhase == 1){
-    if(isToeOff(adc) & (cntsSinceLastHS > debounceCntsStance)){
+    if(isToeContact(adc)){
       *gaitPhase = 2;
       *avgPeriod = gp.prevAvgPeriodCnts;
       *heelStrikeCnt = gp.prevHS_cntStamp;
@@ -112,9 +108,23 @@ void gaitPhaseDetect(volatile uint32_t cnt,
     }
   }
 
-  /* Swing, wait for HS */
+  /* GP=2 (pre-swing), wait for no contact */
   else if(gp.prevGaitPhase == 2){
-    if(isHeelStrike(adc) & (cntsSinceLastHS > debounceCntsSwing)){
+    if( !(isHeelContact(adc)) && !(isToeContact(adc)) ){
+      *gaitPhase = 3;
+      *avgPeriod = gp.prevAvgPeriodCnts;
+      *heelStrikeCnt = gp.prevHS_cntStamp;
+    }
+    else {
+      *gaitPhase = gp.prevGaitPhase;
+      *avgPeriod = gp.prevAvgPeriodCnts;
+      *heelStrikeCnt = gp.prevHS_cntStamp;
+    }
+  }
+
+  /* GP=3 (swing), wait for heel contact */
+  else if(gp.prevGaitPhase == 3){
+    if( (isHeelContact(adc)) && !(isMidContact(adc)) && !(isToeContact(adc)) ){
 
       /* Cnt Stamp */
       gp.HS_cntStamp = cnt;
@@ -145,28 +155,51 @@ void gaitPhaseDetect(volatile uint32_t cnt,
   gp.prevHS_cntStamp = gp.HS_cntStamp;
 }
 
-
-uint16_t isHeelStrike(volatile uint16_t* adc)
+uint8_t isHeelContact(volatile uint16_t* adc)
 {
-  if( (adc[gp.heel_indx] > gp.heel_hs)
-        & (adc[gp.mid_indx] < gp.mid_hs)
-        & (adc[gp.toe_indx] < gp.toe_hs) ){
+  if( adc[gp.heel_indx] > gp.heel_hs )
     return 1;
-  }
-  else{
+  else
     return 0;
-  }
 }
 
-uint16_t isToeOff(volatile uint16_t* adc)
+uint8_t isMidContact(volatile uint16_t* adc)
 {
-  if( (adc[gp.toe_indx] < gp.toe_to)
-        & (adc[gp.heel_indx] < gp.heel_to)
-        & (adc[gp.mid_indx] < gp.mid_to) ){
+  if( adc[gp.mid_indx] > gp.mid_hs )
     return 1;
-  }
-  else{
+  else
     return 0;
-  }
 }
 
+uint8_t isToeContact(volatile uint16_t* adc)
+{
+  if( adc[gp.toe_indx] > gp.toe_hs )
+    return 1;
+  else
+    return 0;
+}
+
+//uint16_t isHeelStrike(volatile uint16_t* adc)
+//{
+//  if( (adc[gp.heel_indx] > gp.heel_hs)
+//        & (adc[gp.mid_indx] < gp.mid_hs)
+//        & (adc[gp.toe_indx] < gp.toe_hs) ){
+//    return 1;
+//  }
+//  else{
+//    return 0;
+//  }
+//}
+//
+//uint16_t isToeOff(volatile uint16_t* adc)
+//{
+//  if( (adc[gp.toe_indx] < gp.toe_to)
+//        & (adc[gp.heel_indx] < gp.heel_to)
+//        & (adc[gp.mid_indx] < gp.mid_to) ){
+//    return 1;
+//  }
+//  else{
+//    return 0;
+//  }
+//}
+//

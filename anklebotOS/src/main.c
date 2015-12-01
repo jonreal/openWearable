@@ -62,8 +62,8 @@ int main(int argc, char **argv)
   printParameters();
 
   /* Feedforward lookup */
-  loadLookUpTable("config/sine");
-  //printFFLookUpTable();
+  loadLookUpTable("config/uff_1");
+//  printFFLookUpTable();
 
   /* Load Pru */
   if(loadPruSoftware() != 0)

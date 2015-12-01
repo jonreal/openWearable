@@ -171,7 +171,8 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 {
   int16_t u_fb = 0;
   int16_t u_ff = 0;
-  uint32_t t_cnts = cnt - p->state[bi][si].heelStrikeCnt;
+  uint32_t t_cnts = (1000*(cnt - p->state[bi][si].heelStrikeCnt))
+                    / p->state[bi][si].avgPeriod;
 
   /* Impedance Feedback */
   //cmd = ((int16_t)loc.Kp)*(loc.anklePos0 - p->state[bi][si].anklePos)/100;
@@ -179,10 +180,8 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
   //
 
   /* Feedforward */
-  if(p->cntrl_bit.doFeedForward & p->cntrl_bit.gaitPhaseReady)
+  if(p->cntrl_bit.doFeedForward && p->cntrl_bit.gaitPhaseReady)
   {
-    t_cnts = (t_cnts % p->state[bi][si].avgPeriod);
-
     if(t_cnts >= NUM_FF_LT)
       t_cnts = (NUM_FF_LT-1);
 

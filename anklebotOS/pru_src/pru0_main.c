@@ -106,7 +106,7 @@ int main(void)
     updateState(cnt, buffIndx, stateIndx);
 
     /* Check to see if GaitPhase Ready */
-    if( !(p->cntrl_bit.gaitPhaseReady) & (isGaitPhaseReady()) )
+    if( !(p->cntrl_bit.gaitPhaseReady) && (isGaitPhaseReady()) )
       p->cntrl_bit.gaitPhaseReady = 1;
 
     /* Set done bit (update state done) */
@@ -198,12 +198,12 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
   p->state[bi][si].sync = viconSync();
 
   adcSample_1(p->state[bi][si].adc);
-  __delay_cycles(100);
   adcSample_2(p->state[bi][si].adc);
 
  // imuSample(p->state[bi][si].imu);
 
-  gaitPhaseDetect(cnt, &p->state[bi][si].gaitPhase,
+  gaitPhaseDetect(cnt,
+                  &p->state[bi][si].gaitPhase,
                   &p->state[bi][si].avgPeriod,
                   &p->state[bi][si].heelStrikeCnt,
                   p->state[bi][si].adc);
