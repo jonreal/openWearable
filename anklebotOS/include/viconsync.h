@@ -10,7 +10,7 @@ volatile register uint32_t __R31;
 extern volatile uint32_t *debugBuffer;
 
 /* Prototypes -------------------------------------------------------------- */
-int viconSync(void);
+uint16_t viconSync(void);
 
 #endif
 

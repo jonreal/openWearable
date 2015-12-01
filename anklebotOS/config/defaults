@@ -8,6 +8,6 @@
 0     // mid_to threshold
 0    // heel_to threshold
 1     // gpOnLeftFoot
-10     // Kp
-10     // Kd
-1     // anklePos0
+1     // Kp
+1     // Kd
+0     // anklePos0

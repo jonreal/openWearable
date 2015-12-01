@@ -3,9 +3,9 @@
 #include "viconsync.h"
 
 /* Sync pin goes high */
-int viconSync(void)
+uint16_t viconSync(void)
 {
-  if( (__R31 & (1 << SYNC_PIN)) == 1){
+  if( (__R31 & (1 << SYNC_PIN)) == (1 << SYNC_PIN)){
     return 1;
   }
   return 0;

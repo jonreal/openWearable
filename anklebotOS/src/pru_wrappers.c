@@ -540,7 +540,7 @@ void loadLookUpTable(char *file)
   if(f != NULL){
     for(int i=0; i<NUM_FF_LT; i++){
       fscanf(f,"%f\n", &value);
-      lookUp->ff_ankleTorque[i] = (int16_t) (value*((float)param->mass)*100.0);
+      lookUp->ff_ankleTorque[i] = (int16_t) (value*((float)param->mass));
     }
     fclose(f);
   }
