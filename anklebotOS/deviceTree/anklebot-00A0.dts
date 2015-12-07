@@ -29,7 +29,7 @@
     "P8.27",  /* pr1_pru1_pru_r30_8 - debug pin */
 
     /**** PWM pins ****/
-    "P8.45",  /* ehrpwm2A */
+    "P8.19",  /* ehrpwm2A */
 
     /**** Motor pins ***/
     "P8.28", /* pr1_pru1_pru_r30_10 - motor dir */
@@ -82,7 +82,7 @@
 
       pwm_pins: pinmux_pwm_pins {
         pinctrl-single,pins = <
-          0x0A0 0x03  /* P8.45 - ehrpwm2A, MODE3 */
+          0x020 0x0C  /* P8.19 - ehrpwm2A, MODE4 */
         >;
       };
 
@@ -108,8 +108,8 @@
 
       i2c1_pins: pinmux_i2c1_pins{
         pinctrl-single,pins = <
-          0x15C 0x72  /* P9.17 - i2c1_scl, MODE2 | INPUT_PULLUP (bi-dir)*/
-          0x158 0x72  /* P9.18 - i2c1_sda, MODE2 | INPUT_PULLUP (bi-dir)*/
+          0x15C 0xA2  /* P9.17 - i2c1_scl, MODE2 | INPUT_PULLUP (bi-dir)*/
+          0x158 0xA2  /* P9.18 - i2c1_sda, MODE2 | INPUT_PULLUP (bi-dir)*/
         >;
       };
     };

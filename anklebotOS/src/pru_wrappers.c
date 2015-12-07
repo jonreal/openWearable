@@ -293,6 +293,8 @@ void writeState(uint8_t bi)
     printf("%i\t", p->state[bi][0].gaitPhase);
     printf("%i\t", p->state[bi][0].anklePos);
     printf("%i\t", p->state[bi][0].ankleVel);
+    printf("%i\t", p->state[bi][0].fbCurrentCmd);
+    printf("%i\t", p->state[bi][0].ffCurrentCmd);
     printf("%i\t", p->state[bi][0].motorDuty);
     printf("%i\t", p->state[bi][0].adc[0]);
     printf("%i\t", p->state[bi][0].adc[1]);
@@ -319,6 +321,8 @@ void writeState(uint8_t bi)
       fprintf(fid,"%i\t", p->state[bi][i].gaitPhase);
       fprintf(fid,"%i\t", p->state[bi][i].anklePos);
       fprintf(fid,"%i\t", p->state[bi][i].ankleVel);
+      fprintf(fid,"%i\t", p->state[bi][i].fbCurrentCmd);
+      fprintf(fid,"%i\t", p->state[bi][i].ffCurrentCmd);
       fprintf(fid,"%i\t", p->state[bi][i].motorDuty);
       fprintf(fid,"%i\t", p->state[bi][i].adc[0]);
       fprintf(fid,"%i\t", p->state[bi][i].adc[1]);
@@ -344,6 +348,8 @@ void writeState(uint8_t bi)
       p->state[bi][i].gaitPhase = 0;
       p->state[bi][i].anklePos = 0;
       p->state[bi][i].ankleVel = 0;
+      p->state[bi][i].fbCurrentCmd = 0;
+      p->state[bi][i].ffCurrentCmd = 0;
       p->state[bi][i].motorDuty = 0;
       for(int k=0; k<NUM_ADC; k++){
         p->state[bi][i].adc[k] = 0;

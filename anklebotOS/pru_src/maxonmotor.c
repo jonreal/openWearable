@@ -20,8 +20,14 @@ void motorCleanUp(void)
 }
 
 
-void motorSetDuty(int16_t duty, volatile int16_t *motorDuty)
+void motorSetDuty(int16_t current_cmd, volatile int16_t *motorDuty)
 {
+  /* Convert current -> duty
+   * 10% -- 0 A
+   * 90% -- 15 A
+   */
+  int16_t duty = (int16_t)(80.0/15.0 * (float)current_cmd + 10.0);
+
   uint16_t abs_duty = (uint16_t)abs(duty);
   int16_t sign = 0;
 
