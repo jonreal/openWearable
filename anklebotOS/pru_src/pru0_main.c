@@ -9,7 +9,7 @@
 #include "mem_types.h"
 #include "hw_types.h"
 
-#include "imu_mpu9150.h"
+//#include "imu_mpu9150.h"
 #include "adcdriver.h"
 #include "gaitPhase.h"
 #include "viconsync.h"
@@ -200,7 +200,7 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
   adcSample_1(p->state[bi][si].adc);
   adcSample_2(p->state[bi][si].adc);
 
- // imuSample(p->state[bi][si].imu);
+  //imuSample(p->state[bi][si].imu);
 
   gaitPhaseDetect(cnt,
                   &p->state[bi][si].gaitPhase,
@@ -238,7 +238,7 @@ void cleanUp(void)
 {
   /* Add pru dependent peripheral cleanup methods here */
   adcCleanUp();
-//  imuCleanUp();
+  //imuCleanUp();
 
   /* Clear all interrupts */
   clearIepInterrupt();

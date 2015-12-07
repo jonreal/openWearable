@@ -58,11 +58,11 @@ int main(int argc, char **argv)
   initDebugBuffer();
 
   /* Load default params */
-  loadParameters("config/defaults");
+  loadParameters("config/PA_FF_subject_1");
   printParameters();
 
   /* Feedforward lookup */
-  loadLookUpTable("config/uff_1");
+  loadLookUpTable("config/sine");
 //  printFFLookUpTable();
 
   /* Load Pru */

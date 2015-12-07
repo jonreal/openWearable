@@ -14,7 +14,7 @@
 #define PRU1_ARM_INT  (20 + 16)
 
 #define NUM_OF_BUFFS    2
-#define SIZE_OF_BUFFS   120
+#define SIZE_OF_BUFFS   110
 
 #define NUM_ADC     8
 #define NUM_IMU     6
@@ -46,6 +46,8 @@ typedef struct{
   volatile uint16_t gaitPhase;
   volatile int16_t anklePos;
   volatile uint16_t ankleVel;
+  volatile int16_t fbCurrentCmd;
+  volatile int16_t ffCurrentCmd;
   volatile int16_t motorDuty;
   volatile uint16_t adc[NUM_ADC];
   volatile int16_t imu[NUM_IMU];

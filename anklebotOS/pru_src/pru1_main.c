@@ -9,6 +9,7 @@
 #include "mem_types.h"
 #include "hw_types.h"
 
+//#include "imu_mpu9150.h"
 #include "encoder.h"
 #include "maxonmotor.h"
 #include "interp.h"
@@ -144,6 +145,7 @@ void initialize(void)
 
   /* Add pru dependent peripheral init methods here */
   encoderInit();
+  //imuInit();
   motorInit();
 }
 
@@ -169,40 +171,41 @@ void updateCounters(uint32_t *cnt, uint8_t *bi, uint8_t *si)
 
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 {
-  int32_t u_fb = 0; // ankleNm
-  int32_t u_ff = 0; // ankleNm
-  int32_t current_cmd = 0; // amps
-  int32_t amps_per_motorNm = 1; // 181; // torque constant
-  int32_t motorNm_per_ankleNm = 1; // Unkown currently
+  int16_t u_fb = 0; // ankleNm
+  int16_t u_ff = 0; // ankleNm
+  int16_t current_cmd = 0; // amps
+  int16_t amps_per_motorNm = 1; // 181; // torque constant
+  int16_t motorNm_per_ankleNm = 1; // Unkown currently
   uint16_t t_cnts = (1000*(cnt - p->state[bi][si].heelStrikeCnt))
                     / p->state[bi][si].avgPeriod;
 
   /* Impedance Feedback */
-  u_fb = ((int16_t)loc.Kp)*(loc.anklePos0 - p->state[bi][si].anklePos)/100;
+  u_fb = ((int16_t)loc.Kp)*(loc.anklePos0 - p->state[bi][si].anklePos)/1000;
 
   /* Feedforward */
   if(p->cntrl_bit.doFeedForward && p->cntrl_bit.gaitPhaseReady)
   {
     if(t_cnts >= NUM_FF_LT)
       t_cnts = (NUM_FF_LT-1);
-
-    u_ff = lookUp->ff_ankleTorque[t_cnts];
-    p->state[bi][si].ankleVel = t_cnts;
+    u_ff = (lookUp->ff_ankleTorque[t_cnts])*amps_per_motorNm*motorNm_per_ankleNm;
   }
 
-  current_cmd = (u_fb + u_ff)*motorNm_per_ankleNm*amps_per_motorNm;
-  motorSetDuty(current_cmd, &p->state[bi][si].motorDuty);
+  p->state[bi][si].fbCurrentCmd = u_fb;
+  p->state[bi][si].ffCurrentCmd = u_ff;
+  motorSetDuty(u_fb + u_ff, &p->state[bi][si].motorDuty);
 }
 
 void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 {
   encoderSample(&p->state[bi][si].anklePos);
+  //imuSample(p->state[bi][si].imu);
 }
 
 void cleanUp(void)
 {
   /* Add pru dependent peripheral cleanup methods here */
   encoderCleanUp();
+  //imuCleanUp();
   motorCleanUp();
 
   /* Clear all interrupts */
