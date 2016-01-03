@@ -185,7 +185,7 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
   if(p->cntrl_bit.testFF){
     uint16_t test_t_cnt = cnt % testPeriod;
     u_fb = 0;
-    u_ff = lookUp->ff_ankleTorque[test_t_cnt]/10;
+    u_ff = lookUp->ff_ankleTorque[test_t_cnt];
   }
 
   /* No Test */
