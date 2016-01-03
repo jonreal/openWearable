@@ -179,15 +179,27 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
   uint16_t t_cnts = (1000*(cnt - p->state[bi][si].heelStrikeCnt))
                     / p->state[bi][si].avgPeriod;
 
-  /* Impedance Feedback */
-  u_fb = ((int16_t)loc.Kp)*(loc.anklePos0 - p->state[bi][si].anklePos)/1000;
+  uint32_t testPeriod = 1000;
 
-  /* Feedforward */
-  if(p->cntrl_bit.doFeedForward && p->cntrl_bit.gaitPhaseReady)
-  {
-    if(t_cnts >= NUM_FF_LT)
-      t_cnts = (NUM_FF_LT-1);
-    u_ff = (lookUp->ff_ankleTorque[t_cnts])*amps_per_motorNm*motorNm_per_ankleNm;
+  /* FF Test */
+  if(p->cntrl_bit.testFF){
+    uint16_t test_t_cnt = cnt % testPeriod;
+    u_fb = 0;
+    u_ff = lookUp->ff_ankleTorque[test_t_cnt]/10;
+  }
+
+  /* No Test */
+  else {
+    /* Impedance Feedback */
+    u_fb = ((int16_t)loc.Kp)*(loc.anklePos0 - p->state[bi][si].anklePos)/1000;
+
+    /* Feedforward */
+    if(p->cntrl_bit.doFeedForward && p->cntrl_bit.gaitPhaseReady)
+    {
+      if(t_cnts >= NUM_FF_LT)
+        t_cnts = (NUM_FF_LT-1);
+      u_ff = (lookUp->ff_ankleTorque[t_cnts])*amps_per_motorNm*motorNm_per_ankleNm;
+    }
   }
 
   p->state[bi][si].fbCurrentCmd = u_fb;

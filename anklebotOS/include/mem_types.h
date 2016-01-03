@@ -76,7 +76,8 @@ typedef struct{
       unsigned gaitPhaseReady: 1; // bit 9 (set by pru0, read by pru1)
       unsigned heelStrike : 1;    // bit 10 (set by pru0, reset by pru1)
       unsigned toeOff : 1;        // bit 11 (set by pru0, reset by pru1)
-      unsigned rsvd : 4;          // bits 12-15 reserved
+      unsigned testFF : 1;        // bit 12 (set by arm, reset by arm)
+      unsigned rsvd : 3;          // bits 13-15 reserved
    } cntrl_bit;
   };
 

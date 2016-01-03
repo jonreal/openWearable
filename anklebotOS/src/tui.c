@@ -85,6 +85,8 @@ void tui_menu(void)
   printf("      j - Toggle feedforward control\n");
   printf("      k - Reset gait phase detection\n");
   printf("      l - Tare encoder angle\n");
+  printf("      p - Test Feedforward\n");
+  printf("      o - Load Feedforward lookup table\n");
   printf("      e - exit\n");
   printf("--------------------------------------------------------------\n");
 }
@@ -316,6 +318,56 @@ int start_tui(void)
         fflush(stdout);
         ptui->io_ready = 0;
         tui_menu();
+      }
+
+      /* Test FF */
+      else if(input_char == 'p'){
+        printf("\t\tTesting Feedforward.\n");
+        printf("\t\t\tPress enter to stop.\n");
+        testFF();
+        fflush(stdout);
+        ptui->io_ready = 0;
+
+        /* Testing loop */
+        while(1){
+          /* Check for input */
+          if(ptui->io_ready){
+            scanf(" %c", &input_char);
+            stopTestFF();
+            break;
+          }
+        }
+        tui_menu();
+      }
+
+      /* Load FF lookup table */
+      else if(input_char == 'o'){
+
+        /* Trial Name Input */
+        printf("\t\tEnter FF lookup table file name: ");
+        fflush(stdout);
+        ptui->io_ready = 0;
+        while(1){
+          if(ptui->io_ready){
+            scanf(" %s", input_string);
+            break;
+          }
+        }
+
+        /* Echo Trial Name */
+        strcat(configFile,input_string);
+        printf("\t\tLoading lookup table from %s\n",configFile);
+
+        /* Toggle FF if on */
+        if (getFFState() == 1)
+          toggleFeedforward();
+
+        loadLookUpTable(configFile);
+        configFile[0] = '\0';
+        strcat(configFile, "config/");
+        tui_menu();
+        fflush(stdout);
+        ptui->io_ready = 0;
       }
       ptui->io_ready = 0;
     }
