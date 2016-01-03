@@ -223,20 +223,23 @@ int pru_mem_init(void)
   printf("\tSize of shared memory (SRAM): %i bytes.\n",
           sizeof(*p));
 
-  /* Zero State Buffers */
+
+  /* Zero State */
   for(int i=0; i<NUM_OF_BUFFS; i++){
     for(int j=0; j<SIZE_OF_BUFFS; j++){
       p->state[i][j].timeStamp = 0;
+      p->state[i][j].sync = 0;
       p->state[i][j].avgPeriod = 0;
+      p->state[i][j].heelStrikeCnt = 0;
+      p->state[i][j].gaitPhase = 0;
       p->state[i][j].anklePos = 0;
       p->state[i][j].ankleVel = 0;
-      p->state[i][j].gaitPhase = 0;
+      p->state[i][j].fbCurrentCmd = 0;
+      p->state[i][j].ffCurrentCmd = 0;
       p->state[i][j].motorDuty = 0;
-
       for(int k=0; k<NUM_ADC; k++){
         p->state[i][j].adc[k] = 0;
       }
-
       for(int k=0; k<NUM_IMU; k++){
         p->state[i][j].imu[k] = 0;
       }
@@ -578,6 +581,16 @@ void resetGaitPhase(void)
 int getFFState(void)
 {
   return p->cntrl_bit.doFeedForward;
+}
+
+void testFF(void)
+{
+  p->cntrl_bit.testFF = 1;
+}
+
+void stopTestFF(void)
+{
+  p->cntrl_bit.testFF = 0;
 }
 
 void closeLogFile(void)

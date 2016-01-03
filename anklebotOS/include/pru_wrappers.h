@@ -52,6 +52,8 @@ void setTareEncoderBit(void);
 void toggleFeedforward(void);
 void resetGaitPhase(void);
 int getFFState(void);
+void testFF(void);
+void stopTestFF(void);
 
 #endif
 
