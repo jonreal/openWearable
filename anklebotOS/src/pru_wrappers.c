@@ -38,10 +38,11 @@ void initDebugBuffer(void)
 
 void printDebugBuffer(void)
 {
+  param->debugBuffer[5] = 0xdeadbeaf;
   printf("\n\n---- Debug Buffer ----\n");
   for(int i=0; i<10; i++)
   {
-    printf("0x%X\t%i\n", param->debugBuffer[i], param->debugBuffer[i]);
+    printf("0x%X \t%i\n", (uint32_t)param->debugBuffer[i], param->debugBuffer[i]);
   }
 }
 
@@ -198,6 +199,7 @@ int pru_mem_init(void)
     return -1;
   }
   param = (param_mem_t *) ptr;
+
 
   /* Memory Map for feedforward lookup table (pru1 DRAM) */
   ptr = NULL;

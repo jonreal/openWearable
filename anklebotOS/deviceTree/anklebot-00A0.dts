@@ -52,6 +52,9 @@
 
     /**** SPI1 pins ****/
     "P9.28",  /* SPI1_CS0 */
+    "P9.42",  /* SPI1_CS1 */
+    //"P9.19", /* SPI1_CS1 */
+    //"P9.20", /* SPI1_CS0 */
     "P9.29",  /* SPI1_D0 */
     "P9.30",  /* SPI1_D1 */
     "P9.31",  /* SPI1_SCLK */
@@ -100,6 +103,8 @@
       spi_pins: pinmux_spi_pins {
         pinctrl-single,pins = <
           0x19C 0x13  /* P9.28 - spi1_cs0,  MODE3 | OUTPUT_PULLUP */
+          0x164 0x12  /* P9.42 - spi1_cs1, MODE2 | OUTPUT_PULLUP */
+          0x1A0 0x06  /* P9.42 alternate mux -- set as input */
           0x194 0x33  /* P9.29 - spi1_d0, MODE3 | INPUT_PULLUP */
           0x198 0x13  /* P9.30 - spi1_d1, MODE3 | OUTPUT_PULLUP */
           0x190 0x33  /* P9.31 - spi1_sclk, MODE3 | INPUT_PULLUP */

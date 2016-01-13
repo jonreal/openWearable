@@ -10,6 +10,7 @@
 #include "hw_types.h"
 
 //#include "imu_mpu9150.h"
+#include "spidriver.h"
 #include "encoder.h"
 #include "maxonmotor.h"
 #include "interp.h"
@@ -86,10 +87,10 @@ int main(void)
     debugPinHigh();
 
     /* Tare Encoder */
-    if(p->cntrl_bit.encoderTare){
-      encoderSetZeroAngle();
-      p->cntrl_bit.encoderTare = 0;
-    }
+//    if(p->cntrl_bit.encoderTare){
+//      encoderSetZeroAngle();
+//      p->cntrl_bit.encoderTare = 0;
+//    }
 
     /* Update (mirror) params */
     updateLocalParams();
@@ -97,8 +98,12 @@ int main(void)
     /* Update State */
     updateState(cnt, buffIndx, stateIndx);
 
+    debugPinLow();
+
     /* Poll for pru0 done bit (updating state)*/
     while(!(p->cntrl_bit.pru0_done));
+
+    debugPinHigh();
 
     /* Reset pru0 done bit */
     p->cntrl_bit.pru0_done = 0;
@@ -209,7 +214,7 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 
 void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 {
-  encoderSample(&p->state[bi][si].anklePos);
+  encoderSample(&(p->state[bi][si].anklePos));
   //imuSample(p->state[bi][si].imu);
 }
 

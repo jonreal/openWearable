@@ -192,6 +192,9 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 {
   /* Use cycle counts as timestamp (for debugging) */
 //  p->state[bi][si].timeStamp = HWREG(PRU_CTRL_BASE + 0xC);
+//
+ // debugBuffer[0] = 0xDEADBEAF;
+ // debugBuffer[1] = 0xDEADBEAF;
 
   p->state[bi][si].timeStamp = cnt;
 
