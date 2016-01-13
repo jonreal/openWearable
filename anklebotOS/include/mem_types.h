@@ -89,7 +89,6 @@ typedef struct{
   volatile uint32_t frq_hz;
   volatile uint32_t frq_clock_ticks;
   volatile uint16_t mass;
-
   volatile uint16_t gp_toe_hs;
   volatile uint16_t gp_mid_hs;
   volatile uint16_t gp_heel_hs;
@@ -97,11 +96,10 @@ typedef struct{
   volatile uint16_t gp_mid_to;
   volatile uint16_t gp_heel_to;
   volatile uint16_t gpOnLeftFoot;
-
   volatile uint16_t Kp;
   volatile uint16_t Kd;
   volatile int16_t anklePos0;
-
+  uint16_t pad;
   volatile uint32_t debugBuffer[10];
 } param_mem_t;
 

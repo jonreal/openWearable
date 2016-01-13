@@ -1,6 +1,6 @@
 1000  // Freq
 0     // Freq. Ticks (leave as zero)
-85     // Subject Mass (kg)
+88     // Subject Mass (kg)
 450     // toe_hs threshold
 600     // mid_hs threshold
 450     // heel_hs threshold
