@@ -38,10 +38,8 @@ void initDebugBuffer(void)
 
 void printDebugBuffer(void)
 {
-  param->debugBuffer[5] = 0xdeadbeaf;
   printf("\n\n---- Debug Buffer ----\n");
-  for(int i=0; i<10; i++)
-  {
+  for(int i=0; i<10; i++){
     printf("0x%X \t%i\n", (uint32_t)param->debugBuffer[i], param->debugBuffer[i]);
   }
 }

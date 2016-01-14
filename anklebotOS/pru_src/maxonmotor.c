@@ -28,7 +28,7 @@ void motorSetDuty(int16_t current_cmd, volatile int16_t *motorDuty)
    */
   float scaling = 5.33; // 80/15
 
-  int16_t duty = (int16_t)(scaling * (float)current_cmd + 10.0);
+  int16_t duty = (int16_t)(scaling * (float)current_cmd) + 10;
   uint16_t abs_duty = (uint16_t)abs(duty);
   int16_t sign = 0;
 
