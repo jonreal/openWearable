@@ -178,7 +178,7 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 {
   int16_t u_fb = 0; // (current of the motor)
   int16_t u_ff = 0; // i_m (current of the motor)
-  float scaling = 0.4;  // ankle torque -> motor current scaling
+  float scaling = 0.5;  // ankle torque -> motor current scaling
   uint16_t t_cnts = (1000*(cnt - p->state[bi][si].heelStrikeCnt))
                     / p->state[bi][si].avgPeriod;
 
@@ -188,7 +188,7 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
     uint32_t testPeriod = 1000;
     uint16_t test_t_cnt = cnt % testPeriod;
     u_fb = 0;
-    u_ff = lookUp->ff_ankleTorque[test_t_cnt];
+    u_ff = (int16_t) (scaling * (float)(lookUp->ff_ankleTorque[test_t_cnt]));
   }
 
   /* No Test */
