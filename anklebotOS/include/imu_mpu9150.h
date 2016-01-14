@@ -11,6 +11,8 @@
 #define ACCEL_CONFIG        0x1C
 #define MEASURE_BASE_ADDR   0x3B
 
+extern volatile uint32_t *debugBuffer;
+
 /* ---- Prototypes ---- */
 void imuInit(void);
 void imuCleanUp(void);

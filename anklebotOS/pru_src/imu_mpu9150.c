@@ -27,6 +27,7 @@ void imuInit(void)
   /* ACCEL_CONFIG : AFS_SEL = 0x0 */
   i2cTxByte(IMU_ADDR, ACCEL_CONFIG, 0x0);
   __delay_cycles(10000);
+
 }
 
 void imuCleanUp(void)

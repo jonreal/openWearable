@@ -26,10 +26,9 @@ void motorSetDuty(int16_t current_cmd, volatile int16_t *motorDuty)
    * 10% -- 0 A
    * 90% -- 15 A
    */
-  int16_t duty = (int16_t)(80.0/15.0 * (float)current_cmd + 10.0);
+  float scaling = 5.33; // 80/15
 
-//  int16_t duty = (int16_t) (800/150 * current_cmd)/100 + 10;
-
+  int16_t duty = (int16_t)(scaling * (float)current_cmd + 10.0);
   uint16_t abs_duty = (uint16_t)abs(duty);
   int16_t sign = 0;
 
@@ -48,7 +47,7 @@ void motorSetDuty(int16_t current_cmd, volatile int16_t *motorDuty)
   }
 
   pwmSetCmpValue(duty2cmpval(abs_duty));
-  *motorDuty = sign*((int16_t)abs_duty);
+  *motorDuty = sign * (int16_t)abs_duty;
 }
 
 void motorEnable(void)
