@@ -205,6 +205,7 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 
       /* Motor current command */
       u_ff = (int16_t) (scaling * (float)(lookUp->ff_ankleTorque[t_cnts]));
+      p->state[si][bi].ankleVel = t_cnts;
     }
   }
 
