@@ -73,9 +73,8 @@ void pwmCleanUp(void)
   HWREGH(SOC_EPWM_2_REGS + 0x12) = 0x1;
 }
 
-void pwmSetCmpValue(uint16_t cmpvalue) 
+void pwmSetCmpValue(uint16_t cmpvalue)
 {
-
   /* CMPA: compare register */
   HWREGH(SOC_EPWM_2_REGS + 0x12) = cmpvalue;
 }

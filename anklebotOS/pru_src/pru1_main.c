@@ -87,10 +87,10 @@ int main(void)
     debugPinHigh();
 
     /* Tare Encoder */
-//    if(p->cntrl_bit.encoderTare){
-//      encoderSetZeroAngle();
-//      p->cntrl_bit.encoderTare = 0;
-//    }
+    if(p->cntrl_bit.encoderTare){
+      encoderSetZeroAngle();
+      p->cntrl_bit.encoderTare = 0;
+    }
 
     /* Update (mirror) params */
     updateLocalParams();
@@ -176,18 +176,16 @@ void updateCounters(uint32_t *cnt, uint8_t *bi, uint8_t *si)
 
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 {
-  int16_t u_fb = 0; // ankleNm
-  int16_t u_ff = 0; // ankleNm
-  int16_t current_cmd = 0; // amps
-  int16_t amps_per_motorNm = 1; // 181; // torque constant
-  int16_t motorNm_per_ankleNm = 1; // Unkown currently
+  int16_t u_fb = 0; // (current of the motor)
+  int16_t u_ff = 0; // i_m (current of the motor)
+  float scaling = 0.4;  // ankle torque -> motor current scaling
   uint16_t t_cnts = (1000*(cnt - p->state[bi][si].heelStrikeCnt))
                     / p->state[bi][si].avgPeriod;
 
-  uint32_t testPeriod = 1000;
 
   /* FF Test */
   if(p->cntrl_bit.testFF){
+    uint32_t testPeriod = 1000;
     uint16_t test_t_cnt = cnt % testPeriod;
     u_fb = 0;
     u_ff = lookUp->ff_ankleTorque[test_t_cnt];
@@ -201,9 +199,12 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
     /* Feedforward */
     if(p->cntrl_bit.doFeedForward && p->cntrl_bit.gaitPhaseReady)
     {
+      /* Check overrun */
       if(t_cnts >= NUM_FF_LT)
         t_cnts = (NUM_FF_LT-1);
-      u_ff = (lookUp->ff_ankleTorque[t_cnts])*amps_per_motorNm*motorNm_per_ankleNm;
+
+      /* Motor current command */
+      u_ff = (int16_t) (scaling * (float)(lookUp->ff_ankleTorque[t_cnts]));
     }
   }
 

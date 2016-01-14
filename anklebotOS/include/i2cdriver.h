@@ -1,6 +1,8 @@
 #ifndef _I2CDRIVER_H_
 #define _I2CDRIVER_H_
 
+extern volatile uint32_t* debugBuffer;
+
 /* ---- Prototypes ---- */
 void i2cInit(void);
 void i2cCleanUp(void);
