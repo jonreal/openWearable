@@ -11,9 +11,10 @@
 #include <prussdrv.h>
 #include <pruss_intc_mapping.h>
 
+
 #include "mem_types.h"
 #include "pru_wrappers.h"
-
+#include "filter.h"
 
 #define M_PI (3.14159265359)
 
@@ -558,6 +559,28 @@ void loadLookUpTable(char *file)
   }
 }
 
+void loadFilterCoeff(char *file)
+{
+  FILE *f = fopen(file, "r");
+  int value;
+
+  if(f != NULL){
+    for(int i=0; i<FILTER_LEN; i++){
+      fscanf(f,"%d\n", &value);
+      lookUp->firCoeff[i] = (int16_t) value;
+    }
+    fclose(f);
+  }
+  else {
+    printf("File doesn't exsist!");
+  }
+}
+void printFirCoeff(void)
+{
+  for(int i=0; i<FILTER_LEN; i++){
+    printf("\t%d\t%hd\n",i,lookUp->firCoeff[i]);
+  }
+}
 void printFFLookUpTable(void)
 {
   for(int i=0; i<NUM_FF_LT; i++){

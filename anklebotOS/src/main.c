@@ -65,6 +65,9 @@ int main(int argc, char **argv)
   loadLookUpTable("config/rahul_uff_1");
 //  printFFLookUpTable();
 
+  loadFilterCoeff("config/lowpass");
+//  printFirCoeff();
+
   /* Load Pru */
   if(loadPruSoftware() != 0)
     return -1;

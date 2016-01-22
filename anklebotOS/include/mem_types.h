@@ -101,12 +101,20 @@ typedef struct{
   volatile int16_t anklePos0;
   uint16_t pad;
   volatile uint32_t debugBuffer[10];
+
+  volatile int16_t filter1[52];
+  volatile int16_t filter2[52];
+  volatile int16_t filter3[52];
+  volatile int16_t filter4[52];
+  volatile int16_t filter5[52];
+  volatile int16_t filter6[52];
+
 } param_mem_t;
 
 /* Feedforward lookup table -> mapped to pru1 DRAM */
 typedef struct{
   int16_t ff_ankleTorque[NUM_FF_LT];
-//  volatile int16_t ankleTorqe2MotorTorque[NUM_TORQUE_LT_1][NUM_TORQUE_LT_2];
+  int16_t firCoeff[52];
 } lookUp_mem_t;
 
 #endif
