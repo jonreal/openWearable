@@ -13,7 +13,7 @@
 #include "adcdriver.h"
 #include "gaitPhase.h"
 #include "viconsync.h"
-
+#include "filter.h"
 
 /* Local Param Struct (mirror) --------------------------------------------- */
 typedef struct{
@@ -58,8 +58,7 @@ shared_mem_t *p;
 param_mem_t *param;
 
 /* LookUp tables */
-///lookUp_mem_t *lookUp;
-
+lookUp_mem_t *lookUp;
 
 /* Debug Buffer */
 volatile uint32_t *debugBuffer;
@@ -176,8 +175,8 @@ void initMemory(void)
   param = (param_mem_t *) ptr;
 
   /* Memory map for feedforward lookup table (pru1 DRAM)*/
-//  ptr = (void *) PRU_OTHER_DRAM;
-//  lookUp = (lookUp_mem_t *) ptr;
+  ptr = (void *) PRU_OTHER_DRAM;
+  lookUp = (lookUp_mem_t *) ptr;
 
   /* Point global debug buffer */
   debugBuffer = &(param->debugBuffer[0]);
@@ -190,18 +189,32 @@ void updateLocalParams(void)
 
 void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 {
-  /* Use cycle counts as timestamp (for debugging) */
-//  p->state[bi][si].timeStamp = HWREG(PRU_CTRL_BASE + 0xC);
-//
- // debugBuffer[0] = 0xDEADBEAF;
- // debugBuffer[1] = 0xDEADBEAF;
+  uint16_t adc[8];
 
   p->state[bi][si].timeStamp = cnt;
 
   p->state[bi][si].sync = viconSync();
 
-  adcSample_1(p->state[bi][si].adc);
-  adcSample_2(p->state[bi][si].adc);
+  adcSample_1(adc);
+  adcSample_2(adc);
+
+  /* Motor analog samples */
+  p->state[bi][si].adc[0] = adc[0];
+  p->state[bi][si].adc[1] = adc[1];
+
+  /* Filter insoles */
+  p->state[bi][si].adc[2] = (uint16_t)
+                  firFixed(lookUp->firCoeff, param->filter1, (int16_t)adc[2]);
+  p->state[bi][si].adc[3] = (uint16_t)
+                  firFixed(lookUp->firCoeff, param->filter2, (int16_t)adc[3]);
+  p->state[bi][si].adc[4] = (uint16_t)
+                  firFixed(lookUp->firCoeff, param->filter3, (int16_t)adc[4]);
+  p->state[bi][si].adc[5] = (uint16_t)
+                  firFixed(lookUp->firCoeff, param->filter4, (int16_t)adc[5]);
+  p->state[bi][si].adc[6] = (uint16_t)
+                  firFixed(lookUp->firCoeff, param->filter5, (int16_t)adc[6]);
+  p->state[bi][si].adc[7] = (uint16_t)
+                  firFixed(lookUp->firCoeff, param->filter6, (int16_t)adc[7]);
 
   //imuSample(p->state[bi][si].imu);
 
