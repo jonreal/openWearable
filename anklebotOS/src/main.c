@@ -62,7 +62,7 @@ int main(int argc, char **argv)
   printParameters();
 
   /* Feedforward lookup */
-  loadLookUpTable("config/rahul_uff_1");
+  loadLookUpTable("config/uff_1");
 //  printFFLookUpTable();
 
   loadFilterCoeff("config/lowpass");

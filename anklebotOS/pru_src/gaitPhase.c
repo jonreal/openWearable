@@ -17,7 +17,7 @@ void gaitPhaseInit(param_mem_t* params)
   gp.mid_to = params->gp_mid_to;
   gp.heel_to = params->gp_heel_to;
 
-  if(params->gpOnLeftFoot){
+  if(params->gpOnLeftFoot == 1){
     gp.toe_indx = 2;
     gp.mid_indx = 3;
     gp.heel_indx = 4;
