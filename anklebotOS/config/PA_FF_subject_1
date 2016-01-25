@@ -1,13 +1,13 @@
 1000	// Freq.
 0	// Freq. Ticks
 88	// Subject Mass
-200	// toe_hs threshold
+300	// toe_hs threshold
 400	// mid_hs threshold
-450	// heel_hs threshold
+400	// heel_hs threshold
 0	// toe_to threshold
 0	// mid_to threshold
 0	// heel_to threshold
-1	// gpOnLeftFoot
+0	// gpOnLeftFoot
 1	// Kp
 0	// Kd
 0	// anklePos0
