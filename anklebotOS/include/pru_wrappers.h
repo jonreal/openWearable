@@ -10,7 +10,7 @@
 /* Globals ------------------------------------------------------------------*/
 extern int debug;
 
-/* Local Globals- */
+/* Local globals ------------------------------------------------------------*/
 FILE* fid;
 
 /* Prototypes ---------------------------------------------------------------*/
@@ -42,11 +42,11 @@ uint16_t getKd(void);
 int16_t getAnklePos0(void);
 int logFileInit(char *fileName);
 void saveParameters(char *f);
-void loadParameters(char *f);
+int loadParameters(char *f);
 void printParameters(void);
 void closeLogFile(void);
-void loadLookUpTable(char *file);
-void loadFilterCoeff(char *file);
+int loadLookUpTable(char *file);
+int loadFilterCoeff(char *file);
 void printFFLookUpTable(void);
 void printFirCoeff(void);
 void clearBufferFlags(void);
