@@ -16,6 +16,7 @@ FILE* fid;
 /* Prototypes ---------------------------------------------------------------*/
 void printDebugBuffer(void);
 void initDebugBuffer(void);
+
 int pru_run(const int pruNum, const char *const path);
 int pru_init(void);
 int pru_cleanup(void);
@@ -27,10 +28,13 @@ void writeState(uint8_t buffIndx);
 void clearFlowBitFeild(void);
 void enable(void);
 void disable(void);
+
 int isBuffer0Full(void);
 int isBuffer1Full(void);
-void resetBuffer0FullFlag(void);
-void resetBuffer1FullFlag(void);
+void clearBuffer0FullFlag(void);
+void clearBuffer1FullFlag(void);
+void clearBufferFlags(void);
+
 uint32_t hzToPruTicks(float freq_hz);
 float pruTicksToHz(uint32_t ticks);
 
@@ -40,16 +44,16 @@ void setAnklePos0(float pos0);
 uint16_t getKp(void);
 uint16_t getKd(void);
 int16_t getAnklePos0(void);
+
 int logFileInit(char *fileName);
+void closeLogFile(void);
 void saveParameters(char *f);
 int loadParameters(char *f);
 void printParameters(void);
-void closeLogFile(void);
 int loadLookUpTable(char *file);
-int loadFilterCoeff(char *file);
+int loadIirFilterCoeff(char *file);
 void printFFLookUpTable(void);
 void printFirCoeff(void);
-void clearBufferFlags(void);
 void setTareEncoderBit(void);
 void toggleFeedforward(void);
 void resetGaitPhase(void);

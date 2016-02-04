@@ -89,12 +89,12 @@ typedef struct{
 typedef struct{
   int16_t x[MAX_IIR_ORDER+1];
   int16_t y[MAX_IIR_ORDER+1];
-} iir_t;
+} iir_buff_t;
 
 /* IIR Coefficients */
 typedef struct{
-  int16_t a[MAX_IIR_ORDER+1];
   int16_t b[MAX_IIR_ORDER+1];
+  int16_t a[MAX_IIR_ORDER+1];
   int16_t N;
   int16_t pad;
 } iir_coeff_t;
@@ -118,7 +118,7 @@ typedef struct{
   uint16_t pad;
 
   iir_coeff_t filt;
-  iir_t filtArray[6];
+  iir_buff_t filtBuffer[6];
 
   volatile uint32_t debugBuffer[10];
 } param_mem_t;
