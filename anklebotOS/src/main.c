@@ -91,13 +91,13 @@ int main(int argc, char **argv)
     while(!(doneFlag)){
 
       if(isBuffer0Full()){
-        resetBuffer0FullFlag();
+        clearBuffer0FullFlag();
         writeState(0);
         lastBufferRead = 0;
       }
 
       if(isBuffer1Full()){
-        resetBuffer1FullFlag();
+        clearBuffer1FullFlag();
         writeState(1);
         lastBufferRead = 1;
       }
