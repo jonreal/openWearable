@@ -13,7 +13,6 @@
 #include "spidriver.h"
 #include "encoder.h"
 #include "maxonmotor.h"
-#include "interp.h"
 
 /* Local Params (mirror) --------------------------------------------------- */
 typedef struct{
