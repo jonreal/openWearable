@@ -4,6 +4,9 @@
 
 #include "filter.h"
 
+
+// ----------------------------------------------------------------------------
+
 /* FIR init */
 void firFixedInit(volatile int16_t *insamp)
 {
@@ -11,6 +14,46 @@ void firFixedInit(volatile int16_t *insamp)
     insamp[i] = 0;
   }
 }
+
+// ----------------------------------------------------------------------------
+
+// Fixed point iir filter
+int16_t iirFixedPoint(int16_t N, int16_t *b, int16_t *a,
+                      int16_t *y, int16_t *x, int16_t s)
+{
+  int32_t acc;     // accumulator for MACs
+  int16_t output;
+
+  // new Sample
+  x[0] = s;
+
+  // load rounding constant
+  acc = 1 << 14;
+
+  // difference eq.
+  acc = (int32_t) b[0] * x[0];
+  for(int k=1; k<N+1; k++) {
+    acc += (int32_t)b[k] * (int32_t)x[k] - (int32_t)a[k] * (int32_t)y[k];
+  }
+
+  // saturate the result
+  if ( acc > 0x3fffffff ) {
+    acc = 0x3fffffff;
+  } else if ( acc < -0x40000000 ) {
+    acc = -0x40000000;
+  }
+
+  // convert from Q30 to Q15
+  output = (int16_t)(acc >> 15);
+
+  // Shift samples back in time
+  for(int i=N+1; i>0; i--){
+    x[i] = x[i-1];
+    y[i] = y[i-1];
+  }
+  return output;
+}
+
 
 /* FIR filter function */
 int16_t firFixed(int16_t *coeffs, volatile int16_t *insamp, int16_t input)

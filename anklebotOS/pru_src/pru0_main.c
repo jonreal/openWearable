@@ -203,18 +203,18 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
   p->state[bi][si].adc[1] = adc[1];
 
   /* Filter insoles */
-  p->state[bi][si].adc[2] = (uint16_t)
-                  firFixed(lookUp->firCoeff, param->filter1, (int16_t)adc[2]);
-  p->state[bi][si].adc[3] = (uint16_t)
-                  firFixed(lookUp->firCoeff, param->filter2, (int16_t)adc[3]);
-  p->state[bi][si].adc[4] = (uint16_t)
-                  firFixed(lookUp->firCoeff, param->filter3, (int16_t)adc[4]);
-  p->state[bi][si].adc[5] = (uint16_t)
-                  firFixed(lookUp->firCoeff, param->filter4, (int16_t)adc[5]);
-  p->state[bi][si].adc[6] = (uint16_t)
-                  firFixed(lookUp->firCoeff, param->filter5, (int16_t)adc[6]);
-  p->state[bi][si].adc[7] = (uint16_t)
-                  firFixed(lookUp->firCoeff, param->filter6, (int16_t)adc[7]);
+//  p->state[bi][si].adc[2] = (uint16_t)
+//                  firFixed(lookUp->firCoeff, param->filter1, (int16_t)adc[2]);
+//  p->state[bi][si].adc[3] = (uint16_t)
+//                  firFixed(lookUp->firCoeff, param->filter2, (int16_t)adc[3]);
+//  p->state[bi][si].adc[4] = (uint16_t)
+//                  firFixed(lookUp->firCoeff, param->filter3, (int16_t)adc[4]);
+//  p->state[bi][si].adc[5] = (uint16_t)
+//                  firFixed(lookUp->firCoeff, param->filter4, (int16_t)adc[5]);
+//  p->state[bi][si].adc[6] = (uint16_t)
+//                  firFixed(lookUp->firCoeff, param->filter5, (int16_t)adc[6]);
+//  p->state[bi][si].adc[7] = (uint16_t)
+//                  firFixed(lookUp->firCoeff, param->filter6, (int16_t)adc[7]);
 
   //imuSample(p->state[bi][si].imu);
 
@@ -223,6 +223,8 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
                   &p->state[bi][si].avgPeriod,
                   &p->state[bi][si].heelStrikeCnt,
                   p->state[bi][si].adc);
+
+  debugBuffer[9] = 0xDEADBEAF;
 }
 
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)

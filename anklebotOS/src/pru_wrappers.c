@@ -128,22 +128,6 @@ int pru_cleanup(void)
 {
   int rtn = 0;
 
-  /* Send Interrupt to pru0 */
-//  armToPru0Interrupt();
-//  printf("Sent interrupt to pru0...\n");
-
-  /* Wait for pru0 acknowledgement */
-//  prussdrv_pru_wait_event(PRU_EVTOUT_0);
-//  printf("Acknowledgement recieved, pru0 halted.\n");
-
-  /* Send Interrupt to pru1 */
-//  armToPru1Interrupt();
-//  printf("Sent interrupt to pru1...\n");
-
-  /* Wait for pru1 acknowledgement */
-//  prussdrv_pru_wait_event(PRU_EVTOUT_1);
-//  printf("Acknowledgement recieved, pru1 halted.\n");
-
   /* clear the event (if asserted) */
   if(prussdrv_pru_clear_event(PRU_EVTOUT_0, PRU0_ARM_INTERRUPT)) {
     printf("prussdrv_pru_clear_event() failed with %i\n", rtn);
@@ -224,7 +208,6 @@ int pru_mem_init(void)
   printf("\tSize of shared memory (SRAM): %i bytes.\n",
           sizeof(*p));
 
-
   /* Zero State */
   for(int i=0; i<NUM_OF_BUFFS; i++){
     for(int j=0; j<SIZE_OF_BUFFS; j++){
@@ -286,6 +269,16 @@ int armToPru1Interrupt(void)
   return 0;
 }
 
+/* ----------------------------------------------------------------------------
+ * Function: void writeState(uint32_t bi)
+ *
+ * This function writes state (data) to file. If debug mode is on, this
+ * prints low fidelity data to screen.
+ *
+ * Outputs: none
+ *
+ * Inputs: uint32_t bi - buffer index
+ * ------------------------------------------------------------------------- */
 void writeState(uint8_t bi)
 {
 
@@ -365,31 +358,60 @@ void writeState(uint8_t bi)
   }
 }
 
+/* ----------------------------------------------------------------------------
+ * Function: void clearFlowBitFeild(void)
+ *
+ * This function clears flow bit feild used by prus.
+ * ------------------------------------------------------------------------- */
 void clearFlowBitFeild(void)
 {
   p->cntrl = 0x00;
 }
 
+/* ----------------------------------------------------------------------------
+ * Function: void enable(void)
+ *
+ * This function sets the enbable bit in the flow bit feild to 1 (enable).
+ * ------------------------------------------------------------------------- */
 void enable(void)
 {
   p->cntrl_bit.enable = 1;
 }
 
+/* ----------------------------------------------------------------------------
+ * Function: void disable(void)
+ *
+ * This function sets the enbable bit in the flow bit feild to 0 (disable)
+ * ------------------------------------------------------------------------- */
 void disable(void)
 {
   p->cntrl_bit.enable = 0;
 }
 
+/* ----------------------------------------------------------------------------
+ * Function: void isBuffer0Full(void)
+ *
+ * This function returns 1 if buffer0 is full.
+ *
+ * Output: 1 - buffer0 full
+ *         0 - buffer0 not full
+ * ------------------------------------------------------------------------- */
 int isBuffer0Full(void)
 {
   return (int)p->cntrl_bit.buffer0_full;
 }
+
 
 int isBuffer1Full(void)
 {
   return (int)p->cntrl_bit.buffer1_full;
 }
 
+/* ----------------------------------------------------------------------------
+ * Function: void resetBuffer0FullFlag(void)
+ *
+ * This function clears bufferFull flag.
+ * ------------------------------------------------------------------------- */
 void resetBuffer0FullFlag(void)
 {
   p->cntrl_bit.buffer0_full = 0;
@@ -400,8 +422,14 @@ void resetBuffer1FullFlag(void)
   p->cntrl_bit.buffer1_full = 0;
 }
 
+void clearBufferFlags(void)
+{
+  p->cntrl_bit.buffer0_full = 0;
+  p->cntrl_bit.buffer1_full = 0;
+}
 
 /* ----------------------------------------------------------------------------
+ * Function: uint32_t hzToPruTicks(float freq_hz)
  *
  * This function converts freq in Hz to number of pru clock ticks.
  *
@@ -428,14 +456,14 @@ float pruTicksToHz(uint32_t ticks)
   return 1/((float)ticks/200000000.0);
 }
 
+/* ----------------------------------------------------------------------------
+ * Functions: void setN(float N)
+ *
+ * These function set params - where N is the param.
+ * ------------------------------------------------------------------------- */
 void setKp(float Kp)
 {
   param->Kp = (uint16_t)Kp;
-}
-
-uint16_t getKp(void)
-{
-  return param->Kp;
 }
 
 void setKd(float Kd)
@@ -443,14 +471,24 @@ void setKd(float Kd)
   param->Kd = (uint16_t)Kd;
 }
 
-uint16_t getKd(void)
-{
-  return (float)param->Kd;
-}
-
 void setAnklePos0(float pos0)
 {
   param->anklePos0 = (int16_t)pos0;
+}
+
+/* ----------------------------------------------------------------------------
+ * Functions: uint16_t getN(float N)
+ *
+ * These functions return param values - where N is the param.
+ * ------------------------------------------------------------------------- */
+uint16_t getKp(void)
+{
+  return param->Kp;
+}
+
+uint16_t getKd(void)
+{
+  return (float)param->Kd;
 }
 
 int16_t getAnklePos0(void)
@@ -458,6 +496,13 @@ int16_t getAnklePos0(void)
   return param->anklePos0;
 }
 
+/* ----------------------------------------------------------------------------
+ * Functions: int logFileInit(char* fileName)
+ *
+ * This function creates a log file.
+ *
+ * TODO: check if file exists.
+ * ------------------------------------------------------------------------- */
 int logFileInit(char* fileName)
 {
   char timestr[256];
@@ -475,9 +520,14 @@ int logFileInit(char* fileName)
   return 0;
 }
 
-void saveParameters(char *file)
+/* ----------------------------------------------------------------------------
+ * Functions: void saveParameters(char* file)
+ *
+ * This function saves current parameters to file.
+ * ------------------------------------------------------------------------- */
+void saveParameters(char* file)
 {
-  FILE *f = fopen(file, "w");
+  FILE* f = fopen(file, "w");
   if(f != NULL){
     fprintf(f, "%u\t// Freq.\n", param->frq_hz);
     fprintf(f,"%u\t// Freq. Ticks\n", 0);
@@ -499,9 +549,14 @@ void saveParameters(char *file)
   }
 }
 
-void loadParameters(char *file)
+/* ----------------------------------------------------------------------------
+ * Functions: void loadParameters(char* file)
+ *
+ * This function loads parameters from file.
+ * ------------------------------------------------------------------------- */
+int loadParameters(char *file)
 {
-  FILE *f = fopen(file, "r");
+  FILE* f = fopen(file, "r");
   if(f != NULL){
     fscanf(f,"%u%*[^\n]\n", &param->frq_hz);
     fscanf(f,"%u%*[^\n]\n", &param->frq_clock_ticks);
@@ -519,12 +574,19 @@ void loadParameters(char *file)
     fclose(f);
 
     param->frq_clock_ticks = hzToPruTicks(param->frq_hz);
+
+    return 0;
   }
   else {
-    printf("File doesn't exsist!");
+    return -1;
   }
 }
 
+/* ----------------------------------------------------------------------------
+ * Functions: void printParameters(void)
+ *
+ * This function prints current parameters.
+ * ------------------------------------------------------------------------- */
 void printParameters(void)
 {
   printf("Parameters:\n");
@@ -542,9 +604,14 @@ void printParameters(void)
   printf("\t anklePos0 = %i\n", param->anklePos0);
 }
 
-void loadLookUpTable(char *file)
+/* ----------------------------------------------------------------------------
+ * Functions: void loadLookUpTable(char* file)
+ *
+ * This function loads lookup table (Feedforward) from file to memory.
+ * ------------------------------------------------------------------------- */
+int loadLookUpTable(char* file)
 {
-  FILE *f = fopen(file, "r");
+  FILE* f = fopen(file, "r");
   float value;
 
   if(f != NULL){
@@ -553,34 +620,38 @@ void loadLookUpTable(char *file)
       lookUp->ff_ankleTorque[i] = (int16_t) (value*((float)param->mass));
     }
     fclose(f);
+    return 0;
   }
-  else {
-    printf("File doesn't exsist!");
-  }
+  return -1;
 }
 
-void loadFilterCoeff(char *file)
-{
-  FILE *f = fopen(file, "r");
-  int value;
-
-  if(f != NULL){
-    for(int i=0; i<FILTER_LEN; i++){
-      fscanf(f,"%d\n", &value);
-      lookUp->firCoeff[i] = (int16_t) value;
-    }
-    fclose(f);
-  }
-  else {
-    printf("File doesn't exsist!");
-  }
-}
-void printFirCoeff(void)
-{
-  for(int i=0; i<FILTER_LEN; i++){
-    printf("\t%d\t%hd\n",i,lookUp->firCoeff[i]);
-  }
-}
+/* ----------------------------------------------------------------------------
+ * Functions: void loadFilterCoeff(char* file)
+ *
+ * This function loads filter coeff from file to memory.
+ * ------------------------------------------------------------------------- */
+//void loadFilterCoeff(char *file)
+//{
+//  FILE* f = fopen(file, "r");
+//  int value;
+//
+//  if(f != NULL){
+//    for(int i=0; i<FILTER_LEN; i++){
+//      fscanf(f,"%d\n", &value);
+//      lookUp->firCoeff[i] = (int16_t) value;
+//    }
+//    fclose(f);
+//  }
+//  else {
+//    printf("File doesn't exsist!");
+//  }
+//}
+//void printFirCoeff(void)
+//{
+//  for(int i=0; i<FILTER_LEN; i++){
+//    printf("\t%d\t%hd\n",i,lookUp->firCoeff[i]);
+//  }
+//}
 void printFFLookUpTable(void)
 {
   for(int i=0; i<NUM_FF_LT; i++){
@@ -619,12 +690,6 @@ void stopTestFF(void)
 void closeLogFile(void)
 {
   fclose(fid);
-}
-
-void clearBufferFlags(void)
-{
-  p->cntrl_bit.buffer0_full = 0;
-  p->cntrl_bit.buffer1_full = 0;
 }
 
 void setTareEncoderBit(void)

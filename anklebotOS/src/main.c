@@ -35,9 +35,11 @@ int main(int argc, char **argv)
     if(strcmp(argv[1], "-v") == 0)
       debug = 1;
   }
-  else
+  else{
     debug = 0;
+  }
 
+  /* Welcome */
   if(!(debug)){
     printf("\n---------------------\n");
     printf("Welcome to AnklebotOS\n");
@@ -58,15 +60,16 @@ int main(int argc, char **argv)
   initDebugBuffer();
 
   /* Load default params */
-  loadParameters("config/PA_FF_subject_1");
+  if(loadParameters("config/PA_A01.txt") != 0){
+    printf("\nParameter file not found!\n");
+  }
   printParameters();
 
   /* Feedforward lookup */
-  loadLookUpTable("config/uff_1");
+  if(loadLookUpTable("config/uff_1") != 0){
+    printf("\nLookup table file not found!\n");
+  }
 //  printFFLookUpTable();
-
-  loadFilterCoeff("config/lowpass");
-//  printFirCoeff();
 
   /* Load Pru */
   if(loadPruSoftware() != 0)
@@ -89,18 +92,14 @@ int main(int argc, char **argv)
 
       if(isBuffer0Full()){
         resetBuffer0FullFlag();
-        //  gpio_set_value(gpio_debug, HIGH);
         writeState(0);
         lastBufferRead = 0;
-        //  gpio_set_value(gpio_debug, LOW);
       }
 
       if(isBuffer1Full()){
         resetBuffer1FullFlag();
-        //  gpio_set_value(gpio_debug, HIGH);
         writeState(1);
         lastBufferRead = 1;
-        //   gpio_set_value(gpio_debug, LOW);
       }
     }
     disable();

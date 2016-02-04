@@ -35,6 +35,8 @@
 #define PRU0_DEBUG_PIN  5
 #define PRU1_DEBUG_PIN  8
 
+#define MAX_IIR_ORDER   3
+
 /* Structures ---------------------------------------------------------------*/
 
 /* Anklebot state */
@@ -83,6 +85,20 @@ typedef struct{
 
 } shared_mem_t;
 
+/* IIR Array */
+typedef struct{
+  int16_t x[MAX_IIR_ORDER+1];
+  int16_t y[MAX_IIR_ORDER+1];
+} iir_t;
+
+/* IIR Coefficients */
+typedef struct{
+  int16_t a[MAX_IIR_ORDER+1];
+  int16_t b[MAX_IIR_ORDER+1];
+  int16_t N;
+  int16_t pad;
+} iir_coeff_t;
+
 
 /* Parameter Struct -> mapped to pr0 DRAM */
 typedef struct{
@@ -100,21 +116,17 @@ typedef struct{
   volatile uint16_t Kd;
   volatile int16_t anklePos0;
   uint16_t pad;
+
+  iir_coeff_t filt;
+  iir_t filtArray[6];
+
   volatile uint32_t debugBuffer[10];
-
-  volatile int16_t filter1[52];
-  volatile int16_t filter2[52];
-  volatile int16_t filter3[52];
-  volatile int16_t filter4[52];
-  volatile int16_t filter5[52];
-  volatile int16_t filter6[52];
-
 } param_mem_t;
+
 
 /* Feedforward lookup table -> mapped to pru1 DRAM */
 typedef struct{
   int16_t ff_ankleTorque[NUM_FF_LT];
-  int16_t firCoeff[52];
 } lookUp_mem_t;
 
 #endif
