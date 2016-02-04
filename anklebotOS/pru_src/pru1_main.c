@@ -126,6 +126,7 @@ int main(void)
     debugPinLow();
   }
 
+  debugBuffer[8] = 0xBEAFDEAD;
   debugPinLow();
   cleanUp();
   __halt();
