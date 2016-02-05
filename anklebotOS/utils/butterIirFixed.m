@@ -1,7 +1,7 @@
-function butterIirFixed(n,Wc,fileName)
+function butterIirFixed(n,fs,fc,fileName)
 
   % Calculate coefficients
-  [b,a] = butter(n,Wc,'low')
+  [b,a] = butter(n,2*fc/fs,'low')
 
   % Multiply by 32768 and round
   b = round(b.*32768)
@@ -9,7 +9,7 @@ function butterIirFixed(n,Wc,fileName)
 
   % Write to file
   if exist(fileName,'file')
-    fprtinf('\tFile already exsists,');
+    fprintf('\tFile already exsists,');
     usr_val = input('overwrite? [y|n]','s');
     if strcmp(usr_val,'n')
       return;
