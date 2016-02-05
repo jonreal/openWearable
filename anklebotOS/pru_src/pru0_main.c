@@ -52,13 +52,13 @@ volatile far pruIep CT_IEP
   __attribute__((cregister("PRU_IEP", near), peripheral));
 
 /* Shared memory pointer */
-shared_mem_t *p;
+shared_mem_t *s;
 
 /* Param pointer */
-param_mem_t *param;
+param_mem_t *p;
 
 /* LookUp tables */
-lookUp_mem_t *lookUp;
+lookUp_mem_t *l;
 
 /* Debug Buffer */
 volatile uint32_t *debugBuffer;
@@ -89,39 +89,39 @@ int main(void)
     debugPinHigh();
 
     /* Shadow enable bit */
-    p->cntrl_bit.shdw_enable = p->cntrl_bit.enable;
+    s->cntrl_bit.shdw_enable = s->cntrl_bit.enable;
 
     /* Mirror params */
     updateLocalParams();
 
     /* Reset Gait phase */
-    if(p->cntrl_bit.resetGaitPhase){
-      p->cntrl_bit.gaitPhaseReady = 0;
+    if(s->cntrl_bit.resetGaitPhase){
+      s->cntrl_bit.gaitPhaseReady = 0;
       resetGaitPhase();
-      p->cntrl_bit.resetGaitPhase = 0;
+      s->cntrl_bit.resetGaitPhase = 0;
     }
 
     /* Update State */
     updateState(cnt, buffIndx, stateIndx);
 
     /* Check to see if GaitPhase Ready */
-    if( !(p->cntrl_bit.gaitPhaseReady) && (isGaitPhaseReady()) )
-      p->cntrl_bit.gaitPhaseReady = 1;
+    if( !(s->cntrl_bit.gaitPhaseReady) && (isGaitPhaseReady()) )
+      s->cntrl_bit.gaitPhaseReady = 1;
 
     /* Set done bit (update state done) */
-    p->cntrl_bit.pru0_done = 1;
+    s->cntrl_bit.pru0_done = 1;
 
     /* Poll for pru1 to be done (control update done) */
-    while(!(p->cntrl_bit.pru1_done));
+    while(!(s->cntrl_bit.pru1_done));
 
     /* Reset done bit */
-    p->cntrl_bit.pru1_done = 0;
+    s->cntrl_bit.pru1_done = 0;
 
     /* Increment state index */
     updateCounters(&cnt ,&buffIndx, &stateIndx);
 
     /* Check enable bit */
-    if(!(p->cntrl_bit.shdw_enable))
+    if(!(s->cntrl_bit.shdw_enable))
         break;
 
     clearIepInterrupt();
@@ -153,13 +153,13 @@ void initialize(void)
 
   /* Init timer */
   iepInterruptInit();
-  iepTimerInit(param->frq_clock_ticks);
+  iepTimerInit(p->frq_clock_ticks);
   clearIepInterrupt();
 
   /* Add pru dependent peripheral init methods here */
   adcInit();
   //imuInit();
-  gaitPhaseInit(param);
+  gaitPhaseInit(p);
 }
 
 void initMemory(void)
@@ -168,61 +168,65 @@ void initMemory(void)
 
   /* Memory map for shared memory */
   ptr = (void *)PRU_L_SHARED_DRAM;
-  p = (shared_mem_t *) ptr;
+  s = (shared_mem_t *) ptr;
 
   /* Memory map for parameters (pru0 DRAM)*/
   ptr = (void *) PRU_DRAM;
-  param = (param_mem_t *) ptr;
+  p = (param_mem_t *) ptr;
 
   /* Memory map for feedforward lookup table (pru1 DRAM)*/
   ptr = (void *) PRU_OTHER_DRAM;
-  lookUp = (lookUp_mem_t *) ptr;
+  l = (lookUp_mem_t *) ptr;
 
   /* Point global debug buffer */
-  debugBuffer = &(param->debugBuffer[0]);
+  debugBuffer = &(p->debugBuffer[0]);
 }
 
 void updateLocalParams(void)
 {
-  gaitPhaseUpdateParams(param);
+  gaitPhaseUpdateParams(p);
 }
 
 void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 {
   uint16_t adc[8];
 
-  p->state[bi][si].timeStamp = cnt;
+  s->state[bi][si].timeStamp = cnt;
 
-  p->state[bi][si].sync = viconSync();
+  s->state[bi][si].sync = viconSync();
 
   adcSample_1(adc);
   adcSample_2(adc);
 
   /* Motor analog samples */
-  p->state[bi][si].adc[0] = adc[0];
-  p->state[bi][si].adc[1] = adc[1];
+  s->state[bi][si].adc[0] = adc[0];
+  s->state[bi][si].adc[1] = adc[1];
 
   /* Filter insoles */
-//  p->state[bi][si].adc[2] = (uint16_t)
-//                  firFixed(lookUp->firCoeff, param->filter1, (int16_t)adc[2]);
-//  p->state[bi][si].adc[3] = (uint16_t)
-//                  firFixed(lookUp->firCoeff, param->filter2, (int16_t)adc[3]);
-//  p->state[bi][si].adc[4] = (uint16_t)
-//                  firFixed(lookUp->firCoeff, param->filter3, (int16_t)adc[4]);
-//  p->state[bi][si].adc[5] = (uint16_t)
-//                  firFixed(lookUp->firCoeff, param->filter4, (int16_t)adc[5]);
-//  p->state[bi][si].adc[6] = (uint16_t)
-//                  firFixed(lookUp->firCoeff, param->filter5, (int16_t)adc[6]);
-//  p->state[bi][si].adc[7] = (uint16_t)
-//                  firFixed(lookUp->firCoeff, param->filter6, (int16_t)adc[7]);
+  s->state[bi][si].adc[2] = (uint16_t)
+        iirFixedPoint(p->filt.N, p->filt.b, p->filt.a,
+                      p->filtBuffer[0].x, p->filtBuffer[0].y, (int16_t)adc[2]);
 
-  //imuSample(p->state[bi][si].imu);
+  s->state[bi][si].adc[3] = adc[2];
+
+//  s->state[bi][si].adc[3] = (uint16_t)
+//                  firFixed(lookUs->firCoeff, p->filter2, (int16_t)adc[3]);
+//  s->state[bi][si].adc[4] = (uint16_t)
+//                  firFixed(lookUs->firCoeff, p->filter3, (int16_t)adc[4]);
+//  s->state[bi][si].adc[5] = (uint16_t)
+//                  firFixed(lookUs->firCoeff, p->filter4, (int16_t)adc[5]);
+//  s->state[bi][si].adc[6] = (uint16_t)
+//                  firFixed(lookUs->firCoeff, p->filter5, (int16_t)adc[6]);
+//  s->state[bi][si].adc[7] = (uint16_t)
+//                  firFixed(lookUs->firCoeff, p->filter6, (int16_t)adc[7]);
+
+  //imuSample(s->state[bi][si].imu);
 
   gaitPhaseDetect(cnt,
-                  &p->state[bi][si].gaitPhase,
-                  &p->state[bi][si].avgPeriod,
-                  &p->state[bi][si].heelStrikeCnt,
-                  p->state[bi][si].adc);
+                  &s->state[bi][si].gaitPhase,
+                  &s->state[bi][si].avgPeriod,
+                  &s->state[bi][si].heelStrikeCnt,
+                  s->state[bi][si].adc);
 
   debugBuffer[9] = 0xDEADBEAF;
 }
@@ -241,9 +245,9 @@ void updateCounters(uint32_t *cnt, uint8_t *bi, uint8_t *si)
 
     /* Set buffer full bit */
     if(*bi == 0)
-      p->cntrl_bit.buffer0_full = 1;
+      s->cntrl_bit.buffer0_full = 1;
     else
-      p->cntrl_bit.buffer1_full = 1;
+      s->cntrl_bit.buffer1_full = 1;
 
     (*bi)++;
     if(*bi == NUM_OF_BUFFS){

@@ -71,6 +71,12 @@ int main(int argc, char **argv)
   }
 //  printFFLookUpTable();
 
+  /* Filter Coeff */
+  if(loadIirFilterCoeff("config/lowpass_order_1_cutoff_60Hz.txt")){
+      printf("\nFilter coefficient file not found!\n");
+  }
+  printFirCoeff();
+
   /* Load Pru */
   if(loadPruSoftware() != 0)
     return -1;

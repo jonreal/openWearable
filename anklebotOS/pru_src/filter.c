@@ -19,10 +19,16 @@ void firFixedInit(volatile int16_t *insamp)
 
 // Fixed point iir filter
 int16_t iirFixedPoint(int16_t N, int16_t *b, int16_t *a,
-                      int16_t *y, int16_t *x, int16_t s)
+                      int16_t *x, int16_t *y, int16_t s)
 {
   int32_t acc;     // accumulator for MACs
   int16_t output;
+
+  // Shift samples back in time
+  for(int i=N; i>0; i--){
+    x[i] = x[i-1];
+    y[i] = y[i-1];
+  }
 
   // new Sample
   x[0] = s;
@@ -32,25 +38,22 @@ int16_t iirFixedPoint(int16_t N, int16_t *b, int16_t *a,
 
   // difference eq.
   acc = (int32_t) b[0] * x[0];
-  for(int k=1; k<N+1; k++) {
+  for(int k=1; k<N; k++) {
     acc += (int32_t)b[k] * (int32_t)x[k] - (int32_t)a[k] * (int32_t)y[k];
   }
 
   // saturate the result
   if ( acc > 0x3fffffff ) {
     acc = 0x3fffffff;
-  } else if ( acc < -0x40000000 ) {
+  }
+  else if ( acc < -0x40000000 ) {
     acc = -0x40000000;
   }
 
   // convert from Q30 to Q15
   output = (int16_t)(acc >> 15);
 
-  // Shift samples back in time
-  for(int i=N+1; i>0; i--){
-    x[i] = x[i-1];
-    y[i] = y[i-1];
-  }
+  y[0] = output;
   return output;
 }
 
