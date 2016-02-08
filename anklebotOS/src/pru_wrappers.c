@@ -629,6 +629,7 @@ int loadLookUpTable(char* file)
  * This function loads filter coeff from file to memory.
  *
  * file format:
+ *    ScalingFactor
  *    FilterOrder
  *    b(1)
  *    .
@@ -649,6 +650,12 @@ int loadIirFilterCoeff(char *file)
   FILE* f = fopen(file, "r");
   int value;
   if(f != NULL){
+
+    // First element scaling (2^Q)
+    fscanf(f, "%d\n", &value);
+    p->filt.Q = value;
+
+
     // First element is filter order
     fscanf(f, "%d\n", &value);
     p->filt.N = value;

@@ -160,6 +160,17 @@ void initialize(void)
   adcInit();
   //imuInit();
   gaitPhaseInit(p);
+
+  /* Init filter buffers */
+  iirFixedInit(p->filtBuffer[0].x, p->filtBuffer[0].y, MAX_IIR_ORDER+1);
+  iirFixedInit(p->filtBuffer[1].x, p->filtBuffer[1].y, MAX_IIR_ORDER+1);
+  iirFixedInit(p->filtBuffer[2].x, p->filtBuffer[2].y, MAX_IIR_ORDER+1);
+  iirFixedInit(p->filtBuffer[3].x, p->filtBuffer[3].y, MAX_IIR_ORDER+1);
+  iirFixedInit(p->filtBuffer[4].x, p->filtBuffer[4].y, MAX_IIR_ORDER+1);
+  iirFixedInit(p->filtBuffer[5].x, p->filtBuffer[5].y, MAX_IIR_ORDER+1);
+
+  debugBuffer[0] = p->filt.N;
+  debugBuffer[1] = p->filt.a[1];
 }
 
 void initMemory(void)
@@ -189,7 +200,7 @@ void updateLocalParams(void)
 
 void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 {
-  uint16_t adc[8];
+  int16_t adc[8];
 
   s->state[bi][si].timeStamp = cnt;
 
@@ -203,9 +214,9 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
   s->state[bi][si].adc[1] = adc[1];
 
   /* Filter insoles */
-  s->state[bi][si].adc[2] = (uint16_t)
-        iirFixedPoint(p->filt.N, p->filt.b, p->filt.a,
-                      p->filtBuffer[0].x, p->filtBuffer[0].y, (int16_t)adc[2]);
+  s->state[bi][si].adc[2] = iirFixedPoint(p->filt.Q, p->filt.N,
+                              p->filt.b, p->filt.a, p->filtBuffer[0].x,
+                              p->filtBuffer[0].y, adc[2]);
 
   s->state[bi][si].adc[3] = adc[2];
 
@@ -222,13 +233,13 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 
   //imuSample(s->state[bi][si].imu);
 
-  gaitPhaseDetect(cnt,
-                  &s->state[bi][si].gaitPhase,
-                  &s->state[bi][si].avgPeriod,
-                  &s->state[bi][si].heelStrikeCnt,
-                  s->state[bi][si].adc);
-
-  debugBuffer[9] = 0xDEADBEAF;
+//  gaitPhaseDetect(cnt,
+//                  &s->state[bi][si].gaitPhase,
+//                  &s->state[bi][si].avgPeriod,
+//                  &s->state[bi][si].heelStrikeCnt,
+//                  s->state[bi][si].adc);
+//
+//  debugBuffer[9] = 0xDEADBEAF;
 }
 
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)

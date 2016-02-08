@@ -189,7 +189,7 @@ void adcInit(void)
   HWREG(SOC_ADC_TSC_0_REGS + 0x28) = 0x7FF;
 }
 
-void adcSample_1(volatile uint16_t adc[8])
+void adcSample_1(int16_t adc[8])
 {
   volatile uint32_t *FIFO =  (uint32_t *) (SOC_ADC_TSC_0_REGS + 0x100);
 
@@ -213,17 +213,17 @@ void adcSample_1(volatile uint16_t adc[8])
   while( (HWREG(SOC_ADC_TSC_0_REGS + 0x28) & (1 << 2)) == 0){}
 
   /* Write to memory */
-  adc[0] = FIFO[0] & 0xFFF;
-  adc[1] = FIFO[1] & 0xFFF;
-  adc[2] = FIFO[2] & 0xFFF;
-  adc[3] = FIFO[3] & 0xFFF;
-  adc[4] = FIFO[4] & 0xFFF;
+  adc[0] = (int16_t) (FIFO[0] & 0xFFF);
+  adc[1] = (int16_t) (FIFO[1] & 0xFFF);
+  adc[2] = (int16_t) (FIFO[2] & 0xFFF);
+  adc[3] = (int16_t) (FIFO[3] & 0xFFF);
+  adc[4] = (int16_t) (FIFO[4] & 0xFFF);
 
   /* IRQSTATUS: Clear all interrupts */
   HWREG(SOC_ADC_TSC_0_REGS + 0x28) = 0x7FF;
 }
 
-void adcSample_2(volatile uint16_t adc[8])
+void adcSample_2(int16_t adc[8])
 {
   volatile uint32_t *FIFO =  (uint32_t *) (SOC_ADC_TSC_0_REGS + 0x100);
 
@@ -246,9 +246,9 @@ void adcSample_2(volatile uint16_t adc[8])
   while( (HWREG(SOC_ADC_TSC_0_REGS + 0x28) & (1 << 2)) == 0){}
 
   /* Write to memory */
-  adc[5] = FIFO[0] & 0xFFF;
-  adc[6] = FIFO[1] & 0xFFF;
-  adc[7] = FIFO[2] & 0xFFF;
+  adc[5] = (int16_t) (FIFO[0] & 0xFFF);
+  adc[6] = (int16_t) (FIFO[1] & 0xFFF);
+  adc[7] = (int16_t) (FIFO[2] & 0xFFF);
 
   /* Vadc */
   uint16_t temp = FIFO[3] & 0xFFF;

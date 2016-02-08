@@ -1,11 +1,9 @@
 #ifndef _SPIDRIVER_H_
 #define _SPIDRIVER_H_
 
-#define FILTER_LEN 51
+#include "mem_types.h"
 
-
-void firFixedInit(volatile int16_t *insamp);
-int16_t firFixed(int16_t *coeffs, volatile int16_t *insamp, int16_t input);
-int16_t iirFixedPoint(int16_t N, int16_t *b, int16_t *a,
-                      int16_t *x, int16_t *y, int16_t s);
+void iirFixedInit(volatile int16_t *x, volatile int16_t *y, uint16_t bufLen);
+int16_t iirFixedPoint(int16_t Q, int16_t N, int16_t *b, int16_t *a,
+                      volatile int16_t *x, volatile int16_t *y, int16_t s);
 #endif
