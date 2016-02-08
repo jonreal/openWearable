@@ -12,8 +12,8 @@ extern volatile uint32_t *debugBuffer;
 
 /* ---- Prototypes ---- */
 void adcInit(void);
-void adcSample_1(volatile uint16_t adc[8]);
-void adcSample_2(volatile uint16_t adc[8]);
+void adcSample_1(int16_t adc[8]);
+void adcSample_2(int16_t adc[8]);
 void adcCleanUp(void);
 
 #endif

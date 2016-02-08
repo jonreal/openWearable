@@ -51,7 +51,7 @@ typedef struct{
   volatile int16_t fbCurrentCmd;
   volatile int16_t ffCurrentCmd;
   volatile int16_t motorDuty;
-  volatile uint16_t adc[NUM_ADC];
+  volatile int16_t adc[NUM_ADC];
   volatile int16_t imu[NUM_IMU];
 } state_t;
 
@@ -87,8 +87,8 @@ typedef struct{
 
 /* IIR Array */
 typedef struct{
-  int16_t x[MAX_IIR_ORDER+1];
-  int16_t y[MAX_IIR_ORDER+1];
+  volatile int16_t x[MAX_IIR_ORDER+1];
+  volatile int16_t y[MAX_IIR_ORDER+1];
 } iir_buff_t;
 
 /* IIR Coefficients */
@@ -96,7 +96,7 @@ typedef struct{
   int16_t b[MAX_IIR_ORDER+1];
   int16_t a[MAX_IIR_ORDER+1];
   int16_t N;
-  int16_t pad;
+  int16_t Q;
 } iir_coeff_t;
 
 
