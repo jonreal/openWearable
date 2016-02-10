@@ -93,8 +93,8 @@ typedef struct{
 
 /* IIR Coefficients */
 typedef struct{
-  int16_t b[MAX_IIR_ORDER+1];
-  int16_t a[MAX_IIR_ORDER+1];
+  int32_t b[MAX_IIR_ORDER+1];
+  int32_t a[MAX_IIR_ORDER+1];
   int16_t N;
   int16_t Q;
 } iir_coeff_t;

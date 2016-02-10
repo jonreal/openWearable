@@ -218,20 +218,22 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
                               p->filt.b, p->filt.a, p->filtBuffer[0].x,
                               p->filtBuffer[0].y, adc[2]);
 
-  s->state[bi][si].adc[3] = adc[2];
+  s->state[bi][si].adc[3] = iirFixedPoint(p->filt.Q, p->filt.N,
+                              p->filt.b, p->filt.a, p->filtBuffer[1].x,
+                              p->filtBuffer[1].y, adc[3]);
+  s->state[bi][si].adc[4] = iirFixedPoint(p->filt.Q, p->filt.N,
+                              p->filt.b, p->filt.a, p->filtBuffer[2].x,
+                              p->filtBuffer[2].y, adc[4]);
+  s->state[bi][si].adc[5] = iirFixedPoint(p->filt.Q, p->filt.N,
+                              p->filt.b, p->filt.a, p->filtBuffer[3].x,
+                              p->filtBuffer[3].y, adc[5]);
 
-//  s->state[bi][si].adc[3] = (uint16_t)
-//                  firFixed(lookUs->firCoeff, p->filter2, (int16_t)adc[3]);
-//  s->state[bi][si].adc[4] = (uint16_t)
-//                  firFixed(lookUs->firCoeff, p->filter3, (int16_t)adc[4]);
-//  s->state[bi][si].adc[5] = (uint16_t)
-//                  firFixed(lookUs->firCoeff, p->filter4, (int16_t)adc[5]);
-//  s->state[bi][si].adc[6] = (uint16_t)
-//                  firFixed(lookUs->firCoeff, p->filter5, (int16_t)adc[6]);
-//  s->state[bi][si].adc[7] = (uint16_t)
-//                  firFixed(lookUs->firCoeff, p->filter6, (int16_t)adc[7]);
-
-  //imuSample(s->state[bi][si].imu);
+  s->state[bi][si].adc[6] = iirFixedPoint(p->filt.Q, p->filt.N,
+                              p->filt.b, p->filt.a, p->filtBuffer[4].x,
+                              p->filtBuffer[4].y, adc[6]);
+  s->state[bi][si].adc[7] = iirFixedPoint(p->filt.Q, p->filt.N,
+                              p->filt.b, p->filt.a, p->filtBuffer[5].x,
+                              p->filtBuffer[5].y, adc[7]);
 
 //  gaitPhaseDetect(cnt,
 //                  &s->state[bi][si].gaitPhase,

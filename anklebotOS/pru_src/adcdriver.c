@@ -10,8 +10,8 @@ void adcInit(void)
   /* TODO make these params */
 //  uint8_t sampleDelay = 250;
 //  uint16_t openDelay = 2250;
-  uint8_t sampleDelay = 250;
-  uint16_t openDelay = 250;
+  uint8_t sampleDelay = 255;
+  uint16_t openDelay = 1500;
   uint8_t avrg = 0x0;
   uint16_t adc_clk_div = 0x0;
 
