@@ -648,28 +648,28 @@ int loadLookUpTable(char* file)
 int loadIirFilterCoeff(char *file)
 {
   FILE* f = fopen(file, "r");
-  int value;
+  int32_t value;
   if(f != NULL){
 
     // First element scaling (2^Q)
     fscanf(f, "%d\n", &value);
-    p->filt.Q = value;
+    p->filt.Q = (int16_t) value;
 
 
     // First element is filter order
     fscanf(f, "%d\n", &value);
-    p->filt.N = value;
+    p->filt.N = (int16_t) value;
 
     // Numerator coefficients, b
     for(int i=0; i<p->filt.N+1; i++){
       fscanf(f,"%d\n", &value);
-      p->filt.b[i] = (int16_t) value;
+      p->filt.b[i] = (int32_t) value;
     }
 
     // Denominator coefficients, a
     for(int i=0; i<p->filt.N+1; i++){
       fscanf(f,"%d\n", &value);
-      p->filt.a[i] = (int16_t) value;
+      p->filt.a[i] = (int32_t) value;
     }
     fclose(f);
     return 0;
@@ -678,8 +678,9 @@ int loadIirFilterCoeff(char *file)
 }
 void printFirCoeff(void)
 {
+  printf("\n\tN = %i, Q = %i\n",p->filt.N, p->filt.Q);
   for(int i=0; i<p->filt.N+1; i++){
-    printf("\tb[%d] : %hd\ta[%d] : %hd\n",
+    printf("\tb[%i] : %i\ta[%i] : %i\n",
           i, p->filt.b[i], i, p->filt.a[i]);
   }
 }
