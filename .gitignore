@@ -2,3 +2,6 @@
 */bin
 */build
 *.swp
+tags
+types_c.taghl
+types_matlab.taghl

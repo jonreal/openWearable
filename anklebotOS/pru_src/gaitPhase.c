@@ -10,62 +10,62 @@ gp_t gp;
 
 void gaitPhaseInit(param_mem_t* params)
 {
-  gp.toe_hs = params->gp_toe_hs;
-  gp.mid_hs = params->gp_mid_hs;
-  gp.heel_hs = params->gp_heel_hs;
-  gp.toe_to = params->gp_toe_to;
-  gp.mid_to = params->gp_mid_to;
-  gp.heel_to = params->gp_heel_to;
+ // gp.toe_hs = params->gp_toe_hs;
+ // gp.mid_hs = params->gp_mid_hs;
+ // gp.heel_hs = params->gp_heel_hs;
+ // gp.toe_to = params->gp_toe_to;
+ // gp.mid_to = params->gp_mid_to;
+ // gp.heel_to = params->gp_heel_to;
 
-  if(params->gpOnLeftFoot == 1){
-    gp.toe_indx = 2;
-    gp.mid_indx = 3;
-    gp.heel_indx = 4;
-  }
-  else{
-    gp.toe_indx = 5;
-    gp.mid_indx = 6;
-    gp.heel_indx = 7;
-  }
+ // if(params->gpOnLeftFoot == 1){
+ //   gp.toe_indx = 2;
+ //   gp.mid_indx = 3;
+ //   gp.heel_indx = 4;
+ // }
+ // else{
+ //   gp.toe_indx = 5;
+ //   gp.mid_indx = 6;
+ //   gp.heel_indx = 7;
+ // }
 
-  gp.prevGaitPhase = 0;
-  gp.prevAvgPeriodCnts = 0;
-  gp.periodCnts[0] = 0;
-  gp.periodCnts[1] = 0;
-  gp.periodCnts[2] = 0;
-  gp.HS_cntStamp = 0;
-  gp.prevHS_cntStamp = 0;
-  gp.heelStrikeCnt = 0;
+ // gp.prevGaitPhase = 0;
+ // gp.prevAvgPeriodCnts = 0;
+ // gp.periodCnts[0] = 0;
+ // gp.periodCnts[1] = 0;
+ // gp.periodCnts[2] = 0;
+ // gp.HS_cntStamp = 0;
+ // gp.prevHS_cntStamp = 0;
+ // gp.heelStrikeCnt = 0;
 }
 
 void gaitPhaseUpdateParams(param_mem_t *params)
 {
-  gp.toe_hs = params->gp_toe_hs;
-  gp.mid_hs = params->gp_mid_hs;
-  gp.heel_hs = params->gp_heel_hs;
-  gp.toe_to = params->gp_toe_to;
-  gp.mid_to = params->gp_mid_to;
-  gp.heel_to = params->gp_heel_to;
+ // gp.toe_hs = params->gp_toe_hs;
+ // gp.mid_hs = params->gp_mid_hs;
+ // gp.heel_hs = params->gp_heel_hs;
+ // gp.toe_to = params->gp_toe_to;
+ // gp.mid_to = params->gp_mid_to;
+ // gp.heel_to = params->gp_heel_to;
 }
 
 void resetGaitPhase(void)
 {
-  gp.prevGaitPhase = 0;
-  gp.prevAvgPeriodCnts = 0;
-  gp.periodCnts[0] = 0;
-  gp.periodCnts[1] = 0;
-  gp.periodCnts[2] = 0;
-  gp.HS_cntStamp = 0;
-  gp.prevHS_cntStamp = 0;
-  gp.heelStrikeCnt = 0;
+ // gp.prevGaitPhase = 0;
+ // gp.prevAvgPeriodCnts = 0;
+ // gp.periodCnts[0] = 0;
+ // gp.periodCnts[1] = 0;
+ // gp.periodCnts[2] = 0;
+ // gp.HS_cntStamp = 0;
+ // gp.prevHS_cntStamp = 0;
+ // gp.heelStrikeCnt = 0;
 }
 
 uint8_t isGaitPhaseReady(void)
 {
-  if(gp.heelStrikeCnt > 4)
-    return 1;
-  else
-    return 0;
+ // if(gp.heelStrikeCnt > 4)
+ //   return 1;
+ // else
+ //   return 0;
 }
 
 void gaitPhaseDetect(volatile uint32_t cnt,

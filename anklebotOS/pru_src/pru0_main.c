@@ -15,9 +15,6 @@
 #include "viconsync.h"
 #include "filter.h"
 
-/* Local Param Struct (mirror) --------------------------------------------- */
-typedef struct{
-}local_t;
 
 /* Prototypes -------------------------------------------------------------- */
 void initialize(void);
@@ -162,15 +159,12 @@ void initialize(void)
   gaitPhaseInit(p);
 
   /* Init filter buffers */
-  iirFixedInit(p->filtBuffer[0].x, p->filtBuffer[0].y, MAX_IIR_ORDER+1);
-  iirFixedInit(p->filtBuffer[1].x, p->filtBuffer[1].y, MAX_IIR_ORDER+1);
-  iirFixedInit(p->filtBuffer[2].x, p->filtBuffer[2].y, MAX_IIR_ORDER+1);
-  iirFixedInit(p->filtBuffer[3].x, p->filtBuffer[3].y, MAX_IIR_ORDER+1);
-  iirFixedInit(p->filtBuffer[4].x, p->filtBuffer[4].y, MAX_IIR_ORDER+1);
-  iirFixedInit(p->filtBuffer[5].x, p->filtBuffer[5].y, MAX_IIR_ORDER+1);
-
-  debugBuffer[0] = p->filt.N;
-  debugBuffer[1] = p->filt.a[1];
+//  fix16_iirInit(p->filtBuffer[0].x, p->filtBuffer[0].y, MAX_IIR_ORDER+1);
+//  fix16_iirInit(p->filtBuffer[1].x, p->filtBuffer[1].y, MAX_IIR_ORDER+1);
+//  fix16_iirInit(p->filtBuffer[2].x, p->filtBuffer[2].y, MAX_IIR_ORDER+1);
+//  fix16_iirInit(p->filtBuffer[3].x, p->filtBuffer[3].y, MAX_IIR_ORDER+1);
+//  fix16_iirInit(p->filtBuffer[4].x, p->filtBuffer[4].y, MAX_IIR_ORDER+1);
+//  fix16_iirInit(p->filtBuffer[5].x, p->filtBuffer[5].y, MAX_IIR_ORDER+1);
 }
 
 void initMemory(void)
@@ -214,27 +208,30 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
   s->state[bi][si].adc[1] = adc[1];
 
   /* Filter insoles */
-  s->state[bi][si].adc[2] = iirFixedPoint(p->filt.Q, p->filt.N,
-                              p->filt.b, p->filt.a, p->filtBuffer[0].x,
-                              p->filtBuffer[0].y, adc[2]);
-
-  s->state[bi][si].adc[3] = iirFixedPoint(p->filt.Q, p->filt.N,
-                              p->filt.b, p->filt.a, p->filtBuffer[1].x,
-                              p->filtBuffer[1].y, adc[3]);
-  s->state[bi][si].adc[4] = iirFixedPoint(p->filt.Q, p->filt.N,
-                              p->filt.b, p->filt.a, p->filtBuffer[2].x,
-                              p->filtBuffer[2].y, adc[4]);
-  s->state[bi][si].adc[5] = iirFixedPoint(p->filt.Q, p->filt.N,
-                              p->filt.b, p->filt.a, p->filtBuffer[3].x,
-                              p->filtBuffer[3].y, adc[5]);
-
-  s->state[bi][si].adc[6] = iirFixedPoint(p->filt.Q, p->filt.N,
-                              p->filt.b, p->filt.a, p->filtBuffer[4].x,
-                              p->filtBuffer[4].y, adc[6]);
-  s->state[bi][si].adc[7] = iirFixedPoint(p->filt.Q, p->filt.N,
-                              p->filt.b, p->filt.a, p->filtBuffer[5].x,
-                              p->filtBuffer[5].y, adc[7]);
-
+//  s->state[bi][si].adc[2] = fix16_iir(p->filt.Q, p->filt.N,
+//                              p->filt.b, p->filt.a, p->filtBuffer[0].x,
+//                              p->filtBuffer[0].y, adc[2]);
+//
+//  s->state[bi][si].adc[3] = fix16_iir(p->filt.Q, p->filt.N,
+//                              p->filt.b, p->filt.a, p->filtBuffer[1].x,
+//                              p->filtBuffer[1].y, adc[3]);
+//
+//  s->state[bi][si].adc[4] = fix16_iir(p->filt.Q, p->filt.N,
+//                              p->filt.b, p->filt.a, p->filtBuffer[2].x,
+//                              p->filtBuffer[2].y, adc[4]);
+//
+//  s->state[bi][si].adc[5] = fix16_iir(p->filt.Q, p->filt.N,
+//                              p->filt.b, p->filt.a, p->filtBuffer[3].x,
+//                              p->filtBuffer[3].y, adc[5]);
+//
+//  s->state[bi][si].adc[6] = fix16_iir(p->filt.Q, p->filt.N,
+//                              p->filt.b, p->filt.a, p->filtBuffer[4].x,
+//                              p->filtBuffer[4].y, adc[6]);
+//
+//  s->state[bi][si].adc[7] = fix16_iir(p->filt.Q, p->filt.N,
+//                              p->filt.b, p->filt.a, p->filtBuffer[5].x,
+//                              p->filtBuffer[5].y, adc[7]);
+//
 //  gaitPhaseDetect(cnt,
 //                  &s->state[bi][si].gaitPhase,
 //                  &s->state[bi][si].avgPeriod,

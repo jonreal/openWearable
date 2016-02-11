@@ -52,32 +52,32 @@ int main(int argc, char **argv)
     signal(SIGINT, sigintHandler);
   }
 
-  /* initialize the library, PRU and interrupt */
+  // Initialize the library, PRUs and interrupts.
   if(pru_init() != 0)
     return -1;
 
-  /* Init debug buffer */
+  // Initialize debug buffer.
   initDebugBuffer();
 
-  /* Load default params */
+  // Load parameters from file to memory.
   if(loadParameters("config/PA_A01.txt") != 0){
     printf("\nParameter file not found!\n");
   }
-  printParameters();
+  printParameters(stdout);
 
-  /* Feedforward lookup */
+  // Load lookup table from file to memory.
   if(loadLookUpTable("config/uff_1") != 0){
     printf("\nLookup table file not found!\n");
   }
 //  printFFLookUpTable();
 
-  /* Filter Coeff */
+  // Load iir filter coefficients from file to memory.
   if(loadIirFilterCoeff("config/lowpass_2_10Hz.txt")){
       printf("\nFilter coefficient file not found!\n");
   }
-  printFirCoeff();
+  printFirCoeff(stdout);
 
-  /* Load Pru */
+  // Load binaries to prus instruction RAM.
   if(loadPruSoftware() != 0)
     return -1;
 
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
   getchar();
 
   /* Enable pru sensor/control */
-  enable();
+  enablePru(1);
 
   /* Start control loop */
   startPruLoop();
@@ -96,19 +96,18 @@ int main(int argc, char **argv)
   if(debug){
     while(!(doneFlag)){
 
-      if(isBuffer0Full()){
+      if(buffer0Full()){
         clearBuffer0FullFlag();
         writeState(0);
         lastBufferRead = 0;
       }
-
-      if(isBuffer1Full()){
+      else if(buffer1Full()){
         clearBuffer1FullFlag();
         writeState(1);
         lastBufferRead = 1;
       }
     }
-    disable();
+    enablePru(0);
 
     if(lastBufferRead == 1){
       writeState(0);
@@ -133,7 +132,7 @@ int main(int argc, char **argv)
 
     /* UI loop */
     if(start_tui() == 1){
-        disable();
+        enablePru(0);
         printDebugBuffer();
 
         /* Cleanup */
@@ -157,14 +156,14 @@ int loadPruSoftware(void)
   int rtn = 0;
 
   /* Run PRU0 software */
-  if( (rtn = pru_run(PRU_SENSOR, "./bin/pru0_main_text.bin")) != 0){
-    printf("pru_run() failed (PRU_SENSOR)");
+  if( (rtn = pru_run(PRU0, "./bin/pru0_main_text.bin")) != 0){
+    printf("pru_run() failed (PRU0)");
     return -1;
   }
 
   /* Run PRU1 software */
-  if( (rtn = pru_run(PRU_CONTROL, "./bin/pru1_main_text.bin")) != 0){
-    printf("pru_run() failed (PRU_CONTROL)");
+  if( (rtn = pru_run(PRU1, "./bin/pru1_main_text.bin")) != 0){
+    printf("pru_run() failed (PRU1)");
     return -1;
   }
   return rtn;

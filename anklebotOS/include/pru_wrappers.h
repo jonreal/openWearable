@@ -1,17 +1,14 @@
 #ifndef _PRU_WRAPPER_
 #define _PRU_WRAPPER_
 
+#include "fix16.h"
 #include "mem_types.h"
-
-#define PRU_SENSOR    0
-#define PRU_CONTROL   1
-
 
 /* Globals ------------------------------------------------------------------*/
 extern int debug;
 
 /* Local globals ------------------------------------------------------------*/
-FILE* fid;
+FILE* flog;
 
 /* Prototypes ---------------------------------------------------------------*/
 void printDebugBuffer(void);
@@ -26,11 +23,10 @@ int armToPru1Interrupt(void);
 
 void writeState(uint8_t buffIndx);
 void clearFlowBitFeild(void);
-void enable(void);
-void disable(void);
+void enablePru(int en);
 
-int isBuffer0Full(void);
-int isBuffer1Full(void);
+int buffer0Full(void);
+int buffer1Full(void);
 void clearBuffer0FullFlag(void);
 void clearBuffer1FullFlag(void);
 void clearBufferFlags(void);
@@ -41,25 +37,26 @@ float pruTicksToHz(uint32_t ticks);
 void setKp(float Kp);
 void setKd(float Kd);
 void setAnklePos0(float pos0);
-uint16_t getKp(void);
-uint16_t getKd(void);
-int16_t getAnklePos0(void);
+float getKp(void);
+float getKd(void);
+float getAnklePos0(void);
+
+void printParameters(FILE *fp);
+void printFirCoeff(FILE *fp);
+void printFFLookUpTable(FILE *fp);
 
 int logFileInit(char *fileName);
 void closeLogFile(void);
-void saveParameters(char *f);
-int loadParameters(char *f);
-void printParameters(void);
+void saveParameters(char *file);
+int loadParameters(char *file);
 int loadLookUpTable(char *file);
 int loadIirFilterCoeff(char *file);
-void printFFLookUpTable(void);
-void printFirCoeff(void);
 void setTareEncoderBit(void);
-void toggleFeedforward(void);
 void resetGaitPhase(void);
-int getFFState(void);
 void testFF(void);
 void stopTestFF(void);
+void enableFF(int en);
+int FFenabled(void);
 
 #endif
 
