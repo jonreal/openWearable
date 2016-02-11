@@ -74,8 +74,8 @@ void io_cb(int sig)
 void tui_menu(void)
 {
   printf("\n\n------------------------------------------------------------\n");
-  printf("Kp = %d, Kd = %d, pos0 = %d, FF enabled = %d\n",
-          getKp(), getKd(), getAnklePos0(), getFFState());
+  printf("Kp = %f, Kd = %f, pos0 = %f, FF enabled = %d\n",
+          getKp(), getKd(), getAnklePos0(), FFenabled());
   printf("Menu: a - Enter new Kp\n");
   printf("      s - Enter new Kd\n");
   printf("      d - Enter new pos_0 (deg X 100)\n");
@@ -206,14 +206,14 @@ int start_tui(void)
         while(1){
 
           /* Log Data Here */
-          if(isBuffer0Full()){
+          if(buffer0Full()){
             clearBuffer0FullFlag();
             gpio_set_value(gpio_debug, HIGH);
             writeState(0);
             lastBufferRead = 0;
             gpio_set_value(gpio_debug, LOW);
           }
-          if(isBuffer1Full()){
+          if(buffer1Full()){
             clearBuffer1FullFlag();
             gpio_set_value(gpio_debug, HIGH);
             writeState(1);
@@ -295,7 +295,8 @@ int start_tui(void)
 
       /* Toggle Feedforward */
       else if(input_char == 'j'){
-        toggleFeedforward();
+
+        enableFF( FFenabled() ^ 1);
         printf("\t\tFeedforward toggeled.\n");
         fflush(stdout);
         ptui->io_ready = 0;
@@ -359,8 +360,8 @@ int start_tui(void)
         printf("\t\tLoading lookup table from %s\n",configFile);
 
         /* Toggle FF if on */
-        if (getFFState() == 1)
-          toggleFeedforward();
+        if(FFenabled())
+          enableFF(0);
 
         loadLookUpTable(configFile);
         configFile[0] = '\0';

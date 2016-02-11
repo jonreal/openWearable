@@ -1,28 +1,26 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "fix16.h"
 #include "filter.h"
 
 
 // ----------------------------------------------------------------------------
-
-/* IIR init */
-void iirFixedInit(volatile int16_t *x, volatile int16_t *y, uint16_t bufLen)
+// Initialize filter buffers
+void fix16_iirInit(volatile fix16_t *x, volatile fix16_t *y, uint32_t len)
 {
-  for(int i=0; i<bufLen; i++){
+  for(int i=0; i<len; i++){
     x[i] = 0;
     y[i] = 0;
   }
 }
 
 // ----------------------------------------------------------------------------
-
-// Fixed point iir filter
-int16_t iirFixedPoint(int16_t Q, int16_t N, int32_t *b, int32_t *a,
-                      volatile int16_t *x, volatile int16_t *y, int16_t s)
+// Fixed point Q16.16 (really Q15.16) iir filter
+fix16_t fix16_iir(uint32_t N, fix16_t *b, fix16_t *a,
+                  volatile fix16_t *x, volatile fix16_t *y, int16_t in)
 {
-  int64_t acc;     // accumulator for MACs
-  int16_t output;
+  fix16_t bx, ay, out;
 
   // Shift samples back in time
   for(int i=N; i>0; i--){
@@ -31,74 +29,15 @@ int16_t iirFixedPoint(int16_t Q, int16_t N, int32_t *b, int32_t *a,
   }
 
   // new Sample
-  x[0] = s;
-
-  // load rounding constant (one less than final bits e.g. int16_t = (15 -1))
-//  acc = 1 << 14;
+  x[0] = in;
 
   // difference eq.
-  acc = (int64_t)b[0] * (int64_t)x[0];
-
+  out = fix16_smul(b[0], x[0]);
   for(int k=1; k<N+1; k++) {
-
-    acc += (int64_t)b[k] * (int64_t)x[k] - (int64_t)a[k] * (int64_t)y[k];
-
-    // saturate the result
-    if ( acc > 0x3fffffffffffffff) {
-      acc = 0x3fffffffffffffff;
-    }
-    else if ( acc < -0x4000000000000000) {
-      acc = -0x4000000000000000;
-    }
+    bx = fix16_smul(b[k], x[k]);
+    ay = fix16_smul(a[k], y[k]);
+    out = fix16_sadd(out, fix16_ssub(bx, ay));
   }
-
-  // Rounding
-  int64_t ahalf = acc >= 0 ? (1<<((Q/2)-1)) : -(1<<((Q/2)-1));
-
-  // Apply scaling and cast as interger
-  output = (int16_t)( (acc+ahalf) / (1<<Q));
-
-  y[0] = output;
-  return output;
+  y[0] = out;
+  return out;
 }
-
-///* FIR init */
-//void firFixedInit(volatile int16_t *insamp)
-//{
-//  for(int i=0; i < FILTER_LEN; i++){
-//    insamp[i] = 0;
-//  }
-//}
-///* FIR filter function */
-//int16_t firFixed(int16_t *coeffs, volatile int16_t *insamp, int16_t input)
-//{
-//    int32_t acc;     // accumulator for MACs
-//    int16_t output;
-//
-//    // shift input samples back in time
-//
-//    for(int i=FILTER_LEN; i > 0; i--){
-//      insamp[i] = insamp[i-1];
-//    }
-//
-//    // put the new samples at the high end of the buffer
-//    insamp[0] = input;
-//
-//    // load rounding constant
-//    acc = 1 << 14;
-//
-//    // perform the multiply-accumulate
-//    for(int k = 0; k < FILTER_LEN; k++ ) {
-//      acc += (int32_t)coeffs[k] * (int32_t)insamp[k];
-//    }
-//    // saturate the result
-//    if ( acc > 0x3fffffff ) {
-//      acc = 0x3fffffff;
-//    } else if ( acc < -0x40000000 ) {
-//      acc = -0x40000000;
-//    }
-//    // convert from Q30 to Q15
-//    output = (int16_t)(acc >> 15);
-//
-//  return output;
-//}

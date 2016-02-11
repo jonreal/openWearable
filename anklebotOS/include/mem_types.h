@@ -1,6 +1,8 @@
 #ifndef _MEM_TYPES_
 #define _MEM_TYPES_
 
+#include "fix16.h"
+
 /* Constants */
 #define PRU_CLK         (200000000)
 #define PWM_CLK         (100000000)
@@ -14,14 +16,12 @@
 #define PRU1_ARM_INT  (20 + 16)
 
 #define NUM_OF_BUFFS    2
-#define SIZE_OF_BUFFS   110
+#define SIZE_OF_BUFFS   64
 
 #define NUM_ADC     8
 #define NUM_IMU     6
 
 #define NUM_FF_LT         1000
-#define NUM_TORQUE_LT_1   50
-#define NUM_TORQUE_LT_2   50
 
 /* Global Addresses to modules */
 #define PRU_CTRL_BASE 0x00022000
@@ -37,22 +37,29 @@
 
 #define MAX_IIR_ORDER   3
 
+#define PRU0 0
+#define PRU1 1
+
 /* Structures ---------------------------------------------------------------*/
 
 /* Anklebot state */
 typedef struct{
+
   volatile uint32_t timeStamp;
+  volatile uint32_t r_hsStamp;
+  volatile uint32_t l_hsStamp;
+
   volatile uint16_t sync;
-  volatile uint16_t avgPeriod;
-  volatile uint32_t heelStrikeCnt;
-  volatile uint16_t gaitPhase;
-  volatile int16_t anklePos;
-  volatile uint16_t ankleVel;
-  volatile int16_t fbCurrentCmd;
-  volatile int16_t ffCurrentCmd;
+  volatile uint16_t meanGaitPeriod;
+  volatile uint16_t gaitPercent;
   volatile int16_t motorDuty;
-  volatile int16_t adc[NUM_ADC];
-  volatile int16_t imu[NUM_IMU];
+
+  volatile fix16_t anklePos;
+  volatile fix16_t fbCurrentCmd;
+  volatile fix16_t ffCurrentCmd;
+
+  volatile fix16_t adc[NUM_ADC];
+  volatile fix16_t imu[NUM_IMU];
 } state_t;
 
 /* Shared Memory -> mapped to SRAM */
@@ -87,16 +94,15 @@ typedef struct{
 
 /* IIR Array */
 typedef struct{
-  volatile int16_t x[MAX_IIR_ORDER+1];
-  volatile int16_t y[MAX_IIR_ORDER+1];
+  volatile fix16_t x[MAX_IIR_ORDER+1];
+  volatile fix16_t y[MAX_IIR_ORDER+1];
 } iir_buff_t;
 
 /* IIR Coefficients */
 typedef struct{
-  int32_t b[MAX_IIR_ORDER+1];
-  int32_t a[MAX_IIR_ORDER+1];
-  int16_t N;
-  int16_t Q;
+  uint32_t N;
+  fix16_t b[MAX_IIR_ORDER+1];
+  fix16_t a[MAX_IIR_ORDER+1];
 } iir_coeff_t;
 
 
@@ -104,18 +110,10 @@ typedef struct{
 typedef struct{
   volatile uint32_t frq_hz;
   volatile uint32_t frq_clock_ticks;
-  volatile uint16_t mass;
-  volatile uint16_t gp_toe_hs;
-  volatile uint16_t gp_mid_hs;
-  volatile uint16_t gp_heel_hs;
-  volatile uint16_t gp_toe_to;
-  volatile uint16_t gp_mid_to;
-  volatile uint16_t gp_heel_to;
-  volatile uint16_t gpOnLeftFoot;
-  volatile uint16_t Kp;
-  volatile uint16_t Kd;
-  volatile int16_t anklePos0;
-  uint16_t pad;
+  volatile uint32_t mass;
+  volatile fix16_t Kp;
+  volatile fix16_t Kd;
+  volatile fix16_t anklePos0;
 
   iir_coeff_t filt;
   iir_buff_t filtBuffer[6];
@@ -126,7 +124,7 @@ typedef struct{
 
 /* Feedforward lookup table -> mapped to pru1 DRAM */
 typedef struct{
-  int16_t ff_ankleTorque[NUM_FF_LT];
+  fix16_t uff[NUM_FF_LT];
 } lookUp_mem_t;
 
 #endif

@@ -180,39 +180,39 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
   int16_t u_ff = 0; // i_m (current of the motor)
 //  float scaling = 0.5;  // ankle torque -> motor current scaling
   float scaling = 0.3;  // ankle torque -> motor current scaling
-  uint16_t t_cnts = (1000*(cnt - p->state[bi][si].heelStrikeCnt))
-                    / p->state[bi][si].avgPeriod;
+  //uint16_t t_cnts = (1000*(cnt - p->state[bi][si].heelStrikeCnt))
+    //                / p->state[bi][si].avgPeriod;
 
 
   /* FF Test */
-  if(p->cntrl_bit.testFF){
-    uint32_t testPeriod = 1000;
-    uint16_t test_t_cnt = cnt % testPeriod;
-    u_fb = 0;
-    u_ff = (int16_t) (scaling * (float)(lookUp->ff_ankleTorque[test_t_cnt]));
-  }
-
-  /* No Test */
-  else {
-    /* Impedance Feedback */
-    u_fb = ((int16_t)loc.Kp)*(loc.anklePos0 - p->state[bi][si].anklePos)/1000;
-
-    /* Feedforward */
-    if(p->cntrl_bit.doFeedForward && p->cntrl_bit.gaitPhaseReady)
-    {
-      /* Check overrun */
-      if(t_cnts >= NUM_FF_LT)
-        t_cnts = (NUM_FF_LT-1);
-
-      /* Motor current command */
-      u_ff = (int16_t) (scaling * (float)(lookUp->ff_ankleTorque[t_cnts]));
-      p->state[si][bi].ankleVel = t_cnts;
-    }
-  }
-
-  p->state[bi][si].fbCurrentCmd = u_fb;
-  p->state[bi][si].ffCurrentCmd = u_ff;
-  motorSetDuty(u_fb + u_ff, &p->state[bi][si].motorDuty);
+//  if(p->cntrl_bit.testFF){
+//    uint32_t testPeriod = 1000;
+//    uint16_t test_t_cnt = cnt % testPeriod;
+//    u_fb = 0;
+//    u_ff = (int16_t) (scaling * (float)(lookUp->ff_ankleTorque[test_t_cnt]));
+//  }
+//
+//  /* No Test */
+//  else {
+//    /* Impedance Feedback */
+//    u_fb = ((int16_t)loc.Kp)*(loc.anklePos0 - p->state[bi][si].anklePos)/1000;
+//
+//    /* Feedforward */
+//    if(p->cntrl_bit.doFeedForward && p->cntrl_bit.gaitPhaseReady)
+//    {
+//      /* Check overrun */
+//      if(t_cnts >= NUM_FF_LT)
+//        t_cnts = (NUM_FF_LT-1);
+//
+//      /* Motor current command */
+//      u_ff = (int16_t) (scaling * (float)(lookUp->ff_ankleTorque[t_cnts]));
+//      p->state[si][bi].ankleVel = t_cnts;
+//    }
+//  }
+//
+//  p->state[bi][si].fbCurrentCmd = u_fb;
+//  p->state[bi][si].ffCurrentCmd = u_ff;
+//  motorSetDuty(u_fb + u_ff, &p->state[bi][si].motorDuty);
 }
 
 void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
