@@ -18,10 +18,14 @@ int pru_run(const int pruNum, const char *const path);
 int pru_init(void);
 int pru_cleanup(void);
 int pru_mem_init(void);
+void printMemoryAllocation(FILE *fp);
 int armToPru0Interrupt(void);
 int armToPru1Interrupt(void);
 
+void zeroState(uint8_t bi, uint8_t si);
+void printState(uint8_t bi, uint8_t si, FILE *fp);
 void writeState(uint8_t buffIndx);
+
 void clearFlowBitFeild(void);
 void enablePru(int en);
 

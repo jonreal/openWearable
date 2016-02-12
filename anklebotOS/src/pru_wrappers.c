@@ -199,36 +199,23 @@ int pru_mem_init(void)
   }
   s = (shared_mem_t *) ptr;
 
-  printf("Memory Allocation:\n");
-  printf("\tSize of parameter memory (pru0 DRAM): %i bytes.\n",
-          sizeof(*p));
-  printf("\tSize of feedforward lookup table (pru1 DRAM): %i bytes.\n",
-          sizeof(*l));
-  printf("\tSize of shared memory (SRAM): %i bytes.\n",
-          sizeof(*s));
+  printMemoryAllocation(stdout);
 
-  /* Zero State */
-//  for(int i=0; i<NUM_OF_BUFFS; i++){
-//    for(int j=0; j<SIZE_OF_BUFFS; j++){
-//      s->state[i][j].timeStamp = 0;
-//      s->state[i][j].sync = 0;
-//      s->state[i][j].avgPeriod = 0;
-//      s->state[i][j].heelStrikeCnt = 0;
-//      s->state[i][j].gaitPhase = 0;
-//      s->state[i][j].anklePos = 0;
-//      s->state[i][j].ankleVel = 0;
-//      s->state[i][j].fbCurrentCmd = 0;
-//      s->state[i][j].ffCurrentCmd = 0;
-//      s->state[i][j].motorDuty = 0;
-//      for(int k=0; k<NUM_ADC; k++){
-//        s->state[i][j].adc[k] = 0;
-//      }
-//      for(int k=0; k<NUM_IMU; k++){
-//        s->state[i][j].imu[k] = 0;
-//      }
-//    }
-//  }
+  for(int i=0; i<NUM_OF_BUFFS; i++)
+    for(int j=0; j<SIZE_OF_BUFFS; j++)
+      zeroState(i,j);
+
   return 0;
+}
+
+void printMemoryAllocation(FILE *fp)
+{
+  fprintf(fp, "\nMemory Allocation:\n"
+              "\tParameter memory: %i bytes.\n"
+              "\tLookup table memory: %i bytes. \n"
+              "\tData memory: %i bytes.\n",
+              sizeof(*p), sizeof(*l), sizeof(*s));
+  fflush(fp);
 }
 
 
@@ -268,6 +255,129 @@ int armToPru1Interrupt(void)
   return 0;
 }
 
+void zeroState(uint8_t bi, uint8_t si)
+{
+  s->state[bi][si].timeStamp = 0;
+  s->state[bi][si].sync = 0;
+  s->state[bi][si].r_hsStamp = 0;
+  s->state[bi][si].l_hsStamp = 0;
+  s->state[bi][si].r_meanGaitPeriod = 0;
+  s->state[bi][si].l_meanGaitPeriod = 0;
+  s->state[bi][si].r_percentGait = 0;
+  s->state[bi][si].l_percentGait = 0;
+  s->state[bi][si].motorDuty = 0;
+  s->state[bi][si].anklePos = 0;
+  s->state[bi][si].ankleVel = 0;
+  s->state[bi][si].u_fb = 0;
+  s->state[bi][si].u_ff = 0;
+  s->state[bi][si].adc[0] = 0;
+  s->state[bi][si].adc[1] = 0;
+  s->state[bi][si].adc[2] = 0;
+  s->state[bi][si].adc[3] = 0;
+  s->state[bi][si].adc[4] = 0;
+  s->state[bi][si].adc[5] = 0;
+  s->state[bi][si].adc[6] = 0;
+  s->state[bi][si].adc[7] = 0;
+  s->state[bi][si].imu[0] = 0;
+  s->state[bi][si].imu[1] = 0;
+  s->state[bi][si].imu[2] = 0;
+  s->state[bi][si].imu[3] = 0;
+  s->state[bi][si].imu[4] = 0;
+  s->state[bi][si].imu[5] = 0;
+
+}
+void printStateHeadings(FILE *fp)
+{
+  fprintf(fp,
+          "frame\t"
+          "sync\t"
+          "r_hs\t"
+          "l_hs\t"
+          "r_Tp\t"
+          "l_Tp\t"
+          "r_Pgait\t"
+          "l_Pgait\t"
+          "duty\t"
+          "ankPos\t"
+          "ankVel\t"
+          "u_fb\t"
+          "u_ff\t"
+          "mtrCurr\t"
+          "mtrVel\t"
+          "l_s1\t"
+          "l_s2\t"
+          "l_s3\t"
+          "r_s1\t"
+          "r_s2\t"
+          "r_s3\t"
+          "imu0\t"
+          "imu1\t"
+          "imu2\t"
+          "imu3\t"
+          "imu4\t"
+          "imu5\n");
+  fflush(fp);
+}
+void printState(uint8_t bi, uint8_t si, FILE *fp)
+{
+  fprintf(fp,
+          "%u\t"    // timeStamp - uint32_t
+          "%u\t"    // sync - uint16_t
+          "%u\t"    // r_hsStamp - uint32_t
+          "%u\t"    // l_hsStamp - uint32_t
+          "%u\t"    // r_meanGaitPeriod - uint16_t
+          "%u\t"    // l_meanGaitPeriod - uint16_t
+          "%u\t"    // r_percentGait - uint16_t
+          "%u\t"    // l_percentGait - uint16_t
+          "%i\t"    // motorDuty - int16_t
+          "%.5f\t"  // anklePos - fix16_t (convert to float)
+          "%.5f\t"  // ankleVel - fix16_t (convert to float)
+          "%.5f\t"  // u_fb - fix16_t (convert to float)
+          "%.5f\t"  // u_ff - fix16_t (convert to float)
+          "%i\t"    // adc[0] (motor current) - int16_t
+          "%i\t"    // adc[1] (motor vel) - int16_t
+          "%i\t"    // adc[2] (amp1s1) - int16_t
+          "%i\t"    // adc[3] (amp1s2) - int16_t
+          "%i\t"    // adc[4] (amp1s3) - int16_t
+          "%i\t"    // adc[5] (amp2s1) - int16_t
+          "%i\t"    // adc[6] (amp2s2) - int16_t
+          "%i\t"    // adc[7] (amp2s3) - int16_t
+          "%i\t"    // imu[0] - int16_t
+          "%i\t"    // imu[1] - int16_t
+          "%i\t"    // imu[2] - int16_t
+          "%i\t"    // imu[3] - int16_t
+          "%i\t"    // imu[4] - int16_t
+          "%i\t"    // imu[5] - int16_t
+          "\n", s->state[bi][si].timeStamp,
+                s->state[bi][si].sync,
+                s->state[bi][si].r_hsStamp,
+                s->state[bi][si].l_hsStamp,
+                s->state[bi][si].r_meanGaitPeriod,
+                s->state[bi][si].l_meanGaitPeriod,
+                s->state[bi][si].r_percentGait,
+                s->state[bi][si].l_percentGait,
+                s->state[bi][si].motorDuty,
+                fix16_to_float(s->state[bi][si].anklePos),
+                fix16_to_float(s->state[bi][si].ankleVel),
+                fix16_to_float(s->state[bi][si].u_fb),
+                fix16_to_float(s->state[bi][si].u_ff),
+                s->state[bi][si].adc[0],
+                s->state[bi][si].adc[1],
+                s->state[bi][si].adc[2],
+                s->state[bi][si].adc[3],
+                s->state[bi][si].adc[4],
+                s->state[bi][si].adc[5],
+                s->state[bi][si].adc[6],
+                s->state[bi][si].adc[7],
+                s->state[bi][si].imu[0],
+                s->state[bi][si].imu[1],
+                s->state[bi][si].imu[2],
+                s->state[bi][si].imu[3],
+                s->state[bi][si].imu[4],
+                s->state[bi][si].imu[5]);
+  fflush(fp);
+}
+
 /* ----------------------------------------------------------------------------
  * Function: void writeState(uint32_t bi)
  *
@@ -280,81 +390,13 @@ int armToPru1Interrupt(void)
  * ------------------------------------------------------------------------- */
 void writeState(uint8_t bi)
 {
-
-//  if(debug){
-//    printf("%i\t", s->state[bi][0].timeStamp);
-//    printf("%i\t", s->state[bi][0].sync);
-//    printf("%i\t", s->state[bi][0].avgPeriod);
-//    printf("%i\t", s->state[bi][0].heelStrikeCnt);
-//    printf("%i\t", s->state[bi][0].gaitPhase);
-//    printf("%i\t", s->state[bi][0].anklePos);
-//    printf("%i\t", s->state[bi][0].ankleVel);
-//    printf("%i\t", s->state[bi][0].fbCurrentCmd);
-//    printf("%i\t", s->state[bi][0].ffCurrentCmd);
-//    printf("%i\t", s->state[bi][0].motorDuty);
-//    printf("%i\t", s->state[bi][0].adc[0]);
-//    printf("%i\t", s->state[bi][0].adc[1]);
-//    printf("%i\t", s->state[bi][0].adc[2]);
-//    printf("%i\t", s->state[bi][0].adc[3]);
-//    printf("%i\t", s->state[bi][0].adc[4]);
-//    printf("%i\t", s->state[bi][0].adc[5]);
-//    printf("%i\t", s->state[bi][0].adc[6]);
-//    printf("%i\t", s->state[bi][0].adc[7]);
-//    printf("%i\t", s->state[bi][0].imu[0]);
-//    printf("%i\t", s->state[bi][0].imu[1]);
-//    printf("%i\t", s->state[bi][0].imu[2]);
-//    printf("%i\t", s->state[bi][0].imu[3]);
-//    printf("%i\t", s->state[bi][0].imu[4]);
-//    printf("%i", s->state[bi][0].imu[5]);
-//    printf("\n");
-//  }
-//  else {
-//    for(int i=0; i<SIZE_OF_BUFFS; i++){
-//      fprintf(fid,"%i\t", s->state[bi][i].timeStamp);
-//      fprintf(fid,"%i\t", s->state[bi][i].sync);
-//      fprintf(fid,"%i\t", s->state[bi][i].avgPeriod);
-//      fprintf(fid,"%i\t", s->state[bi][i].heelStrikeCnt);
-//      fprintf(fid,"%i\t", s->state[bi][i].gaitPhase);
-//      fprintf(fid,"%i\t", s->state[bi][i].anklePos);
-//      fprintf(fid,"%i\t", s->state[bi][i].ankleVel);
-//      fprintf(fid,"%i\t", s->state[bi][i].fbCurrentCmd);
-//      fprintf(fid,"%i\t", s->state[bi][i].ffCurrentCmd);
-//      fprintf(fid,"%i\t", s->state[bi][i].motorDuty);
-//      fprintf(fid,"%i\t", s->state[bi][i].adc[0]);
-//      fprintf(fid,"%i\t", s->state[bi][i].adc[1]);
-//      fprintf(fid,"%i\t", s->state[bi][i].adc[2]);
-//      fprintf(fid,"%i\t", s->state[bi][i].adc[3]);
-//      fprintf(fid,"%i\t", s->state[bi][i].adc[4]);
-//      fprintf(fid,"%i\t", s->state[bi][i].adc[5]);
-//      fprintf(fid,"%i\t", s->state[bi][i].adc[6]);
-//      fprintf(fid,"%i\t", s->state[bi][i].adc[7]);
-//      fprintf(fid,"%i\t", s->state[bi][i].imu[0]);
-//      fprintf(fid,"%i\t", s->state[bi][i].imu[1]);
-//      fprintf(fid,"%i\t", s->state[bi][i].imu[2]);
-//      fprintf(fid,"%i\t", s->state[bi][i].imu[3]);
-//      fprintf(fid,"%i\t", s->state[bi][i].imu[4]);
-//      fprintf(fid,"%i", s->state[bi][i].imu[5]);
-//      fprintf(fid,"\n");
-//
-//      /* Zero State */
-//      s->state[bi][i].timeStamp = 0;
-//      s->state[bi][i].sync = 0;
-//      s->state[bi][i].avgPeriod = 0;
-//      s->state[bi][i].heelStrikeCnt = 0;
-//      s->state[bi][i].gaitPhase = 0;
-//      s->state[bi][i].anklePos = 0;
-//      s->state[bi][i].ankleVel = 0;
-//      s->state[bi][i].fbCurrentCmd = 0;
-//      s->state[bi][i].ffCurrentCmd = 0;
-//      s->state[bi][i].motorDuty = 0;
-//      for(int k=0; k<NUM_ADC; k++){
-//        s->state[bi][i].adc[k] = 0;
-//      }
-//      for(int k=0; k<NUM_IMU; k++){
-//        s->state[bi][i].imu[k] = 0;
-//      }
-//    }
-//  }
+  if(debug)
+    printState(bi, 0, stdout);
+  else
+    for(int i=1; i<SIZE_OF_BUFFS; i++){
+      printState(bi, i, flog);
+      zeroState(bi, i);
+    }
 }
 
 /* ----------------------------------------------------------------------------
@@ -506,11 +548,12 @@ int logFileInit(char* fileName)
   flog = fopen(fileName, "w");
 
   /* Create header */
-  fprintf(flog, "%% anklebot \n");
-  fprintf(flog, "%% Date: %s\n", timestr);
-  fprintf(flog, "%% Sample frequency = %u\n", p->frq_hz);
+  fprintf(flog, "Date: %s\n", timestr);
+  printMemoryAllocation(flog);
+  printParameters(flog);
+  printFirCoeff(flog);
+  printStateHeadings(flog);
 
-  //TODO add paramters and variable headings
   return 0;
 }
 
@@ -575,12 +618,16 @@ int loadParameters(char *file)
  * ------------------------------------------------------------------------- */
 void printParameters(FILE *fp)
 {
-  fprintf(fp, "Parameters:\n");
-  fprintf(fp, "\t Frq = %i (Hz)\n", p->frq_hz);
-  fprintf(fp, "\t Ticks = %i\n", p->frq_clock_ticks);
-  fprintf(fp, "\t Kp = %f\n", fix16_to_float(p->Kp));
-  fprintf(fp, "\t Kd = %f\n", fix16_to_float(p->Kd));
-  fprintf(fp, "\t anklePos0 = %f\n", fix16_to_float(p->anklePos0));
+  fprintf(fp, "\nParameters:\n"
+          "\tFrq = %i (Hz)\n"
+          "\tTicks = %i\n"
+          "\tKp = %.4f\n"
+          "\tKd = %.4f\n"
+          "\tanklePos0 = %.4f\n",
+          p->frq_hz, p->frq_clock_ticks,
+          fix16_to_float(p->Kp), fix16_to_float(p->Kd),
+          fix16_to_float(p->anklePos0));
+  fflush(fp);
 }
 
 /* ----------------------------------------------------------------------------
@@ -652,11 +699,14 @@ int loadIirFilterCoeff(char *file)
 }
 void printFirCoeff(FILE *fp)
 {
+  fprintf(fp, "\nFilter Coefficients (N = %i):\n", p->filt.N);
   for(int i=0; i<p->filt.N+1; i++){
     fprintf(fp, "\tb[%i] : %8.8f\ta[%i] : %8.8f\n",
             i, fix16_to_float(p->filt.b[i]),
             i, fix16_to_float(p->filt.a[i]));
   }
+  fprintf(fp, "\n");
+  fflush(fp);
 }
 void printFFLookUpTable(FILE *fp)
 {
