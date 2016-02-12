@@ -77,6 +77,9 @@ int main(int argc, char **argv)
   }
   printFirCoeff(stdout);
 
+  if(debug)
+    printStateHeadings(stdout);
+
   // Load binaries to prus instruction RAM.
   if(loadPruSoftware() != 0)
     return -1;

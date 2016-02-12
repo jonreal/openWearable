@@ -16,7 +16,7 @@
 #define PRU1_ARM_INT  (20 + 16)
 
 #define NUM_OF_BUFFS    2
-#define SIZE_OF_BUFFS   64
+#define SIZE_OF_BUFFS   83
 
 #define NUM_ADC     8
 #define NUM_IMU     6
@@ -46,20 +46,24 @@
 typedef struct{
 
   volatile uint32_t timeStamp;
+  volatile uint32_t sync;
   volatile uint32_t r_hsStamp;
   volatile uint32_t l_hsStamp;
 
-  volatile uint16_t sync;
-  volatile uint16_t meanGaitPeriod;
-  volatile uint16_t gaitPercent;
-  volatile int16_t motorDuty;
+  volatile uint16_t r_meanGaitPeriod;
+  volatile uint16_t l_meanGaitPeriod;
+  volatile uint16_t r_percentGait;
+  volatile uint16_t l_percentGait;
 
+  volatile int32_t motorDuty;
   volatile fix16_t anklePos;
-  volatile fix16_t fbCurrentCmd;
-  volatile fix16_t ffCurrentCmd;
+  volatile fix16_t ankleVel;
+  volatile fix16_t u_fb;
+  volatile fix16_t u_ff;
 
-  volatile fix16_t adc[NUM_ADC];
-  volatile fix16_t imu[NUM_IMU];
+  volatile int16_t adc[NUM_ADC];
+  volatile int16_t imu[NUM_IMU];
+
 } state_t;
 
 /* Shared Memory -> mapped to SRAM */
@@ -124,7 +128,7 @@ typedef struct{
 
 /* Feedforward lookup table -> mapped to pru1 DRAM */
 typedef struct{
-  fix16_t uff[NUM_FF_LT];
+  int16_t uff[NUM_FF_LT];
 } lookUp_mem_t;
 
 #endif
