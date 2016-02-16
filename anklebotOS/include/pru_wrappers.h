@@ -62,6 +62,11 @@ void stopTestFF(void);
 void enableFF(int en);
 int FFenabled(void);
 
+void setStepCurrent(float cur);
+void startStepResponse(void);
+void resetStepRespVars(void);
+
+
 #endif
 
 

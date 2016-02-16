@@ -81,14 +81,16 @@ void tui_menu(void)
           "      f - Collect trial\n"
           "      g - Save parameters\n"
           "      h - Load parameters\n"
-          "      j - Toggle feedforward control\n"
-          "      k - Reset gait phase detection\n"
-          "      l - Tare encoder angle\n"
+          "      j - Load Feedforward lookup table\n"
+          "      k - Toggle feedforward control\n"
+          "      l - Reset gait phase detection\n"
+          "      o - Tare encoder angle\n"
           "      p - Test Feedforward\n"
-          "      o - Load Feedforward lookup table\n"
+          "      q - Step Response\n"
           "      e - exit\n"
           "--------------------------------------------------------------\n",
           getKp(), getKd(), getAnklePos0(), FFenabled());
+  fflush(stdout);
 }
 
 /* ----------------------------------------------------------------------------
@@ -234,17 +236,223 @@ int start_tui(void)
             writeState(1);
           else
             writeState(0);
-      
+
           closeLogFile();
           logFile[0] = '\0';
           strcat(logFile, "datalog/");
           tui_menu();
           fflush(stdout);
           ptui->io_ready = 0;
-        }
+          break;
+
+        // ---- Save Parameters -----------------------------------------------
+        case 'g' :
+          printf("\t\tEnter parameter file name: ");
+          fflush(stdout);
+          ptui->io_ready = 0;
+
+          // Wait for user input
+          while(1)
+            if(ptui->io_ready)
+              break;
+
+          scanf(" %s", inString);
+
+          /* Echo Trial Name */
+          strcat(configFile, inString);
+          printf("\t\tSaving parameters to %s\n",configFile);
+          fflush(stdout);
+          saveParameters(configFile);
+          configFile[0] = '\0';
+          strcat(configFile, "config/");
+          tui_menu();
+          ptui->io_ready = 0;
+          break;
+
+        // ---- Load Parameters -----------------------------------------------
+        case 'h' :
+          printf("\t\tEnter parameter file name: ");
+          fflush(stdout);
+          ptui->io_ready = 0;
+
+          // Wait for user input
+          while(1)
+            if(ptui->io_ready)
+              break;
+
+          scanf(" %s", inString);
+
+          /* Echo Trial Name */
+          strcat(configFile, inString);
+          printf("\t\tLoading parameters from %s\n",configFile);
+          fflush(stdout);
+          loadParameters(configFile);
+          configFile[0] = '\0';
+          strcat(configFile, "config/");
+          tui_menu();
+          ptui->io_ready = 0;
+          break;
+
+        // ---- Load Parameters -----------------------------------------------
+        case 'j' :
+          printf("\t\tEnter lookup table file name: ");
+          fflush(stdout);
+          ptui->io_ready = 0;
+
+          // Wait for user input
+          while(1)
+            if(ptui->io_ready)
+              break;
+
+          scanf(" %s", inString);
+
+          /* Echo Trial Name */
+          strcat(configFile, inString);
+          printf("\t\tLoading lookup table from %s\n",configFile);
+          fflush(stdout);
+          loadParameters(configFile);
+          configFile[0] = '\0';
+          strcat(configFile, "config/");
+          tui_menu();
+          ptui->io_ready = 0;
+          break;
+
+
+        // ---- Toggle feedforward -----------------------------------------------
+        case 'k' :
+          enableFF( FFenabled() ^ 1);
+          printf("\t\tFeedforward toggled.\n");
+          fflush(stdout);
+          ptui->io_ready = 0;
+          tui_menu();
+          break;
+
+        // ---- Reset gait phase -----------------------------------------------
+        case 'l' :
+
+          //TODO add method here.
+          printf("\t\tGait phase reset.\n");
+          fflush(stdout);
+          ptui->io_ready = 0;
+          tui_menu();
+          break;
+
+        // ---- Tare encoder -----------------------------------------------
+        case 'o' :
+          setTareEncoderBit();
+          printf("\t\tEncoder angle zeroed.\n");
+          fflush(stdout);
+          ptui->io_ready = 0;
+          tui_menu();
+          break;
+
+        // ---- Test FF -----------------------------------------------
+        case 'p' :
+          printf("\t\tTesting FF signal.\n");
+          printf("\t\t\tPress enter to stop.\n");
+          fflush(stdout);
+          testFF();
+          ptui->io_ready = 0;
+
+          while(1)
+            if(ptui->io_ready)
+              break;
+
+          scanf(" %c", &inChar);
+
+          stopTestFF();
+          ptui->io_ready = 0;
+          tui_menu();
+          break;
+
+        // ---- Step Response -----------------------------------------------
+        case 'q' :
+          printf("\t\tEnter trial name: ");
+          fflush(stdout);
+          ptui->io_ready = 0;
+
+          // Wait for input.
+          while(1)
+            if(ptui->io_ready)
+              break;
+
+          scanf(" %s", inString);
+          strcat(logFile, inString);
+          printf("\t\tSaving data to %s\n",logFile);
+          logFileInit(logFile);
+
+          printf("\t\tEnter demand current: ");
+          fflush(stdout);
+          ptui->io_ready = 0;
+
+          // Wait for user input.
+          while(1)
+            if(ptui->io_ready)
+              break;
+
+          scanf(" %f", &inFloat);
+          setStepCurrent(inFloat);
+
+          // Wait for enter to start saving data
+          printf("\t\tPress enter to start collection...\n");
+          fflush(stdout);
+          ptui->io_ready = 0;
+          while(1)
+            if(ptui->io_ready)
+              break;
+          scanf(" %c", &inChar);
+
+          startStepResponse();
+
+          // Wait for enter to stop collection
+          printf("\t\tPress enter to stop collection...\n");
+          fflush(stdout);
+          ptui->io_ready = 0;
+
+          // Data collection loop
+          clearBufferFlags();
+          lastBufferRead = 0;
+          while(1){
+            if(buffer0Full()){
+              clearBuffer0FullFlag();
+              gpio_set_value(gpio_debug, HIGH);
+              writeState(0);
+              lastBufferRead = 0;
+              gpio_set_value(gpio_debug, LOW);
+            }
+            else if(buffer1Full()){
+              clearBuffer1FullFlag();
+              gpio_set_value(gpio_debug, HIGH);
+              writeState(1);
+              lastBufferRead = 1;
+              gpio_set_value(gpio_debug, LOW);
+            }
+
+            /* Check for input */
+            if(ptui->io_ready)
+              break;
+          }
+          scanf(" %c", &inChar);
+          resetStepRespVars();
+
+          // Get last buffer
+          if(lastBufferRead == 0)
+            writeState(1);
+          else
+            writeState(0);
+
+          closeLogFile();
+          logFile[0] = '\0';
+          strcat(logFile, "datalog/");
+          tui_menu();
+          fflush(stdout);
+          ptui->io_ready = 0;
+          break;
+
       }
     }
-
+  }
+}
 
 
 //      if(input_char == 'e'){
@@ -508,7 +716,6 @@ int start_tui(void)
 //      ptui->io_ready = 0;
 //    }
 //  }
-}
 
 int tui_cleanup(void)
 {

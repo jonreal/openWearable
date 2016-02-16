@@ -65,20 +65,19 @@ int main(int argc, char **argv)
   }
   printParameters(stdout);
 
+  // Load iir filter coefficients from file to memory.
+  if(loadIirFilterCoeff("config/lowpass_2_6Hz.txt")){
+      printf("\nFilter coefficient file not found!\n");
+  }
+  printFirCoeff(stdout);
+
   // Load lookup table from file to memory.
   if(loadLookUpTable("config/uff_1") != 0){
     printf("\nLookup table file not found!\n");
   }
 //  printFFLookUpTable();
 
-  // Load iir filter coefficients from file to memory.
-  if(loadIirFilterCoeff("config/lowpass_2_10Hz.txt")){
-      printf("\nFilter coefficient file not found!\n");
-  }
-  printFirCoeff(stdout);
 
-  if(debug)
-    printStateHeadings(stdout);
 
   // Load binaries to prus instruction RAM.
   if(loadPruSoftware() != 0)
@@ -86,7 +85,7 @@ int main(int argc, char **argv)
 
   clearFlowBitFeild();
 
-  printf("Press enter to start");
+  printf("\n\nPress enter to start\n\n");
   getchar();
 
   /* Enable pru sensor/control */
