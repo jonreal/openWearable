@@ -13,7 +13,8 @@
 
 #include "mem_types.h"
 #include "pru_wrappers.h"
-#include "filter.h"
+#include "fix16.h"
+
 
 #define M_PI (3.14159265359)
 
@@ -40,7 +41,7 @@ void printDebugBuffer(void)
 {
   printf("\n\n---- Debug Buffer ----\n");
   for(int i=0; i<10; i++){
-    printf("0x%X \t%i\n", (uint32_t)p->debugBuffer[i], p->debugBuffer[i]);
+    printf("0x%X \t%i\n", p->debugBuffer[i], p->debugBuffer[i]);
   }
 }
 
@@ -210,10 +211,10 @@ int pru_mem_init(void)
 
 void printMemoryAllocation(FILE *fp)
 {
-  fprintf(fp, "\nMemory Allocation:\n"
-              "\tParameter memory: %i bytes.\n"
-              "\tLookup table memory: %i bytes. \n"
-              "\tData memory: %i bytes.\n",
+  fprintf(fp, "\n#Memory Allocation:\n"
+              "#\tParameter memory: %i bytes.\n"
+              "#\tLookup table memory: %i bytes.\n"
+              "#\tData memory: %i bytes.\n#",
               sizeof(*p), sizeof(*l), sizeof(*s));
   fflush(fp);
 }
@@ -289,7 +290,7 @@ void zeroState(uint8_t bi, uint8_t si)
 void printStateHeadings(FILE *fp)
 {
   fprintf(fp,
-          "frame\t"
+          "\n# frame\t"
           "sync\t"
           "r_hs\t"
           "l_hs\t"
@@ -310,6 +311,8 @@ void printStateHeadings(FILE *fp)
           "r_s1\t"
           "r_s2\t"
           "r_s3\t"
+          "l_s3_vel\t"
+          "r_s3_vel\t"
           "imu0\t"
           "imu1\t"
           "imu2\t"
@@ -342,6 +345,8 @@ void printState(uint8_t bi, uint8_t si, FILE *fp)
           "%i\t"    // adc[5] (amp2s1) - int16_t
           "%i\t"    // adc[6] (amp2s2) - int16_t
           "%i\t"    // adc[7] (amp2s3) - int16_t
+          "%i\t"    // heelVel - int16_t
+          "%i\t"    // heelVel - int16_t
           "%i\t"    // imu[0] - int16_t
           "%i\t"    // imu[1] - int16_t
           "%i\t"    // imu[2] - int16_t
@@ -369,6 +374,8 @@ void printState(uint8_t bi, uint8_t si, FILE *fp)
                 s->state[bi][si].adc[5],
                 s->state[bi][si].adc[6],
                 s->state[bi][si].adc[7],
+                s->state[bi][si].heelForceVel[0],
+                s->state[bi][si].heelForceVel[1],
                 s->state[bi][si].imu[0],
                 s->state[bi][si].imu[1],
                 s->state[bi][si].imu[2],
@@ -390,10 +397,11 @@ void printState(uint8_t bi, uint8_t si, FILE *fp)
  * ------------------------------------------------------------------------- */
 void writeState(uint8_t bi)
 {
-  if(debug)
+  if(debug){
     printState(bi, 0, stdout);
+  }
   else
-    for(int i=1; i<SIZE_OF_BUFFS; i++){
+    for(int i=0; i<SIZE_OF_BUFFS; i++){
       printState(bi, i, flog);
       zeroState(bi, i);
     }
@@ -548,7 +556,7 @@ int logFileInit(char* fileName)
   flog = fopen(fileName, "w");
 
   /* Create header */
-  fprintf(flog, "Date: %s\n", timestr);
+  fprintf(flog, "#Date: %s\n#", timestr);
   printMemoryAllocation(flog);
   printParameters(flog);
   printFirCoeff(flog);
@@ -566,12 +574,12 @@ void saveParameters(char* file)
 {
   FILE* fp = fopen(file, "w");
   if(fp != NULL){
-    fprintf(fp, "%u\t// Freq.\n", p->frq_hz);
-    fprintf(fp, "%u\t// Freq. Ticks\n", 0);
-    fprintf(fp, "%hu\t// Subject Mass\n", p->mass);
-    fprintf(fp, "%hu\t// Kp\n", p->Kp);
-    fprintf(fp, "%hu\t// Kd\n", p->Kd);
-    fprintf(fp, "%hd\t// anklePos0\n", p->anklePos0);
+    fprintf(fp, "%i\t// Freq.\n", p->frq_hz);
+    fprintf(fp, "%i\t// Freq. Ticks\n", 0);
+    fprintf(fp, "%i\t// Subject Mass\n", p->mass);
+    fprintf(fp, "%.5f\t// Kp\n", fix16_to_float(p->Kp));
+    fprintf(fp, "%.5f\t// Kd\n", fix16_to_float(p->Kd));
+    fprintf(fp, "%.5f\t// anklePos0\n", fix16_to_float(p->anklePos0));
     fclose(fp);
   }
   else{
@@ -618,12 +626,12 @@ int loadParameters(char *file)
  * ------------------------------------------------------------------------- */
 void printParameters(FILE *fp)
 {
-  fprintf(fp, "\nParameters:\n"
-          "\tFrq = %i (Hz)\n"
-          "\tTicks = %i\n"
-          "\tKp = %.4f\n"
-          "\tKd = %.4f\n"
-          "\tanklePos0 = %.4f\n",
+  fprintf(fp, "\n#Parameters:\n"
+          "#\tFrq = %i (Hz)\n"
+          "#\tTicks = %i\n"
+          "#\tKp = %.4f\n"
+          "#\tKd = %.4f\n"
+          "#\tanklePos0 = %.4f\n#",
           p->frq_hz, p->frq_clock_ticks,
           fix16_to_float(p->Kp), fix16_to_float(p->Kd),
           fix16_to_float(p->anklePos0));
@@ -699,13 +707,13 @@ int loadIirFilterCoeff(char *file)
 }
 void printFirCoeff(FILE *fp)
 {
-  fprintf(fp, "\nFilter Coefficients (N = %i):\n", p->filt.N);
+  fprintf(fp, "\n#Filter Coefficients (N = %i):\n", p->filt.N);
   for(int i=0; i<p->filt.N+1; i++){
-    fprintf(fp, "\tb[%i] : %8.8f\ta[%i] : %8.8f\n",
+    fprintf(fp, "#\tb[%i] : %8.8f\ta[%i] : %8.8f\n",
             i, fix16_to_float(p->filt.b[i]),
             i, fix16_to_float(p->filt.a[i]));
   }
-  fprintf(fp, "\n");
+  fprintf(fp, "#");
   fflush(fp);
 }
 void printFFLookUpTable(FILE *fp)
@@ -753,6 +761,23 @@ void setTareEncoderBit(void)
   s->cntrl_bit.encoderTare = 1;
 }
 
+void setStepCurrent(float cur)
+{
+  p->stepCurrent = fix16_from_float(cur);
+}
+
+void startStepResponse(void)
+{
+  s->cntrl_bit.stepResp = 1;
+}
+
+void resetStepRespVars(void)
+{
+  s->cntrl_bit.stepResp = 0;
+  p->stepCurrent = 0;
+  p->stepRespFlag = 0;
+  p->stepRespCnt = 0;
+}
 
 
 

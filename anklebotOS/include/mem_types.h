@@ -16,7 +16,7 @@
 #define PRU1_ARM_INT  (20 + 16)
 
 #define NUM_OF_BUFFS    2
-#define SIZE_OF_BUFFS   83
+#define SIZE_OF_BUFFS   78
 
 #define NUM_ADC     8
 #define NUM_IMU     6
@@ -63,6 +63,7 @@ typedef struct{
 
   volatile int16_t adc[NUM_ADC];
   volatile int16_t imu[NUM_IMU];
+  volatile int16_t heelForceVel[2];
 
 } state_t;
 
@@ -90,13 +91,14 @@ typedef struct{
       unsigned heelStrike : 1;    // bit 10 (set by pru0, reset by pru1)
       unsigned toeOff : 1;        // bit 11 (set by pru0, reset by pru1)
       unsigned testFF : 1;        // bit 12 (set by arm, reset by arm)
-      unsigned rsvd : 3;          // bits 13-15 reserved
+      unsigned stepResp : 1;      // bit 13 (set by arm, reset by pru1)
+      unsigned rsvd : 2;          // bits 14-15 reserved
    } cntrl_bit;
   };
 
 } shared_mem_t;
 
-/* IIR Array */
+/* IIR Buffer */
 typedef struct{
   volatile fix16_t x[MAX_IIR_ORDER+1];
   volatile fix16_t y[MAX_IIR_ORDER+1];
@@ -109,6 +111,11 @@ typedef struct{
   fix16_t a[MAX_IIR_ORDER+1];
 } iir_coeff_t;
 
+/* Vel Buffer */
+typedef struct{
+  volatile fix16_t x[2];
+  volatile fix16_t y[2];
+} vel_buff_t;
 
 /* Parameter Struct -> mapped to pr0 DRAM */
 typedef struct{
@@ -119,8 +126,13 @@ typedef struct{
   volatile fix16_t Kd;
   volatile fix16_t anklePos0;
 
+  volatile uint32_t stepRespCnt;
+  volatile uint32_t stepRespFlag;
+  volatile fix16_t stepCurrent;
+
   iir_coeff_t filt;
   iir_buff_t filtBuffer[6];
+  vel_buff_t velBuffer[2];
 
   volatile uint32_t debugBuffer[10];
 } param_mem_t;
