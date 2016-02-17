@@ -433,6 +433,7 @@ int start_tui(void)
               break;
           }
           scanf(" %c", &inChar);
+          printf("\t\tReset step resp. vars.\n");
           resetStepRespVars();
 
           // Get last buffer

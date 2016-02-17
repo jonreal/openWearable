@@ -28,16 +28,11 @@ void motorSetDuty(int16_t current_cmd, volatile int32_t *motorDuty)
    */
   float scaling = 5.33; // 80/15
 
-  int16_t duty = (int16_t)(scaling * (float)current_cmd) + 10;
-  uint16_t abs_duty = (uint16_t)abs(duty);
+  int16_t duty; //= (int16_t)(scaling * (float)current_cmd) + 10;
+  uint16_t abs_duty; //= (uint16_t)abs(duty);
   int16_t sign = 0;
 
-  if(abs_duty < MIN_DUTY)
-    abs_duty = MIN_DUTY;
-  else if(abs_duty > MAX_DUTY)
-    abs_duty = MAX_DUTY;
-
-  if(duty > 0){
+  if(current_cmd > 0){
     motorSetDir(0);
     sign = 1;
   }
@@ -45,6 +40,14 @@ void motorSetDuty(int16_t current_cmd, volatile int32_t *motorDuty)
     motorSetDir(1);
     sign = -1;
   }
+
+  duty = (int16_t) ((float)sign * scaling *(float)current_cmd) + 10;
+  abs_duty = (uint16_t)abs(duty);
+
+  if(abs_duty < MIN_DUTY)
+    abs_duty = MIN_DUTY;
+  else if(abs_duty > MAX_DUTY)
+    abs_duty = MAX_DUTY;
 
   pwmSetCmpValue(duty2cmpval(abs_duty));
   *motorDuty = sign * (int16_t)abs_duty;
