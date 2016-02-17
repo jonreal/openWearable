@@ -13,6 +13,7 @@
 #include "spidriver.h"
 #include "encoder.h"
 #include "maxonmotor.h"
+#include "fix16.h"
 
 /* Prototypes -------------------------------------------------------------- */
 void initialize(void);
@@ -163,25 +164,32 @@ void updateCounters(uint32_t *cnt, uint8_t *bi, uint8_t *si)
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 {
   int16_t u_fb = 0; // (current of the motor)
-  int16_t u_ff = 0; // i_m (current of the motor)
+  fix16_t u_ff = 0; // i_m (current of the motor)
   float scaling = 0.4;  // ankle torque -> motor current scaling
 
   //uint16_t t_cnts = (1000*(cnt - s->state[bi][si].heelStrikeCnt))
     //                / s->state[bi][si].avgPeriod;
 
+  if (s->cntrl_bit.stepResp == 1){
 
-  if (s->cntrl_bit.stepResp){
-
-    if (!(p->stepRespFlag)){
+    if (!(p->stepRespFlag == 1)){
       p->stepRespCnt = cnt + 1000;
       p->stepRespFlag = 1;
+      motorSetDuty(0, &s->state[bi][si].motorDuty);
     }
 
     else if ( (p->stepRespFlag) & (cnt >= p->stepRespCnt) ){
-      u_ff = (int16_t) fix16_to_int(p->stepCurrent);
-      motorSetDuty(u_ff, &s->state[bi][si].motorDuty);
+      u_ff = p->stepCurrent;
+      motorSetDuty((int16_t)fix16_to_int(u_ff), &s->state[bi][si].motorDuty);
       s->state[bi][si].u_ff = u_ff;
     }
+
+    else {
+      motorSetDuty(0, &s->state[bi][si].motorDuty);
+    }
+  }
+  else{
+      motorSetDuty(0, &s->state[bi][si].motorDuty);
   }
 
   /* FF Test */
