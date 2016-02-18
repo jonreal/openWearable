@@ -145,6 +145,8 @@ void initialize(void)
   p->stepRespCnt = 0;
   p->stepRespFlag = 0;
   p->stepCurrent = 0;
+
+  p->prevDuty = 0;
 }
 
 
@@ -170,26 +172,28 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
   //uint16_t t_cnts = (1000*(cnt - s->state[bi][si].heelStrikeCnt))
     //                / s->state[bi][si].avgPeriod;
 
+  // Step Response
   if (s->cntrl_bit.stepResp == 1){
 
     if (!(p->stepRespFlag == 1)){
       p->stepRespCnt = cnt + 1000;
       p->stepRespFlag = 1;
-      motorSetDuty(0, &s->state[bi][si].motorDuty);
+      motorSetDuty(0, &p->prevDuty, &s->state[bi][si].motorDuty);
     }
 
     else if ( (p->stepRespFlag) & (cnt >= p->stepRespCnt) ){
       u_ff = p->stepCurrent;
-      motorSetDuty((int16_t)fix16_to_int(u_ff), &s->state[bi][si].motorDuty);
+      motorSetDuty((int16_t)fix16_to_int(u_ff), &p->prevDuty,
+                   &s->state[bi][si].motorDuty);
       s->state[bi][si].u_ff = u_ff;
     }
 
     else {
-      motorSetDuty(0, &s->state[bi][si].motorDuty);
+      motorSetDuty(0, &p->prevDuty, &s->state[bi][si].motorDuty);
     }
   }
   else{
-      motorSetDuty(0, &s->state[bi][si].motorDuty);
+      motorSetDuty(0, &p->prevDuty, &s->state[bi][si].motorDuty);
   }
 
   /* FF Test */

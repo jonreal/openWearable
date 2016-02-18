@@ -7,8 +7,8 @@ void motorInit(void)
 {
   motorDisable();
   pwmInit();
-  motorSetDir(1);
-  pwmSetCmpValue(duty2cmpval(10));
+  motorSetDir(0);
+  pwmSetCmpValue(duty2cmpval(MIN_DUTY));
   motorEnable();
 }
 
@@ -20,7 +20,8 @@ void motorCleanUp(void)
 }
 
 
-void motorSetDuty(int16_t current_cmd, volatile int32_t *motorDuty)
+void motorSetDuty(int16_t current_cmd, volatile int32_t *prev_cmd,
+                  volatile int32_t *motorDuty)
 {
   /* Convert current -> duty
    * 10% -- 0 A
@@ -28,18 +29,43 @@ void motorSetDuty(int16_t current_cmd, volatile int32_t *motorDuty)
    */
   float scaling = 5.33; // 80/15
 
-  int16_t duty; //= (int16_t)(scaling * (float)current_cmd) + 10;
-  uint16_t abs_duty; //= (uint16_t)abs(duty);
+  int16_t duty;
+  uint16_t abs_duty;
   int16_t sign = 0;
 
-  if(current_cmd > 0){
-    motorSetDir(0);
+
+  // Positive cmd and positive prev_cmd (no direction change)
+  if ((current_cmd >= 0) && (*prev_cmd >= 0)){
     sign = 1;
   }
-  else{
-    motorSetDir(1);
+  // Negative cmd and negative prev_cmd (no direction change)
+  else if ((current_cmd < 0) && (*prev_cmd < 0)){
     sign = -1;
   }
+  // Positive cmd and negative prev_cmd (direction change)
+  else if ((current_cmd >= 0) && (*prev_cmd < 0)){
+    sign = 1;
+    motorDisable();
+    pwmSetCmpValue(duty2cmpval(MIN_DUTY));
+    motorSetDir(0);
+  }
+  // Negative cmd and positive prev_cmd (direction change)
+  else if ((current_cmd < 0) && (*prev_cmd >= 0)){
+    sign = -1;
+    motorDisable();
+    pwmSetCmpValue(duty2cmpval(MIN_DUTY));
+    motorSetDir(1);
+  }
+
+
+//  if (current_cmd >= 0){
+////    motorSetDir(0);
+//    sign = 1;
+//  }
+//  else{
+////    motorSetDir(1);
+//    sign = -1;
+//  }
 
   duty = (int16_t) ((float)sign * scaling *(float)current_cmd) + 10;
   abs_duty = (uint16_t)abs(duty);
@@ -49,8 +75,16 @@ void motorSetDuty(int16_t current_cmd, volatile int32_t *motorDuty)
   else if(abs_duty > MAX_DUTY)
     abs_duty = MAX_DUTY;
 
+//  if (sign == 1)
+//    motorSetDir(0);
+//  else
+//    motorSetDir(1);
+
   pwmSetCmpValue(duty2cmpval(abs_duty));
-  *motorDuty = sign * (int16_t)abs_duty;
+  motorEnable();
+
+  *motorDuty = sign * (int32_t)abs_duty;
+  *prev_cmd = *motorDuty;
 }
 
 void motorEnable(void)

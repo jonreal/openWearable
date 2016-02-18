@@ -130,6 +130,8 @@ typedef struct{
   volatile uint32_t stepRespFlag;
   volatile fix16_t stepCurrent;
 
+  volatile int32_t prevDuty;
+
   iir_coeff_t filt;
   iir_buff_t filtBuffer[6];
   vel_buff_t velBuffer[2];
