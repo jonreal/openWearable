@@ -214,43 +214,43 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
   s->state[bi][si].adc[1] = adc[1];
 
   /* Filter insoles */
-  s1 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-                 p->filtBuffer[0].x, p->filtBuffer[0].y,
-                 adc[2]);
+//  s1 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
+//                 p->filtBuffer[0].x, p->filtBuffer[0].y,
+//                 adc[2]);
 
   s2 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
                  p->filtBuffer[1].x, p->filtBuffer[1].y,
-                 adc[3]);
+                 adc[4]);
 
   s3 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
                  p->filtBuffer[2].x, p->filtBuffer[2].y,
-                 adc[4]);
+                 (int16_t) fix16_to_int(s2));
 
   s4 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
                  p->filtBuffer[3].x, p->filtBuffer[3].y,
-                 adc[5]);
+                 adc[7]);
 
   s5 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
                  p->filtBuffer[4].x, p->filtBuffer[4].y,
-                 adc[6]);
+                 (int16_t) fix16_to_int(s4));
 
-  s6 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-                 p->filtBuffer[5].x, p->filtBuffer[5].y,
-                 adc[7]);
+//  s6 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
+//                 p->filtBuffer[5].x, p->filtBuffer[5].y,
+//                 adc[7]);
 
   /* Velocity Filter on heels */
-  v1 = fix16_velFilt(p->velBuffer[0].x, p->velBuffer[0].y, s3);
-  v2 = fix16_velFilt(p->velBuffer[1].x, p->velBuffer[1].y, s6);
+//  v1 = fix16_velFilt(p->velBuffer[0].x, p->velBuffer[0].y, s3);
+//  v2 = fix16_velFilt(p->velBuffer[1].x, p->velBuffer[1].y, s6);
 
   /* Pack Stuct */
-  s->state[bi][si].adc[2] = (int16_t)fix16_to_int(s1);
+  s->state[bi][si].adc[2] = adc[4]; //(int16_t)fix16_to_int(s1);
   s->state[bi][si].adc[3] = (int16_t)fix16_to_int(s2);
   s->state[bi][si].adc[4] = (int16_t)fix16_to_int(s3);
-  s->state[bi][si].adc[5] = (int16_t)fix16_to_int(s4);
-  s->state[bi][si].adc[6] = (int16_t)fix16_to_int(s5);
-  s->state[bi][si].adc[7] = (int16_t)fix16_to_int(s6);
-  s->state[bi][si].d_heelForce[0] = (int16_t)fix16_to_int(v1);
-  s->state[bi][si].d_heelForce[1] = (int16_t)fix16_to_int(v2);
+  s->state[bi][si].adc[5] = adc[7];// (int16_t)fix16_to_int(s4);
+  s->state[bi][si].adc[6] = (int16_t)fix16_to_int(s4);
+  s->state[bi][si].adc[7] = (int16_t)fix16_to_int(s5);
+  s->state[bi][si].d_heelForce[0] = (int16_t)fix16_to_int(fix16_ssub(s2, s3));
+  s->state[bi][si].d_heelForce[1] = (int16_t)fix16_to_int(fix16_ssub(s4, s5));
 }
 
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
