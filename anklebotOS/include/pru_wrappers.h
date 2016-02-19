@@ -55,10 +55,14 @@ void saveParameters(char *file);
 int loadParameters(char *file);
 int loadLookUpTable(char *file);
 int loadIirFilterCoeff(char *file);
+
 void setTareEncoderBit(void);
 void resetGaitPhase(void);
-void testFF(void);
-void stopTestFF(void);
+
+void startFFtest(void);
+void stopFFtest(void);
+void setFFtestPeriod(float Tp);
+
 void enableFF(int en);
 int FFenabled(void);
 

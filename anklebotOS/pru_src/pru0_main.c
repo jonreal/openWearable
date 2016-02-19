@@ -249,8 +249,8 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
   s->state[bi][si].adc[5] = (int16_t)fix16_to_int(s4);
   s->state[bi][si].adc[6] = (int16_t)fix16_to_int(s5);
   s->state[bi][si].adc[7] = (int16_t)fix16_to_int(s6);
-  s->state[bi][si].heelForceVel[0] = (int16_t)fix16_to_int(v1);
-  s->state[bi][si].heelForceVel[1] = (int16_t)fix16_to_int(v2);
+  s->state[bi][si].d_heelForce[0] = (int16_t)fix16_to_int(v1);
+  s->state[bi][si].d_heelForce[1] = (int16_t)fix16_to_int(v2);
 }
 
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
