@@ -147,6 +147,7 @@ void initialize(void)
   p->stepCurrent = 0;
 
   p->prevDuty = 0;
+  p->pwmCycleCnt = 5;
 }
 
 
@@ -165,9 +166,11 @@ void updateCounters(uint32_t *cnt, uint8_t *bi, uint8_t *si)
 
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 {
-  int16_t u_fb = 0; // (current of the motor)
+  fix16_t u_fb = 0; // (current of the motor)
   fix16_t u_ff = 0; // i_m (current of the motor)
-  float scaling = 0.4;  // ankle torque -> motor current scaling
+
+ // float scaling = 0.4;  // ankle torque -> motor current scaling
+  uint32_t t_cnts;
 
   //uint16_t t_cnts = (1000*(cnt - s->state[bi][si].heelStrikeCnt))
     //                / s->state[bi][si].avgPeriod;
@@ -176,25 +179,48 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
   if (s->cntrl_bit.stepResp == 1){
 
     if (!(p->stepRespFlag == 1)){
-      p->stepRespCnt = cnt + 1000;
+      p->stepRespCnt = cnt + 1000; // Delay 1 sec before step starts
       p->stepRespFlag = 1;
-      motorSetDuty(0, &p->prevDuty, &s->state[bi][si].motorDuty);
+      u_ff = 0;
+      u_fb = 0;
     }
 
     else if ( (p->stepRespFlag) & (cnt >= p->stepRespCnt) ){
       u_ff = p->stepCurrent;
-      motorSetDuty((int16_t)fix16_to_int(u_ff), &p->prevDuty,
-                   &s->state[bi][si].motorDuty);
-      s->state[bi][si].u_ff = u_ff;
+      u_fb = 0;
     }
-
     else {
-      motorSetDuty(0, &p->prevDuty, &s->state[bi][si].motorDuty);
+      u_ff = 0;
+      u_fb = 0;
     }
   }
-  else{
-      motorSetDuty(0, &p->prevDuty, &s->state[bi][si].motorDuty);
+
+  // Feedforward Test
+  else if (s->cntrl_bit.testFF == 1){
+
+    // Calculate lut index t = (cnt % Tp) / Tp
+    t_cnts = (cnt % 250) * 4;
+
+    s->state[bi][si].l_percentGait = t_cnts;
+
+    // Scale lut values
+    u_ff = fix16_sdiv(fix16_from_int(l->u_ff[t_cnts]),fix16_from_int(1000));
   }
+
+  // Else no control
+  else{
+    u_ff = 0;
+    u_fb = 0;
+  }
+
+  // Send command/store command
+  motorSetDuty(fix16_sadd(u_ff,u_fb),
+               &p->pwmCycleCnt,
+               &p->prevDuty,
+               &s->state[bi][si].motorDuty);
+
+  s->state[bi][si].u_ff = u_ff;
+  s->state[bi][si].u_fb = u_fb;
 
   /* FF Test */
 //  if(s->cntrl_bit.testFF){

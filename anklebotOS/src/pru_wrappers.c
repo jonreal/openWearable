@@ -374,8 +374,8 @@ void printState(uint8_t bi, uint8_t si, FILE *fp)
                 s->state[bi][si].adc[5],
                 s->state[bi][si].adc[6],
                 s->state[bi][si].adc[7],
-                s->state[bi][si].heelForceVel[0],
-                s->state[bi][si].heelForceVel[1],
+                s->state[bi][si].d_heelForce[0],
+                s->state[bi][si].d_heelForce[1],
                 s->state[bi][si].imu[0],
                 s->state[bi][si].imu[1],
                 s->state[bi][si].imu[2],
@@ -651,7 +651,9 @@ int loadLookUpTable(char* file)
   if(fp != NULL){
     for(int i=0; i<NUM_FF_LT; i++){
       fscanf(fp, "%f\n", &value);
-      l->uff[i] = (fix16_t) fix16_from_float(value * (float)p->mass);
+      // Scale signal by 1000
+      l->u_ff[i] = (int16_t)
+                   fix16_to_int(fix16_from_float( 5.0*(value + 1.8)*1000.0));
     }
     fclose(fp);
     return 0;
@@ -719,7 +721,7 @@ void printFirCoeff(FILE *fp)
 void printFFLookUpTable(FILE *fp)
 {
   for(int i=0; i<NUM_FF_LT; i++){
-    fprintf(fp, "\t%i\t%f\n", i, fix16_to_float(l->uff[i]));
+    fprintf(fp, "\t%i\t%i\n", i, l->u_ff[i]);
   }
 }
 
@@ -741,15 +743,16 @@ int FFenabled(void)
   return (s->cntrl_bit.doFeedForward);
 }
 
-void testFF(void)
+void startFFtest(void)
 {
   s->cntrl_bit.testFF = 1;
 }
 
-void stopTestFF(void)
+void stopFFtest(void)
 {
   s->cntrl_bit.testFF = 0;
 }
+
 
 void closeLogFile(void)
 {

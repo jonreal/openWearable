@@ -63,7 +63,7 @@ typedef struct{
 
   volatile int16_t adc[NUM_ADC];
   volatile int16_t imu[NUM_IMU];
-  volatile int16_t heelForceVel[2];
+  volatile int16_t d_heelForce[2];
 
 } state_t;
 
@@ -131,6 +131,7 @@ typedef struct{
   volatile fix16_t stepCurrent;
 
   volatile int32_t prevDuty;
+  volatile uint32_t pwmCycleCnt;
 
   iir_coeff_t filt;
   iir_buff_t filtBuffer[6];
@@ -142,7 +143,7 @@ typedef struct{
 
 /* Feedforward lookup table -> mapped to pru1 DRAM */
 typedef struct{
-  int16_t uff[NUM_FF_LT];
+  int16_t u_ff[NUM_FF_LT];
 } lookUp_mem_t;
 
 #endif

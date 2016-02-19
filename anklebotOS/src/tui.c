@@ -348,21 +348,74 @@ int start_tui(void)
 
         // ---- Test FF -----------------------------------------------
         case 'p' :
-          printf("\t\tTesting FF signal.\n");
-          printf("\t\t\tPress enter to stop.\n");
+          printf("\t\tEnter trial name: ");
           fflush(stdout);
-          testFF();
           ptui->io_ready = 0;
 
+          // Wait for input.
           while(1)
             if(ptui->io_ready)
               break;
 
+          scanf(" %s", inString);
+          strcat(logFile, inString);
+          printf("\t\tSaving data to %s\n",logFile);
+          logFileInit(logFile);
+
+          // Wait for enter to start saving data
+          printf("\t\tPress enter to start collection...\n");
+          fflush(stdout);
+          ptui->io_ready = 0;
+          while(1)
+            if(ptui->io_ready)
+              break;
           scanf(" %c", &inChar);
 
-          stopTestFF();
+          startFFtest();
+
+          // Wait for enter to stop collection
+          printf("\t\tPress enter to stop collection...\n");
+          fflush(stdout);
           ptui->io_ready = 0;
+
+          // Data collection loop
+          clearBufferFlags();
+          lastBufferRead = 0;
+          while(1){
+            if(buffer0Full()){
+              clearBuffer0FullFlag();
+              gpio_set_value(gpio_debug, HIGH);
+              writeState(0);
+              lastBufferRead = 0;
+              gpio_set_value(gpio_debug, LOW);
+            }
+            else if(buffer1Full()){
+              clearBuffer1FullFlag();
+              gpio_set_value(gpio_debug, HIGH);
+              writeState(1);
+              lastBufferRead = 1;
+              gpio_set_value(gpio_debug, LOW);
+            }
+
+            /* Check for input */
+            if(ptui->io_ready)
+              break;
+          }
+          scanf(" %c", &inChar);
+          stopFFtest();
+
+          // Get last buffer
+          if(lastBufferRead == 0)
+            writeState(1);
+          else
+            writeState(0);
+
+          closeLogFile();
+          logFile[0] = '\0';
+          strcat(logFile, "datalog/");
           tui_menu();
+          fflush(stdout);
+          ptui->io_ready = 0;
           break;
 
         // ---- Step Response -----------------------------------------------
