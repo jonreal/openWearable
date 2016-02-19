@@ -66,7 +66,7 @@ int main(int argc, char **argv)
   printParameters(stdout);
 
   // Load iir filter coefficients from file to memory.
-  if(loadIirFilterCoeff("config/lowpass_2_6Hz.txt")){
+  if(loadIirFilterCoeff("config/lowpass_1_6Hz")){
       printf("\nFilter coefficient file not found!\n");
   }
   printFirCoeff(stdout);
