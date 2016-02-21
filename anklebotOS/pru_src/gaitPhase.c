@@ -1,205 +1,80 @@
 #include <stdint.h>
 
-#include "mem_types.h"
 #include "gaitPhase.h"
 
 
-/* Stuct */
-gp_t gp;
-
-
-void gaitPhaseInit(param_mem_t* params)
+void gaitPhaseInit(void)
 {
- // gp.toe_hs = params->gp_toe_hs;
- // gp.mid_hs = params->gp_mid_hs;
- // gp.heel_hs = params->gp_heel_hs;
- // gp.toe_to = params->gp_toe_to;
- // gp.mid_to = params->gp_mid_to;
- // gp.heel_to = params->gp_heel_to;
+  for (int i=1; i>3; i++){
+    p->l_period[i] = 0;
+    p->r_period[i] = 0;
+  }
 
- // if(params->gpOnLeftFoot == 1){
- //   gp.toe_indx = 2;
- //   gp.mid_indx = 3;
- //   gp.heel_indx = 4;
- // }
- // else{
- //   gp.toe_indx = 5;
- //   gp.mid_indx = 6;
- //   gp.heel_indx = 7;
- // }
+  p->numOfSteps = 0;
+  p->gaitDetectReady = 0;
 
- // gp.prevGaitPhase = 0;
- // gp.prevAvgPeriodCnts = 0;
- // gp.periodCnts[0] = 0;
- // gp.periodCnts[1] = 0;
- // gp.periodCnts[2] = 0;
- // gp.HS_cntStamp = 0;
- // gp.prevHS_cntStamp = 0;
- // gp.heelStrikeCnt = 0;
+  p->l_prevGaitPhase= 0;
+  p->r_prevGaitPhase = 0;
+  p->l_prevHsStamp = 0;
+  p->r_prevHsStamp = 0;
+  p->l_prevPeriod = 0;
+  p->r_prevPeriod = 0;
 }
 
-void gaitPhaseUpdateParams(param_mem_t *params)
+void leftGaitPhaseDetect(uint32_t cnt,
+                         volatile int16_t heelForce,
+                         volatile int16_t d_heelForce)
 {
- // gp.toe_hs = params->gp_toe_hs;
- // gp.mid_hs = params->gp_mid_hs;
- // gp.heel_hs = params->gp_heel_hs;
- // gp.toe_to = params->gp_toe_to;
- // gp.mid_to = params->gp_mid_to;
- // gp.heel_to = params->gp_heel_to;
-}
+  uint32_t gp;
+  uint32_t hsStamp;
+  uint32_t meanPeriod;
 
-void resetGaitPhase(void)
-{
- // gp.prevGaitPhase = 0;
- // gp.prevAvgPeriodCnts = 0;
- // gp.periodCnts[0] = 0;
- // gp.periodCnts[1] = 0;
- // gp.periodCnts[2] = 0;
- // gp.HS_cntStamp = 0;
- // gp.prevHS_cntStamp = 0;
- // gp.heelStrikeCnt = 0;
-}
+  if (p->l_prevGaitPhase == 0){
+    if ((d_heelForce > p->l_d_forceThrs) && (heelForce < p->l_forceThrs)){
+      gp = 1;
+      hsStamp = cnt;
 
-uint8_t isGaitPhaseReady(void)
-{
- // if(gp.heelStrikeCnt > 4)
- //   return 1;
- // else
- //   return 0;
-}
+      // Find mean period
+      p->l_period[2] = p->l_period[1];
+      p->l_period[1] = p->l_period[0];
+      p->l_period[0] = fix16_from_int(hsStamp - p->l_prevHsStamp);
 
-void gaitPhaseDetect(volatile uint32_t cnt,
-                     volatile uint16_t *gaitPhase,
-                     volatile uint16_t *avgPeriod,
-                     volatile uint32_t *heelStrikeCnt,
-                     volatile uint16_t *adc)
-{
-  /* 0 - unknown
-   * 1 - stance
-   * 2 - preswing
-   * 3 - swing */
+      meanPeriod = (uint32_t) fix16_to_int(
+        fix16_sdiv(fix16_sadd(fix16_sadd(p->l_period[0],
+                      p->l_period[1]), p->l_period[2]), fix16_from_int(3)));
 
-  /* Unkown, wait for heel contact */
-  if(gp.prevGaitPhase == 0){
-    if( (isHeelContact(adc)) && !(isMidContact(adc)) && !(isToeContact(adc)) ){
-      gp.HS_cntStamp = cnt;
-      *gaitPhase = 1;
-      *avgPeriod = gp.prevAvgPeriodCnts;
-      *heelStrikeCnt = gp.HS_cntStamp;
+      // Increment step
+      p->numOfSteps++;
+      if (p->numOfSteps > 5)
+        p->numOfSteps = 5;
+
+      if (p->numOfSteps == 5)
+        p->gaitDetectReady = 1;
+
     }
-    else {
-      *gaitPhase = 0;
-      *avgPeriod = gp.prevAvgPeriodCnts;
-      *heelStrikeCnt = gp.prevHS_cntStamp;
+    else{
+      gp = 0;
+      hsStamp = p->l_prevHsStamp;
+      meanPeriod = p->l_prevPeriod;
+    }
+  }
+  else if (p->l_prevGaitPhase == 1){
+    if ((d_heelForce < -p->l_d_forceThrs) && (heelForce > p->l_forceThrs)){
+      gp = 0;
+      hsStamp = p->l_prevHsStamp;
+      meanPeriod = p->l_prevPeriod;
+
+    }
+    else{
+      gp = 1;
+      hsStamp = p->l_prevHsStamp;
+      meanPeriod = p->l_prevPeriod;
     }
   }
 
-  /* GP=1 (Stance), wait for toe contact */
-  else if(gp.prevGaitPhase == 1){
-    if(isToeContact(adc)){
-      *gaitPhase = 2;
-      *avgPeriod = gp.prevAvgPeriodCnts;
-      *heelStrikeCnt = gp.prevHS_cntStamp;
-    }
-    else {
-      *gaitPhase = gp.prevGaitPhase;
-      *avgPeriod = gp.prevAvgPeriodCnts;
-      *heelStrikeCnt = gp.prevHS_cntStamp;
-    }
-  }
-
-  /* GP=2 (pre-swing), wait for no contact */
-  else if(gp.prevGaitPhase == 2){
-    if( !(isHeelContact(adc)) && !(isToeContact(adc)) ){
-      *gaitPhase = 3;
-      *avgPeriod = gp.prevAvgPeriodCnts;
-      *heelStrikeCnt = gp.prevHS_cntStamp;
-    }
-    else {
-      *gaitPhase = gp.prevGaitPhase;
-      *avgPeriod = gp.prevAvgPeriodCnts;
-      *heelStrikeCnt = gp.prevHS_cntStamp;
-    }
-  }
-
-  /* GP=3 (swing), wait for heel contact */
-  else if(gp.prevGaitPhase == 3){
-    if( (isHeelContact(adc)) && !(isMidContact(adc)) && !(isToeContact(adc)) ){
-
-      /* Cnt Stamp */
-      gp.HS_cntStamp = cnt;
-
-      /* Circular Buffer for average period */
-      gp.periodCnts[2] = gp.periodCnts[1];
-      gp.periodCnts[1] = gp.periodCnts[0];
-      gp.periodCnts[0] = gp.HS_cntStamp - gp.prevHS_cntStamp;
-
-      /* Average Period */
-      *avgPeriod = (gp.periodCnts[0] + gp.periodCnts[1] + gp.periodCnts[2])/3;
-
-      *gaitPhase = 1;
-
-      if(gp.heelStrikeCnt < 5)
-        gp.heelStrikeCnt++;
-
-      *heelStrikeCnt = gp.HS_cntStamp;
-    }
-    else {
-      *gaitPhase = gp.prevGaitPhase;
-      *avgPeriod = gp.prevAvgPeriodCnts;
-      *heelStrikeCnt = gp.prevHS_cntStamp;
-    }
-  }
-  gp.prevGaitPhase = *gaitPhase;
-  gp.prevAvgPeriodCnts = *avgPeriod;
-  gp.prevHS_cntStamp = gp.HS_cntStamp;
+  // Store Results
+  p->l_prevPeriod = meanPeriod;
+  p->l_prevGaitPhase = gp;
+  p->l_prevHsStamp = hsStamp;
 }
 
-uint8_t isHeelContact(volatile uint16_t* adc)
-{
-  if( adc[gp.heel_indx] > gp.heel_hs )
-    return 1;
-  else
-    return 0;
-}
-
-uint8_t isMidContact(volatile uint16_t* adc)
-{
-  if( adc[gp.mid_indx] > gp.mid_hs )
-    return 1;
-  else
-    return 0;
-}
-
-uint8_t isToeContact(volatile uint16_t* adc)
-{
-  if( adc[gp.toe_indx] > gp.toe_hs )
-    return 1;
-  else
-    return 0;
-}
-
-//uint16_t isHeelStrike(volatile uint16_t* adc)
-//{
-//  if( (adc[gp.heel_indx] > gp.heel_hs)
-//        & (adc[gp.mid_indx] < gp.mid_hs)
-//        & (adc[gp.toe_indx] < gp.toe_hs) ){
-//    return 1;
-//  }
-//  else{
-//    return 0;
-//  }
-//}
-//
-//uint16_t isToeOff(volatile uint16_t* adc)
-//{
-//  if( (adc[gp.toe_indx] < gp.toe_to)
-//        & (adc[gp.heel_indx] < gp.heel_to)
-//        & (adc[gp.mid_indx] < gp.mid_to) ){
-//    return 1;
-//  }
-//  else{
-//    return 0;
-//  }
-//}
-//

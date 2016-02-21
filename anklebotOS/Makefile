@@ -29,7 +29,7 @@ LDFLAGS =
 
 # PRU compiler
 PRU_CC = clpru
-PRU_CFLAGS = -q --c99 -v3 --define=am3359d
+PRU_CFLAGS = -q --c99 -v3 --define=am3359d -O3
 PRU_LDFLAGS =
 
 # PRU hex

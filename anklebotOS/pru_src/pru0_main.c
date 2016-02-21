@@ -11,7 +11,7 @@
 
 //#include "imu_mpu9150.h"
 #include "adcdriver.h"
-//#include "gaitPhase.h"
+#include "gaitPhase.h"
 #include "viconsync.h"
 #include "filter.h"
 
@@ -156,7 +156,7 @@ void initialize(void)
   /* Add pru dependent peripheral init methods here */
   adcInit();
   //imuInit();
-  //gaitPhaseInit(p);
+  gaitPhaseInit();
 
   /* Init filter buffers */
   fix16_iirInit(p->filtBuffer[0].x, p->filtBuffer[0].y, MAX_IIR_ORDER+1);
@@ -165,10 +165,6 @@ void initialize(void)
   fix16_iirInit(p->filtBuffer[3].x, p->filtBuffer[3].y, MAX_IIR_ORDER+1);
   fix16_iirInit(p->filtBuffer[4].x, p->filtBuffer[4].y, MAX_IIR_ORDER+1);
   fix16_iirInit(p->filtBuffer[5].x, p->filtBuffer[5].y, MAX_IIR_ORDER+1);
-
-  /* Init vel filter buffers */
-  fix16_velFiltInit(p->velBuffer[0].x, p->velBuffer[0].y);
-  fix16_velFiltInit(p->velBuffer[1].x, p->velBuffer[1].y);
 }
 
 void initMemory(void)
@@ -251,6 +247,14 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
   s->state[bi][si].adc[7] = (int16_t)fix16_to_int(s5);
   s->state[bi][si].d_heelForce[0] = (int16_t)fix16_to_int(fix16_ssub(s2, s3));
   s->state[bi][si].d_heelForce[1] = (int16_t)fix16_to_int(fix16_ssub(s4, s5));
+
+  leftGaitPhaseDetect(cnt, s->state[bi][si].adc[4],
+                           s->state[bi][si].d_heelForce[0]);
+
+  s->state[bi][si].l_meanGaitPeriod = p->l_prevPeriod;
+  s->state[bi][si].l_gaitPhase = p->l_prevGaitPhase;
+  s->state[bi][si].l_hsStamp = p->l_prevHsStamp;
+
 }
 
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)

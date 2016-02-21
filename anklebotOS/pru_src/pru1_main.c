@@ -15,6 +15,10 @@
 #include "maxonmotor.h"
 #include "fix16.h"
 
+
+#define FIX16_1000  0x3E80000
+
+
 /* Prototypes -------------------------------------------------------------- */
 void initialize(void);
 void initMemory(void);
@@ -146,8 +150,7 @@ void initialize(void)
   p->stepRespFlag = 0;
   p->stepCurrent = 0;
 
-  p->prevDuty = 0;
-  p->pwmCycleCnt = 5;
+  p->FFgain = 0;
 }
 
 
@@ -168,12 +171,7 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 {
   fix16_t u_fb = 0; // (current of the motor)
   fix16_t u_ff = 0; // i_m (current of the motor)
-
- // float scaling = 0.4;  // ankle torque -> motor current scaling
-  uint32_t t_cnts;
-
-  //uint16_t t_cnts = (1000*(cnt - s->state[bi][si].heelStrikeCnt))
-    //                / s->state[bi][si].avgPeriod;
+  uint32_t t_cnts, temp;
 
   // Step Response
   if (s->cntrl_bit.stepResp == 1){
@@ -203,54 +201,44 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 
     s->state[bi][si].l_percentGait = t_cnts;
 
-    // Scale lut values
-    u_ff = fix16_sdiv(fix16_from_int(l->u_ff[t_cnts]),fix16_from_int(1000));
+    // Scale ff
+    u_ff = fix16_smul(p->FFgain,
+                        fix16_sdiv(fix16_from_int(l->u_ff[t_cnts]),
+                                   FIX16_1000));
   }
 
-  // Else no control
+  // Impedance and feedforward
   else{
-    u_ff = 0;
-    u_fb = 0;
+
+    // Impedance
+    //u_fb = fix16_smul(p->Kp, fix16_ssub(p->anklePos0, s->state[bi][si].anklePos));
+
+    // Feedforward
+    if (s->cntrl_bit.doFeedForward){
+      // Calculate percent gait
+      temp = (cnt - s->state[bi][si].l_hsStamp) * 1000;
+      t_cnts = (uint32_t)
+        fix16_to_int(fix16_sdiv(fix16_from_int((int32_t)temp),
+                     fix16_from_int(s->state[bi][si].l_meanGaitPeriod)));
+
+      // Saturate t_cnts;
+      if (t_cnts >= NUM_FF_LT)
+        t_cnts = NUM_FF_LT-1;
+
+      // Store percent gait
+      s->state[bi][si].l_percentGait = t_cnts;
+
+      // Scale ff
+      u_ff = fix16_smul(p->FFgain,
+                        fix16_sdiv(fix16_from_int(l->u_ff[t_cnts]),
+                                   FIX16_1000));
+    }
   }
 
   // Send command/store command
-  motorSetDuty(fix16_sadd(u_ff,u_fb),
-               &p->pwmCycleCnt,
-               &p->prevDuty,
-               &s->state[bi][si].motorDuty);
-
+  motorSetDuty(fix16_sadd(u_ff, u_fb), &s->state[bi][si].motorDuty);
   s->state[bi][si].u_ff = u_ff;
   s->state[bi][si].u_fb = u_fb;
-
-  /* FF Test */
-//  if(s->cntrl_bit.testFF){
-//    uint32_t testPeriod = 1000;
-//    uint16_t test_t_cnt = cnt % testPeriod;
-//    u_fb = 0;
-//    u_ff = (int16_t) (scaling * (float)(lookUs->ff_ankleTorque[test_t_cnt]));
-//  }
-//
-//  /* No Test */
-//  else {
-//    /* Impedance Feedback */
-//    u_fb = ((int16_t)loc.Kp)*(loc.anklePos0 - s->state[bi][si].anklePos)/1000;
-//
-//    /* Feedforward */
-//    if(s->cntrl_bit.doFeedForward && s->cntrl_bit.gaitPhaseReady)
-//    {
-//      /* Check overrun */
-//      if(t_cnts >= NUM_FF_LT)
-//        t_cnts = (NUM_FF_LT-1);
-//
-//      /* Motor current command */
-//      u_ff = (int16_t) (scaling * (float)(lookUp->ff_ankleTorque[t_cnts]));
-//      s->state[si][bi].ankleVel = t_cnts;
-//    }
-//  }
-//
-//  s->state[bi][si].fbCurrentCmd = u_fb;
-//  s->state[bi][si].ffCurrentCmd = u_ff;
-//  motorSetDuty(u_fb + u_ff, &s->state[bi][si].motorDuty);
 }
 
 void updateState(uint32_t cnt, uint8_t bi, uint8_t si)

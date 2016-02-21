@@ -10,8 +10,6 @@ extern volatile uint32_t *debugBuffer;
 
 /* --- Prototypes -----------------------------------------------------------*/
 void fix16_iirInit(volatile fix16_t *x, volatile fix16_t *y, uint32_t len);
-void fix16_velFiltInit(volatile fix16_t *x, volatile fix16_t *y);
 fix16_t fix16_iir(uint32_t N, fix16_t *b, fix16_t *a,
                   volatile fix16_t *x, volatile fix16_t *y, int16_t in);
-fix16_t fix16_velFilt(volatile fix16_t *x, volatile fix16_t *y, fix16_t in);
 #endif

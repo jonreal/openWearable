@@ -3,6 +3,7 @@
 #include "spidriver.h"
 #include "encoder.h"
 
+
 void encoderInit(void)
 {
  spiInit();
@@ -13,7 +14,7 @@ void encoderCleanUp(void)
   spiCleanUp();
 }
 
-void encoderSample(volatile int16_t *pos)
+void encoderSample(volatile fix16_t *pos)
 {
   uint8_t rx = 0;
   uint8_t MSB = 0;
@@ -34,14 +35,14 @@ void encoderSample(volatile int16_t *pos)
   *pos =  encoderCnts2Degs((uint16_t) ((MSB << 8) | (LSB & 0xFF)));
 }
 
-int16_t encoderCnts2Degs(uint16_t cnts)
+fix16_t encoderCnts2Degs(uint16_t cnts)
 {
-  int32_t angleDeg = ((int32_t)cnts)*36000/4096;
+  fix16_t angleDeg = fix16_smul(fix16_from_int(cnts), FIX16_360_DIV_4096);
 
-   if(angleDeg > 18000){
-     angleDeg = angleDeg - 36000;
-  }
-  return (int16_t)(angleDeg + ANGLE_OFFSET);
+  if (angleDeg > FIX16_180)
+    angleDeg = fix16_ssub(angleDeg, FIX16_360);
+
+  return angleDeg;
 }
 
 void encoderSetZeroAngle(void)
