@@ -1,0 +1,10 @@
+1000	// Freq.
+0	  // Freq. Ticks
+88	// Subject Mass
+1.1	// Kp
+0.05	// Kd
+10.5	// anklePos0
+200  // l_forceThrs
+50    // l_d_forceThrs
+200   // r_forceThrs
+50    // r_d_forceThrs

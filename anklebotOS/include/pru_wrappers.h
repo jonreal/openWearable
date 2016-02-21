@@ -57,14 +57,13 @@ int loadLookUpTable(char *file);
 int loadIirFilterCoeff(char *file);
 
 void setTareEncoderBit(void);
-void resetGaitPhase(void);
 
 void startFFtest(void);
 void stopFFtest(void);
-void setFFtestPeriod(float Tp);
-
-void enableFF(int en);
-int FFenabled(void);
+void setFFenable(int en);
+int getFFenable(void);
+float getFFgain(void);
+void setFFgain(float gain);
 
 void setStepCurrent(float cur);
 void startStepResponse(void);

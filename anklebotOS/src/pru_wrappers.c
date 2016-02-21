@@ -266,6 +266,8 @@ void zeroState(uint8_t bi, uint8_t si)
   s->state[bi][si].l_meanGaitPeriod = 0;
   s->state[bi][si].r_percentGait = 0;
   s->state[bi][si].l_percentGait = 0;
+  s->state[bi][si].l_gaitPhase = 0;
+  s->state[bi][si].r_gaitPhase = 0;
   s->state[bi][si].motorDuty = 0;
   s->state[bi][si].anklePos = 0;
   s->state[bi][si].ankleVel = 0;
@@ -298,6 +300,8 @@ void printStateHeadings(FILE *fp)
           "l_Tp\t"
           "r_Pgait\t"
           "l_Pgait\t"
+          "r_gp\t"
+          "l_gp\t"
           "duty\t"
           "ankPos\t"
           "ankVel\t"
@@ -311,8 +315,8 @@ void printStateHeadings(FILE *fp)
           "r_s1\t"
           "r_s2\t"
           "r_s3\t"
-          "l_s3_vel\t"
-          "r_s3_vel\t"
+          "l_d_s3\t"
+          "r_d_s3\t"
           "imu0\t"
           "imu1\t"
           "imu2\t"
@@ -332,6 +336,8 @@ void printState(uint8_t bi, uint8_t si, FILE *fp)
           "%u\t"    // l_meanGaitPeriod - uint16_t
           "%u\t"    // r_percentGait - uint16_t
           "%u\t"    // l_percentGait - uint16_t
+          "%u\t"    // l_gaitPhase - uint16_t
+          "%u\t"    // r_gaitPhase - uint16_t
           "%i\t"    // motorDuty - int16_t
           "%.5f\t"  // anklePos - fix16_t (convert to float)
           "%.5f\t"  // ankleVel - fix16_t (convert to float)
@@ -361,6 +367,8 @@ void printState(uint8_t bi, uint8_t si, FILE *fp)
                 s->state[bi][si].l_meanGaitPeriod,
                 s->state[bi][si].r_percentGait,
                 s->state[bi][si].l_percentGait,
+                s->state[bi][si].l_gaitPhase,
+                s->state[bi][si].r_gaitPhase,
                 s->state[bi][si].motorDuty,
                 fix16_to_float(s->state[bi][si].anklePos),
                 fix16_to_float(s->state[bi][si].ankleVel),
@@ -580,6 +588,10 @@ void saveParameters(char* file)
     fprintf(fp, "%.5f\t// Kp\n", fix16_to_float(p->Kp));
     fprintf(fp, "%.5f\t// Kd\n", fix16_to_float(p->Kd));
     fprintf(fp, "%.5f\t// anklePos0\n", fix16_to_float(p->anklePos0));
+    fprintf(fp, "%i\t// l_forceThrs\n", p->l_forceThrs);
+    fprintf(fp, "%i\t// l_d_forceThrs\n", p->l_d_forceThrs);
+    fprintf(fp, "%i\t// r_forceThrs\n", p->r_forceThrs);
+    fprintf(fp, "%i\t// l_d_forceThrs\n", p->r_d_forceThrs);
     fclose(fp);
   }
   else{
@@ -611,6 +623,12 @@ int loadParameters(char *file)
     fscanf(fp, "%f%*[^\n]\n", &t1);
     p->anklePos0 = fix16_from_float(t1);
 
+    fscanf(fp, "%u%*[^\n]\n", &p->l_forceThrs);
+    fscanf(fp, "%u%*[^\n]\n", &p->l_d_forceThrs);
+    fscanf(fp, "%u%*[^\n]\n", &p->r_forceThrs);
+    fscanf(fp, "%u%*[^\n]\n", &p->r_d_forceThrs);
+
+
     fclose(fp);
     p->frq_clock_ticks = hzToPruTicks(p->frq_hz);
 
@@ -631,10 +649,15 @@ void printParameters(FILE *fp)
           "#\tTicks = %i\n"
           "#\tKp = %.4f\n"
           "#\tKd = %.4f\n"
-          "#\tanklePos0 = %.4f\n#",
+          "#\tanklePos0 = %.4f\n"
+          "#\tl_forceThrs = %i\n"
+          "#\tl_d_forceThrs = %i\n"
+          "#\tr_forceThrs = %i\n"
+          "#\tr_d_forceThrs = %i\n#",
           p->frq_hz, p->frq_clock_ticks,
           fix16_to_float(p->Kp), fix16_to_float(p->Kd),
-          fix16_to_float(p->anklePos0));
+          fix16_to_float(p->anklePos0), p->l_forceThrs,
+          p->l_d_forceThrs, p->r_forceThrs, p->r_d_forceThrs);
   fflush(fp);
 }
 
@@ -725,22 +748,33 @@ void printFFLookUpTable(FILE *fp)
   }
 }
 
-void enableFF(int en)
+void setFFenable(int en)
 {
-  if(en == 1)
+  if(en == 1){
     s->cntrl_bit.doFeedForward = 1;
-  else
+    p->FFgain = 0;
+  }
+  else {
     s->cntrl_bit.doFeedForward = 0;
+    p->FFgain = 0;
+  }
 }
 
-void resetGaitPhase(void)
-{
-  s->cntrl_bit.resetGaitPhase = 1;
-}
-
-int FFenabled(void)
+int getFFenable(void)
 {
   return (s->cntrl_bit.doFeedForward);
+}
+
+float getFFgain(void)
+{
+  return fix16_to_float(p->FFgain);
+}
+
+void setFFgain(float gain)
+{
+  if (gain > 1.0)
+    gain = 1.0;
+  p->FFgain = fix16_from_float(gain);
 }
 
 void startFFtest(void)
