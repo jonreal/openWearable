@@ -92,18 +92,13 @@ int main(void)
     updateLocalParams();
 
     /* Reset Gait phase */
-   // if(s->cntrl_bit.resetGaitPhase){
-   //   s->cntrl_bit.gaitPhaseReady = 0;
-   //   resetGaitPhase();
-   //   s->cntrl_bit.resetGaitPhase = 0;
-   // }
+    if(s->cntrl_bit.resetGaitPhase){
+      s->cntrl_bit.resetGaitPhase = 0;
+      gaitPhaseInit();
+    }
 
     /* Update State */
     updateState(cnt, buffIndx, stateIndx);
-
-    /* Check to see if GaitPhase Ready */
-   // if( !(s->cntrl_bit.gaitPhaseReady) && (isGaitPhaseReady()) )
-   //   s->cntrl_bit.gaitPhaseReady = 1;
 
     /* Set done bit (update state done) */
     s->cntrl_bit.pru0_done = 1;
@@ -196,7 +191,6 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 {
   int16_t adc[8];
   fix16_t s1, s2, s3, s4, s5, s6;
-  fix16_t v1, v2;
 
   s->state[bi][si].timeStamp = cnt;
 
@@ -209,18 +203,19 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
   s->state[bi][si].adc[0] = adc[0];
   s->state[bi][si].adc[1] = adc[1];
 
-  /* Filter insoles */
-//  s1 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-//                 p->filtBuffer[0].x, p->filtBuffer[0].y,
-//                 adc[2]);
+  /* Filter insoles heel */
+  s1 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
+                 p->filtBuffer[0].x, p->filtBuffer[0].y,
+                 adc[4]);
 
   s2 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
                  p->filtBuffer[1].x, p->filtBuffer[1].y,
-                 adc[4]);
+                 (int16_t) fix16_to_int(s1));
 
   s3 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
                  p->filtBuffer[2].x, p->filtBuffer[2].y,
                  (int16_t) fix16_to_int(s2));
+
 
   s4 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
                  p->filtBuffer[3].x, p->filtBuffer[3].y,
@@ -230,23 +225,20 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
                  p->filtBuffer[4].x, p->filtBuffer[4].y,
                  (int16_t) fix16_to_int(s4));
 
-//  s6 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-//                 p->filtBuffer[5].x, p->filtBuffer[5].y,
-//                 adc[7]);
+  s6 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
+                 p->filtBuffer[5].x, p->filtBuffer[5].y,
+                 (int16_t) fix16_to_int(s5));
 
-  /* Velocity Filter on heels */
-//  v1 = fix16_velFilt(p->velBuffer[0].x, p->velBuffer[0].y, s3);
-//  v2 = fix16_velFilt(p->velBuffer[1].x, p->velBuffer[1].y, s6);
 
   /* Pack Stuct */
-  s->state[bi][si].adc[2] = adc[4]; //(int16_t)fix16_to_int(s1);
-  s->state[bi][si].adc[3] = (int16_t)fix16_to_int(s2);
-  s->state[bi][si].adc[4] = (int16_t)fix16_to_int(s3);
-  s->state[bi][si].adc[5] = adc[7];// (int16_t)fix16_to_int(s4);
-  s->state[bi][si].adc[6] = (int16_t)fix16_to_int(s4);
+  s->state[bi][si].adc[2] = adc[2];
+  s->state[bi][si].adc[3] = adc[3];
+  s->state[bi][si].adc[4] = (int16_t)fix16_to_int(s2);
+  s->state[bi][si].adc[5] = adc[5];
+  s->state[bi][si].adc[6] = adc[6];
   s->state[bi][si].adc[7] = (int16_t)fix16_to_int(s5);
   s->state[bi][si].d_heelForce[0] = (int16_t)fix16_to_int(fix16_ssub(s2, s3));
-  s->state[bi][si].d_heelForce[1] = (int16_t)fix16_to_int(fix16_ssub(s4, s5));
+  s->state[bi][si].d_heelForce[1] = (int16_t)fix16_to_int(fix16_ssub(s5, s6));
 
   leftGaitPhaseDetect(cnt, s->state[bi][si].adc[4],
                            s->state[bi][si].d_heelForce[0]);
@@ -255,6 +247,12 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
   s->state[bi][si].l_gaitPhase = p->l_prevGaitPhase;
   s->state[bi][si].l_hsStamp = p->l_prevHsStamp;
 
+  rightGaitPhaseDetect(cnt, s->state[bi][si].adc[7],
+                           s->state[bi][si].d_heelForce[1]);
+
+  s->state[bi][si].r_meanGaitPeriod = p->r_prevPeriod;
+  s->state[bi][si].r_gaitPhase = p->r_prevGaitPhase;
+  s->state[bi][si].r_hsStamp = p->r_prevHsStamp;
 }
 
 void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)

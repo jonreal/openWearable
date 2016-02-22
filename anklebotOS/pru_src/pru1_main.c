@@ -171,7 +171,7 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 {
   fix16_t u_fb = 0; // (current of the motor)
   fix16_t u_ff = 0; // i_m (current of the motor)
-  uint32_t t_cnts, temp;
+  uint32_t t_cnts, t1, Tp;
 
   // Step Response
   if (s->cntrl_bit.stepResp == 1){
@@ -214,12 +214,18 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
     //u_fb = fix16_smul(p->Kp, fix16_ssub(p->anklePos0, s->state[bi][si].anklePos));
 
     // Feedforward
-    if (s->cntrl_bit.doFeedForward){
-      // Calculate percent gait
-      temp = (cnt - s->state[bi][si].l_hsStamp) * 1000;
-      t_cnts = (uint32_t)
-        fix16_to_int(fix16_sdiv(fix16_from_int((int32_t)temp),
-                     fix16_from_int(s->state[bi][si].l_meanGaitPeriod)));
+    if ((s->cntrl_bit.doFeedForward) && (p->gaitDetectReady)){
+
+      // Time since hs
+      t1 = (cnt - s->state[bi][si].l_hsStamp) * 1000;
+
+      t_cnts = t1 / (s->state[bi][si].l_meanGaitPeriod -
+                    s->state[bi][si].l_meanGaitPeriod / 1000);
+
+
+//      t_cnts = (uint32_t)
+//        fix16_to_int(fix16_sdiv(fix16_from_int((int32_t)temp),
+//                     fix16_from_int(s->state[bi][si].l_meanGaitPeriod)));
 
       // Saturate t_cnts;
       if (t_cnts >= NUM_FF_LT)

@@ -11,7 +11,7 @@ PRU1_TARGET = pru1_main
 # C Source Directories
 CSRC_DIR = ./src
 CINC_DIR = ./include
-CLIB = -lprussdrv
+CLIB = -lprussdrv -lpthread
 
 # PRU_C Source Directories
 PRU_CSRC_DIR = ./pru_src
@@ -24,7 +24,7 @@ BUILD_DIR = ./build
 
 # Compiler
 CC = gcc
-CFLAGS = -std=gnu99 -Wall -g -O2 -mtune=cortex-a8 -march=armv7-a
+CFLAGS = -std=gnu99 -Wall -g -O3 -mtune=cortex-a8 -march=armv7-a
 LDFLAGS =
 
 # PRU compiler

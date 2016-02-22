@@ -69,6 +69,7 @@ void setStepCurrent(float cur);
 void startStepResponse(void);
 void resetStepRespVars(void);
 
+void resetGP(void);
 
 #endif
 

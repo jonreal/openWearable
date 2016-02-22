@@ -4,7 +4,7 @@
 1.1	// Kp
 0.05	// Kd
 10.5	// anklePos0
-200  // l_forceThrs
-50    // l_d_forceThrs
-200   // r_forceThrs
-50    // r_d_forceThrs
+100  // l_forceThrs
+10    // l_d_forceThrs
+100   // r_forceThrs
+10    // r_d_forceThrs

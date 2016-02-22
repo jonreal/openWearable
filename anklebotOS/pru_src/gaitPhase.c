@@ -25,9 +25,9 @@ void leftGaitPhaseDetect(uint32_t cnt,
                          volatile int16_t heelForce,
                          volatile int16_t d_heelForce)
 {
-  uint32_t gp;
-  uint32_t hsStamp;
-  uint32_t meanPeriod;
+  uint32_t gp = 0;
+  uint32_t hsStamp = 0;
+  uint32_t meanPeriod = 0;
 
   if (p->l_prevGaitPhase == 0){
     if ((d_heelForce > p->l_d_forceThrs) && (heelForce < p->l_forceThrs)){
@@ -48,7 +48,7 @@ void leftGaitPhaseDetect(uint32_t cnt,
       if (p->numOfSteps > 5)
         p->numOfSteps = 5;
 
-      if (p->numOfSteps == 5)
+      if (p->numOfSteps >= 5)
         p->gaitDetectReady = 1;
 
     }
@@ -59,7 +59,7 @@ void leftGaitPhaseDetect(uint32_t cnt,
     }
   }
   else if (p->l_prevGaitPhase == 1){
-    if ((d_heelForce < -p->l_d_forceThrs) && (heelForce > p->l_forceThrs)){
+    if ((d_heelForce < (-p->l_d_forceThrs)) && (heelForce > p->l_forceThrs)){
       gp = 0;
       hsStamp = p->l_prevHsStamp;
       meanPeriod = p->l_prevPeriod;
@@ -78,3 +78,59 @@ void leftGaitPhaseDetect(uint32_t cnt,
   p->l_prevHsStamp = hsStamp;
 }
 
+void rightGaitPhaseDetect(uint32_t cnt,
+                         volatile int16_t heelForce,
+                         volatile int16_t d_heelForce)
+{
+  uint32_t gp = 0;
+  uint32_t hsStamp = 0;
+  uint32_t meanPeriod = 0;
+
+  if (p->r_prevGaitPhase == 0){
+    if ((d_heelForce > p->r_d_forceThrs) && (heelForce < p->r_forceThrs)){
+      gp = 1;
+      hsStamp = cnt;
+
+      // Find mean period
+      p->r_period[2] = p->r_period[1];
+      p->r_period[1] = p->r_period[0];
+      p->r_period[0] = fix16_from_int(hsStamp - p->r_prevHsStamp);
+
+      meanPeriod = (uint32_t) fix16_to_int(
+        fix16_sdiv(fix16_sadd(fix16_sadd(p->r_period[0],
+                      p->r_period[1]), p->r_period[2]), fix16_from_int(3)));
+
+      // Increment step
+//      p->numOfSteps++;
+//      if (p->numOfSteps > 5)
+//        p->numOfSteps = 5;
+//
+//      if (p->numOfSteps >= 5)
+//        p->gaitDetectReady = 1;
+
+    }
+    else{
+      gp = 0;
+      hsStamp = p->r_prevHsStamp;
+      meanPeriod = p->r_prevPeriod;
+    }
+  }
+  else if (p->r_prevGaitPhase == 1){
+    if ((d_heelForce < (-p->r_d_forceThrs)) && (heelForce > p->r_forceThrs)){
+      gp = 0;
+      hsStamp = p->r_prevHsStamp;
+      meanPeriod = p->r_prevPeriod;
+
+    }
+    else{
+      gp = 1;
+      hsStamp = p->r_prevHsStamp;
+      meanPeriod = p->r_prevPeriod;
+    }
+  }
+
+  // Store Results
+  p->r_prevPeriod = meanPeriod;
+  p->r_prevGaitPhase = gp;
+  p->r_prevHsStamp = hsStamp;
+}
