@@ -16,7 +16,7 @@
 #define PRU1_ARM_INT  (20 + 16)
 
 #define NUM_OF_BUFFS    2
-#define SIZE_OF_BUFFS   74
+#define SIZE_OF_BUFFS   88
 
 #define NUM_ADC     8
 #define NUM_IMU     6
@@ -64,7 +64,7 @@ typedef struct{
   volatile fix16_t u_ff;
 
   volatile int16_t adc[NUM_ADC];
-  volatile int16_t imu[NUM_IMU];
+//  volatile int16_t imu[NUM_IMU];
   volatile int16_t d_heelForce[2];
 
 } state_t;
@@ -89,11 +89,10 @@ typedef struct{
       unsigned encoderTare : 1;   // bit 6 (set by arm, read/reset by pru1)
       unsigned doFeedForward : 1; // bit 7 (set by arm, read by pru1)
       unsigned gaitPhaseReady: 1; // bit 8 (set by pru0, read by pru1)
-      unsigned heelStrike : 1;    // bit 9 (set by pru0, reset by pru1)
-      unsigned toeOff : 1;        // bit 10 (set by pru0, reset by pru1)
-      unsigned testFF : 1;        // bit 11 (set by arm, reset by arm)
-      unsigned stepResp : 1;      // bit 12 (set by arm, reset by pru1)
-      unsigned rsvd : 3;          // bits 13-15 reserved
+      unsigned resetGaitPhase : 1; // bit 9
+      unsigned testFF : 1;        // bit 10 (set by arm, reset by arm)
+      unsigned stepResp : 1;      // bit 11 (set by arm, reset by pru1)
+      unsigned rsvd : 4;          // bits 12-15 reserved
    } cntrl_bit;
   };
 
@@ -122,10 +121,10 @@ typedef struct{
   volatile fix16_t Kd;
   volatile fix16_t anklePos0;
 
-  volatile uint32_t l_forceThrs;
-  volatile uint32_t r_forceThrs;
-  volatile uint32_t l_d_forceThrs;
-  volatile uint32_t r_d_forceThrs;
+  volatile int32_t l_forceThrs;
+  volatile int32_t r_forceThrs;
+  volatile int32_t l_d_forceThrs;
+  volatile int32_t r_d_forceThrs;
 
   volatile uint32_t l_prevGaitPhase;
   volatile uint32_t r_prevGaitPhase;

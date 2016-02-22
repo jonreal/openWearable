@@ -266,8 +266,8 @@ void zeroState(uint8_t bi, uint8_t si)
   s->state[bi][si].l_meanGaitPeriod = 0;
   s->state[bi][si].r_percentGait = 0;
   s->state[bi][si].l_percentGait = 0;
-  s->state[bi][si].l_gaitPhase = 0;
   s->state[bi][si].r_gaitPhase = 0;
+  s->state[bi][si].l_gaitPhase = 0;
   s->state[bi][si].motorDuty = 0;
   s->state[bi][si].anklePos = 0;
   s->state[bi][si].ankleVel = 0;
@@ -281,12 +281,12 @@ void zeroState(uint8_t bi, uint8_t si)
   s->state[bi][si].adc[5] = 0;
   s->state[bi][si].adc[6] = 0;
   s->state[bi][si].adc[7] = 0;
-  s->state[bi][si].imu[0] = 0;
-  s->state[bi][si].imu[1] = 0;
-  s->state[bi][si].imu[2] = 0;
-  s->state[bi][si].imu[3] = 0;
-  s->state[bi][si].imu[4] = 0;
-  s->state[bi][si].imu[5] = 0;
+///  s->state[bi][si].imu[0] = 0;
+///  s->state[bi][si].imu[1] = 0;
+///  s->state[bi][si].imu[2] = 0;
+///  s->state[bi][si].imu[3] = 0;
+///  s->state[bi][si].imu[4] = 0;
+///  s->state[bi][si].imu[5] = 0;
 
 }
 void printStateHeadings(FILE *fp)
@@ -317,16 +317,19 @@ void printStateHeadings(FILE *fp)
           "r_s3\t"
           "l_d_s3\t"
           "r_d_s3\t"
-          "imu0\t"
-          "imu1\t"
-          "imu2\t"
-          "imu3\t"
-          "imu4\t"
-          "imu5\n");
+//          "imu0\t"
+//          "imu1\t"
+//          "imu2\t"
+//          "imu3\t"
+//          "imu4\t"
+//          "imu5"
+          "\n");
   fflush(fp);
 }
 void printState(uint8_t bi, uint8_t si, FILE *fp)
 {
+
+  fflush(fp);
   fprintf(fp,
           "%u\t"    // timeStamp - uint32_t
           "%u\t"    // sync - uint16_t
@@ -336,8 +339,8 @@ void printState(uint8_t bi, uint8_t si, FILE *fp)
           "%u\t"    // l_meanGaitPeriod - uint16_t
           "%u\t"    // r_percentGait - uint16_t
           "%u\t"    // l_percentGait - uint16_t
-          "%u\t"    // l_gaitPhase - uint16_t
           "%u\t"    // r_gaitPhase - uint16_t
+          "%u\t"    // l_gaitPhase - uint16_t
           "%i\t"    // motorDuty - int16_t
           "%.5f\t"  // anklePos - fix16_t (convert to float)
           "%.5f\t"  // ankleVel - fix16_t (convert to float)
@@ -353,12 +356,12 @@ void printState(uint8_t bi, uint8_t si, FILE *fp)
           "%i\t"    // adc[7] (amp2s3) - int16_t
           "%i\t"    // heelVel - int16_t
           "%i\t"    // heelVel - int16_t
-          "%i\t"    // imu[0] - int16_t
-          "%i\t"    // imu[1] - int16_t
-          "%i\t"    // imu[2] - int16_t
-          "%i\t"    // imu[3] - int16_t
-          "%i\t"    // imu[4] - int16_t
-          "%i\t"    // imu[5] - int16_t
+//          "%i\t"    // imu[0] - int16_t
+//          "%i\t"    // imu[1] - int16_t
+//          "%i\t"    // imu[2] - int16_t
+//          "%i\t"    // imu[3] - int16_t
+//          "%i\t"    // imu[4] - int16_t
+//          "%i\t"    // imu[5] - int16_t
           "\n", s->state[bi][si].timeStamp,
                 s->state[bi][si].sync,
                 s->state[bi][si].r_hsStamp,
@@ -367,8 +370,8 @@ void printState(uint8_t bi, uint8_t si, FILE *fp)
                 s->state[bi][si].l_meanGaitPeriod,
                 s->state[bi][si].r_percentGait,
                 s->state[bi][si].l_percentGait,
-                s->state[bi][si].l_gaitPhase,
                 s->state[bi][si].r_gaitPhase,
+                s->state[bi][si].l_gaitPhase,
                 s->state[bi][si].motorDuty,
                 fix16_to_float(s->state[bi][si].anklePos),
                 fix16_to_float(s->state[bi][si].ankleVel),
@@ -383,13 +386,15 @@ void printState(uint8_t bi, uint8_t si, FILE *fp)
                 s->state[bi][si].adc[6],
                 s->state[bi][si].adc[7],
                 s->state[bi][si].d_heelForce[0],
-                s->state[bi][si].d_heelForce[1],
-                s->state[bi][si].imu[0],
-                s->state[bi][si].imu[1],
-                s->state[bi][si].imu[2],
-                s->state[bi][si].imu[3],
-                s->state[bi][si].imu[4],
-                s->state[bi][si].imu[5]);
+                s->state[bi][si].d_heelForce[1]
+//                s->state[bi][si].imu[0],
+//                s->state[bi][si].imu[1],
+//                s->state[bi][si].imu[2],
+//                s->state[bi][si].imu[3],
+//                s->state[bi][si].imu[4],
+//                s->state[bi][si].imu[5]
+               );
+
   fflush(fp);
 }
 
@@ -562,6 +567,7 @@ int logFileInit(char* fileName)
   /* Create log file */
   strftime(timestr, sizeof(timestr)-1, "%d-%b-%Y %X", t);
   flog = fopen(fileName, "w");
+  setvbuf(flog, NULL, _IOFBF, 6553600);
 
   /* Create header */
   fprintf(flog, "#Date: %s\n#", timestr);
@@ -675,8 +681,7 @@ int loadLookUpTable(char* file)
     for(int i=0; i<NUM_FF_LT; i++){
       fscanf(fp, "%f\n", &value);
       // Scale signal by 1000
-      l->u_ff[i] = (int16_t)
-                   fix16_to_int(fix16_from_float( 5.0*(value + 1.8)*1000.0));
+      l->u_ff[i] = (int16_t) fix16_to_int(fix16_from_float(value * 1000.0));
     }
     fclose(fp);
     return 0;
@@ -816,6 +821,9 @@ void resetStepRespVars(void)
   p->stepRespCnt = 0;
 }
 
-
+void resetGP(void)
+{
+  s->cntrl_bit.resetGaitPhase = 1;
+}
 
 
