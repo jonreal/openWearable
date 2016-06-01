@@ -217,9 +217,8 @@ int pru_mem_init(void)
 
   printMemoryAllocation(stdout);
 
-  for(int i=0; i<NUM_OF_BUFFS; i++)
-    for(int j=0; j<SIZE_OF_BUFFS; j++)
-      zeroState(i,j);
+  for(int i=0; i<SIZE_STATE_BUFF; i++)
+    zeroState(i);
 
   return 0;
 }
@@ -281,37 +280,37 @@ int armToPru1Interrupt(void)
   return 0;
 }
 
-void zeroState(uint8_t bi, uint8_t si)
+void zeroState(uint32_t si)
 {
-  s->state[bi][si].timeStamp = 0;
-  s->state[bi][si].sync = 0;
-  s->state[bi][si].r_hsStamp = 0;
-  s->state[bi][si].l_hsStamp = 0;
-  s->state[bi][si].r_meanGaitPeriod = 0;
-  s->state[bi][si].l_meanGaitPeriod = 0;
-  s->state[bi][si].r_percentGait = 0;
-  s->state[bi][si].l_percentGait = 0;
-  s->state[bi][si].r_gaitPhase = 0;
-  s->state[bi][si].l_gaitPhase = 0;
-  s->state[bi][si].motorDuty = 0;
-  s->state[bi][si].anklePos = 0;
-  s->state[bi][si].ankleVel = 0;
-  s->state[bi][si].u_fb = 0;
-  s->state[bi][si].u_ff = 0;
-  s->state[bi][si].adc[0] = 0;
-  s->state[bi][si].adc[1] = 0;
-  s->state[bi][si].adc[2] = 0;
-  s->state[bi][si].adc[3] = 0;
-  s->state[bi][si].adc[4] = 0;
-  s->state[bi][si].adc[5] = 0;
-  s->state[bi][si].adc[6] = 0;
-  s->state[bi][si].adc[7] = 0;
-  s->state[bi][si].imu[0] = 0;
-  s->state[bi][si].imu[1] = 0;
-  s->state[bi][si].imu[2] = 0;
-  s->state[bi][si].imu[3] = 0;
-  s->state[bi][si].imu[4] = 0;
-  s->state[bi][si].imu[5] = 0;
+  s->state[si].timeStamp = 0;
+  s->state[si].sync = 0;
+  s->state[si].r_hsStamp = 0;
+  s->state[si].l_hsStamp = 0;
+  s->state[si].r_meanGaitPeriod = 0;
+  s->state[si].l_meanGaitPeriod = 0;
+  s->state[si].r_percentGait = 0;
+  s->state[si].l_percentGait = 0;
+  s->state[si].r_gaitPhase = 0;
+  s->state[si].l_gaitPhase = 0;
+  s->state[si].motorDuty = 0;
+  s->state[si].anklePos = 0;
+  s->state[si].ankleVel = 0;
+  s->state[si].u_fb = 0;
+  s->state[si].u_ff = 0;
+  s->state[si].adc[0] = 0;
+  s->state[si].adc[1] = 0;
+  s->state[si].adc[2] = 0;
+  s->state[si].adc[3] = 0;
+  s->state[si].adc[4] = 0;
+  s->state[si].adc[5] = 0;
+  s->state[si].adc[6] = 0;
+  s->state[si].adc[7] = 0;
+  s->state[si].imu[0] = 0;
+  s->state[si].imu[1] = 0;
+  s->state[si].imu[2] = 0;
+  s->state[si].imu[3] = 0;
+  s->state[si].imu[4] = 0;
+  s->state[si].imu[5] = 0;
 
 }
 void printStateHeader(FILE *fp)
@@ -388,7 +387,7 @@ void sprintStateHeader(char* buffer)
           "\n");
 }
 
-void printState(uint8_t bi, uint8_t si, FILE *fp)
+void printState(uint8_t si, FILE *fp)
 {
 
   fflush(fp);
@@ -418,49 +417,49 @@ void printState(uint8_t bi, uint8_t si, FILE *fp)
           "%i\t"    // adc[7] (amp2s3) - int16_t
           "%i\t"    // heelVel - int16_t
           "%i\t"    // heelVel - int16_t
-//          "%i\t"    // imu[0] - int16_t
-//          "%i\t"    // imu[1] - int16_t
-//          "%i\t"    // imu[2] - int16_t
-//          "%i\t"    // imu[3] - int16_t
-//          "%i\t"    // imu[4] - int16_t
-//          "%i\t"    // imu[5] - int16_t
-          "\n", s->state[bi][si].timeStamp,
-                s->state[bi][si].sync,
-                s->state[bi][si].r_hsStamp,
-                s->state[bi][si].l_hsStamp,
-                s->state[bi][si].r_meanGaitPeriod,
-                s->state[bi][si].l_meanGaitPeriod,
-                s->state[bi][si].r_percentGait,
-                s->state[bi][si].l_percentGait,
-                s->state[bi][si].r_gaitPhase,
-                s->state[bi][si].l_gaitPhase,
-                s->state[bi][si].motorDuty,
-                fix16_to_float(s->state[bi][si].anklePos),
-                fix16_to_float(s->state[bi][si].ankleVel),
-                fix16_to_float(s->state[bi][si].u_fb),
-                fix16_to_float(s->state[bi][si].u_ff),
-                s->state[bi][si].adc[0],
-                s->state[bi][si].adc[1],
-                s->state[bi][si].adc[2],
-                s->state[bi][si].adc[3],
-                s->state[bi][si].adc[4],
-                s->state[bi][si].adc[5],
-                s->state[bi][si].adc[6],
-                s->state[bi][si].adc[7],
-                s->state[bi][si].d_heelForce[0],
-                s->state[bi][si].d_heelForce[1]
-//                s->state[bi][si].imu[0],
-//                s->state[bi][si].imu[1],
-//                s->state[bi][si].imu[2],
-//                s->state[bi][si].imu[3],
-//                s->state[bi][si].imu[4],
-//                s->state[bi][si].imu[5]
+          "%i\t"    // imu[0] - int16_t
+          "%i\t"    // imu[1] - int16_t
+          "%i\t"    // imu[2] - int16_t
+          "%i\t"    // imu[3] - int16_t
+          "%i\t"    // imu[4] - int16_t
+          "%i\t"    // imu[5] - int16_t
+          "\n", s->state[si].timeStamp,
+                s->state[si].sync,
+                s->state[si].r_hsStamp,
+                s->state[si].l_hsStamp,
+                s->state[si].r_meanGaitPeriod,
+                s->state[si].l_meanGaitPeriod,
+                s->state[si].r_percentGait,
+                s->state[si].l_percentGait,
+                s->state[si].r_gaitPhase,
+                s->state[si].l_gaitPhase,
+                s->state[si].motorDuty,
+                fix16_to_float(s->state[si].anklePos),
+                fix16_to_float(s->state[si].ankleVel),
+                fix16_to_float(s->state[si].u_fb),
+                fix16_to_float(s->state[si].u_ff),
+                s->state[si].adc[0],
+                s->state[si].adc[1],
+                s->state[si].adc[2],
+                s->state[si].adc[3],
+                s->state[si].adc[4],
+                s->state[si].adc[5],
+                s->state[si].adc[6],
+                s->state[si].adc[7],
+                s->state[si].d_heelForce[0],
+                s->state[si].d_heelForce[1]
+                s->state[si].imu[0],
+                s->state[si].imu[1],
+                s->state[si].imu[2],
+                s->state[si].imu[3],
+                s->state[si].imu[4],
+                s->state[si].imu[5]
                );
 
   fflush(fp);
 }
 
-void sprintState(uint8_t bi, uint8_t si, char* buffer)
+void sprintState(uint8_t si, char* buffer)
 {
   sprintf(buffer,
           "%u\t"    // timeStamp - uint32_t
@@ -487,44 +486,44 @@ void sprintState(uint8_t bi, uint8_t si, char* buffer)
           "%i\t"    // adc[6] (amp2s2) - int16_t
           "%i\t"    // adc[7] (amp2s3) - int16_t
           "%i\t"    // heelVel - int16_t
-          "%i"    // heelVel - int16_t
-//          "%i\t"    // imu[0] - int16_t
-//          "%i\t"    // imu[1] - int16_t
-//          "%i\t"    // imu[2] - int16_t
-//          "%i\t"    // imu[3] - int16_t
-//          "%i\t"    // imu[4] - int16_t
-//          "%i\t"    // imu[5] - int16_t
-          "\n", s->state[bi][si].timeStamp,
-                s->state[bi][si].sync,
-                s->state[bi][si].r_hsStamp,
-                s->state[bi][si].l_hsStamp,
-                s->state[bi][si].r_meanGaitPeriod,
-                s->state[bi][si].l_meanGaitPeriod,
-                s->state[bi][si].r_percentGait,
-                s->state[bi][si].l_percentGait,
-                s->state[bi][si].r_gaitPhase,
-                s->state[bi][si].l_gaitPhase,
-                s->state[bi][si].motorDuty,
-                fix16_to_float(s->state[bi][si].anklePos),
-                fix16_to_float(s->state[bi][si].ankleVel),
-                fix16_to_float(s->state[bi][si].u_fb),
-                fix16_to_float(s->state[bi][si].u_ff),
-                s->state[bi][si].adc[0],
-                s->state[bi][si].adc[1],
-                s->state[bi][si].adc[2],
-                s->state[bi][si].adc[3],
-                s->state[bi][si].adc[4],
-                s->state[bi][si].adc[5],
-                s->state[bi][si].adc[6],
-                s->state[bi][si].adc[7],
-                s->state[bi][si].d_heelForce[0],
-                s->state[bi][si].d_heelForce[1]
-//                s->state[bi][si].imu[0],
-//                s->state[bi][si].imu[1],
-//                s->state[bi][si].imu[2],
-//                s->state[bi][si].imu[3],
-//                s->state[bi][si].imu[4],
-//                s->state[bi][si].imu[5]
+          "%i\t"    // heelVel - int16_t
+          "%i\t"    // imu[0] - int16_t
+          "%i\t"    // imu[1] - int16_t
+          "%i\t"    // imu[2] - int16_t
+          "%i\t"    // imu[3] - int16_t
+          "%i\t"    // imu[4] - int16_t
+          "%i"    // imu[5] - int16_t
+          "\n", s->state[si].timeStamp,
+                s->state[si].sync,
+                s->state[si].r_hsStamp,
+                s->state[si].l_hsStamp,
+                s->state[si].r_meanGaitPeriod,
+                s->state[si].l_meanGaitPeriod,
+                s->state[si].r_percentGait,
+                s->state[si].l_percentGait,
+                s->state[si].r_gaitPhase,
+                s->state[si].l_gaitPhase,
+                s->state[si].motorDuty,
+                fix16_to_float(s->state[si].anklePos),
+                fix16_to_float(s->state[si].ankleVel),
+                fix16_to_float(s->state[si].u_fb),
+                fix16_to_float(s->state[si].u_ff),
+                s->state[si].adc[0],
+                s->state[si].adc[1],
+                s->state[si].adc[2],
+                s->state[si].adc[3],
+                s->state[si].adc[4],
+                s->state[si].adc[5],
+                s->state[si].adc[6],
+                s->state[si].adc[7],
+                s->state[si].d_heelForce[0],
+                s->state[si].d_heelForce[1]
+                s->state[si].imu[0],
+                s->state[si].imu[1],
+                s->state[si].imu[2],
+                s->state[si].imu[3],
+                s->state[si].imu[4],
+                s->state[si].imu[5]
                );
 }
 /* ----------------------------------------------------------------------------
