@@ -149,13 +149,13 @@ void updateCounters(uint32_t *cnt, uint8_t *bi, uint32_t *si)
 {
   (*cnt)++;
   (*si)++;
-  (*si) %= SIZE_OF_BUFFS;
+  (*si) %= SIZE_STATE_BUFF;
 }
 
 void updateControl(uint32_t cnt, uint8_t bi, uint32_t si)
 {
   fix16_t u_fb = 0;
-  fix16_t u_ff = 0; 
+  fix16_t u_ff = 0;
   uint32_t t_cnts, t1, Tp;
 
   // Step Response

@@ -259,7 +259,7 @@ void updateCounters(uint32_t *cnt, uint32_t *si)
 {
   (*cnt)++;
   (*si)++;
-  (*si) %= SIZE_OF_BUFFS;
+  (*si) %= SIZE_OF_BUFF;
 }
 
 void cleanUp(void)

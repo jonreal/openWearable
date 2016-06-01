@@ -6,7 +6,9 @@
 
 #define LOGSIZE     (1e9 + 1)
 
-/* Stuct --------------------------------------------------------------------*/
+// Stuct ---------------------------------------------------------------------
+
+// Log File Struct
 typedef struct{
   uint32_t fd;
   uint32_t location;
@@ -14,15 +16,14 @@ typedef struct{
   char writeBuffer[65536];
 } log_t;
 
-/* Globals ------------------------------------------------------------------*/
+// External Globals ----------------------------------------------------------
 extern int debug;
 
-/* Local globals ------------------------------------------------------------*/
+// Local globals -------------------------------------------------------------
 FILE* flog;
 log_t dataLog;
 
-
-/* Prototypes ---------------------------------------------------------------*/
+// Prototypes ----------------------------------------------------------------
 void printDebugBuffer(void);
 void initDebugBuffer(void);
 
@@ -91,5 +92,3 @@ void resetStepRespVars(void);
 void resetGP(void);
 
 #endif
-
-

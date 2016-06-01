@@ -15,7 +15,7 @@
 #define PRU0_ARM_INT  (19 + 16)
 #define PRU1_ARM_INT  (20 + 16)
 
-#define NUM_OF_BUFFS    176
+#define SIZE_STATE_BUFF   176
 
 #define NUM_ADC     8
 #define NUM_IMU     6
@@ -69,7 +69,7 @@ typedef struct{
 
 // Shared Memory -> mapped to SRAM
 typedef struct{
-  state_t state[SIZE_OF_BUFFS];
+  state_t state[SIZE_STATE_BUFF];
 
   // Flow control
   union{
