@@ -19,12 +19,12 @@
 #define FIX16_1000  0x3E80000
 
 
-/* Prototypes -------------------------------------------------------------- */
+// Prototypes ----------------------------------------------------------------
 void initialize(void);
 void initMemory(void);
-void updateState(uint32_t cnt, uint8_t si);
-void updateControl(uint32_t cnt, uint8_t si);
-void updateCounters(uint32_t *cnt, uint8_t *si);
+void updateState(uint32_t cnt, uint32_t si);
+void updateControl(uint32_t cnt, uint32_t si);
+void updateCounters(uint32_t *cnt, uint32_t *si);
 void cleanUp(void);
 void debugPinHigh(void);
 void debugPinLow(void);
@@ -32,7 +32,7 @@ void debugPinLow(void);
 void interruptInit(void);
 void clearInterrupt(void);
 
-/* Globals ----------------------------------------------------------------- */
+// Globals -------------------------------------------------------------------
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 
@@ -45,79 +45,70 @@ volatile pruCfg CT_CFG
 volatile far pruIep CT_IEP
   __attribute__((cregister("PRU_IEP", near), peripheral));
 
-/* State pointer */
+// State pointer
 shared_mem_t *s;
 
-/* Param pointer */
+// Param pointer
 param_mem_t *p;
 
-/* Feedforward lookup table pointer */
+// Feedforward lookup table pointer
 lookUp_mem_t *l;
 
-/* Debug Buffer */
+// Debug Buffer
 volatile uint32_t *debugBuffer;
 
-/* Main ---------------------------------------------------------------------*/
+// Main ----------------------------------------------------------------------
 int main(void)
 {
   uint32_t cnt = 0;
   uint8_t stateIndx = 0;
-  uint8_t buffIndx = 0;
 
   initialize();
 
-  /*** Wait for host interrupt ***/
+  // Wait for host interrupt
   while( (__R31 & HOST1_MASK) == 0){}
 
   clearInterrupt();
 
-  /*** Loop ***/
+  // Control Loop
   while(1){
 
-    /* Poll of IEP timer interrupt */
+    // Poll of IEP timer interrupt
     while((CT_INTC.SECR0 & (1 << 7)) == 0);
 
     debugPinHigh();
 
-    /* Tare Encoder */
-    if(s->cntrl_bit.encoderTare){
-      encoderSetZeroAngle();
-      s->cntrl_bit.encoderTare = 0;
-    }
-
-    /* Update State */
+    // Update State
     updateState(cnt, buffIndx, stateIndx);
 
     debugPinLow();
 
-    /* Poll for pru0 done bit (updating state)*/
+    // Poll for pru0 done bit (updating state)
     while(!(s->cntrl_bit.pru0_done));
 
     debugPinHigh();
 
-    /* Reset pru0 done bit */
+    // Reset pru0 done bit
     s->cntrl_bit.pru0_done = 0;
 
-    /* Update Control */
-    updateControl(cnt, buffIndx, stateIndx);
+    // Update Control
+    updateControl(cnt, stateIndx);
 
-    /* Set done bit (control update done) */
+    // Set done bit (control update done)
     s->cntrl_bit.pru1_done = 1;
 
-    /* Increment state index */
-    updateCounters(&cnt, &buffIndx, &stateIndx);
+    // Increment state index
+    updateCounters(&cnt, &stateIndx);
 
-    /* Check enable bit */
+    // Check enable bit
     if(!(s->cntrl_bit.shdw_enable))
         break;
 
-    /* Wait till interrupt is cleared */
+    // Wait till interrupt is cleared
     while(CT_INTC.SECR0 & (1 << 7));
 
     debugPinLow();
   }
-
-  debugBuffer[8] = 0xBEAFDAAD;
   debugPinLow();
   cleanUp();
   __halt();
@@ -128,18 +119,18 @@ void initialize(void)
 {
   /*** Init Pru ***/
 
-  /* Clear SYSCFG[STANDBY_INIT] to enable OCP master port */
+  // Clear SYSCFG[STANDBY_INIT] to enable OCP master port
   CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
 
-  /* Pin Mux */
+  // Pin Mux
   CT_CFG.GPCFG0 = 0;
 
-  /*** Memory ***/
+  // Memory
   initMemory();
 
   interruptInit();
 
-  /* Add pru dependent peripheral init methods here */
+  // Add pru dependent peripheral init methods here
   encoderInit();
   //imuInit();
   motorInit();
@@ -154,29 +145,18 @@ void initialize(void)
 }
 
 
-void updateCounters(uint32_t *cnt, uint8_t *bi, uint8_t *si)
+void updateCounters(uint32_t *cnt, uint8_t *bi, uint32_t *si)
 {
   (*cnt)++;
   (*si)++;
-  if(*si == SIZE_OF_BUFFS){
-    *si = 0;
-    (*bi)++;
-    if(*bi == NUM_OF_BUFFS){
-      *bi = 0;
-    }
-  }
+  (*si) %= SIZE_OF_BUFFS;
 }
 
-void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
+void updateControl(uint32_t cnt, uint8_t bi, uint32_t si)
 {
-  fix16_t u_fb = 0; // (current of the motor)
-  fix16_t u_ff = 0; // i_m (current of the motor)
+  fix16_t u_fb = 0;
+  fix16_t u_ff = 0; 
   uint32_t t_cnts, t1, Tp;
-
- // motorSetDuty(fix16_from_float(7.5), &s->state[bi][si].motorDuty);
-
-  pwmSetCmpValue(duty2cmpval(fix16_from_int(5)));
-  return;
 
   // Step Response
   if (s->cntrl_bit.stepResp == 1){
@@ -204,51 +184,54 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
     // Calculate lut index t = (cnt % Tp) / Tp
     t_cnts = (cnt % 250) * 4;
 
-    s->state[bi][si].l_percentGait = t_cnts;
+    s->state[si].l_percentGait = t_cnts;
 
     // Scale ff
     u_ff = fix16_smul(p->FFgain,
-                        fix16_sdiv(fix16_from_int(l->u_ff[t_cnts]),
-                                   FIX16_1000));
+                      fix16_sdiv(fix16_from_int(l->u_ff[t_cnts]), FIX16_1000));
   }
 
   // Impedance and feedforward
   else{
 
     // Impedance
-    u_fb = fix16_smul(p->Kp, fix16_ssub(p->anklePos0, s->state[bi][si].anklePos));
+    u_fb = fix16_smul(p->Kp, fix16_ssub(p->anklePos0, s->state[si].anklePos));
 
     // Feedforward
     if ((s->cntrl_bit.doFeedForward) && (p->gaitDetectReady)){
 
       // Time since hs
-      t1 = (cnt - s->state[bi][si].l_hsStamp) * 1000;
+      t1 = (cnt - s->state[si].l_hsStamp) * 1000;
 
-      t_cnts = t1 / (s->state[bi][si].l_meanGaitPeriod -
-                    s->state[bi][si].l_meanGaitPeriod / 1000);
+      t_cnts = t1 / (s->state[si].l_meanGaitPeriod -
+                     s->state[si].l_meanGaitPeriod / 1000);
 
       // Saturate t_cnts;
       if (t_cnts >= NUM_FF_LT)
         t_cnts = NUM_FF_LT-1;
 
       // Store percent gait
-      s->state[bi][si].l_percentGait = t_cnts;
+      s->state[si].l_percentGait = t_cnts;
 
       // Scale ff
       u_ff = fix16_smul(p->FFgain,
-                        fix16_sdiv(fix16_from_int(l->u_ff[t_cnts]),
-                                   FIX16_1000));
+                        fix16_sdiv(fix16_from_int(l->u_ff[t_cnts]), FIX16_1000));
     }
   }
 
   // Send command/store command
-  motorSetDuty(fix16_sadd(u_ff, u_fb), &s->state[bi][si].motorDuty);
-  s->state[bi][si].u_ff = u_ff;
-  s->state[bi][si].u_fb = u_fb;
+  motorSetDuty(fix16_sadd(u_ff, u_fb), &s->state[si].motorDuty);
+  s->state[si].u_ff = u_ff;
+  s->state[si].u_fb = u_fb;
 }
 
-void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
+void updateState(uint32_t cnt, uint32_t si)
 {
+  // Tare Encoder if needed
+  if(s->cntrl_bit.encoderTare){
+    encoderSetZeroAngle();
+    s->cntrl_bit.encoderTare = 0;
+  }
   //encoderSample(&(s->state[bi][si].anklePos));
   //imuSample(s->state[bi][si].imu);
 }
@@ -280,35 +263,35 @@ void initMemory(void)
 {
   void *ptr = NULL;
 
-  /* Memory map for shared memory */
+  // Memory map for shared memory
   ptr = (void *)PRU_L_SHARED_DRAM;
   s = (shared_mem_t *) ptr;
 
-  /* Memory map for parameters (pru0 DRAM)*/
+  // Memory map for parameters (pru0 DRAM)
   ptr = (void *) PRU_OTHER_DRAM;
   p = (param_mem_t *) ptr;
 
-  /* Memory map for feedforward lookup table (pru1 DRAM)*/
+  // Memory map for feedforward lookup table (pru1 DRAM)
   ptr = (void *) PRU_DRAM;
   l = (lookUp_mem_t *) ptr;
 
-  /* Point global debug buffer */
+  // Point global debug buffer
   debugBuffer = &(p->debugBuffer[0]);
 }
 
 void interruptInit(void)
 {
-  /* Disable Global enable interrupts */
+  // Disable Global enable interrupts
   CT_INTC.GER = 0;
 
-  /* Clear any pending PRU-generated events */
+  // Clear any pending PRU-generated events
   __R31 = 0x00000000;
 
-  /* Clear the status of all interrupts */
+  // Clear the status of all interrupts
   CT_INTC.SECR0 = 0xFFFFFFFF;
   CT_INTC.SECR1 = 0xFFFFFFFF;
 
-  /* Gloablly enable interrupts */
+  // Gloablly enable interrupts
   CT_INTC.GER = 1;
 }
 

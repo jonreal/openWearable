@@ -20,9 +20,9 @@
 void initialize(void);
 void initMemory(void);
 void updateLocalParams(void);
-void updateState(uint32_t cnt, uint8_t si);
-void updateControl(uint32_t cnt, uint8_t si);
-void updateCounters(uint32_t *cnt, uint8_t *si);
+void updateState(uint32_t cnt, uint32_t si);
+void updateControl(uint32_t cnt, uint32_t si);
+void updateCounters(uint32_t *cnt, uint32_t *si);
 void cleanUp(void);
 void debugPinHigh(void);
 void debugPinLow(void);
@@ -184,7 +184,7 @@ void updateLocalParams(void)
   //gaitPhaseUpdateParams(p);
 }
 
-void updateState(uint32_t cnt, uint8_t si)
+void updateState(uint32_t cnt, uint32_t si)
 {
   int16_t adc[8];
   fix16_t s1, s2, s3, s4, s5, s6;
@@ -250,12 +250,12 @@ void updateState(uint32_t cnt, uint8_t si)
   s->state[si].r_hsStamp = p->r_prevHsStamp;
 }
 
-void updateControl(uint32_t cnt, uint8_t si)
+void updateControl(uint32_t cnt, uint32_t si)
 {
 
 }
 
-void updateCounters(uint32_t *cnt, uint8_t *si)
+void updateCounters(uint32_t *cnt, uint32_t *si)
 {
   (*cnt)++;
   (*si)++;
