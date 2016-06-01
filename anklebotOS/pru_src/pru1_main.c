@@ -173,6 +173,11 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
   fix16_t u_ff = 0; // i_m (current of the motor)
   uint32_t t_cnts, t1, Tp;
 
+ // motorSetDuty(fix16_from_float(7.5), &s->state[bi][si].motorDuty);
+
+  pwmSetCmpValue(duty2cmpval(fix16_from_int(5)));
+  return;
+
   // Step Response
   if (s->cntrl_bit.stepResp == 1){
 
@@ -211,7 +216,7 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
   else{
 
     // Impedance
-    //u_fb = fix16_smul(p->Kp, fix16_ssub(p->anklePos0, s->state[bi][si].anklePos));
+    u_fb = fix16_smul(p->Kp, fix16_ssub(p->anklePos0, s->state[bi][si].anklePos));
 
     // Feedforward
     if ((s->cntrl_bit.doFeedForward) && (p->gaitDetectReady)){
@@ -221,11 +226,6 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 
       t_cnts = t1 / (s->state[bi][si].l_meanGaitPeriod -
                     s->state[bi][si].l_meanGaitPeriod / 1000);
-
-
-//      t_cnts = (uint32_t)
-//        fix16_to_int(fix16_sdiv(fix16_from_int((int32_t)temp),
-//                     fix16_from_int(s->state[bi][si].l_meanGaitPeriod)));
 
       // Saturate t_cnts;
       if (t_cnts >= NUM_FF_LT)
@@ -249,7 +249,7 @@ void updateControl(uint32_t cnt, uint8_t bi, uint8_t si)
 
 void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 {
-  encoderSample(&(s->state[bi][si].anklePos));
+  //encoderSample(&(s->state[bi][si].anklePos));
   //imuSample(s->state[bi][si].imu);
 }
 

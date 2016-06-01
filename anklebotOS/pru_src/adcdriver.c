@@ -193,21 +193,12 @@ void adcSample_1(int16_t adc[8])
 {
   volatile uint32_t *FIFO =  (uint32_t *) (SOC_ADC_TSC_0_REGS + 0x100);
 
-  /* Mux pin low (Mux0) */
-  __R30 &= ~(1 << MUX_SEL_PIN);
-
-  __delay_cycles(200);
-
-  /* FIFO0THRESHOLD: FIFO0_threshold_Level = 4 (5-1) */
-  HWREG(SOC_ADC_TSC_0_REGS + 0xE8) = 0x4;
+  /* FIFO0THRESHOLD: FIFO0_threshold_Level = 1 (2-1) */
+  HWREG(SOC_ADC_TSC_0_REGS + 0xE8) = 0x1;
 
   /* Enalbe steps: 1 - motor ao1
-   *               2 - motor ao2
-   *               3 - forcesenor1 ao1
-   *               4 - forcesenor1 ao2
-   *               5 - forcesenor1 ao3 */
-  HWREG(SOC_ADC_TSC_0_REGS + 0x54) = (1 << 5) | (1 << 4) | (1 << 3)
-                                      | (1 << 2) | (1 << 1);
+   *               2 - motor ao2 */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x54) = (1 << 2) | (1 << 1);
 
   /* IRQSTATUS: poll for interrupt */
   while( (HWREG(SOC_ADC_TSC_0_REGS + 0x28) & (1 << 2)) == 0){}
@@ -215,15 +206,42 @@ void adcSample_1(int16_t adc[8])
   /* Write to memory */
   adc[0] = (int16_t) (FIFO[0] & 0xFFF);
   adc[1] = (int16_t) (FIFO[1] & 0xFFF);
-  adc[2] = (int16_t) (FIFO[2] & 0xFFF);
-  adc[3] = (int16_t) (FIFO[3] & 0xFFF);
-  adc[4] = (int16_t) (FIFO[4] & 0xFFF);
 
   /* IRQSTATUS: Clear all interrupts */
   HWREG(SOC_ADC_TSC_0_REGS + 0x28) = 0x7FF;
 }
 
+
 void adcSample_2(int16_t adc[8])
+{
+  volatile uint32_t *FIFO =  (uint32_t *) (SOC_ADC_TSC_0_REGS + 0x100);
+
+  /* Mux pin low (Mux0) */
+  __R30 &= ~(1 << MUX_SEL_PIN);
+
+  __delay_cycles(300);
+
+  /* FIFO0THRESHOLD: FIFO0_threshold_Level = 2 (3-1) */
+  HWREG(SOC_ADC_TSC_0_REGS + 0xE8) = 0x2;
+
+  /* Enalbe steps: 3 - forcesenor1 ao1
+   *               4 - forcesenor1 ao2
+   *               5 - forcesenor1 ao3 */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x54) = (1 << 5) | (1 << 4) | (1 << 3);
+
+  /* IRQSTATUS: poll for interrupt */
+  while( (HWREG(SOC_ADC_TSC_0_REGS + 0x28) & (1 << 2)) == 0){}
+
+  /* Write to memory */
+  adc[2] = (int16_t) (FIFO[0] & 0xFFF);
+  adc[3] = (int16_t) (FIFO[1] & 0xFFF);
+  adc[4] = (int16_t) (FIFO[2] & 0xFFF);
+
+  /* IRQSTATUS: Clear all interrupts */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x28) = 0x7FF;
+}
+
+void adcSample_3(int16_t adc[8])
 {
   volatile uint32_t *FIFO =  (uint32_t *) (SOC_ADC_TSC_0_REGS + 0x100);
 

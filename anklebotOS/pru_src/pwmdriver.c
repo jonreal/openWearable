@@ -17,7 +17,7 @@ void pwmInit(void)
    *    Res (bits) = log2(F_pwm/F_sysclkout) */
 
   /* TODO: make this a param */
-  uint16_t pwm_prd = 10000;
+  uint16_t pwm_prd = 10000; // 5 kHz
 
   /* Disable Global enable interrupts */
   //CT_INTC.GER = 0;

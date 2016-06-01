@@ -217,7 +217,7 @@ int start_tui(void)
               lastBufferRead = 0;
               gpio_set_value(gpio_debug, LOW);
             }
-            if(buffer1Full()){
+            else if(buffer1Full()){
               clearBuffer1FullFlag();
               gpio_set_value(gpio_debug, HIGH);
               writeState(1);
