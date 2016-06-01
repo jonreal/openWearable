@@ -3,7 +3,7 @@
 
 #include "fix16.h"
 
-/* Constants */
+// Constants
 #define PRU_CLK         (200000000)
 #define PWM_CLK         (100000000)
 #define SPI_CLK         (48000000)
@@ -15,15 +15,14 @@
 #define PRU0_ARM_INT  (19 + 16)
 #define PRU1_ARM_INT  (20 + 16)
 
-#define NUM_OF_BUFFS    2
-#define SIZE_OF_BUFFS   88
+#define NUM_OF_BUFFS    176
 
 #define NUM_ADC     8
 #define NUM_IMU     6
 
 #define NUM_FF_LT         1000
 
-/* Global Addresses to modules */
+// Global addresses to hardware modules
 #define PRU_CTRL_BASE 0x00022000
 #define ADC_BASE      0x44E0D000
 #define SPI1_BASE     0x481A0000
@@ -31,7 +30,7 @@
 #define EPWM2_BASE    0x48304200
 #define I2C1_BASE     0x4802A000
 
-/* Pru debug pins */
+// Debug pins
 #define PRU0_DEBUG_PIN  5
 #define PRU1_DEBUG_PIN  8
 
@@ -40,11 +39,10 @@
 #define PRU0 0
 #define PRU1 1
 
-/* Structures ---------------------------------------------------------------*/
+// Structures ----------------------------------------------------------------
 
-/* Anklebot state */
+// Anklebot state
 typedef struct{
-
   volatile uint32_t timeStamp;
   volatile uint32_t sync;
   volatile uint32_t r_hsStamp;
@@ -64,23 +62,21 @@ typedef struct{
   volatile fix16_t u_ff;
 
   volatile int16_t adc[NUM_ADC];
-//  volatile int16_t imu[NUM_IMU];
+  volatile int16_t imu[NUM_IMU];
   volatile int16_t d_heelForce[2];
-
 } state_t;
 
-/* Shared Memory -> mapped to SRAM */
+
+// Shared Memory -> mapped to SRAM
 typedef struct{
+  state_t state[SIZE_OF_BUFFS];
 
-  /* Ping pong buffers */
-  state_t state[NUM_OF_BUFFS][SIZE_OF_BUFFS];
-
-  /* Flow control */
+  // Flow control
   union{
     volatile uint16_t cntrl;
 
     volatile struct{
-      unsigned enable : 1;        // bit 0 (set by ARM and shadowed */
+      unsigned enable : 1;        // bit 0 (set by ARM and shadowed)
       unsigned pru0_done : 1;     // bit 1 (set by pru0, read/reset by pru1)
       unsigned pru1_done : 1;     // bit 2 (set by pru1, read/reset by pru0)
       unsigned buffer0_full : 1;  // bit 3 (set by pru0, read/reset by ARM)
@@ -95,23 +91,22 @@ typedef struct{
       unsigned rsvd : 4;          // bits 12-15 reserved
    } cntrl_bit;
   };
-
 } shared_mem_t;
 
-/* IIR Buffer */
+// Filter IIR buffers
 typedef struct{
   volatile fix16_t x[MAX_IIR_ORDER+1];
   volatile fix16_t y[MAX_IIR_ORDER+1];
 } iir_buff_t;
 
-/* IIR Coefficients */
+// IIR Coefficients
 typedef struct{
   uint32_t N;
   fix16_t b[MAX_IIR_ORDER+1];
   fix16_t a[MAX_IIR_ORDER+1];
 } iir_coeff_t;
 
-/* Parameter Struct -> mapped to pr0 DRAM */
+// Parameter Struct -> mapped to pr0 DRAM
 typedef struct{
   volatile uint32_t frq_hz;
   volatile uint32_t frq_clock_ticks;
@@ -151,7 +146,7 @@ typedef struct{
 } param_mem_t;
 
 
-/* Feedforward lookup table -> mapped to pru1 DRAM */
+// Feedforward lookup table -> mapped to pru1 DRAM
 typedef struct{
   int16_t u_ff[NUM_FF_LT];
 } lookUp_mem_t;

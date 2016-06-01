@@ -22,16 +22,25 @@
 
 #define AM33XX
 
-/* Pointer to state data */
+// Global variables ----------------------------------------------------------
+
+// Pointer to state data
 shared_mem_t *s;
 
-/* Pointer to sensor pru params */
+// Pointer to parameters data
 param_mem_t *p;
 
-/* Pointer to controller pru params */
+// Pointer to lookup table data
 lookUp_mem_t *l;
 
+// Methods -------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Function: void initDebugBuffer(void)
+//
+//  This function initializes the debug buffer. The debug buffer can be used to
+//  info from prus to arm.
+// ---------------------------------------------------------------------------
 void initDebugBuffer(void)
 {
   for(int i=0; i<10; i++){
@@ -39,6 +48,11 @@ void initDebugBuffer(void)
   }
 }
 
+// ---------------------------------------------------------------------------
+// Function: void printDebugBuffer(void)
+//
+//  This function prints the debug buffer.
+// ---------------------------------------------------------------------------
 void printDebugBuffer(void)
 {
   printf("\n\n---- Debug Buffer ----\n");
@@ -46,7 +60,6 @@ void printDebugBuffer(void)
     printf("0x%X \t%i\n", p->debugBuffer[i], p->debugBuffer[i]);
   }
 }
-
 
 /* ----------------------------------------------------------------------------
  * Function: int pru_run(const int pruNum, const char *const path)
@@ -293,12 +306,12 @@ void zeroState(uint8_t bi, uint8_t si)
   s->state[bi][si].adc[5] = 0;
   s->state[bi][si].adc[6] = 0;
   s->state[bi][si].adc[7] = 0;
-///  s->state[bi][si].imu[0] = 0;
-///  s->state[bi][si].imu[1] = 0;
-///  s->state[bi][si].imu[2] = 0;
-///  s->state[bi][si].imu[3] = 0;
-///  s->state[bi][si].imu[4] = 0;
-///  s->state[bi][si].imu[5] = 0;
+  s->state[bi][si].imu[0] = 0;
+  s->state[bi][si].imu[1] = 0;
+  s->state[bi][si].imu[2] = 0;
+  s->state[bi][si].imu[3] = 0;
+  s->state[bi][si].imu[4] = 0;
+  s->state[bi][si].imu[5] = 0;
 
 }
 void printStateHeader(FILE *fp)
