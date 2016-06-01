@@ -22,9 +22,9 @@
 /* Prototypes -------------------------------------------------------------- */
 void initialize(void);
 void initMemory(void);
-void updateState(uint32_t cnt, uint8_t bi, uint8_t si);
-void updateControl(uint32_t cnt, uint8_t bi, uint8_t si);
-void updateCounters(uint32_t *cnt, uint8_t *bi, uint8_t *si);
+void updateState(uint32_t cnt, uint8_t si);
+void updateControl(uint32_t cnt, uint8_t si);
+void updateCounters(uint32_t *cnt, uint8_t *si);
 void cleanUp(void);
 void debugPinHigh(void);
 void debugPinLow(void);
