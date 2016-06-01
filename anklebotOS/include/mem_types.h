@@ -70,25 +70,24 @@ typedef struct{
 // Shared Memory -> mapped to SRAM
 typedef struct{
   state_t state[SIZE_STATE_BUFF];
+  uint32_t stateIndex;
 
   // Flow control
   union{
     volatile uint16_t cntrl;
 
     volatile struct{
-      unsigned enable : 1;        // bit 0 (set by ARM and shadowed)
-      unsigned pru0_done : 1;     // bit 1 (set by pru0, read/reset by pru1)
-      unsigned pru1_done : 1;     // bit 2 (set by pru1, read/reset by pru0)
-      unsigned buffer0_full : 1;  // bit 3 (set by pru0, read/reset by ARM)
-      unsigned buffer1_full : 1;  // bit 4 (set by pru0, read/reset by ARM)
-      unsigned shdw_enable : 1;   // bit 5 (shawdow reg. for enable)
-      unsigned encoderTare : 1;   // bit 6 (set by arm, read/reset by pru1)
-      unsigned doFeedForward : 1; // bit 7 (set by arm, read by pru1)
-      unsigned gaitPhaseReady: 1; // bit 8 (set by pru0, read by pru1)
-      unsigned resetGaitPhase : 1; // bit 9
-      unsigned testFF : 1;        // bit 10 (set by arm, reset by arm)
-      unsigned stepResp : 1;      // bit 11 (set by arm, reset by pru1)
-      unsigned rsvd : 4;          // bits 12-15 reserved
+      unsigned enable : 1;          // bit 0 (set by ARM and shadowed)
+      unsigned pru0_done : 1;       // bit 1 (set by pru0, read/reset by pru1)
+      unsigned pru1_done : 1;       // bit 2 (set by pru1, read/reset by pru0)
+      unsigned shdw_enable : 1;     // bit 3 (shawdow reg. for enable)
+      unsigned encoderTare : 1;     // bit 4 (set by arm, read/reset by pru1)
+      unsigned doFeedForward : 1;   // bit 5 (set by arm, read by pru1)
+      unsigned gaitPhaseReady: 1;   // bit 6 (set by pru0, read by pru1)
+      unsigned resetGaitPhase : 1;  // bit 7
+      unsigned testFF : 1;          // bit 8 (set by arm, reset by arm)
+      unsigned stepResp : 1;        // bit 9 (set by arm, reset by pru1)
+      unsigned rsvd : 6;            // bits 10-15 reserved
    } cntrl_bit;
   };
 } shared_mem_t;

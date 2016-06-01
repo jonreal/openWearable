@@ -16,12 +16,19 @@ typedef struct{
   char writeBuffer[65536];
 } log_t;
 
+// Circular Buffer Struct
+typedef struct{
+  uint32_t start;
+  uint32_t end;
+} circbuff_t;
+
 // External Globals ----------------------------------------------------------
 extern int debug;
 
 // Local globals -------------------------------------------------------------
 FILE* flog;
 log_t dataLog;
+circbuff_t circbuff;
 
 // Prototypes ----------------------------------------------------------------
 void printDebugBuffer(void);

@@ -25,21 +25,43 @@
 // Global variables ----------------------------------------------------------
 
 // Pointer to state data
-shared_mem_t *s;
+shared_mem_t* s;
 
 // Pointer to parameters data
-param_mem_t *p;
+param_mem_t* p;
 
 // Pointer to lookup table data
-lookUp_mem_t *l;
+lookUp_mem_t* l;
 
 // Methods -------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Function: void circBuffInit(void)
+//
+//  This function initializes the circular buffer.
+// ---------------------------------------------------------------------------
+void circBuffInit(void)
+{
+  circbuff.start = 0;
+  circbuff.end = 0;
+}
+
+// ---------------------------------------------------------------------------
+// Function: void circBuffInit(void)
+//
+//  This function initializes the circular buffer.
+// ---------------------------------------------------------------------------
+void circBuffUpdate(void)
+{
+  circbuff.start = (circbuff.end + 1) % SIZE_STATE_BUFF;
+  circbuff.end = p->stateIndex;
+}
 
 // ---------------------------------------------------------------------------
 // Function: void initDebugBuffer(void)
 //
 //  This function initializes the debug buffer. The debug buffer can be used to
-//  info from prus to arm.
+//  info from PRUs to ARM.
 // ---------------------------------------------------------------------------
 void initDebugBuffer(void)
 {
@@ -61,40 +83,39 @@ void printDebugBuffer(void)
   }
 }
 
-/* ----------------------------------------------------------------------------
- * Function: int pru_run(const int pruNum, const char *const path)
- *
- * This function loads binary file into pru IRAM, and starts the SW.
- *
- * Inputs:    pruNum  -   which pru (0|1)
- *            path    -   path to binary file
- *
- * Outputs:   1 for success
- * ------------------------------------------------------------------------- */
-int pru_run(const int pruNum, const char *const path)
+// ---------------------------------------------------------------------------
+// Function: int pru_run(const int pruNum, const char *const path)
+//
+//  This function load a binary file into pru IRAM, and starts the software.
+//
+// Inputs:    pruNum  -   which pru (0|1)
+//            path    -   path to binary file
+//
+// Outputs:   1 for success
+// ---------------------------------------------------------------------------
+int pru_run(const int pruNum, const char* const path)
 {
   int rtn = 0;
 
-  // Load and run PRU program
   if( (rtn = prussdrv_exec_program(pruNum, path)) != 0){
     printf("prussdrv_exec_program() failed with %i.\n", rtn);
     return rtn;
   }
-
   return 0;
 }
 
-/* ----------------------------------------------------------------------------
- * Function: int pru_init(void)
- *
- * This function initializes pru library in linux space and opens 1 interrupt
- * (PRU_EVTOUT_0).
- *
- * Outputs:   1 for success
- * ------------------------------------------------------------------------- */
+// ---------------------------------------------------------------------------
+// Function: int pru_init(void)
+//
+//  This function initializes pru library in linux space and opens 2 interrupts
+//  PRU_EVTOUT_0 and PRU_EVTOUT_1.
+//
+// Outputs:   1 for success
+// ---------------------------------------------------------------------------
 int pru_init(void)
 {
   int rtn = 0;
+
   tpruss_intc_initdata intc = PRUSS_INTC_INITDATA;
 
   // Initialize PRUs
@@ -126,19 +147,19 @@ int pru_init(void)
     printf("pru_mem_init() failedi!\n");
     return -1;
   }
-
   return 0;
 }
 
-/* ----------------------------------------------------------------------------
- * Function: int pru_cleanup(const int pruNum)
- *
- * This function clears event interrupts, diables pru and realeases pru clocks.
- *
- * Inputs:    pruNum    -   which pru (0|1)
- *
- * Outputs:   1 for success
- * ------------------------------------------------------------------------- */
+// ---------------------------------------------------------------------------
+// Function: int pru_cleanup(const int pruNum)
+//
+//  This function clears event interrupts, diables pru and realeases pru
+//  clocks.
+//
+// Inputs:    pruNum    -   which pru (0|1)
+//
+// Outputs:   0 for success
+// ---------------------------------------------------------------------------
 int pru_cleanup(void)
 {
   int rtn = 0;
@@ -178,17 +199,17 @@ int pru_cleanup(void)
   return rtn;
 }
 
-/* ----------------------------------------------------------------------------
- * Function: int pru_mem_init(void)
- *
- * This function sets memory pointers to pru0RAM, pru1RAM, sharedRAM
- *
- * Outputs:  returns 0 on success
- * ------------------------------------------------------------------------- */
+// ---------------------------------------------------------------------------
+// Function: int pru_mem_init(void)
+//
+//  This function sets memory pointers to pru0RAM, pru1RAM, sharedRAM
+//
+// Outputs:  returns 0 on success
+// ---------------------------------------------------------------------------
 int pru_mem_init(void)
 {
   int rtn = 0;
-  void *ptr = NULL;
+  void* ptr = NULL;
 
   // Memory Map for params (pru0 DRAM)
   ptr = NULL;
@@ -196,8 +217,7 @@ int pru_mem_init(void)
     printf("prussdrv_map_prumem() failed with %i\n", rtn);
     return -1;
   }
-  p = (param_mem_t *) ptr;
-
+  p = (param_mem_t*) ptr;
 
   // Memory Map for feedforward lookup table (pru1 DRAM)
   ptr = NULL;
@@ -205,7 +225,7 @@ int pru_mem_init(void)
     printf("prussdrv_map_prumem() failed with %i\n", rtn);
     return -1;
   }
-  l = (lookUp_mem_t *) ptr;
+  l = (lookUp_mem_t*) ptr;
 
   // Memory Map for shared memory
   ptr = NULL;
@@ -213,44 +233,54 @@ int pru_mem_init(void)
     printf("prussdrv_map_prumem() failed with %i\n", rtn);
     return -1;
   }
-  s = (shared_mem_t *) ptr;
+  s = (shared_mem_t*) ptr;
 
-  printMemoryAllocation(stdout);
-
+  // Zero State
   for(int i=0; i<SIZE_STATE_BUFF; i++)
     zeroState(i);
 
+  printMemoryAllocation(stdout);
   return 0;
 }
 
-void printMemoryAllocation(FILE *fp)
+// ---------------------------------------------------------------------------
+// Function: void printMemoryAllocation(FILE* fp)
+//           void sprintMemoryAllocation(char* buffer)
+//
+//  This function prints the size of each chunk of memory, eg, shared memory,
+//  parameter memory and lookupt table. The second function stores the string
+//  in a buffer.
+//
+//  Input: pointer to file or buffer
+// ---------------------------------------------------------------------------
+void printMemoryAllocation(FILE* fp)
 {
-  fprintf(fp, "\n#Memory Allocation:\n"
-              "#\tParameter memory: %i bytes.\n"
-              "#\tLookup table memory: %i bytes.\n"
-              "#\tData memory: %i bytes.\n#",
-              sizeof(*p), sizeof(*l), sizeof(*s));
+  fprintf(fp,
+          "#\n#Memory Allocation:\n"
+          "#\tParameter memory: %i bytes.\n"
+          "#\tLookup table memory: %i bytes.\n"
+          "#\tData memory: %i bytes.\n#",
+          sizeof(*p), sizeof(*l), sizeof(*s));
   fflush(fp);
 }
 
 void sprintMemoryAllocation(char* buffer)
 {
-  sprintf(buffer,"#\n#Memory Allocation:\n"
-              "#\tParameter memory: %i bytes.\n"
-              "#\tLookup table memory: %i bytes.\n"
-              "#\tData memory: %i bytes.\n#",
-              sizeof(*p), sizeof(*l), sizeof(*s));
+  sprintf(buffer,
+          "#\n#Memory Allocation:\n"
+          "#\tParameter memory: %i bytes.\n"
+          "#\tLookup table memory: %i bytes.\n"
+          "#\tData memory: %i bytes.\n#",
+          sizeof(*p), sizeof(*l), sizeof(*s));
 }
 
-
-
-/* ----------------------------------------------------------------------------
- * Function: int armToPru0Interrupt(void)
- *
- * This function sends an interrupt to pru0 from the arm.
- *
- * Outputs:  returns 0 on success
- * ------------------------------------------------------------------------- */
+// ----------------------------------------------------------------------------
+// Function: int armToPru0Interrupt(void)
+//
+//  This function sends an interrupt to pru0 from the arm.
+//
+// Outputs:  returns 0 on success
+// ------------------------------------------------------------------------- */
 int armToPru0Interrupt(void)
 {
   int rtn = 0;
@@ -262,13 +292,6 @@ int armToPru0Interrupt(void)
   return 0;
 }
 
-/* ----------------------------------------------------------------------------
- * Function: int armToPru1Interrupt(void)
- *
- * This function sends an interrupt to pru1 from the arm.
- *
- * Outputs:  returns 0 on success
- * ------------------------------------------------------------------------- */
 int armToPru1Interrupt(void)
 {
   int rtn = 0;
@@ -280,6 +303,13 @@ int armToPru1Interrupt(void)
   return 0;
 }
 
+// ---------------------------------------------------------------------------
+// Function: void zeroState(uint32_t si)
+//
+//  This function zeros state[si], where si is the index.
+//
+// Inputs:  si  -   state index 
+// ---------------------------------------------------------------------------
 void zeroState(uint32_t si)
 {
   s->state[si].timeStamp = 0;
@@ -311,8 +341,16 @@ void zeroState(uint32_t si)
   s->state[si].imu[3] = 0;
   s->state[si].imu[4] = 0;
   s->state[si].imu[5] = 0;
-
 }
+
+// ---------------------------------------------------------------------------
+// Function: void printStateHeader(FILE *fp)
+//           void sprintStateHeader(char* buffer)
+//
+//  This function prints the state header.
+//
+// Input: pointer to file or buffer
+// ---------------------------------------------------------------------------
 void printStateHeader(FILE *fp)
 {
   fprintf(fp,
@@ -341,15 +379,16 @@ void printStateHeader(FILE *fp)
           "r_s3\t"
           "l_d_s3\t"
           "r_d_s3\t"
-//          "imu0\t"
-//          "imu1\t"
-//          "imu2\t"
-//          "imu3\t"
-//          "imu4\t"
-//          "imu5"
+          "imu0\t"
+          "imu1\t"
+          "imu2\t"
+          "imu3\t"
+          "imu4\t"
+          "imu5"
           "\n");
   fflush(fp);
 }
+
 void sprintStateHeader(char* buffer)
 {
   sprintf(buffer,
@@ -378,18 +417,25 @@ void sprintStateHeader(char* buffer)
           "r_s3\t"
           "l_d_s3\t"
           "r_d_s3\t"
-//          "imu0\t"
-//          "imu1\t"
-//          "imu2\t"
-//          "imu3\t"
-//          "imu4\t"
-//          "imu5"
+          "imu0\t"
+          "imu1\t"
+          "imu2\t"
+          "imu3\t"
+          "imu4\t"
+          "imu5"
           "\n");
 }
 
+// ---------------------------------------------------------------------------
+// Function: void printState(uint8_t si, FILE *fp)
+//           void sprintState(uint8_t si, char* buffer)
+//
+//  This function prints the states.
+//
+// Input: pointer to file or buffer
+// ---------------------------------------------------------------------------
 void printState(uint8_t si, FILE *fp)
 {
-
   fflush(fp);
   fprintf(fp,
           "%u\t"    // timeStamp - uint32_t
@@ -455,7 +501,6 @@ void printState(uint8_t si, FILE *fp)
                 s->state[si].imu[4],
                 s->state[si].imu[5]
                );
-
   fflush(fp);
 }
 
@@ -526,52 +571,58 @@ void sprintState(uint8_t si, char* buffer)
                 s->state[si].imu[5]
                );
 }
-/* ----------------------------------------------------------------------------
- * Function: void writeState(uint32_t bi)
- *
- * This function writes state (data) to file. If debug mode is on, this
- * prints low fidelity data to screen.
- *
- * Outputs: none
- *
- * Inputs: uint32_t bi - buffer index
- * ------------------------------------------------------------------------- */
+
+// ----------------------------------------------------------------------------
+// Function: void writeState(uint32_t)
+//
+// This function writes state (data) to file. If debug mode is on, this
+// prints low fidelity data to screen.
+//
+// Outputs: none
+//
+// Inputs: uint32_t bi - buffer index
+// ------------------------------------------------------------------------- */
 void writeState(uint8_t bi)
 {
   int len = 0;
   char temp[4096];
 
   dataLog.writeBuffer[0] = '\0';
+
+  // Debug Mode, print first state in buffer
   if(debug){
-    printState(bi, 0, stdout);
+    printState(0, stdout);
   }
+
+  // Write Data Mode, use circular buffer
   else
     for(int i=0; i<SIZE_OF_BUFFS; i++){
-      sprintState(bi, i, temp);
+      sprintState(i, temp);
       strcat(dataLog.writeBuffer, temp);
       zeroState(bi, i);
     }
 
+  // Write to file
   len = strlen(dataLog.writeBuffer);
   memcpy(dataLog.addr + dataLog.location, dataLog.writeBuffer, len);
   dataLog.location += len;
 }
 
-/* ----------------------------------------------------------------------------
- * Function: void clearFlowBitFeild(void)
- *
- * This function clears flow bit feild used by prus.
- * ------------------------------------------------------------------------- */
+// ---------------------------------------------------------------------------
+// Function: void clearFlowBitFeild(void)
+//
+// This function clears flow bit feild used by prus.
+// ---------------------------------------------------------------------------
 void clearFlowBitFeild(void)
 {
   s->cntrl = 0x00;
 }
 
-/* ----------------------------------------------------------------------------
- * Function: void enable(void)
- *
- * This function sets the enbable bit in the flow bit feild to 1 (enable).
- * ------------------------------------------------------------------------- */
+// ----------------------------------------------------------------------------
+// Function: void enable(void)
+//
+// This function sets the enbable bit in the flow bit feild to 1 (enable).
+// ---------------------------------------------------------------------------
 void enablePru(int en)
 {
   if(en == 1)
@@ -801,7 +852,7 @@ void saveParameters(char* file)
  *
  * This function loads parameters from file.
  * ------------------------------------------------------------------------- */
-int loadParameters(char *file)
+int loadParameters(char* file)
 {
   FILE* fp = fopen(file, "r");
   float t1;
