@@ -198,6 +198,7 @@ void updateState(uint32_t cnt, uint8_t bi, uint8_t si)
 
   adcSample_1(adc);
   adcSample_2(adc);
+  adcSample_3(adc);
 
   /* Motor analog samples */
   s->state[bi][si].adc[0] = adc[0];

@@ -7,6 +7,8 @@
 #include <limits.h>
 #include <string.h>
 #include <time.h>
+#include <sys/types.h>
+#include <sys/mman.h>
 
 #include <prussdrv.h>
 #include <pruss_intc_mapping.h>
@@ -219,6 +221,16 @@ void printMemoryAllocation(FILE *fp)
   fflush(fp);
 }
 
+void sprintMemoryAllocation(char* buffer)
+{
+  sprintf(buffer,"#\n#Memory Allocation:\n"
+              "#\tParameter memory: %i bytes.\n"
+              "#\tLookup table memory: %i bytes.\n"
+              "#\tData memory: %i bytes.\n#",
+              sizeof(*p), sizeof(*l), sizeof(*s));
+}
+
+
 
 /* ----------------------------------------------------------------------------
  * Function: int armToPru0Interrupt(void)
@@ -289,7 +301,7 @@ void zeroState(uint8_t bi, uint8_t si)
 ///  s->state[bi][si].imu[5] = 0;
 
 }
-void printStateHeadings(FILE *fp)
+void printStateHeader(FILE *fp)
 {
   fprintf(fp,
           "\n# frame\t"
@@ -326,6 +338,43 @@ void printStateHeadings(FILE *fp)
           "\n");
   fflush(fp);
 }
+void sprintStateHeader(char* buffer)
+{
+  sprintf(buffer,
+          "\n# frame\t"
+          "sync\t"
+          "r_hs\t"
+          "l_hs\t"
+          "r_Tp\t"
+          "l_Tp\t"
+          "r_Pgait\t"
+          "l_Pgait\t"
+          "r_gp\t"
+          "l_gp\t"
+          "duty\t"
+          "ankPos\t"
+          "ankVel\t"
+          "u_fb\t"
+          "u_ff\t"
+          "mtrCurr\t"
+          "mtrVel\t"
+          "l_s1\t"
+          "l_s2\t"
+          "l_s3\t"
+          "r_s1\t"
+          "r_s2\t"
+          "r_s3\t"
+          "l_d_s3\t"
+          "r_d_s3\t"
+//          "imu0\t"
+//          "imu1\t"
+//          "imu2\t"
+//          "imu3\t"
+//          "imu4\t"
+//          "imu5"
+          "\n");
+}
+
 void printState(uint8_t bi, uint8_t si, FILE *fp)
 {
 
@@ -398,6 +447,73 @@ void printState(uint8_t bi, uint8_t si, FILE *fp)
   fflush(fp);
 }
 
+void sprintState(uint8_t bi, uint8_t si, char* buffer)
+{
+  sprintf(buffer,
+          "%u\t"    // timeStamp - uint32_t
+          "%u\t"    // sync - uint16_t
+          "%u\t"    // r_hsStamp - uint32_t
+          "%u\t"    // l_hsStamp - uint32_t
+          "%u\t"    // r_meanGaitPeriod - uint16_t
+          "%u\t"    // l_meanGaitPeriod - uint16_t
+          "%u\t"    // r_percentGait - uint16_t
+          "%u\t"    // l_percentGait - uint16_t
+          "%u\t"    // r_gaitPhase - uint16_t
+          "%u\t"    // l_gaitPhase - uint16_t
+          "%i\t"    // motorDuty - int16_t
+          "%.5f\t"  // anklePos - fix16_t (convert to float)
+          "%.5f\t"  // ankleVel - fix16_t (convert to float)
+          "%.5f\t"  // u_fb - fix16_t (convert to float)
+          "%.5f\t"  // u_ff - fix16_t (convert to float)
+          "%i\t"    // adc[0] (motor current) - int16_t
+          "%i\t"    // adc[1] (motor vel) - int16_t
+          "%i\t"    // adc[2] (amp1s1) - int16_t
+          "%i\t"    // adc[3] (amp1s2) - int16_t
+          "%i\t"    // adc[4] (amp1s3) - int16_t
+          "%i\t"    // adc[5] (amp2s1) - int16_t
+          "%i\t"    // adc[6] (amp2s2) - int16_t
+          "%i\t"    // adc[7] (amp2s3) - int16_t
+          "%i\t"    // heelVel - int16_t
+          "%i"    // heelVel - int16_t
+//          "%i\t"    // imu[0] - int16_t
+//          "%i\t"    // imu[1] - int16_t
+//          "%i\t"    // imu[2] - int16_t
+//          "%i\t"    // imu[3] - int16_t
+//          "%i\t"    // imu[4] - int16_t
+//          "%i\t"    // imu[5] - int16_t
+          "\n", s->state[bi][si].timeStamp,
+                s->state[bi][si].sync,
+                s->state[bi][si].r_hsStamp,
+                s->state[bi][si].l_hsStamp,
+                s->state[bi][si].r_meanGaitPeriod,
+                s->state[bi][si].l_meanGaitPeriod,
+                s->state[bi][si].r_percentGait,
+                s->state[bi][si].l_percentGait,
+                s->state[bi][si].r_gaitPhase,
+                s->state[bi][si].l_gaitPhase,
+                s->state[bi][si].motorDuty,
+                fix16_to_float(s->state[bi][si].anklePos),
+                fix16_to_float(s->state[bi][si].ankleVel),
+                fix16_to_float(s->state[bi][si].u_fb),
+                fix16_to_float(s->state[bi][si].u_ff),
+                s->state[bi][si].adc[0],
+                s->state[bi][si].adc[1],
+                s->state[bi][si].adc[2],
+                s->state[bi][si].adc[3],
+                s->state[bi][si].adc[4],
+                s->state[bi][si].adc[5],
+                s->state[bi][si].adc[6],
+                s->state[bi][si].adc[7],
+                s->state[bi][si].d_heelForce[0],
+                s->state[bi][si].d_heelForce[1]
+//                s->state[bi][si].imu[0],
+//                s->state[bi][si].imu[1],
+//                s->state[bi][si].imu[2],
+//                s->state[bi][si].imu[3],
+//                s->state[bi][si].imu[4],
+//                s->state[bi][si].imu[5]
+               );
+}
 /* ----------------------------------------------------------------------------
  * Function: void writeState(uint32_t bi)
  *
@@ -410,14 +526,23 @@ void printState(uint8_t bi, uint8_t si, FILE *fp)
  * ------------------------------------------------------------------------- */
 void writeState(uint8_t bi)
 {
+  int len = 0;
+  char temp[4096];
+
+  dataLog.writeBuffer[0] = '\0';
   if(debug){
     printState(bi, 0, stdout);
   }
   else
     for(int i=0; i<SIZE_OF_BUFFS; i++){
-      printState(bi, i, flog);
+      sprintState(bi, i, temp);
+      strcat(dataLog.writeBuffer, temp);
       zeroState(bi, i);
     }
+
+  len = strlen(dataLog.writeBuffer);
+  memcpy(dataLog.addr + dataLog.location, dataLog.writeBuffer, len);
+  dataLog.location += len;
 }
 
 /* ----------------------------------------------------------------------------
@@ -560,24 +685,78 @@ float getAnklePos0(void)
  * ------------------------------------------------------------------------- */
 int logFileInit(char* fileName)
 {
-  char timestr[256];
   time_t now = time(NULL);
-  struct tm *t = localtime(&now);
+  struct tm* t = localtime(&now);
+  int len = 0;
+  char timeStr[1024];
 
-  /* Create log file */
-  strftime(timestr, sizeof(timestr)-1, "%d-%b-%Y %X", t);
-  flog = fopen(fileName, "w");
-  setvbuf(flog, NULL, _IOFBF, 6553600);
+  // Init datalog vars.
+  dataLog.fd = 0;
+  dataLog.location = 0;
+  dataLog.addr = NULL;
+  dataLog.writeBuffer[0] = '\0';
 
-  /* Create header */
-  fprintf(flog, "#Date: %s\n#", timestr);
-  printMemoryAllocation(flog);
-  printParameters(flog);
-  printFirCoeff(flog);
-  printStateHeadings(flog);
+  // Open file, stretch and write blank
+  dataLog.fd = open(fileName, O_RDWR | O_CREAT | O_TRUNC);
+  if (lseek(dataLog.fd, LOGSIZE, SEEK_SET) == -1){
+    close(dataLog.fd);
+    printf("Error stretching file.\n");
+    return -1;
+  }
+  if (write (dataLog.fd, "", 1) == -1){
+    close(dataLog.fd);
+    printf("Error writing blank at end of file.\n");
+    return -1;
+  }
+
+  // memory map file
+  dataLog.addr = mmap(0, LOGSIZE, PROT_WRITE, MAP_SHARED, dataLog.fd, 0);
+  if (dataLog.addr == MAP_FAILED){
+    printf("mmap failed\n");
+    close(dataLog.fd);
+    return -1;
+  }
+
+  // Log time
+  memcpy(dataLog.writeBuffer, "#Date: ", 7);
+  strftime(timeStr, 1024, "%d-%b-%Y %X\n", t);
+  strcat(dataLog.writeBuffer, timeStr);
+  len = strlen(dataLog.writeBuffer);
+  memcpy(dataLog.addr + dataLog.location, dataLog.writeBuffer, len);
+  dataLog.location += len;
+  dataLog.writeBuffer[0] = '\0';
+
+  // Log memory allocation
+  sprintMemoryAllocation(dataLog.writeBuffer);
+  len = strlen(dataLog.writeBuffer);
+  memcpy(dataLog.addr + dataLog.location, dataLog.writeBuffer, len);
+  dataLog.location += len;
+  dataLog.writeBuffer[0] = '\0';
+
+  // Log parameters
+  sprintParameters(dataLog.writeBuffer);
+  len = strlen(dataLog.writeBuffer);
+  memcpy(dataLog.addr + dataLog.location, dataLog.writeBuffer, len);
+  dataLog.location += len;
+  dataLog.writeBuffer[0] = '\0';
+
+  // Log Fir Coeff
+  sprintFirCoeff(dataLog.writeBuffer);
+  len = strlen(dataLog.writeBuffer);
+  memcpy(dataLog.addr + dataLog.location, dataLog.writeBuffer, len);
+  dataLog.location += len;
+  dataLog.writeBuffer[0] = '\0';
+
+  // Log header
+  sprintStateHeader(dataLog.writeBuffer);
+  len = strlen(dataLog.writeBuffer);
+  memcpy(dataLog.addr + dataLog.location, dataLog.writeBuffer, len);
+  dataLog.location += len;
+  dataLog.writeBuffer[0] = '\0';
 
   return 0;
 }
+
 
 /* ----------------------------------------------------------------------------
  * Functions: void saveParameters(char* file)
@@ -667,6 +846,25 @@ void printParameters(FILE *fp)
   fflush(fp);
 }
 
+void sprintParameters(char* buffer)
+{
+  sprintf(buffer, "\n#Parameters:\n"
+                  "#\tFrq = %i (Hz)\n"
+                  "#\tTicks = %i\n"
+                  "#\tKp = %.4f\n"
+                  "#\tKd = %.4f\n"
+                  "#\tanklePos0 = %.4f\n"
+                  "#\tl_forceThrs = %i\n"
+                  "#\tl_d_forceThrs = %i\n"
+                  "#\tr_forceThrs = %i\n"
+                  "#\tr_d_forceThrs = %i\n#",
+                  p->frq_hz, p->frq_clock_ticks,
+                  fix16_to_float(p->Kp), fix16_to_float(p->Kd),
+                  fix16_to_float(p->anklePos0), p->l_forceThrs,
+                  p->l_d_forceThrs, p->r_forceThrs, p->r_d_forceThrs);
+}
+
+
 /* ----------------------------------------------------------------------------
  * Functions: void loadLookUpTable(char* file)
  *
@@ -746,6 +944,22 @@ void printFirCoeff(FILE *fp)
   fprintf(fp, "#");
   fflush(fp);
 }
+
+void sprintFirCoeff(char* buffer)
+{
+  char temp[1024];
+
+  sprintf(buffer, "\n#Filter Coefficients (N = %i):\n", p->filt.N);
+  for(int i=0; i<p->filt.N+1; i++){
+    sprintf(temp, "#\tb[%i] : %8.8f\ta[%i] : %8.8f\n",
+            i, fix16_to_float(p->filt.b[i]),
+            i, fix16_to_float(p->filt.a[i]));
+    strcat(buffer, temp);
+    temp[0] = '\0';
+  }
+  strcat(buffer, "#");
+}
+
 void printFFLookUpTable(FILE *fp)
 {
   for(int i=0; i<NUM_FF_LT; i++){
@@ -793,9 +1007,21 @@ void stopFFtest(void)
 }
 
 
-void closeLogFile(void)
+int closeLogFile(void)
 {
-  fclose(flog);
+  // Unmap and truncate file
+  if (munmap(dataLog.addr, LOGSIZE) == -1){
+    close(dataLog.fd);
+    printf("unmap failed\n");
+    return -1;
+  }
+  if (ftruncate(dataLog.fd, dataLog.location) == -1){
+    close(dataLog.fd);
+    printf("Error truncating file.\n");
+    return -1;
+  }
+  close(dataLog.fd);
+  return 0;
 }
 
 void setTareEncoderBit(void)

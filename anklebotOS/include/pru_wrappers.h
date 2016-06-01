@@ -4,11 +4,23 @@
 #include "fix16.h"
 #include "mem_types.h"
 
+#define LOGSIZE     (1e9 + 1)
+
+/* Stuct --------------------------------------------------------------------*/
+typedef struct{
+  uint32_t fd;
+  uint32_t location;
+  char* addr;
+  char writeBuffer[65536];
+} log_t;
+
 /* Globals ------------------------------------------------------------------*/
 extern int debug;
 
 /* Local globals ------------------------------------------------------------*/
 FILE* flog;
+log_t dataLog;
+
 
 /* Prototypes ---------------------------------------------------------------*/
 void printDebugBuffer(void);
@@ -19,11 +31,13 @@ int pru_init(void);
 int pru_cleanup(void);
 int pru_mem_init(void);
 void printMemoryAllocation(FILE *fp);
+void sprintMemoryAllocation(char* buffer);
+
 int armToPru0Interrupt(void);
 int armToPru1Interrupt(void);
 
 void zeroState(uint8_t bi, uint8_t si);
-void printState(uint8_t bi, uint8_t si, FILE *fp);
+void printState(uint8_t bi, uint8_t si, FILE* fp);
 void writeState(uint8_t buffIndx);
 
 void clearFlowBitFeild(void);
@@ -45,16 +59,21 @@ float getKp(void);
 float getKd(void);
 float getAnklePos0(void);
 
-void printParameters(FILE *fp);
-void printFirCoeff(FILE *fp);
-void printFFLookUpTable(FILE *fp);
+void printParameters(FILE* fp);
+void sprintParameters(char* buffer);
+void printFirCoeff(FILE* fp);
+void sprintFirCoeff(char* buffer);
+void printFFLookUpTable(FILE* fp);
 
-int logFileInit(char *fileName);
-void closeLogFile(void);
-void saveParameters(char *file);
-int loadParameters(char *file);
-int loadLookUpTable(char *file);
-int loadIirFilterCoeff(char *file);
+void printStateHeader(FILE *fp);
+void sprintStateHeader(char* buffer);
+
+int logFileInit(char* fileName);
+int closeLogFile(void);
+void saveParameters(char* file);
+int loadParameters(char* file);
+int loadLookUpTable(char* file);
+int loadIirFilterCoeff(char* file);
 
 void setTareEncoderBit(void);
 
