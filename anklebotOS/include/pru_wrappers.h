@@ -28,7 +28,7 @@ extern int debug;
 // Local globals -------------------------------------------------------------
 FILE* flog;
 log_t dataLog;
-circbuff_t circbuff;
+circbuff_t cbuff;
 
 // Prototypes ----------------------------------------------------------------
 void printDebugBuffer(void);
@@ -44,18 +44,12 @@ void sprintMemoryAllocation(char* buffer);
 int armToPru0Interrupt(void);
 int armToPru1Interrupt(void);
 
-void zeroState(uint8_t bi, uint8_t si);
-void printState(uint8_t bi, uint8_t si, FILE* fp);
-void writeState(uint8_t buffIndx);
+void zeroState(uint32_t si);
+void printState(uint32_t si, FILE* fp);
+void writeState(void);
 
-void clearFlowBitFeild(void);
+void clearFlowBitField(void);
 void enablePru(int en);
-
-int buffer0Full(void);
-int buffer1Full(void);
-void clearBuffer0FullFlag(void);
-void clearBuffer1FullFlag(void);
-void clearBufferFlags(void);
 
 uint32_t hzToPruTicks(float freq_hz);
 float pruTicksToHz(uint32_t ticks);

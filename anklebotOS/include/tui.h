@@ -15,4 +15,5 @@ void io_cb(int sig);
 void tui_menu(void);
 int start_tui(void);
 int tui_cleanup(void);
+void logData(void);
 #endif

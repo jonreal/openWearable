@@ -207,35 +207,19 @@ int start_tui(void)
           ptui->io_ready = 0;
 
           // Data collection loop
-          clearBufferFlags();
-          lastBufferRead = 0;
+          circBuffInit();
+
           while(1){
-            if(buffer0Full()){
-              clearBuffer0FullFlag();
-              gpio_set_value(gpio_debug, HIGH);
-              writeState(0);
-              lastBufferRead = 0;
-              gpio_set_value(gpio_debug, LOW);
-            }
-            else if(buffer1Full()){
-              clearBuffer1FullFlag();
-              gpio_set_value(gpio_debug, HIGH);
-              writeState(1);
-              lastBufferRead = 1;
-              gpio_set_value(gpio_debug, LOW);
-            }
+
+            logData();
 
             /* Check for input */
             if(ptui->io_ready)
               break;
+
+            delay(50)
           }
           scanf(" %c", &inChar);
-
-          // Get last buffer
-          if(lastBufferRead == 0)
-            writeState(1);
-          else
-            writeState(0);
 
           closeLogFile();
           logFile[0] = '\0';
@@ -387,36 +371,19 @@ int start_tui(void)
           ptui->io_ready = 0;
 
           // Data collection loop
-          clearBufferFlags();
-          lastBufferRead = 0;
+          circBuffInit();
+
           while(1){
-            if(buffer0Full()){
-              clearBuffer0FullFlag();
-              gpio_set_value(gpio_debug, HIGH);
-              writeState(0);
-              lastBufferRead = 0;
-              gpio_set_value(gpio_debug, LOW);
-            }
-            else if(buffer1Full()){
-              clearBuffer1FullFlag();
-              gpio_set_value(gpio_debug, HIGH);
-              writeState(1);
-              lastBufferRead = 1;
-              gpio_set_value(gpio_debug, LOW);
-            }
+
+            logData();
 
             /* Check for input */
             if(ptui->io_ready)
               break;
+            delay(50);
           }
           scanf(" %c", &inChar);
           stopFFtest();
-
-          // Get last buffer
-          if(lastBufferRead == 0)
-            writeState(1);
-          else
-            writeState(0);
 
           closeLogFile();
           logFile[0] = '\0';
@@ -471,37 +438,17 @@ int start_tui(void)
           ptui->io_ready = 0;
 
           // Data collection loop
-          clearBufferFlags();
-          lastBufferRead = 0;
+          circBuffInit();
           while(1){
-            if(buffer0Full()){
-              clearBuffer0FullFlag();
-              gpio_set_value(gpio_debug, HIGH);
-              writeState(0);
-              lastBufferRead = 0;
-              gpio_set_value(gpio_debug, LOW);
-            }
-            else if(buffer1Full()){
-              clearBuffer1FullFlag();
-              gpio_set_value(gpio_debug, HIGH);
-              writeState(1);
-              lastBufferRead = 1;
-              gpio_set_value(gpio_debug, LOW);
-            }
-
+            logData();
             /* Check for input */
             if(ptui->io_ready)
               break;
+            delay(50);
           }
           scanf(" %c", &inChar);
           printf("\t\tReset step resp. vars.\n");
           resetStepRespVars();
-
-          // Get last buffer
-          if(lastBufferRead == 0)
-            writeState(1);
-          else
-            writeState(0);
 
           closeLogFile();
           logFile[0] = '\0';
@@ -510,10 +457,17 @@ int start_tui(void)
           fflush(stdout);
           ptui->io_ready = 0;
           break;
-
       }
     }
   }
+}
+
+void logData(void)
+{
+ circBuffUpdate();
+ gpio_set_value(gpio_debug, HIGH);
+ writeState();
+ gpio_set_value(gpio_debug, LOW);
 }
 
 int tui_cleanup(void)

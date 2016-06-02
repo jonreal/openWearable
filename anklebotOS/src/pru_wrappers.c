@@ -42,8 +42,8 @@ lookUp_mem_t* l;
 // ---------------------------------------------------------------------------
 void circBuffInit(void)
 {
-  circbuff.start = 0;
-  circbuff.end = 0;
+  cbuff.start = 0;
+  cbuff.end = 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -53,8 +53,8 @@ void circBuffInit(void)
 // ---------------------------------------------------------------------------
 void circBuffUpdate(void)
 {
-  circbuff.start = (circbuff.end + 1) % SIZE_STATE_BUFF;
-  circbuff.end = p->stateIndex;
+  cbuff.start = (cbuff.end + 1) % SIZE_STATE_BUFF;
+  cbuff.end = s->stateIndex;
 }
 
 // ---------------------------------------------------------------------------
@@ -434,7 +434,7 @@ void sprintStateHeader(char* buffer)
 //
 // Input: pointer to file or buffer
 // ---------------------------------------------------------------------------
-void printState(uint8_t si, FILE *fp)
+void printState(uint32_t si, FILE *fp)
 {
   fflush(fp);
   fprintf(fp,
@@ -493,7 +493,7 @@ void printState(uint8_t si, FILE *fp)
                 s->state[si].adc[6],
                 s->state[si].adc[7],
                 s->state[si].d_heelForce[0],
-                s->state[si].d_heelForce[1]
+                s->state[si].d_heelForce[1],
                 s->state[si].imu[0],
                 s->state[si].imu[1],
                 s->state[si].imu[2],
@@ -562,7 +562,7 @@ void sprintState(uint8_t si, char* buffer)
                 s->state[si].adc[6],
                 s->state[si].adc[7],
                 s->state[si].d_heelForce[0],
-                s->state[si].d_heelForce[1]
+                s->state[si].d_heelForce[1],
                 s->state[si].imu[0],
                 s->state[si].imu[1],
                 s->state[si].imu[2],
@@ -582,10 +582,11 @@ void sprintState(uint8_t si, char* buffer)
 //
 // Inputs: uint32_t bi - buffer index
 // ------------------------------------------------------------------------- */
-void writeState(uint8_t bi)
+void writeState(void)
 {
   int len = 0;
   char temp[4096];
+  int size = 0;
 
   dataLog.writeBuffer[0] = '\0';
 
@@ -596,10 +597,12 @@ void writeState(uint8_t bi)
 
   // Write Data Mode, use circular buffer
   else
-    for(int i=0; i<SIZE_OF_BUFFS; i++){
-      sprintState(i, temp);
+    size = ((SIZE_STATE_BUFF + cbuff.end - cbuff.start) % SIZE_STATE_BUFF) + 1;
+
+    for(int i=cbuff.start; i<cbuff.start+size; i++){
+      sprintState(i % SIZE_STATE_BUFF, temp);
       strcat(dataLog.writeBuffer, temp);
-      zeroState(bi, i);
+      zeroState(i % SIZE_STATE_BUFF);
     }
 
   // Write to file
@@ -613,7 +616,7 @@ void writeState(uint8_t bi)
 //
 // This function clears flow bit feild used by prus.
 // ---------------------------------------------------------------------------
-void clearFlowBitFeild(void)
+void clearFlowBitField(void)
 {
   s->cntrl = 0x00;
 }
@@ -621,7 +624,7 @@ void clearFlowBitFeild(void)
 // ----------------------------------------------------------------------------
 // Function: void enable(void)
 //
-// This function sets the enbable bit in the flow bit feild to 1 (enable).
+//  This function sets the enbable bit in the flow bit feild to 1 (enable).
 // ---------------------------------------------------------------------------
 void enablePru(int en)
 {
@@ -631,69 +634,29 @@ void enablePru(int en)
     s->cntrl_bit.enable = 0;
 }
 
-/* ----------------------------------------------------------------------------
- * Function: void isBuffer0Full(void)
- *
- * This function returns 1 if buffer0 is full.
- *
- * Output: 1 - buffer0 full
- *         0 - buffer0 not full
- * ------------------------------------------------------------------------- */
-int buffer0Full(void)
-{
-  return (int)s->cntrl_bit.buffer0_full;
-}
-
-
-int buffer1Full(void)
-{
-  return (int)s->cntrl_bit.buffer1_full;
-}
-
-/* ----------------------------------------------------------------------------
- * Function: void resetBuffer0FullFlag(void)
- *
- * This function clears bufferFull flag.
- * ------------------------------------------------------------------------- */
-void clearBuffer0FullFlag(void)
-{
-  s->cntrl_bit.buffer0_full = 0;
-}
-
-void clearBuffer1FullFlag(void)
-{
-  s->cntrl_bit.buffer1_full = 0;
-}
-
-void clearBufferFlags(void)
-{
-  s->cntrl_bit.buffer0_full = 0;
-  s->cntrl_bit.buffer1_full = 0;
-}
-
-/* ----------------------------------------------------------------------------
- * Function: uint32_t hzToPruTicks(float freq_hz)
- *
- * This function converts freq in Hz to number of pru clock ticks.
- *
- * Inputs:    freq_hz   -   freq. in hz (float)
- *
- * Outputs:   pruTicks  -   pru clock ticks (uint32_t)
- * ------------------------------------------------------------------------- */
+// ---------------------------------------------------------------------------
+// Function: uint32_t hzToPruTicks(float freq_hz)
+//
+//  This function converts freq in Hz to number of pru clock ticks.
+//
+// Inputs:    freq_hz   -   freq. in hz (float)
+//
+// Outputs:   pruTicks  -   pru clock ticks (uint32_t)
+// ---------------------------------------------------------------------------
 uint32_t hzToPruTicks(float freq_hz)
 {
   return (uint32_t)( (float)PRU_CLK / freq_hz);
 }
 
-/* ----------------------------------------------------------------------------
- * Function: float pruTicksToHz(uint32_t ticks)
- *
- * This function converts pru ticks to freq in Hz.
- *
- * Inputs:    ticks     -   pru clock ticks (uint32_t)
- *
- * Outputs:   freq_hz   -   freq_hz (float)
- * ------------------------------------------------------------------------- */
+// ---------------------------------------------------------------------------
+// Function: float pruTicksToHz(uint32_t ticks)
+//
+//  This function converts pru ticks to freq in Hz.
+//
+// Inputs:    ticks     -   pru clock ticks (uint32_t)
+//
+// Outputs:   freq_hz   -   freq_hz (float)
+// ---------------------------------------------------------------------------
 float pruTicksToHz(uint32_t ticks)
 {
   return 1/((float)ticks/200000000.0);
