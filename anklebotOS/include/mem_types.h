@@ -15,7 +15,7 @@
 #define PRU0_ARM_INT  (19 + 16)
 #define PRU1_ARM_INT  (20 + 16)
 
-#define SIZE_STATE_BUFF   176
+#define SIZE_STATE_BUFF   149
 
 #define NUM_ADC     8
 #define NUM_IMU     6

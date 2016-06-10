@@ -216,8 +216,6 @@ int start_tui(void)
             /* Check for input */
             if(ptui->io_ready)
               break;
-
-            delay(50)
           }
           scanf(" %c", &inChar);
 
@@ -377,10 +375,9 @@ int start_tui(void)
 
             logData();
 
-            /* Check for input */
+            // Check for input
             if(ptui->io_ready)
               break;
-            delay(50);
           }
           scanf(" %c", &inChar);
           stopFFtest();
@@ -441,10 +438,10 @@ int start_tui(void)
           circBuffInit();
           while(1){
             logData();
-            /* Check for input */
+
+            // Check for input
             if(ptui->io_ready)
               break;
-            delay(50);
           }
           scanf(" %c", &inChar);
           printf("\t\tReset step resp. vars.\n");

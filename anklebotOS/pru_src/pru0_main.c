@@ -192,8 +192,8 @@ void updateState(uint32_t cnt, uint32_t si)
   s->state[si].timeStamp = cnt;
   s->state[si].sync = viconSync();
 
-  adcSample_1(adc);
   adcSample_2(adc);
+  adcSample_1(adc);
   adcSample_3(adc);
 
   /* Motor analog samples */
@@ -257,9 +257,12 @@ void updateControl(uint32_t cnt, uint32_t si)
 
 void updateCounters(uint32_t *cnt, uint32_t *si)
 {
+  // Set buffer location for circ buffer
+  s->stateIndex = (*si);
+
   (*cnt)++;
   (*si)++;
-  (*si) %= SIZE_OF_BUFF;
+  (*si) %= SIZE_STATE_BUFF;
 }
 
 void cleanUp(void)
