@@ -61,7 +61,7 @@ volatile uint32_t *debugBuffer;
 int main(void)
 {
   uint32_t cnt = 0;
-  uint8_t stateIndx = 0;
+  uint32_t stateIndx = 0;
 
   initialize();
 
@@ -79,7 +79,7 @@ int main(void)
     debugPinHigh();
 
     // Update State
-    updateState(cnt, buffIndx, stateIndx);
+    updateState(cnt, stateIndx);
 
     debugPinLow();
 
@@ -145,14 +145,14 @@ void initialize(void)
 }
 
 
-void updateCounters(uint32_t *cnt, uint8_t *bi, uint32_t *si)
+void updateCounters(uint32_t* cnt, uint32_t* si)
 {
   (*cnt)++;
   (*si)++;
   (*si) %= SIZE_STATE_BUFF;
 }
 
-void updateControl(uint32_t cnt, uint8_t bi, uint32_t si)
+void updateControl(uint32_t cnt, uint32_t si)
 {
   fix16_t u_fb = 0;
   fix16_t u_ff = 0;

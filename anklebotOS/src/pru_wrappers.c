@@ -53,8 +53,10 @@ void circBuffInit(void)
 // ---------------------------------------------------------------------------
 void circBuffUpdate(void)
 {
-  cbuff.start = (cbuff.end + 1) % SIZE_STATE_BUFF;
-  cbuff.end = s->stateIndex;
+  int endOfData = s->stateIndex;
+
+  if (cbuff.end != endOfData)
+    cbuff.end = endOfData;
 }
 
 // ---------------------------------------------------------------------------
@@ -449,10 +451,10 @@ void printState(uint32_t si, FILE *fp)
           "%u\t"    // r_gaitPhase - uint16_t
           "%u\t"    // l_gaitPhase - uint16_t
           "%i\t"    // motorDuty - int16_t
-          "%.5f\t"  // anklePos - fix16_t (convert to float)
-          "%.5f\t"  // ankleVel - fix16_t (convert to float)
-          "%.5f\t"  // u_fb - fix16_t (convert to float)
-          "%.5f\t"  // u_ff - fix16_t (convert to float)
+          "%.2f\t"  // anklePos - fix16_t (convert to float)
+          "%.2f\t"  // ankleVel - fix16_t (convert to float)
+          "%.2f\t"  // u_fb - fix16_t (convert to float)
+          "%.2f\t"  // u_ff - fix16_t (convert to float)
           "%i\t"    // adc[0] (motor current) - int16_t
           "%i\t"    // adc[1] (motor vel) - int16_t
           "%i\t"    // adc[2] (amp1s1) - int16_t
@@ -518,10 +520,10 @@ void sprintState(uint8_t si, char* buffer)
           "%u\t"    // r_gaitPhase - uint16_t
           "%u\t"    // l_gaitPhase - uint16_t
           "%i\t"    // motorDuty - int16_t
-          "%.5f\t"  // anklePos - fix16_t (convert to float)
-          "%.5f\t"  // ankleVel - fix16_t (convert to float)
-          "%.5f\t"  // u_fb - fix16_t (convert to float)
-          "%.5f\t"  // u_ff - fix16_t (convert to float)
+          "%.2f\t"  // anklePos - fix16_t (convert to float)
+          "%.2f\t"  // ankleVel - fix16_t (convert to float)
+          "%.2f\t"  // u_fb - fix16_t (convert to float)
+          "%.2f\t"  // u_ff - fix16_t (convert to float)
           "%i\t"    // adc[0] (motor current) - int16_t
           "%i\t"    // adc[1] (motor vel) - int16_t
           "%i\t"    // adc[2] (amp1s1) - int16_t
@@ -573,7 +575,7 @@ void sprintState(uint8_t si, char* buffer)
 }
 
 // ----------------------------------------------------------------------------
-// Function: void writeState(uint32_t)
+// Function: void writeState(void)
 //
 // This function writes state (data) to file. If debug mode is on, this
 // prints low fidelity data to screen.
@@ -590,25 +592,30 @@ void writeState(void)
 
   dataLog.writeBuffer[0] = '\0';
 
-  // Debug Mode, print first state in buffer
+  // Debug Mode, print first state if its new
   if(debug){
-    printState(0, stdout);
+    if (cbuff.start != s->state[0].timeStamp){
+      printState(0, stdout);
+      cbuff.start = s->state[0].timeStamp;
+    }
   }
 
   // Write Data Mode, use circular buffer
-  else
-    size = ((SIZE_STATE_BUFF + cbuff.end - cbuff.start) % SIZE_STATE_BUFF) + 1;
+  else{
+    size = ((SIZE_STATE_BUFF + cbuff.end - cbuff.start) % SIZE_STATE_BUFF);
 
     for(int i=cbuff.start; i<cbuff.start+size; i++){
       sprintState(i % SIZE_STATE_BUFF, temp);
       strcat(dataLog.writeBuffer, temp);
-      zeroState(i % SIZE_STATE_BUFF);
     }
 
-  // Write to file
-  len = strlen(dataLog.writeBuffer);
-  memcpy(dataLog.addr + dataLog.location, dataLog.writeBuffer, len);
-  dataLog.location += len;
+    cbuff.start = (cbuff.start + size) % SIZE_STATE_BUFF;
+
+    // Write to file
+    len = strlen(dataLog.writeBuffer);
+    memcpy(dataLog.addr + dataLog.location, dataLog.writeBuffer, len);
+    dataLog.location += len;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -796,9 +803,9 @@ void saveParameters(char* file)
     fprintf(fp, "%i\t// Freq.\n", p->frq_hz);
     fprintf(fp, "%i\t// Freq. Ticks\n", 0);
     fprintf(fp, "%i\t// Subject Mass\n", p->mass);
-    fprintf(fp, "%.5f\t// Kp\n", fix16_to_float(p->Kp));
-    fprintf(fp, "%.5f\t// Kd\n", fix16_to_float(p->Kd));
-    fprintf(fp, "%.5f\t// anklePos0\n", fix16_to_float(p->anklePos0));
+    fprintf(fp, "%.2f\t// Kp\n", fix16_to_float(p->Kp));
+    fprintf(fp, "%.2f\t// Kd\n", fix16_to_float(p->Kd));
+    fprintf(fp, "%.2f\t// anklePos0\n", fix16_to_float(p->anklePos0));
     fprintf(fp, "%i\t// l_forceThrs\n", p->l_forceThrs);
     fprintf(fp, "%i\t// l_d_forceThrs\n", p->l_d_forceThrs);
     fprintf(fp, "%i\t// r_forceThrs\n", p->r_forceThrs);
