@@ -16,21 +16,19 @@
 #include "control.h"
 #include "tui.h"
 
-/* Global ------------------------------------------------------------------ */
+// Global --------------------------------------------------------------------
 int debug;
 volatile int doneFlag = 0;
 
-/* Protoypes --------------------------------------------------------------- */
+// Protoypes -----------------------------------------------------------------
 void sigintHandler(int sig);
 int loadPruSoftware(void);
 void startPruLoop(void);
 
-/* ------------------------------------------------------------------------- */
+// ---------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
-  uint8_t lastBufferRead = 0;
-
-  /* Command Line Inputs */
+  // Command Line Inputs
   if(argc != 1){
     if(strcmp(argv[1], "-v") == 0)
       debug = 1;
@@ -39,7 +37,7 @@ int main(int argc, char **argv)
     debug = 0;
   }
 
-  /* Welcome */
+  // Welcome
   if(!(debug)){
     printf("\n---------------------\n");
     printf("Welcome to AnklebotOS\n");
@@ -77,65 +75,48 @@ int main(int argc, char **argv)
   }
 //  printFFLookUpTable(stdout);
 
-  // Load binaries to prus instruction RAM.
+  // Load binaries to PRUs IRAM.
   if(loadPruSoftware() != 0)
     return -1;
 
-  clearFlowBitFeild();
+  clearFlowBitField();
 
+  // Enable PRUs
+  enablePru(1);
+
+  // Start control loop
   printf("\n\nPress enter to start\n\n");
   getchar();
 
-  /* Enable pru sensor/control */
-  enablePru(1);
-
-  /* Start control loop */
   startPruLoop();
 
-  /* Debug Loop */
+  // Debug Loop
   if(debug){
+    circBuffInit();
     while(!(doneFlag)){
-
-      if(buffer0Full()){
-        clearBuffer0FullFlag();
-        writeState(0);
-        lastBufferRead = 0;
-      }
-      else if(buffer1Full()){
-        clearBuffer1FullFlag();
-        writeState(1);
-        lastBufferRead = 1;
-      }
+      logData();
     }
     enablePru(0);
-
-    if(lastBufferRead == 1){
-      writeState(0);
-    }
-    else{
-      writeState(1);
-    }
     printDebugBuffer();
 
-    /* Cleanup */
+    // Cleanup
     pru_cleanup();
     printf("pru0 and pru1 cleaned up.\n");
   }
 
-  /* TUI */
+  // TUI
   else {
-
     if(init_tui() != 0){
       printf("TUI init fail.");
       return -1;
     }
 
-    /* UI loop */
+    // UI loop
     if(start_tui() == 1){
         enablePru(0);
         printDebugBuffer();
 
-        /* Cleanup */
+        // Cleanup
         pru_cleanup();
         printf("pru0 and pru1 cleaned up.\n");
         raise(SIGINT);
@@ -155,13 +136,13 @@ int loadPruSoftware(void)
 {
   int rtn = 0;
 
-  /* Run PRU0 software */
+  // Run PRU0 software
   if( (rtn = pru_run(PRU0, "./bin/pru0_main_text.bin")) != 0){
     printf("pru_run() failed (PRU0)");
     return -1;
   }
 
-  /* Run PRU1 software */
+  // Run PRU1 software
   if( (rtn = pru_run(PRU1, "./bin/pru1_main_text.bin")) != 0){
     printf("pru_run() failed (PRU1)");
     return -1;

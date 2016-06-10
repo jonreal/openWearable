@@ -34,6 +34,9 @@ circbuff_t cbuff;
 void printDebugBuffer(void);
 void initDebugBuffer(void);
 
+void circBuffInit(void);
+void circBuffUpdate(void);
+
 int pru_run(const int pruNum, const char *const path);
 int pru_init(void);
 int pru_cleanup(void);

@@ -6,13 +6,9 @@
 
 void adcInit(void)
 {
-
-  /* TODO make these params */
-//  uint8_t sampleDelay = 250;
-//  uint16_t openDelay = 2250;
   uint8_t sampleDelay = 255;
   uint16_t openDelay = 1500;
-  uint8_t avrg = 0x0;
+  uint8_t avrg = 0x1;
   uint16_t adc_clk_div = 0x0;
 
   /* CTRL:  StepConfig_WriteProtext_n_active_low = 0x1 - enable step config
@@ -219,7 +215,7 @@ void adcSample_2(int16_t adc[8])
   /* Mux pin low (Mux0) */
   __R30 &= ~(1 << MUX_SEL_PIN);
 
-  __delay_cycles(300);
+  __delay_cycles(250);
 
   /* FIFO0THRESHOLD: FIFO0_threshold_Level = 2 (3-1) */
   HWREG(SOC_ADC_TSC_0_REGS + 0xE8) = 0x2;
@@ -239,6 +235,9 @@ void adcSample_2(int16_t adc[8])
 
   /* IRQSTATUS: Clear all interrupts */
   HWREG(SOC_ADC_TSC_0_REGS + 0x28) = 0x7FF;
+
+  /* Mux pin high (Mux1) */
+  __R30 |= (1 << MUX_SEL_PIN);
 }
 
 void adcSample_3(int16_t adc[8])
@@ -248,7 +247,7 @@ void adcSample_3(int16_t adc[8])
   /* Mux pin high (Mux1) */
   __R30 |= (1 << MUX_SEL_PIN);
 
-  __delay_cycles(200);
+  __delay_cycles(250);
 
   /* FIFO0THRESHOLD: FIFO0_threshold_Level = 3 (4-1) */
   HWREG(SOC_ADC_TSC_0_REGS + 0xE8) = 0x3;
@@ -273,6 +272,9 @@ void adcSample_3(int16_t adc[8])
 
   /* IRQSTATUS: Clear all interrupts */
   HWREG(SOC_ADC_TSC_0_REGS + 0x28) = 0x7FF;
+
+  /* Mux pin low (Mux0) */
+  __R30 &= ~(1 << MUX_SEL_PIN);
 }
 
 void adcCleanUp(void)
