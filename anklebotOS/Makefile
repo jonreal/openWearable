@@ -15,7 +15,7 @@ CLIB = -lprussdrv -lpthread
 
 # PRU_C Source Directories
 PRU_CSRC_DIR = ./pru_src
-PRU_CINC_DIR = -I./include/ -I/opt/source/pru-software-support-package/include/
+PRU_CINC_DIR = -I./include/ -I/opt/source/pru-software-support-package/include -I/opt/source/pru-software-support-package/include/am335x
 PRU_CLIB =
 
 # Build Directories
