@@ -1,0 +1,11 @@
+[user]
+  email = jonreal731@gmail.com
+  name = JR:beaglebone
+[alias]
+  st = status
+  co = checkout
+  br = rebase
+  ci = commit
+  up = rebase
+[credential]
+	helper = cache --timeout=3600
