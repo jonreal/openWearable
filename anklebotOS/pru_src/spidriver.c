@@ -6,7 +6,6 @@
 
 void spiInit(void)
 {
-  /* TODO: param */
   uint16_t clkdiv = 200;
 
   /* CM_PER_SPI1_CLKCTRL: MODULEMODE = 0x2
@@ -59,9 +58,6 @@ void spiInit(void)
    *                  CLKD = 0x4 - divide by 16
    *                  POL = 0x0
    *                  PHA = 0x0; */
-
-  //HWREG(SOC_SPI_1_REGS + 0x12C) = (0x1 << 29) | (0x1 << 28) | (0x1 << 27)
-  //HWREG(SOC_SPI_1_REGS + 0x12C) = (0x1 << 29) | (0x1 << 28) | (0x1 << 27)
   HWREG(SOC_SPI_1_REGS + 0x140) = (0x1 << 29) | (0x1 << 28) | (0x1 << 27)
           | (0x3 << 25) | (0x0 << 24) | (0x0 << 23) | (0x0 << 21) | (0x0 << 20)
           | (0x0 << 19) | (0x0 << 18) | (0x0 << 17) | (0x1 << 16) | (0x0 << 15)
@@ -69,7 +65,6 @@ void spiInit(void)
           | ( (clkdiv & 0xF) << 2) | (0x0 << 1) | (0x0 << 0);
 
   /* MCSPI_CH0CTRL: EXTCLK =  clock divider extension */
-  //HWREG(SOC_SPI_1_REGS + 0x134) = ( ((clkdiv >> 4) & 0xFF) << 8);
   HWREG(SOC_SPI_1_REGS + 0x148) = ( ((clkdiv >> 4) & 0xFF) << 8);
 
   HWREG(SOC_SPI_1_REGS + 0x148) |= 0x1;
