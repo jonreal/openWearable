@@ -9,7 +9,6 @@
 #include "mem_types.h"
 #include "hw_types.h"
 
-//#include "imu_mpu9150.h"
 #include "spidriver.h"
 #include "encoder.h"
 #include "maxonmotor.h"
@@ -125,16 +124,24 @@ void initialize(void)
   // Pin Mux
   CT_CFG.GPCFG0 = 0;
 
-  // Memory
-  initMemory();
+  // Zero detect flags
+  p->encoderDetect = 0;
+  p->imuDetect = 0;
 
+  // Memory and Interrupt
+  initMemory();
   interruptInit();
 
-  // Add pru dependent peripheral init methods here
-  encoderInit();
-  //imuInit();
-  motorInit();
+  // Modules
+  spiInit();
 
+  // Add pru dependent peripheral init methods here
+  if (encoderInit() == 0)
+    p->encoderDetect = 1;
+  else
+    p->encoderDetect = 0;
+
+  motorInit();
 
   // Zero some stuff
   p->stepRespCnt = 0;
@@ -227,23 +234,22 @@ void updateControl(uint32_t cnt, uint32_t si)
 
 void updateState(uint32_t cnt, uint32_t si)
 {
-  // Tare Encoder if needed
-  if(s->cntrl_bit.encoderTare){
-    encoderSetZeroAngle();
-    s->cntrl_bit.encoderTare = 0;
-  }
-  //encoderSample(&(s->state[bi][si].anklePos));
-  //imuSample(s->state[bi][si].imu);
+  if (p->encoderDetect)
+    encoderSample(&(s->state[si].anklePos));
+  else
+    s->state[si].anklePos = 0;
 }
 
 void cleanUp(void)
 {
-  /* Add pru dependent peripheral cleanup methods here */
+  // Add pru dependent peripheral cleanup methods here
   encoderCleanUp();
-  //imuCleanUp();
   motorCleanUp();
 
-  /* Clear all interrupts */
+  // Cleanup modules
+  spiCleanUp();
+
+  // Clear all interrupts
   clearInterrupt();
   CT_INTC.SECR0 = 0xFFFFFFFF;
   CT_INTC.SECR1 = 0xFFFFFFFF;

@@ -192,13 +192,9 @@ void updateState(uint32_t cnt, uint32_t si)
   s->state[si].timeStamp = cnt;
   s->state[si].sync = viconSync();
 
+  // Insole samples
   adcSample_2(adc);
-  adcSample_1(adc);
   adcSample_3(adc);
-
-  /* Motor analog samples */
-  s->state[si].adc[0] = adc[0];
-  s->state[si].adc[1] = adc[1];
 
   /* Filter insoles heel */
   s1 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
@@ -248,6 +244,11 @@ void updateState(uint32_t cnt, uint32_t si)
   s->state[si].r_meanGaitPeriod = p->r_prevPeriod;
   s->state[si].r_gaitPhase = p->r_prevGaitPhase;
   s->state[si].r_hsStamp = p->r_prevHsStamp;
+
+  /* Motor analog samples */
+  adcSample_1(adc);
+  s->state[si].adc[0] = adc[0];
+  s->state[si].adc[1] = adc[1];
 }
 
 void updateControl(uint32_t cnt, uint32_t si)
