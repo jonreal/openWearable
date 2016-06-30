@@ -55,7 +55,7 @@ typedef struct{
   volatile uint16_t l_gaitPhase;
   volatile uint16_t r_gaitPhase;
 
-  volatile int32_t motorDuty;
+  volatile fix16_t motorDuty;
   volatile fix16_t anklePos;
   volatile fix16_t ankleVel;
   volatile fix16_t u_fb;
@@ -137,6 +137,9 @@ typedef struct{
   volatile fix16_t stepCurrent;
 
   volatile fix16_t FFgain;
+
+  volatile uint32_t encoderDetect;
+  volatile uint32_t imuDetect;
 
   iir_coeff_t filt;
   iir_buff_t filtBuffer[6];

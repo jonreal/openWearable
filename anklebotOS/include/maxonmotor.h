@@ -9,8 +9,9 @@
 #define FIX16_MAX_DUTY  0x5A0000
 #define FIX16_MIN_DUTY  0xA0000
 
-// 80/15 in fix16
-#define FIX16_K       0x55555
+
+// 5/2 in fix16
+#define FIX16_K       0x28000
 
 // 10 in fix16
 #define FIX16_10      0xA0000
@@ -18,18 +19,20 @@
 // 100 in fix16
 #define FIX16_100     0x640000
 
+// 50 in fix16
+#define FIX16_50    0x320000
+
 // 10000 in fix16
 #define FIX16_10000   0x27100000
 
 
-
-/* --- Digital output reg. */
+// --- Digital output reg.
 volatile register uint32_t __R30;
 
-/* ---- Global ---- */
+//---- Global ----
 extern volatile uint32_t *debugBuffer;
 
-/* ---- Prototypes ---- */
+// ---- Prototypes ----
 void motorInit(void);
 void motorCleanUp(void);
 void motorSetDuty(fix16_t u, volatile int32_t *motorDuty);
