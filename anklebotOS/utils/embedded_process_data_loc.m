@@ -114,8 +114,8 @@ function rtn = embedded_process_data(trialName)
 
   % Sort data based on frameID (data isn't guaranteed to arrive in order)
   % Also buffer maybe skipped (ie. hole in data)
-  [values, order] = sort(D(:,1));
-  D = D(order,:);
+%  [values, order] = sort(D(:,1));
+%  D = D(order,:);
 
   figure;
     plot(D(:,1))
@@ -123,7 +123,7 @@ function rtn = embedded_process_data(trialName)
     ylabel('Time Stamp','fontsize',20)
 
   figure;
-    plot(D(1:end-1,1),D(2:end,1) - D(1:end-1,1))
+  plot(1:numel(D(1:end-1,1)),D(2:end,1) - D(1:end-1,1))
     xlabel('Data Point','fontsize',20)
     ylabel('Stamp[k+1] - Stamp[k]','fontsize',20)
 
