@@ -1,12 +1,17 @@
-#ifndef _SPIDRIVER_H_
-#define _SPIDRIVER_H_
+#ifndef _LSM6DS3IMU_H_
+#define _LSM6DS3IMU_H_
+
+// IMU Registers
+#define LSM_WHO_AM_I    0x0F
+
+// SPI channel
+#define SPI_IMU_CHAN    0x0
 
 // Global ---------------------------------------------------------------------
 extern volatile uint32_t *debugBuffer;
 
 // Prototypes -----------------------------------------------------------------
-void spiInit(void);
-void spiCleanUp(void);
-uint16_t spiXfer(uint8_t channel, uint16_t tx);
+void lsm_imuInit(void);
+void lsm_x(void);
 
 #endif
