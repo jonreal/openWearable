@@ -7,8 +7,8 @@
 void adcInit(void)
 {
   uint8_t sampleDelay = 255;
-  uint16_t openDelay = 1500;
-  uint8_t avrg = 0x1;
+  uint16_t openDelay = 2000;
+  uint8_t avrg = 0x0;
   uint16_t adc_clk_div = 0x0;
 
   /* CTRL:  StepConfig_WriteProtext_n_active_low = 0x1 - enable step config

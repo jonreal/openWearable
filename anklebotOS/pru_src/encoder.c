@@ -4,14 +4,17 @@
 #include "encoder.h"
 
 
-void encoderInit(void)
+int8_t encoderInit(void)
 {
- spiInit();
+  if (spiXfer(SPI_ENCODER_CHAN, 0x0) == 0xA5)
+    return 0;
+
+  return -1;
 }
 
 void encoderCleanUp(void)
 {
-  spiCleanUp();
+
 }
 
 void encoderSample(volatile fix16_t *pos)
@@ -20,17 +23,17 @@ void encoderSample(volatile fix16_t *pos)
   uint8_t MSB = 0;
   uint8_t LSB = 0;
 
-  /* Issue read command (0x10) */
-  rx = spiXfer(0x10);
+  // Issue read command (0x10)
+  rx = spiXfer(SPI_ENCODER_CHAN, 0x10);
 
-  /* Wait till recieve ack. (0x10) */
+  // Wait till recieve ack. (0x10)
   while(rx != 0x10){
-    rx = spiXfer(0x00);
+    rx = spiXfer(SPI_ENCODER_CHAN, 0x00);
   }
 
-  /* RX data */
-  MSB = spiXfer(0x00);
-  LSB = spiXfer(0x00);
+  // RX data
+  MSB = spiXfer(SPI_ENCODER_CHAN, 0x00);
+  LSB = spiXfer(SPI_ENCODER_CHAN, 0x00);
 
   *pos =  encoderCnts2Degs((uint16_t) ((MSB << 8) | (LSB & 0xFF)));
 }
@@ -49,11 +52,10 @@ void encoderSetZeroAngle(void)
 {
   uint8_t rx = 0;
 
-  /* Issue read command (0x70) */
-  rx = spiXfer(0x70);
+  // Issue read command (0x70)
+  rx = spiXfer(SPI_ENCODER_CHAN, 0x70);
 
-  /* Wait till recieve ack. (0x80) */
-  while(rx != 0x80){
-    rx = spiXfer(0x00);
-  }
+  // Wait till recieve ack. (0x80)
+  while(rx != 0x80)
+    rx = spiXfer(SPI_ENCODER_CHAN, 0x00);
 }

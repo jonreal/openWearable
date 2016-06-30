@@ -310,7 +310,7 @@ int armToPru1Interrupt(void)
 //
 //  This function zeros state[si], where si is the index.
 //
-// Inputs:  si  -   state index 
+// Inputs:  si  -   state index
 // ---------------------------------------------------------------------------
 void zeroState(uint32_t si)
 {
@@ -410,7 +410,7 @@ void sprintStateHeader(char* buffer)
           "u_fb\t"
           "u_ff\t"
           "mtrCurr\t"
-          "mtrVel\t"
+          "mtrCurr_d\t"
           "l_s1\t"
           "l_s2\t"
           "l_s3\t"
@@ -450,13 +450,13 @@ void printState(uint32_t si, FILE *fp)
           "%u\t"    // l_percentGait - uint16_t
           "%u\t"    // r_gaitPhase - uint16_t
           "%u\t"    // l_gaitPhase - uint16_t
-          "%i\t"    // motorDuty - int16_t
+          "%.2f\t"  // motorDuty - fix16_t (convert to float)
           "%.2f\t"  // anklePos - fix16_t (convert to float)
           "%.2f\t"  // ankleVel - fix16_t (convert to float)
           "%.2f\t"  // u_fb - fix16_t (convert to float)
           "%.2f\t"  // u_ff - fix16_t (convert to float)
-          "%i\t"    // adc[0] (motor current) - int16_t
-          "%i\t"    // adc[1] (motor vel) - int16_t
+          "%i\t"    // adc[0] (motor actual current) - int16_t
+          "%i\t"    // adc[1] (motor demand current) - int16_t
           "%i\t"    // adc[2] (amp1s1) - int16_t
           "%i\t"    // adc[3] (amp1s2) - int16_t
           "%i\t"    // adc[4] (amp1s3) - int16_t
@@ -481,7 +481,7 @@ void printState(uint32_t si, FILE *fp)
                 s->state[si].l_percentGait,
                 s->state[si].r_gaitPhase,
                 s->state[si].l_gaitPhase,
-                s->state[si].motorDuty,
+                fix16_to_float(s->state[si].motorDuty),
                 fix16_to_float(s->state[si].anklePos),
                 fix16_to_float(s->state[si].ankleVel),
                 fix16_to_float(s->state[si].u_fb),
@@ -519,7 +519,7 @@ void sprintState(uint8_t si, char* buffer)
           "%u\t"    // l_percentGait - uint16_t
           "%u\t"    // r_gaitPhase - uint16_t
           "%u\t"    // l_gaitPhase - uint16_t
-          "%i\t"    // motorDuty - int16_t
+          "%.2f\t"  // motorDuty - fix16_t (convert to float)
           "%.2f\t"  // anklePos - fix16_t (convert to float)
           "%.2f\t"  // ankleVel - fix16_t (convert to float)
           "%.2f\t"  // u_fb - fix16_t (convert to float)
@@ -550,7 +550,7 @@ void sprintState(uint8_t si, char* buffer)
                 s->state[si].l_percentGait,
                 s->state[si].r_gaitPhase,
                 s->state[si].l_gaitPhase,
-                s->state[si].motorDuty,
+                fix16_to_float(s->state[si].motorDuty),
                 fix16_to_float(s->state[si].anklePos),
                 fix16_to_float(s->state[si].ankleVel),
                 fix16_to_float(s->state[si].u_fb),
@@ -727,7 +727,7 @@ int logFileInit(char* fileName)
   dataLog.fd = 0;
   dataLog.location = 0;
   dataLog.addr = NULL;
-  dataLog.writeBuffer[0] = '\0';
+  memset(&dataLog.writeBuffer[0], 0, sizeof(dataLog.writeBuffer));
 
   // Open file, stretch and write blank
   dataLog.fd = open(fileName, O_RDWR | O_CREAT | O_TRUNC);
@@ -736,7 +736,7 @@ int logFileInit(char* fileName)
     printf("Error stretching file.\n");
     return -1;
   }
-  if (write (dataLog.fd, "", 1) == -1){
+  if (write(dataLog.fd, "", 1) == -1){
     close(dataLog.fd);
     printf("Error writing blank at end of file.\n");
     return -1;

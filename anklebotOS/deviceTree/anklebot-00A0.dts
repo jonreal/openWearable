@@ -169,7 +169,7 @@
         pwm-names = "anklebot";
 
         pwm-frequency = <9250>;
-        pwm-duty-cycle = <35>;
+        pwm-duty-cycle = <50>;
 
         default-brightness = <35>;
 
