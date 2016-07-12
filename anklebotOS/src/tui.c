@@ -45,7 +45,6 @@ int init_tui(void)
     printf("Error setting stdin fd flags.\n");
     return -1;
   }
-//  add_func_to_cleanup(&tui_cleanup);
   printf("TUI initialized.\n");
 
   /* Debug pin */
@@ -121,11 +120,11 @@ int start_tui(void)
 
       switch(inChar){
 
-        // ---- Exit -------------------------------------------------------------
+        // ---- Exit ----------------------------------------------------------
         case 'e' :
           return 1;
 
-        // ---- Set Kp -----------------------------------------------------------
+        // ---- Set Kp --------------------------------------------------------
         case 'a' :
           printf("\t\tEnter new Kp: ");
           fflush(stdout);
@@ -142,7 +141,7 @@ int start_tui(void)
           ptui->io_ready = 0;
           break;
 
-        // ---- Set Kd -----------------------------------------------------------
+        // ---- Set Kd --------------------------------------------------------
         case 's' :
           printf("\t\tEnter new Kd: ");
           fflush(stdout);
@@ -159,7 +158,7 @@ int start_tui(void)
           ptui->io_ready = 0;
           break;
 
-        // ---- Set pos0 ---------------------------------------------------------
+        // ---- Set pos0 ------------------------------------------------------
         case 'd' :
           printf("\t\tEnter new pos0: ");
           fflush(stdout);
@@ -176,7 +175,7 @@ int start_tui(void)
           ptui->io_ready = 0;
           break;
 
-        // ---- Collect trial ----------------------------------------------------
+        // ---- Collect trial -------------------------------------------------
         case 'f' :
           printf("\t\tEnter trial name: ");
           fflush(stdout);
@@ -190,7 +189,10 @@ int start_tui(void)
           scanf(" %s", inString);
           strcat(logFile, inString);
           printf("\t\tSaving data to %s\n",logFile);
+
+          // Init file and circbuff
           logFileInit(logFile);
+          circBuffInit();
 
           // Wait for enter to start saving data
           printf("\t\tPress enter to start collection...\n");
@@ -207,13 +209,11 @@ int start_tui(void)
           ptui->io_ready = 0;
 
           // Data collection loop
-          circBuffInit();
-
           while(1){
 
             logData();
 
-            /* Check for input */
+            // Check for input
             if(ptui->io_ready)
               break;
           }
@@ -350,7 +350,11 @@ int start_tui(void)
           scanf(" %s", inString);
           strcat(logFile, inString);
           printf("\t\tSaving data to %s\n",logFile);
+
+          // Init
           logFileInit(logFile);
+          circBuffInit();
+
 
           // Wait for enter to start saving data
           printf("\t\tPress enter to start collection...\n");
@@ -361,6 +365,7 @@ int start_tui(void)
               break;
           scanf(" %c", &inChar);
 
+
           startFFtest();
 
           // Wait for enter to stop collection
@@ -368,9 +373,7 @@ int start_tui(void)
           fflush(stdout);
           ptui->io_ready = 0;
 
-          // Data collection loop
-          circBuffInit();
-
+          // Data collection
           while(1){
 
             logData();
@@ -404,7 +407,10 @@ int start_tui(void)
           scanf(" %s", inString);
           strcat(logFile, inString);
           printf("\t\tSaving data to %s\n",logFile);
+
+          // Init
           logFileInit(logFile);
+          circBuffInit();
 
           printf("\t\tEnter demand current: ");
           fflush(stdout);
@@ -435,7 +441,6 @@ int start_tui(void)
           ptui->io_ready = 0;
 
           // Data collection loop
-          circBuffInit();
           while(1){
             logData();
 
