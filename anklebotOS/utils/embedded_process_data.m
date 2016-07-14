@@ -183,46 +183,46 @@ function rtn = embedded_process_data(trialName)
   % Segment gait cycles
   if (numel(l_ii) > 1)
     for i=1:(numel(l_ii)-1)
-      rtn.segmentedGaitCycles.l_index(i,:) = [l_ii(i),l_ii(i+1)];
+      rtn.segmentedGaitCycles.l.index(i,:) = [l_ii(i),l_ii(i+1)];
     end
   else
-    rtn.segmentedGaitCycles.l_index = [];
+    rtn.segmentedGaitCycles.l.index = [];
   end
 
   if (numel(r_ii) > 1)
     for i=1:(numel(l_ii)-1)
-      rtn.segmentedGaitCycles.r_index(i,:) = [r_ii(i),r_ii(i+1)];
+      rtn.segmentedGaitCycles.r.index(i,:) = [r_ii(i),r_ii(i+1)];
     end
   else
-    rtn.segmentedGaitCycles.r_index = [];
+    rtn.segmentedGaitCycles.r.index = [];
   end
 
   % Remove gait cycle immediatly before and after and missing data chunck
   if (numel(l_ii) > 1)
     for i=1:numel(startMissingData_index)
       [~,ii] = min(abs(startMissingData_index ...
-                        - rtn.segmentedGaitCycles.l_index(:,1)));
-      rtn.segmentedGaitCycles.l_index(ii,:) = [];
+                        - rtn.segmentedGaitCycles.l.index(:,1)));
+      rtn.segmentedGaitCycles.l.index(ii,:) = [];
     end
 
     for i=1:numel(endMissingData_index)
       [~,ii] = min(abs(endMissingData_index ...
-                        - rtn.segmentedGaitCycles.l_index(:,2)));
-      rtn.segmentedGaitCycles.l_index(ii,:) = [];
+                        - rtn.segmentedGaitCycles.l.index(:,2)));
+      rtn.segmentedGaitCycles.l.index(ii,:) = [];
     end
   end
 
   if (numel(r_ii) > 1)
     for i=1:numel(startMissingData_index)
       [~,ii] = min(abs(startMissingData_index ...
-                        - rtn.segmentedGaitCycles.r_index(:,1)));
-      rtn.segmentedGaitCycles.r_index(ii,:) = [];
+                        - rtn.segmentedGaitCycles.r.index(:,1)));
+      rtn.segmentedGaitCycles.r.index(ii,:) = [];
     end
 
     for i=1:numel(endMissingData_index)
       [~,ii] = min(abs(ednMissingData_index ...
-                        - rtn.segmentedGaitCycles.r_index(:,2)));
-      rtn.segmentedGaitCycles.r_index(ii,:) = [];
+                        - rtn.segmentedGaitCycles.r.index(:,2)));
+      rtn.segmentedGaitCycles.r.index(ii,:) = [];
     end
   end
 
@@ -230,22 +230,22 @@ function rtn = embedded_process_data(trialName)
 
   % Convert to index to time
   if (numel(l_ii) > 1)
-    for i=1:numel(rtn.segmentedGaitCycles.l_index(:,1))
-      rtn.segmentedGaitCycles.l_time(i,:) = ...
-                  [rtn.data.time(rtn.segmentedGaitCycles.l_index(i,1)), ...
-                   rtn.data.time(rtn.segmentedGaitCycles.l_index(i,2))];
+    for i=1:numel(rtn.segmentedGaitCycles.l.index(:,1))
+      rtn.segmentedGaitCycles.l.time(i,:) = ...
+                  [rtn.data.time(rtn.segmentedGaitCycles.l.index(i,1)), ...
+                   rtn.data.time(rtn.segmentedGaitCycles.l.index(i,2))];
     end
   else
-    rtn.segmentedGaitCycles.l_time = [];
+    rtn.segmentedGaitCycles.l.time = [];
   end
 
   if (numel(r_ii) > 1)
-    for i=1:numel(rtn.segmentedGaitCycles.r_index(:,1))
-      rtn.segmentedGaitCycles.r_time(i,:) = ...
-                  [rtn.data.time(rtn.segmentedGaitCycles.r_index(i,1)), ...
-                   rtn.data.time(rtn.segmentedGaitCycles.r_index(i,2))];
+    for i=1:numel(rtn.segmentedGaitCycles.r.index(:,1))
+      rtn.segmentedGaitCycles.r.time(i,:) = ...
+                  [rtn.data.time(rtn.segmentedGaitCycles.r.index(i,1)), ...
+                   rtn.data.time(rtn.segmentedGaitCycles.r.index(i,2))];
     end
   else
-    rtn.segmentedGaitCycles.r_time = [];
+    rtn.segmentedGaitCycles.r.time = [];
   end
 end
