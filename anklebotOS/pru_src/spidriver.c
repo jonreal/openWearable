@@ -7,7 +7,7 @@
 void spiInit(void)
 {
 
-  uint16_t clkdiv_ch0 = 5;
+  uint16_t clkdiv_ch0 = 10;
   uint16_t clkdiv_ch1 = 200;
 
   // CM_PER_SPI1_CLKCTRL: MODULEMODE = 0x2

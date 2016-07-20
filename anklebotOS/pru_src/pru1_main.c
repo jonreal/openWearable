@@ -13,7 +13,7 @@
 #include "encoder.h"
 #include "maxonmotor.h"
 #include "fix16.h"
-
+#include "lsm6ds3imu.h"
 
 #define FIX16_1000  0x3E80000
 
@@ -142,6 +142,8 @@ void initialize(void)
     p->encoderDetect = 0;
 
   motorInit();
+
+  lsm_imuInit();
 
   // Zero some stuff
   p->stepRespCnt = 0;
