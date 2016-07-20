@@ -6,5 +6,5 @@
 0	    // anklePos0
 250  // l_forceThrs
 50    // l_d_forceThrs
-250   // r_forceThrs
+300   // r_forceThrs
 50    // r_d_forceThrs
