@@ -917,6 +917,7 @@ int loadLookUpTable(char* file)
     fclose(fp);
     return 0;
   }
+  printf("File not found\n");
   return -1;
 }
 
