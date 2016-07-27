@@ -142,11 +142,12 @@ void initialize(void)
 
   motorInit();
 
+  //encoderSetZeroAngle();
+
   // Zero some stuff
   p->stepRespCnt = 0;
   p->stepRespFlag = 0;
   p->stepCurrent = 0;
-
   p->FFgain = 0;
 }
 
