@@ -275,7 +275,7 @@ int start_tui(void)
           ptui->io_ready = 0;
           break;
 
-        // ---- Load Parameters -----------------------------------------------
+        // ---- Load Lookup -----------------------------------------------
         case 'j' :
           printf("\t\tEnter lookup table file name: ");
           fflush(stdout);
@@ -292,7 +292,7 @@ int start_tui(void)
           strcat(configFile, inString);
           printf("\t\tLoading lookup table from %s\n",configFile);
           fflush(stdout);
-          loadParameters(configFile);
+          loadLookUpTable(configFile);
           configFile[0] = '\0';
           strcat(configFile, "config/");
           tui_menu();
