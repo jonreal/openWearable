@@ -190,7 +190,7 @@ function rtn = embedded_process_data(trialName)
   end
 
   if (numel(r_ii) > 1)
-    for i=1:(numel(l_ii)-1)
+    for i=1:(numel(r_ii)-1)
       rtn.segmentedGaitCycles.r.index(i,:) = [r_ii(i),r_ii(i+1)];
     end
   else
@@ -220,7 +220,7 @@ function rtn = embedded_process_data(trialName)
     end
 
     for i=1:numel(endMissingData_index)
-      [~,ii] = min(abs(ednMissingData_index ...
+      [~,ii] = min(abs(endMissingData_index ...
                         - rtn.segmentedGaitCycles.r.index(:,2)));
       rtn.segmentedGaitCycles.r.index(ii,:) = [];
     end
