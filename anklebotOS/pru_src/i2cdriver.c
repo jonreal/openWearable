@@ -19,7 +19,7 @@ void i2cInit(void)
   I2CAutoIdleDisable(SOC_I2C_1_REGS);
 
   /* Bus speed 400 kHz */
-  I2CMasterInitExpClk(SOC_I2C_1_REGS, 48000000, 12000000, 400000);
+  I2CMasterInitExpClk(SOC_I2C_1_REGS, 48000000, 12000000, 300000);
 
   /* Enable */
   I2CMasterEnable(SOC_I2C_1_REGS);
@@ -239,5 +239,63 @@ void i2cTxByte(uint8_t addr, uint8_t reg, uint8_t tx)
   i2cClearInterrupts();
 }
 
+void i2cTxBurst(uint8_t addr, uint8_t reg, uint16_t len, uint8_t* tx)
+{
+  uint16_t i = 0;
+
+  i2cClearInterrupts();
+
+  /* Slave address */
+  I2CMasterSlaveAddrSet(SOC_I2C_1_REGS, addr);
+
+  /* Tx: 2 bytes  devReg, Tx */
+  I2CSetDataCount(SOC_I2C_1_REGS, (0x1 + len));
+
+  /* Configure as master transmitter */
+  I2CMasterControl(SOC_I2C_1_REGS, I2C_CFG_MST_TX);
+
+  /* Enable transmit, recieve and registers ready interrupt */
+  I2CMasterIntEnableEx(SOC_I2C_1_REGS, I2C_INT_TRANSMIT_READY
+                                  | I2C_INT_RECV_READY
+                                  | I2C_INT_ADRR_READY_ACESS);
+
+  /* Make sure bus is free */
+  while(I2CMasterBusBusy(SOC_I2C_1_REGS));
+
+  /* Start condition */
+  I2CMasterStart(SOC_I2C_1_REGS);
+
+  /* Wait for transmit ready */
+  while(!(I2CMasterIntStatusEx(SOC_I2C_1_REGS, I2C_INT_TRANSMIT_READY)));
+
+  /* Write devive register (devReg) to fifo */
+  I2CMasterDataPut(SOC_I2C_1_REGS, reg);
+
+  /* Clear int */
+  I2CMasterIntClearEx(SOC_I2C_1_REGS, I2C_INT_TRANSMIT_READY);
+
+  while(I2CDataCountGet(SOC_I2C_1_REGS) != 0){
+
+    /* Wait for transmit ready */
+    while(!(I2CMasterIntStatusEx(SOC_I2C_1_REGS, I2C_INT_TRANSMIT_READY)));
+
+    /* Write payload to fifo */
+    I2CMasterDataPut(SOC_I2C_1_REGS, tx[i++]);
+
+    /* Clear int */
+    I2CMasterIntClearEx(SOC_I2C_1_REGS, I2C_INT_TRANSMIT_READY);
+  }
+
+  /* Wait for registers ready */
+  while(!(I2CMasterIntStatusEx(SOC_I2C_1_REGS, I2C_INT_ADRR_READY_ACESS)));
+
+  /* Clear int */
+  I2CMasterIntClearEx(SOC_I2C_1_REGS, I2C_INT_ADRR_READY_ACESS);
+
+  /* Stop condition */
+  I2CMasterStop(SOC_I2C_1_REGS);
+
+  i2cClearInterrupts();
+}
 
 

@@ -13,6 +13,9 @@
 #include "encoder.h"
 #include "maxonmotor.h"
 #include "fix16.h"
+#include "i2cdriver.h"
+#include "fyberHaptic.h"
+
 
 #define FIX16_1000  0x3E80000
 
@@ -132,6 +135,7 @@ void initialize(void)
   interruptInit();
 
   // Modules
+  i2cInit();
   spiInit();
 
   // Add pru dependent peripheral init methods here
@@ -141,8 +145,12 @@ void initialize(void)
     p->encoderDetect = 0;
 
   motorInit();
+  hapticInit();
 
-  //encoderSetZeroAngle();
+  __delay_cycles(100000);
+  hapticSetWaveForm();
+
+
 
   // Zero some stuff
   p->stepRespCnt = 0;
@@ -245,6 +253,7 @@ void cleanUp(void)
   // Add pru dependent peripheral cleanup methods here
   encoderCleanUp();
   motorCleanUp();
+  hapticCleanUp();
 
   // Cleanup modules
   spiCleanUp();
