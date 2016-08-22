@@ -19,7 +19,7 @@ void i2cInit(void)
   I2CAutoIdleDisable(SOC_I2C_1_REGS);
 
   /* Bus speed 400 kHz */
-  I2CMasterInitExpClk(SOC_I2C_1_REGS, 48000000, 12000000, 300000);
+  I2CMasterInitExpClk(SOC_I2C_1_REGS, 48000000, 12000000, 400000);
 
   /* Enable */
   I2CMasterEnable(SOC_I2C_1_REGS);
@@ -211,6 +211,7 @@ void i2cTxByte(uint8_t addr, uint8_t reg, uint8_t tx)
 
   /* Wait for transmit ready */
   while(!(I2CMasterIntStatusEx(SOC_I2C_1_REGS, I2C_INT_TRANSMIT_READY)));
+
 
   /* Write devive register (devReg) to fifo */
   I2CMasterDataPut(SOC_I2C_1_REGS, reg);

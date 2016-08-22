@@ -146,9 +146,8 @@ void initialize(void)
 
   motorInit();
   hapticInit();
-
   __delay_cycles(100000);
-  hapticSetWaveForm();
+ // hapticSetWaveForm();
 
 
 
@@ -172,6 +171,9 @@ void updateControl(uint32_t cnt, uint32_t si)
   fix16_t u_fb = 0;
   fix16_t u_ff = 0;
   uint32_t t_cnts, t1, Tp;
+
+
+  setAmplitude(cnt,50);
 
   // Step Response
   if (s->cntrl_bit.stepResp == 1){
