@@ -316,19 +316,6 @@ void zeroState(uint32_t si)
 {
   s->state[si].timeStamp = 0;
   s->state[si].sync = 0;
-  s->state[si].r_hsStamp = 0;
-  s->state[si].l_hsStamp = 0;
-  s->state[si].r_meanGaitPeriod = 0;
-  s->state[si].l_meanGaitPeriod = 0;
-  s->state[si].r_percentGait = 0;
-  s->state[si].l_percentGait = 0;
-  s->state[si].r_gaitPhase = 0;
-  s->state[si].l_gaitPhase = 0;
-  s->state[si].motorDuty = 0;
-  s->state[si].anklePos = 0;
-  s->state[si].ankleVel = 0;
-  s->state[si].u_fb = 0;
-  s->state[si].u_ff = 0;
   s->state[si].adc[0] = 0;
   s->state[si].adc[1] = 0;
   s->state[si].adc[2] = 0;
@@ -337,12 +324,12 @@ void zeroState(uint32_t si)
   s->state[si].adc[5] = 0;
   s->state[si].adc[6] = 0;
   s->state[si].adc[7] = 0;
-  s->state[si].imu[0] = 0;
-  s->state[si].imu[1] = 0;
-  s->state[si].imu[2] = 0;
-  s->state[si].imu[3] = 0;
-  s->state[si].imu[4] = 0;
-  s->state[si].imu[5] = 0;
+  s->state[si].hapticAmp[0] = 0;
+  s->state[si].hapticAmp[1] = 0;
+  s->state[si].hapticAmp[2] = 0;
+  s->state[si].hapticAmp[3] = 0;
+  s->state[si].hapticAmp[4] = 0;
+  s->state[si].hapticAmp[5] = 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -358,35 +345,18 @@ void printStateHeader(FILE *fp)
   fprintf(fp,
           "\n# frame\t"
           "sync\t"
-          "r_hs\t"
-          "l_hs\t"
-          "r_Tp\t"
-          "l_Tp\t"
-          "r_Pgait\t"
-          "l_Pgait\t"
-          "r_gp\t"
-          "l_gp\t"
-          "duty\t"
-          "ankPos\t"
-          "ankVel\t"
-          "u_fb\t"
-          "u_ff\t"
-          "mtrCurr\t"
-          "mtrCurr_d\t"
-          "l_s1\t"
-          "l_s2\t"
-          "l_s3\t"
-          "r_s1\t"
-          "r_s2\t"
-          "r_s3\t"
-          "l_d_s3\t"
-          "r_d_s3\t"
-          "imu0\t"
-          "imu1\t"
-          "imu2\t"
-          "imu3\t"
-          "imu4\t"
-          "imu5"
+          "s1\t"
+          "s2\t"
+          "s3\t"
+          "s4\t"
+          "s5\t"
+          "s6\t"
+          "amp1\t"
+          "amp2\t"
+          "amp3\t"
+          "amp4\t"
+          "amp5\t"
+          "amp6\t"
           "\n");
   fflush(fp);
 }
@@ -396,35 +366,18 @@ void sprintStateHeader(char* buffer)
   sprintf(buffer,
           "\n# frame\t"
           "sync\t"
-          "r_hs\t"
-          "l_hs\t"
-          "r_Tp\t"
-          "l_Tp\t"
-          "r_Pgait\t"
-          "l_Pgait\t"
-          "r_gp\t"
-          "l_gp\t"
-          "duty\t"
-          "ankPos\t"
-          "ankVel\t"
-          "u_fb\t"
-          "u_ff\t"
-          "mtrCurr\t"
-          "mtrCurr_d\t"
-          "l_s1\t"
-          "l_s2\t"
-          "l_s3\t"
-          "r_s1\t"
-          "r_s2\t"
-          "r_s3\t"
-          "l_d_s3\t"
-          "r_d_s3\t"
-          "imu0\t"
-          "imu1\t"
-          "imu2\t"
-          "imu3\t"
-          "imu4\t"
-          "imu5"
+          "s1\t"
+          "s2\t"
+          "s3\t"
+          "s4\t"
+          "s5\t"
+          "s6\t"
+          "amp1\t"
+          "amp2\t"
+          "amp3\t"
+          "amp4\t"
+          "amp5\t"
+          "amp6"
           "\n");
 }
 
@@ -442,66 +395,32 @@ void printState(uint32_t si, FILE *fp)
   fprintf(fp,
           "%u\t"    // timeStamp - uint32_t
           "%u\t"    // sync - uint16_t
-          "%u\t"    // r_hsStamp - uint32_t
-          "%u\t"    // l_hsStamp - uint32_t
-          "%u\t"    // r_meanGaitPeriod - uint16_t
-          "%u\t"    // l_meanGaitPeriod - uint16_t
-          "%u\t"    // r_percentGait - uint16_t
-          "%u\t"    // l_percentGait - uint16_t
-          "%u\t"    // r_gaitPhase - uint16_t
-          "%u\t"    // l_gaitPhase - uint16_t
-          "%.2f\t"  // motorDuty - fix16_t (convert to float)
-          "%.2f\t"  // anklePos - fix16_t (convert to float)
-          "%.2f\t"  // ankleVel - fix16_t (convert to float)
-          "%.2f\t"  // u_fb - fix16_t (convert to float)
-          "%.2f\t"  // u_ff - fix16_t (convert to float)
-          "%i\t"    // adc[0] (motor actual current) - int16_t
-          "%i\t"    // adc[1] (motor demand current) - int16_t
           "%i\t"    // adc[2] (amp1s1) - int16_t
           "%i\t"    // adc[3] (amp1s2) - int16_t
           "%i\t"    // adc[4] (amp1s3) - int16_t
           "%i\t"    // adc[5] (amp2s1) - int16_t
           "%i\t"    // adc[6] (amp2s2) - int16_t
           "%i\t"    // adc[7] (amp2s3) - int16_t
-          "%i\t"    // heelVel - int16_t
-          "%i\t"    // heelVel - int16_t
-          "%i\t"    // imu[0] - int16_t
-          "%i\t"    // imu[1] - int16_t
-          "%i\t"    // imu[2] - int16_t
-          "%i\t"    // imu[3] - int16_t
-          "%i\t"    // imu[4] - int16_t
-          "%i\t"    // imu[5] - int16_t
+          "%i\t"    // hapticAmp[0] - int8_t
+          "%i\t"    // hapticAmp[1] - int8_t
+          "%i\t"    // hapticAmp[2] - int8_t
+          "%i\t"    // hapticAmp[3] - int8_t
+          "%i\t"    // hapticAmp[4] - int8_t
+          "%i\t"    // hapticAmp[5] - int8_t
           "\n", s->state[si].timeStamp,
                 s->state[si].sync,
-                s->state[si].r_hsStamp,
-                s->state[si].l_hsStamp,
-                s->state[si].r_meanGaitPeriod,
-                s->state[si].l_meanGaitPeriod,
-                s->state[si].r_percentGait,
-                s->state[si].l_percentGait,
-                s->state[si].r_gaitPhase,
-                s->state[si].l_gaitPhase,
-                fix16_to_float(s->state[si].motorDuty),
-                fix16_to_float(s->state[si].anklePos),
-                fix16_to_float(s->state[si].ankleVel),
-                fix16_to_float(s->state[si].u_fb),
-                fix16_to_float(s->state[si].u_ff),
-                s->state[si].adc[0],
-                s->state[si].adc[1],
                 s->state[si].adc[2],
                 s->state[si].adc[3],
                 s->state[si].adc[4],
                 s->state[si].adc[5],
                 s->state[si].adc[6],
                 s->state[si].adc[7],
-                s->state[si].d_heelForce[0],
-                s->state[si].d_heelForce[1],
-                s->state[si].imu[0],
-                s->state[si].imu[1],
-                s->state[si].imu[2],
-                s->state[si].imu[3],
-                s->state[si].imu[4],
-                s->state[si].imu[5]
+                s->state[si].hapticAmp[0],
+                s->state[si].hapticAmp[1],
+                s->state[si].hapticAmp[2],
+                s->state[si].hapticAmp[3],
+                s->state[si].hapticAmp[4],
+                s->state[si].hapticAmp[5]
                );
   fflush(fp);
 }
@@ -511,66 +430,32 @@ void sprintState(uint8_t si, char* buffer)
   sprintf(buffer,
           "%u\t"    // timeStamp - uint32_t
           "%u\t"    // sync - uint16_t
-          "%u\t"    // r_hsStamp - uint32_t
-          "%u\t"    // l_hsStamp - uint32_t
-          "%u\t"    // r_meanGaitPeriod - uint16_t
-          "%u\t"    // l_meanGaitPeriod - uint16_t
-          "%u\t"    // r_percentGait - uint16_t
-          "%u\t"    // l_percentGait - uint16_t
-          "%u\t"    // r_gaitPhase - uint16_t
-          "%u\t"    // l_gaitPhase - uint16_t
-          "%.2f\t"  // motorDuty - fix16_t (convert to float)
-          "%.2f\t"  // anklePos - fix16_t (convert to float)
-          "%.2f\t"  // ankleVel - fix16_t (convert to float)
-          "%.2f\t"  // u_fb - fix16_t (convert to float)
-          "%.2f\t"  // u_ff - fix16_t (convert to float)
-          "%i\t"    // adc[0] (motor current) - int16_t
-          "%i\t"    // adc[1] (motor vel) - int16_t
           "%i\t"    // adc[2] (amp1s1) - int16_t
           "%i\t"    // adc[3] (amp1s2) - int16_t
           "%i\t"    // adc[4] (amp1s3) - int16_t
           "%i\t"    // adc[5] (amp2s1) - int16_t
           "%i\t"    // adc[6] (amp2s2) - int16_t
           "%i\t"    // adc[7] (amp2s3) - int16_t
-          "%i\t"    // heelVel - int16_t
-          "%i\t"    // heelVel - int16_t
-          "%i\t"    // imu[0] - int16_t
-          "%i\t"    // imu[1] - int16_t
-          "%i\t"    // imu[2] - int16_t
-          "%i\t"    // imu[3] - int16_t
-          "%i\t"    // imu[4] - int16_t
-          "%i"    // imu[5] - int16_t
+          "%i\t"    // hapticAmp[0] - int8_t
+          "%i\t"    // hapticAmp[1] - int8_t
+          "%i\t"    // hapticAmp[2] - int8_t
+          "%i\t"    // hapticAmp[3] - int8_t
+          "%i\t"    // hapticAmp[4] - int8_t
+          "%i\t"    // hapticAmp[5] - int8_t
           "\n", s->state[si].timeStamp,
                 s->state[si].sync,
-                s->state[si].r_hsStamp,
-                s->state[si].l_hsStamp,
-                s->state[si].r_meanGaitPeriod,
-                s->state[si].l_meanGaitPeriod,
-                s->state[si].r_percentGait,
-                s->state[si].l_percentGait,
-                s->state[si].r_gaitPhase,
-                s->state[si].l_gaitPhase,
-                fix16_to_float(s->state[si].motorDuty),
-                fix16_to_float(s->state[si].anklePos),
-                fix16_to_float(s->state[si].ankleVel),
-                fix16_to_float(s->state[si].u_fb),
-                fix16_to_float(s->state[si].u_ff),
-                s->state[si].adc[0],
-                s->state[si].adc[1],
                 s->state[si].adc[2],
                 s->state[si].adc[3],
                 s->state[si].adc[4],
                 s->state[si].adc[5],
                 s->state[si].adc[6],
                 s->state[si].adc[7],
-                s->state[si].d_heelForce[0],
-                s->state[si].d_heelForce[1],
-                s->state[si].imu[0],
-                s->state[si].imu[1],
-                s->state[si].imu[2],
-                s->state[si].imu[3],
-                s->state[si].imu[4],
-                s->state[si].imu[5]
+                s->state[si].hapticAmp[0],
+                s->state[si].hapticAmp[1],
+                s->state[si].hapticAmp[2],
+                s->state[si].hapticAmp[3],
+                s->state[si].hapticAmp[4],
+                s->state[si].hapticAmp[5]
                );
 }
 
@@ -669,46 +554,46 @@ float pruTicksToHz(uint32_t ticks)
   return 1/((float)ticks/200000000.0);
 }
 
-/* ----------------------------------------------------------------------------
- * Functions: void setN(float N)
- *
- * These function set params - where N is the param.
- * ------------------------------------------------------------------------- */
-void setKp(float newKp)
-{
-  p->Kp = (fix16_t) fix16_from_float(newKp);
-}
-
-void setKd(float newKd)
-{
-  p->Kd = (fix16_t) fix16_from_float(newKd);
-}
-
-void setAnklePos0(float newAnklePos0)
-{
-  p->anklePos0 = (fix16_t) fix16_from_float(newAnklePos0);
-}
-
-/* ----------------------------------------------------------------------------
- * Functions: uint16_t getN(float N)
- *
- * These functions return param values - where N is the param.
- * ------------------------------------------------------------------------- */
-float getKp(void)
-{
-  return fix16_to_float(p->Kp);
-}
-
-float getKd(void)
-{
-  return fix16_to_float(p->Kd);
-}
-
-float getAnklePos0(void)
-{
-  return fix16_to_float(p->anklePos0);
-}
-
+///* ----------------------------------------------------------------------------
+// * Functions: void setN(float N)
+// *
+// * These function set params - where N is the param.
+// * ------------------------------------------------------------------------- */
+//void setKp(float newKp)
+//{
+//  p->Kp = (fix16_t) fix16_from_float(newKp);
+//}
+//
+//void setKd(float newKd)
+//{
+//  p->Kd = (fix16_t) fix16_from_float(newKd);
+//}
+//
+//void setAnklePos0(float newAnklePos0)
+//{
+//  p->anklePos0 = (fix16_t) fix16_from_float(newAnklePos0);
+//}
+//
+///* ----------------------------------------------------------------------------
+// * Functions: uint16_t getN(float N)
+// *
+// * These functions return param values - where N is the param.
+// * ------------------------------------------------------------------------- */
+//float getKp(void)
+//{
+//  return fix16_to_float(p->Kp);
+//}
+//
+//float getKd(void)
+//{
+//  return fix16_to_float(p->Kd);
+//}
+//
+//float getAnklePos0(void)
+//{
+//  return fix16_to_float(p->anklePos0);
+//}
+//
 /* ----------------------------------------------------------------------------
  * Functions: int logFileInit(char* fileName)
  *
@@ -802,14 +687,6 @@ void saveParameters(char* file)
   if(fp != NULL){
     fprintf(fp, "%i\t// Freq.\n", p->frq_hz);
     fprintf(fp, "%i\t// Freq. Ticks\n", 0);
-    fprintf(fp, "%i\t// Subject Mass\n", p->mass);
-    fprintf(fp, "%.2f\t// Kp\n", fix16_to_float(p->Kp));
-    fprintf(fp, "%.2f\t// Kd\n", fix16_to_float(p->Kd));
-    fprintf(fp, "%.2f\t// anklePos0\n", fix16_to_float(p->anklePos0));
-    fprintf(fp, "%i\t// l_forceThrs\n", p->l_forceThrs);
-    fprintf(fp, "%i\t// l_d_forceThrs\n", p->l_d_forceThrs);
-    fprintf(fp, "%i\t// r_forceThrs\n", p->r_forceThrs);
-    fprintf(fp, "%i\t// l_d_forceThrs\n", p->r_d_forceThrs);
     fclose(fp);
   }
   else{
@@ -830,23 +707,7 @@ int loadParameters(char* file)
   if(fp != NULL){
     fscanf(fp, "%u%*[^\n]\n", &p->frq_hz);
     fscanf(fp, "%u%*[^\n]\n", &p->frq_clock_ticks);
-    fscanf(fp, "%u%*[^\n]\n", &p->mass);
-
-    fscanf(fp, "%f%*[^\n]\n", &t1);
-    p->Kp = fix16_from_float(t1);
-
-    fscanf(fp, "%f%*[^\n]\n", &t1);
-    p->Kd = fix16_from_float(t1);
-
-    fscanf(fp, "%f%*[^\n]\n", &t1);
-    p->anklePos0 = fix16_from_float(t1);
-
-    fscanf(fp, "%u%*[^\n]\n", &p->l_forceThrs);
-    fscanf(fp, "%u%*[^\n]\n", &p->l_d_forceThrs);
-    fscanf(fp, "%u%*[^\n]\n", &p->r_forceThrs);
-    fscanf(fp, "%u%*[^\n]\n", &p->r_d_forceThrs);
-
-
+    fscanf(fp, "%u%*[^\n]\n", &p->hapticMode);
     fclose(fp);
     p->frq_clock_ticks = hzToPruTicks(p->frq_hz);
 
@@ -865,36 +726,20 @@ void printParameters(FILE *fp)
   fprintf(fp, "\n#Parameters:\n"
           "#\tFrq = %i (Hz)\n"
           "#\tTicks = %i\n"
-          "#\tKp = %.4f\n"
-          "#\tKd = %.4f\n"
-          "#\tanklePos0 = %.4f\n"
-          "#\tl_forceThrs = %i\n"
-          "#\tl_d_forceThrs = %i\n"
-          "#\tr_forceThrs = %i\n"
-          "#\tr_d_forceThrs = %i\n#",
+          "#\thapticMode = %i\n#",
           p->frq_hz, p->frq_clock_ticks,
-          fix16_to_float(p->Kp), fix16_to_float(p->Kd),
-          fix16_to_float(p->anklePos0), p->l_forceThrs,
-          p->l_d_forceThrs, p->r_forceThrs, p->r_d_forceThrs);
+          p->hapticMode);
   fflush(fp);
 }
 
 void sprintParameters(char* buffer)
 {
   sprintf(buffer, "\n#Parameters:\n"
-                  "#\tFrq = %i (Hz)\n"
-                  "#\tTicks = %i\n"
-                  "#\tKp = %.4f\n"
-                  "#\tKd = %.4f\n"
-                  "#\tanklePos0 = %.4f\n"
-                  "#\tl_forceThrs = %i\n"
-                  "#\tl_d_forceThrs = %i\n"
-                  "#\tr_forceThrs = %i\n"
-                  "#\tr_d_forceThrs = %i\n#",
-                  p->frq_hz, p->frq_clock_ticks,
-                  fix16_to_float(p->Kp), fix16_to_float(p->Kd),
-                  fix16_to_float(p->anklePos0), p->l_forceThrs,
-                  p->l_d_forceThrs, p->r_forceThrs, p->r_d_forceThrs);
+          "#\tFrq = %i (Hz)\n"
+          "#\tTicks = %i\n"
+          "#\thapticMode = %i\n#",
+          p->frq_hz, p->frq_clock_ticks,
+          p->hapticMode);
 }
 
 
@@ -1001,44 +846,44 @@ void printFFLookUpTable(FILE *fp)
   }
 }
 
-void setFFenable(int en)
-{
-  if(en == 1){
-    s->cntrl_bit.doFeedForward = 1;
-    p->FFgain = 0;
-  }
-  else {
-    s->cntrl_bit.doFeedForward = 0;
-    p->FFgain = 0;
-  }
-}
-
-int getFFenable(void)
-{
-  return (s->cntrl_bit.doFeedForward);
-}
-
-float getFFgain(void)
-{
-  return fix16_to_float(p->FFgain);
-}
-
-void setFFgain(float gain)
-{
-  if (gain > 1.0)
-    gain = 1.0;
-  p->FFgain = fix16_from_float(gain);
-}
-
-void startFFtest(void)
-{
-  s->cntrl_bit.testFF = 1;
-}
-
-void stopFFtest(void)
-{
-  s->cntrl_bit.testFF = 0;
-}
+//void setFFenable(int en)
+//{
+//  if(en == 1){
+//    s->cntrl_bit.doFeedForward = 1;
+//    p->FFgain = 0;
+//  }
+//  else {
+//    s->cntrl_bit.doFeedForward = 0;
+//    p->FFgain = 0;
+//  }
+//}
+//
+//int getFFenable(void)
+//{
+//  return (s->cntrl_bit.doFeedForward);
+//}
+//
+//float getFFgain(void)
+//{
+//  return fix16_to_float(p->FFgain);
+//}
+//
+//void setFFgain(float gain)
+//{
+//  if (gain > 1.0)
+//    gain = 1.0;
+//  p->FFgain = fix16_from_float(gain);
+//}
+//
+//void startFFtest(void)
+//{
+//  s->cntrl_bit.testFF = 1;
+//}
+//
+//void stopFFtest(void)
+//{
+//  s->cntrl_bit.testFF = 0;
+//}
 
 
 int closeLogFile(void)
@@ -1058,32 +903,42 @@ int closeLogFile(void)
   return 0;
 }
 
-void setTareEncoderBit(void)
+int getHapticMode(void)
 {
-  s->cntrl_bit.encoderTare = 1;
+  return p->hapticMode;
 }
 
-void setStepCurrent(float cur)
+void setHapticMode(int mode)
 {
-  p->stepCurrent = fix16_from_float(cur);
+  p->hapticMode = mode;
 }
 
-void startStepResponse(void)
-{
-  s->cntrl_bit.stepResp = 1;
-}
-
-void resetStepRespVars(void)
-{
-  s->cntrl_bit.stepResp = 0;
-  p->stepCurrent = 0;
-  p->stepRespFlag = 0;
-  p->stepRespCnt = 0;
-}
-
-void resetGP(void)
-{
-  s->cntrl_bit.resetGaitPhase = 1;
-}
+//void setTareEncoderBit(void)
+//{
+//  s->cntrl_bit.encoderTare = 1;
+//}
+//
+//void setStepCurrent(float cur)
+//{
+//  p->stepCurrent = fix16_from_float(cur);
+//}
+//
+//void startStepResponse(void)
+//{
+//  s->cntrl_bit.stepResp = 1;
+//}
+//
+//void resetStepRespVars(void)
+//{
+//  s->cntrl_bit.stepResp = 0;
+//  p->stepCurrent = 0;
+//  p->stepRespFlag = 0;
+//  p->stepRespCnt = 0;
+//}
+//
+//void resetGP(void)
+//{
+//  s->cntrl_bit.resetGaitPhase = 1;
+//}
 
 

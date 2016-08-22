@@ -97,4 +97,7 @@ void resetStepRespVars(void);
 
 void resetGP(void);
 
+int getHapticMode(void);
+void setHapticMode(int mode);
+
 #endif

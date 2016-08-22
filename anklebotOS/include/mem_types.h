@@ -15,10 +15,11 @@
 #define PRU0_ARM_INT  (19 + 16)
 #define PRU1_ARM_INT  (20 + 16)
 
-#define SIZE_STATE_BUFF   149
+#define SIZE_STATE_BUFF   255
 
 #define NUM_ADC     8
 #define NUM_IMU     6
+#define NUM_HAPTICS 6
 
 #define NUM_FF_LT         1000
 
@@ -45,25 +46,8 @@
 typedef struct{
   volatile uint32_t timeStamp;
   volatile uint32_t sync;
-  volatile uint32_t r_hsStamp;
-  volatile uint32_t l_hsStamp;
-
-  volatile uint16_t r_meanGaitPeriod;
-  volatile uint16_t l_meanGaitPeriod;
-  volatile uint16_t r_percentGait;
-  volatile uint16_t l_percentGait;
-  volatile uint16_t l_gaitPhase;
-  volatile uint16_t r_gaitPhase;
-
-  volatile fix16_t motorDuty;
-  volatile fix16_t anklePos;
-  volatile fix16_t ankleVel;
-  volatile fix16_t u_fb;
-  volatile fix16_t u_ff;
-
   volatile int16_t adc[NUM_ADC];
-  volatile int16_t imu[NUM_IMU];
-  volatile int16_t d_heelForce[2];
+  volatile int8_t hapticAmp[8];
 } state_t;
 
 
@@ -81,13 +65,7 @@ typedef struct{
       unsigned pru0_done : 1;       // bit 1 (set by pru0, read/reset by pru1)
       unsigned pru1_done : 1;       // bit 2 (set by pru1, read/reset by pru0)
       unsigned shdw_enable : 1;     // bit 3 (shawdow reg. for enable)
-      unsigned encoderTare : 1;     // bit 4 (set by arm, read/reset by pru1)
-      unsigned doFeedForward : 1;   // bit 5 (set by arm, read by pru1)
-      unsigned gaitPhaseReady: 1;   // bit 6 (set by pru0, read by pru1)
-      unsigned resetGaitPhase : 1;  // bit 7
-      unsigned testFF : 1;          // bit 8 (set by arm, reset by arm)
-      unsigned stepResp : 1;        // bit 9 (set by arm, reset by pru1)
-      unsigned rsvd : 6;            // bits 10-15 reserved
+      unsigned rsvd : 12;            // bits 4-15 reserved
    } cntrl_bit;
   };
 } shared_mem_t;
@@ -109,38 +87,7 @@ typedef struct{
 typedef struct{
   volatile uint32_t frq_hz;
   volatile uint32_t frq_clock_ticks;
-  volatile uint32_t mass;
-
-  volatile fix16_t Kp;
-  volatile fix16_t Kd;
-  volatile fix16_t anklePos0;
-
-  volatile int32_t l_forceThrs;
-  volatile int32_t r_forceThrs;
-  volatile int32_t l_d_forceThrs;
-  volatile int32_t r_d_forceThrs;
-
-  volatile uint32_t l_prevGaitPhase;
-  volatile uint32_t r_prevGaitPhase;
-  volatile uint32_t l_prevHsStamp;
-  volatile uint32_t r_prevHsStamp;
-  volatile uint32_t l_prevPeriod;
-  volatile uint32_t r_prevPeriod;
-
-  volatile fix16_t l_period[3];
-  volatile fix16_t r_period[3];
-  volatile uint32_t numOfSteps;
-  volatile uint32_t gaitDetectReady;
-
-  volatile uint32_t stepRespCnt;
-  volatile uint32_t stepRespFlag;
-  volatile fix16_t stepCurrent;
-
-  volatile fix16_t FFgain;
-
-  volatile uint32_t encoderDetect;
-  volatile uint32_t imuDetect;
-
+  volatile uint32_t hapticMode;
   iir_coeff_t filt;
   iir_buff_t filtBuffer[6];
 

@@ -73,22 +73,12 @@ void io_cb(int sig)
 void tui_menu(void)
 {
   printf("\n\n---------------------------------------------------------------------\n"
-          "Kp = %3.2f, Kd = %3.2f, pos0 = %3.2f, FF enabled = %d, FFgain = %3.2f\n"
-          "Menu: a - Enter new Kp\n"
-          "      s - Enter new Kd\n"
-          "      d - Enter new pos_0 (deg)\n"
-          "      f - Collect trial\n"
-          "      g - Save parameters\n"
-          "      h - Load parameters\n"
-          "      j - Load Feedforward lookup table\n"
-          "      k - Toggle feedforward control\n"
-          "      l - Enter new FFgain\n"
-          "      o - Tare encoder angle\n"
-          "      p - Test Feedforward\n"
-          "      q - Step Response\n"
+          "Haptic Mode = %d\n"
+          "Menu: a - Change Haptic Mode\n"
+          "      s - Collect trial\n"
           "      e - exit\n"
           "-----------------------------------------------------------------------\n",
-          getKp(), getKd(), getAnklePos0(), getFFenable(), getFFgain());
+          getHapticMode());
   fflush(stdout);
 }
 
@@ -103,6 +93,7 @@ int start_tui(void)
   char inString[256];
 
   char logFile[256] = "datalog/";
+
   char configFile[256] = "config/";
 
   tui_menu();
@@ -124,9 +115,9 @@ int start_tui(void)
         case 'e' :
           return 1;
 
-        // ---- Set Kp --------------------------------------------------------
+        // ---- Set Haptic Mode -----------------------------------------------
         case 'a' :
-          printf("\t\tEnter new Kp: ");
+          printf("\t\tEnter new mode (0 | 1 | 2 | 3): ");
           fflush(stdout);
           ptui->io_ready = 0;
 
@@ -135,48 +126,15 @@ int start_tui(void)
             if(ptui->io_ready)
               break;
 
-          scanf(" %f", &inFloat);
-          setKp(inFloat);
+          scanf(" %d", &inChar);
+          setHapticMode(inChar);
           tui_menu();
           ptui->io_ready = 0;
           break;
 
-        // ---- Set Kd --------------------------------------------------------
-        case 's' :
-          printf("\t\tEnter new Kd: ");
-          fflush(stdout);
-          ptui->io_ready = 0;
-
-          // Wait for user input.
-          while(1)
-            if(ptui->io_ready)
-              break;
-
-          scanf(" %f", &inFloat);
-          setKd(inFloat);
-          tui_menu();
-          ptui->io_ready = 0;
-          break;
-
-        // ---- Set pos0 ------------------------------------------------------
-        case 'd' :
-          printf("\t\tEnter new pos0: ");
-          fflush(stdout);
-          ptui->io_ready = 0;
-
-          // Wait for user input.
-          while(1)
-            if(ptui->io_ready)
-              break;
-
-          scanf(" %f", &inFloat);
-          setAnklePos0(inFloat);
-          tui_menu();
-          ptui->io_ready = 0;
-          break;
 
         // ---- Collect trial -------------------------------------------------
-        case 'f' :
+        case 's' :
           printf("\t\tEnter trial name: ");
           fflush(stdout);
           ptui->io_ready = 0;
@@ -218,239 +176,6 @@ int start_tui(void)
               break;
           }
           scanf(" %c", &inChar);
-
-          closeLogFile();
-          logFile[0] = '\0';
-          strcat(logFile, "datalog/");
-          tui_menu();
-          fflush(stdout);
-          ptui->io_ready = 0;
-          break;
-
-        // ---- Save Parameters -----------------------------------------------
-        case 'g' :
-          printf("\t\tEnter parameter file name: ");
-          fflush(stdout);
-          ptui->io_ready = 0;
-
-          // Wait for user input
-          while(1)
-            if(ptui->io_ready)
-              break;
-
-          scanf(" %s", inString);
-
-          /* Echo Trial Name */
-          strcat(configFile, inString);
-          printf("\t\tSaving parameters to %s\n",configFile);
-          fflush(stdout);
-          saveParameters(configFile);
-          configFile[0] = '\0';
-          strcat(configFile, "config/");
-          tui_menu();
-          ptui->io_ready = 0;
-          break;
-
-        // ---- Load Parameters -----------------------------------------------
-        case 'h' :
-          printf("\t\tEnter parameter file name: ");
-          fflush(stdout);
-          ptui->io_ready = 0;
-
-          // Wait for user input
-          while(1)
-            if(ptui->io_ready)
-              break;
-
-          scanf(" %s", inString);
-
-          /* Echo Trial Name */
-          strcat(configFile, inString);
-          printf("\t\tLoading parameters from %s\n",configFile);
-          fflush(stdout);
-          loadParameters(configFile);
-          configFile[0] = '\0';
-          strcat(configFile, "config/");
-          tui_menu();
-          ptui->io_ready = 0;
-          break;
-
-        // ---- Load Lookup -----------------------------------------------
-        case 'j' :
-          printf("\t\tEnter lookup table file name: ");
-          fflush(stdout);
-          ptui->io_ready = 0;
-
-          // Wait for user input
-          while(1)
-            if(ptui->io_ready)
-              break;
-
-          scanf(" %s", inString);
-
-          /* Echo Trial Name */
-          strcat(configFile, inString);
-          printf("\t\tLoading lookup table from %s\n",configFile);
-          fflush(stdout);
-          loadLookUpTable(configFile);
-          configFile[0] = '\0';
-          strcat(configFile, "config/");
-          tui_menu();
-          ptui->io_ready = 0;
-          break;
-
-
-        // ---- Toggle feedforward -----------------------------------------------
-        case 'k' :
-          setFFenable( getFFenable() ^ 1);
-          printf("\t\tFeedforward toggled.\n");
-          fflush(stdout);
-          ptui->io_ready = 0;
-          tui_menu();
-          break;
-
-        // ---- FFgain -----------------------------------------------
-        case 'l' :
-
-          printf("\t\tEnter new ffgain: ");
-          fflush(stdout);
-          ptui->io_ready = 0;
-
-          // Wait for user input.
-          while(1)
-            if(ptui->io_ready)
-              break;
-
-          scanf(" %f", &inFloat);
-          setFFgain(inFloat);
-          tui_menu();
-          ptui->io_ready = 0;
-          break;
-
-        // ---- Tare encoder -----------------------------------------------
-        case 'o' :
-          setTareEncoderBit();
-          printf("\t\tEncoder angle zeroed.\n");
-          fflush(stdout);
-          ptui->io_ready = 0;
-          tui_menu();
-          break;
-
-        // ---- Test FF -----------------------------------------------
-        case 'p' :
-          printf("\t\tEnter trial name: ");
-          fflush(stdout);
-          ptui->io_ready = 0;
-
-          // Wait for input.
-          while(1)
-            if(ptui->io_ready)
-              break;
-
-          scanf(" %s", inString);
-          strcat(logFile, inString);
-          printf("\t\tSaving data to %s\n",logFile);
-
-          // Init
-          logFileInit(logFile);
-          circBuffInit();
-
-
-          // Wait for enter to start saving data
-          printf("\t\tPress enter to start collection...\n");
-          fflush(stdout);
-          ptui->io_ready = 0;
-          while(1)
-            if(ptui->io_ready)
-              break;
-          scanf(" %c", &inChar);
-
-
-          startFFtest();
-
-          // Wait for enter to stop collection
-          printf("\t\tPress enter to stop collection...\n");
-          fflush(stdout);
-          ptui->io_ready = 0;
-
-          // Data collection
-          while(1){
-
-            logData();
-
-            // Check for input
-            if(ptui->io_ready)
-              break;
-          }
-          scanf(" %c", &inChar);
-          stopFFtest();
-
-          closeLogFile();
-          logFile[0] = '\0';
-          strcat(logFile, "datalog/");
-          tui_menu();
-          fflush(stdout);
-          ptui->io_ready = 0;
-          break;
-
-        // ---- Step Response -----------------------------------------------
-        case 'q' :
-          printf("\t\tEnter trial name: ");
-          fflush(stdout);
-          ptui->io_ready = 0;
-
-          // Wait for input.
-          while(1)
-            if(ptui->io_ready)
-              break;
-
-          scanf(" %s", inString);
-          strcat(logFile, inString);
-          printf("\t\tSaving data to %s\n",logFile);
-
-          // Init
-          logFileInit(logFile);
-          circBuffInit();
-
-          printf("\t\tEnter demand current: ");
-          fflush(stdout);
-          ptui->io_ready = 0;
-
-          // Wait for user input.
-          while(1)
-            if(ptui->io_ready)
-              break;
-
-          scanf(" %f", &inFloat);
-          setStepCurrent(inFloat);
-
-          // Wait for enter to start saving data
-          printf("\t\tPress enter to start collection...\n");
-          fflush(stdout);
-          ptui->io_ready = 0;
-          while(1)
-            if(ptui->io_ready)
-              break;
-          scanf(" %c", &inChar);
-
-          startStepResponse();
-
-          // Wait for enter to stop collection
-          printf("\t\tPress enter to stop collection...\n");
-          fflush(stdout);
-          ptui->io_ready = 0;
-
-          // Data collection loop
-          while(1){
-            logData();
-
-            // Check for input
-            if(ptui->io_ready)
-              break;
-          }
-          scanf(" %c", &inChar);
-          printf("\t\tReset step resp. vars.\n");
-          resetStepRespVars();
 
           closeLogFile();
           logFile[0] = '\0';
