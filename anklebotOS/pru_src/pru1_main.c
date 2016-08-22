@@ -9,11 +9,9 @@
 #include "mem_types.h"
 #include "hw_types.h"
 
-#include "spidriver.h"
-#include "encoder.h"
-#include "maxonmotor.h"
 #include "fix16.h"
 #include "i2cdriver.h"
+#include "i2cBusPCA9548A.h"
 #include "fyberHaptic.h"
 
 
@@ -126,36 +124,23 @@ void initialize(void)
   // Pin Mux
   CT_CFG.GPCFG0 = 0;
 
-  // Zero detect flags
-  p->encoderDetect = 0;
-  p->imuDetect = 0;
-
   // Memory and Interrupt
   initMemory();
   interruptInit();
 
   // Modules
   i2cInit();
-  spiInit();
+  __delay_cycles(100000);
 
-  // Add pru dependent peripheral init methods here
-  if (encoderInit() == 0)
-    p->encoderDetect = 1;
-  else
-    p->encoderDetect = 0;
+  i2cBusChannelOn(I2C_BUS_CH0_EN);
 
-  motorInit();
+  __delay_cycles(100000);
+
   hapticInit();
   __delay_cycles(100000);
- // hapticSetWaveForm();
 
+  hapticSetWaveForm();
 
-
-  // Zero some stuff
-  p->stepRespCnt = 0;
-  p->stepRespFlag = 0;
-  p->stepCurrent = 0;
-  p->FFgain = 0;
 }
 
 
@@ -168,97 +153,21 @@ void updateCounters(uint32_t* cnt, uint32_t* si)
 
 void updateControl(uint32_t cnt, uint32_t si)
 {
-  fix16_t u_fb = 0;
-  fix16_t u_ff = 0;
-  uint32_t t_cnts, t1, Tp;
-
-
-  setAmplitude(cnt,50);
-
-  // Step Response
-  if (s->cntrl_bit.stepResp == 1){
-
-    if (!(p->stepRespFlag == 1)){
-      p->stepRespCnt = cnt + 1000; // Delay 1 sec before step starts
-      p->stepRespFlag = 1;
-      u_ff = 0;
-      u_fb = 0;
-    }
-
-    else if ( (p->stepRespFlag) & (cnt >= p->stepRespCnt) ){
-      u_ff = p->stepCurrent;
-      u_fb = 0;
-    }
-    else {
-      u_ff = 0;
-      u_fb = 0;
-    }
-  }
-
-  // Feedforward Test
-  else if (s->cntrl_bit.testFF == 1){
-
-    // Calculate lut index t = (cnt % Tp) / Tp
-    t_cnts = (cnt % 250) * 4;
-
-    s->state[si].l_percentGait = t_cnts;
-
-    // Scale ff
-    u_ff = fix16_smul(p->FFgain,
-                      fix16_sdiv(fix16_from_int(l->u_ff[t_cnts]), FIX16_1000));
-  }
-
-  // Impedance and feedforward
-  else{
-
-    // Impedance
-    u_fb = fix16_smul(p->Kp, fix16_ssub(p->anklePos0, s->state[si].anklePos));
-
-    // Feedforward
-    if ((s->cntrl_bit.doFeedForward) && (p->gaitDetectReady)){
-
-      // Time since hs
-      t1 = (cnt - s->state[si].l_hsStamp) * 1000;
-
-      t_cnts = t1 / (s->state[si].l_meanGaitPeriod -
-                     s->state[si].l_meanGaitPeriod / 1000);
-
-      // Saturate t_cnts;
-      if (t_cnts >= NUM_FF_LT)
-        t_cnts = NUM_FF_LT-1;
-
-      // Store percent gait
-      s->state[si].l_percentGait = t_cnts;
-
-      // Scale ff
-      u_ff = fix16_smul(p->FFgain,
-                        fix16_sdiv(fix16_from_int(l->u_ff[t_cnts]), FIX16_1000));
-    }
-  }
-
-  // Send command/store command
-  motorSetDuty(fix16_sadd(u_ff, u_fb), &s->state[si].motorDuty);
-  s->state[si].u_ff = u_ff;
-  s->state[si].u_fb = u_fb;
+  //setAmplitude(cnt,50);
 }
 
 void updateState(uint32_t cnt, uint32_t si)
 {
-  if (p->encoderDetect)
-    encoderSample(&(s->state[si].anklePos));
-  else
-    s->state[si].anklePos = 0;
+
 }
 
 void cleanUp(void)
 {
   // Add pru dependent peripheral cleanup methods here
-  encoderCleanUp();
-  motorCleanUp();
   hapticCleanUp();
 
   // Cleanup modules
-  spiCleanUp();
+  i2cCleanUp();
 
   // Clear all interrupts
   clearInterrupt();

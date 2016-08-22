@@ -9,9 +9,7 @@
 #include "mem_types.h"
 #include "hw_types.h"
 
-//#include "imu_mpu9150.h"
 #include "adcdriver.h"
-#include "gaitPhase.h"
 #include "viconsync.h"
 #include "filter.h"
 
@@ -19,7 +17,6 @@
 // Prototypes ----------------------------------------------------------------
 void initialize(void);
 void initMemory(void);
-void updateLocalParams(void);
 void updateState(uint32_t cnt, uint32_t si);
 void updateControl(uint32_t cnt, uint32_t si);
 void updateCounters(uint32_t *cnt, uint32_t *si);
@@ -74,6 +71,7 @@ int main(void)
   clearIepInterrupt();
   startTimer();
 
+  debugBuffer[0] = 0xAF;
   // Control Loop
   while(1){
 
@@ -85,15 +83,6 @@ int main(void)
 
     // Shadow enable bit
     s->cntrl_bit.shdw_enable = s->cntrl_bit.enable;
-
-    // Mirror params
-    updateLocalParams();
-
-    // Reset Gait phase if needed
-    if(s->cntrl_bit.resetGaitPhase){
-      s->cntrl_bit.resetGaitPhase = 0;
-      gaitPhaseInit();
-    }
 
     // Update State
     updateState(cnt, stateIndx);
@@ -116,6 +105,7 @@ int main(void)
 
     clearIepInterrupt();
     debugPinLow();
+    debugBuffer[9] = 0xFF;
  }
 
   debugPinLow();
@@ -147,8 +137,6 @@ void initialize(void)
 
   /* Add pru dependent peripheral init methods here */
   adcInit();
-  //imuInit();
-  gaitPhaseInit();
 
   /* Init filter buffers */
   fix16_iirInit(p->filtBuffer[0].x, p->filtBuffer[0].y, MAX_IIR_ORDER+1);
@@ -179,11 +167,6 @@ void initMemory(void)
   debugBuffer = &(p->debugBuffer[0]);
 }
 
-void updateLocalParams(void)
-{
-  //gaitPhaseUpdateParams(p);
-}
-
 void updateState(uint32_t cnt, uint32_t si)
 {
   int16_t adc[8];
@@ -197,56 +180,42 @@ void updateState(uint32_t cnt, uint32_t si)
   adcSample_3(adc);
 
   /* Filter insoles heel */
-  s1 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-                 p->filtBuffer[0].x, p->filtBuffer[0].y,
-                 adc[4]);
-
-  s2 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-                 p->filtBuffer[1].x, p->filtBuffer[1].y,
-                 (int16_t) fix16_to_int(s1));
-
-  s3 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-                 p->filtBuffer[2].x, p->filtBuffer[2].y,
-                 (int16_t) fix16_to_int(s2));
-
-
-  s4 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-                 p->filtBuffer[3].x, p->filtBuffer[3].y,
-                 adc[7]);
-
-  s5 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-                 p->filtBuffer[4].x, p->filtBuffer[4].y,
-                 (int16_t) fix16_to_int(s4));
-
-  s6 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-                 p->filtBuffer[5].x, p->filtBuffer[5].y,
-                 (int16_t) fix16_to_int(s5));
-
-
+//  s1 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
+//                 p->filtBuffer[0].x, p->filtBuffer[0].y,
+//                 adc[4]);
+//
+//  s2 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
+//                 p->filtBuffer[1].x, p->filtBuffer[1].y,
+//                 (int16_t) fix16_to_int(s1));
+//
+//  s3 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
+//                 p->filtBuffer[2].x, p->filtBuffer[2].y,
+//                 (int16_t) fix16_to_int(s2));
+//
+//
+//  s4 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
+//                 p->filtBuffer[3].x, p->filtBuffer[3].y,
+//                 adc[7]);
+//
+//  s5 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
+//                 p->filtBuffer[4].x, p->filtBuffer[4].y,
+//                 (int16_t) fix16_to_int(s4));
+//
+//  s6 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
+//                 p->filtBuffer[5].x, p->filtBuffer[5].y,
+//                 (int16_t) fix16_to_int(s5));
+//
+//
   /* Pack Stuct */
   s->state[si].adc[2] = adc[2];
   s->state[si].adc[3] = adc[3];
-  s->state[si].adc[4] = (int16_t)fix16_to_int(s2);
+  //s->state[si].adc[4] = (int16_t)fix16_to_int(s2);
+  s->state[si].adc[4] = adc[4];
   s->state[si].adc[5] = adc[5];
   s->state[si].adc[6] = adc[6];
-  s->state[si].adc[7] = (int16_t)fix16_to_int(s5);
-  s->state[si].d_heelForce[0] = (int16_t)fix16_to_int(fix16_ssub(s2, s3));
-  s->state[si].d_heelForce[1] = (int16_t)fix16_to_int(fix16_ssub(s5, s6));
+  ////s->state[si].adc[7] = (int16_t)fix16_to_int(s5);
+  s->state[si].adc[7] = adc[7];
 
-  leftGaitPhaseDetect(cnt, s->state[si].adc[4], s->state[si].d_heelForce[0]);
-
-  s->state[si].l_meanGaitPeriod = p->l_prevPeriod;
-  s->state[si].l_gaitPhase = p->l_prevGaitPhase;
-  s->state[si].l_hsStamp = p->l_prevHsStamp;
-
-  rightGaitPhaseDetect(cnt, s->state[si].adc[7], s->state[si].d_heelForce[1]);
-
-  s->state[si].r_meanGaitPeriod = p->r_prevPeriod;
-  s->state[si].r_gaitPhase = p->r_prevGaitPhase;
-  s->state[si].r_hsStamp = p->r_prevHsStamp;
-
-  /* Motor analog samples */
-  adcSample_1(adc);
   s->state[si].adc[0] = adc[0];
   s->state[si].adc[1] = adc[1];
 }
@@ -270,7 +239,6 @@ void cleanUp(void)
 {
   // Add pru dependent peripheral cleanup methods here
   adcCleanUp();
-  //imuCleanUp();
 
   // Clear all interrupts
   clearIepInterrupt();

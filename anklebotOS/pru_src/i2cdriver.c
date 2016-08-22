@@ -1,9 +1,3 @@
-#include <stdint.h>
-
-#include "soc_AM33XX.h"
-#include "hw_types.h"
-#include "hw_hsi2c.h"
-#include "hsi2c.h"
 #include "i2cdriver.h"
 
 void i2cInit(void)
@@ -182,8 +176,6 @@ void i2cRxBurst(uint8_t addr, uint8_t reg, uint16_t len, uint8_t *buffer)
 
   i2cClearInterrupts();
 }
-
-
 
 void i2cTxByte(uint8_t addr, uint8_t reg, uint8_t tx)
 {
