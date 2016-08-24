@@ -21,5 +21,6 @@ extern volatile uint32_t* debugBuffer;
 
 
 void i2cBusChannelOn(uint8_t ch_id);
+void i2cBusCleanUp(void);
 
 #endif

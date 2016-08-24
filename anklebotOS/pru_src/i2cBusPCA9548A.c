@@ -46,4 +46,7 @@ void i2cBusChannelOn(uint8_t ch_id)
 }
 
 
-
+void i2cBusCleanUp(void)
+{
+  i2cBusChannelOn(0x00);
+}
