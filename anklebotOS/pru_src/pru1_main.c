@@ -132,15 +132,55 @@ void initialize(void)
   i2cInit();
   __delay_cycles(100000);
 
-  i2cBusChannelOn(I2C_BUS_CH0_EN);
 
+  i2cBusChannelOn(I2C_BUS_CH1_EN);
+
+  debugBuffer[0] = 0xFF;
   __delay_cycles(100000);
+
 
   hapticInit();
   __delay_cycles(100000);
-
+  debugBuffer[1] = 0xAA;
   hapticSetWaveForm();
+  __delay_cycles(100000);
 
+//  i2cBusChannelOn(I2C_BUS_CH1_EN);
+//  __delay_cycles(100000);
+//  hapticInit();
+//  __delay_cycles(100000);
+//  hapticSetWaveForm();
+//  __delay_cycles(100000);
+//
+//
+//  i2cBusChannelOn(I2C_BUS_CH2_EN);
+//  __delay_cycles(100000);
+//  hapticInit();
+//  __delay_cycles(100000);
+//  hapticSetWaveForm();
+//  __delay_cycles(100000);
+//
+//  i2cBusChannelOn(I2C_BUS_CH3_EN);
+//  __delay_cycles(100000);
+//  hapticInit();
+//  __delay_cycles(100000);
+//  hapticSetWaveForm();
+//  __delay_cycles(100000);
+//
+//  i2cBusChannelOn(I2C_BUS_CH4_EN);
+//  __delay_cycles(100000);
+//  hapticInit();
+//  __delay_cycles(100000);
+//  hapticSetWaveForm();
+//  __delay_cycles(100000);
+//
+//  i2cBusChannelOn(I2C_BUS_CH5_EN);
+//  __delay_cycles(100000);
+//  hapticInit();
+//  __delay_cycles(100000);
+//  hapticSetWaveForm();
+//  __delay_cycles(100000);
+//
 }
 
 
@@ -165,6 +205,7 @@ void cleanUp(void)
 {
   // Add pru dependent peripheral cleanup methods here
   hapticCleanUp();
+  i2cBusCleanUp();
 
   // Cleanup modules
   i2cCleanUp();

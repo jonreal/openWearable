@@ -71,7 +71,6 @@ int main(void)
   clearIepInterrupt();
   startTimer();
 
-  debugBuffer[0] = 0xAF;
   // Control Loop
   while(1){
 
@@ -105,7 +104,6 @@ int main(void)
 
     clearIepInterrupt();
     debugPinLow();
-    debugBuffer[9] = 0xFF;
  }
 
   debugPinLow();
