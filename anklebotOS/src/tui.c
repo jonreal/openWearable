@@ -75,6 +75,7 @@ void tui_menu(void)
   printf("\n\n---------------------------------------------------------------------\n"
           "Haptic Mode = %d\n"
           "Menu: a - Change Haptic Mode\n"
+          "      z - Manual Mode\n"
           "      s - Collect trial\n"
           "      e - exit\n"
           "-----------------------------------------------------------------------\n",
@@ -132,7 +133,38 @@ int start_tui(void)
           ptui->io_ready = 0;
           break;
 
-
+//        // ---- Manual Mode -----------------------------------------------
+//        case 'a' :
+//          while(1) {
+//            printf("\t\tManual mode \n
+//                    \t\t\t motor 1 : %s\n
+//                    \t\t\t motor 2 : %s\n
+//                    \t\t\t motor 3 : %s\n
+//                    \t\t\t motor 4 : %s\n
+//                    \t\t\t motor 5 : %s\n
+//                    \t\t\t motor 5 : %s\n",
+//                    p->hapticFlag[0], p->hapticFlag[1], 
+//          }
+//
+//
+//
+//
+//
+//          fflush(stdout);
+//          ptui->io_ready = 0;
+//
+//          // Wait for user input.
+//          while(1)
+//            if(ptui->io_ready)
+//              break;
+//
+//          scanf(" %d", &inChar);
+//          setHapticMode(inChar);
+//          tui_menu();
+//          ptui->io_ready = 0;
+//          break;
+//
+//
         // ---- Collect trial -------------------------------------------------
         case 's' :
           printf("\t\tEnter trial name: ");

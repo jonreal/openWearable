@@ -913,6 +913,22 @@ void setHapticMode(int mode)
   p->hapticMode = mode;
 }
 
+void onHapticFlag(int ch)
+{
+  p->hapticFlag[ch-1] = 1;
+}
+
+void offHapticFlag(int ch)
+{
+  p->hapticFlag[ch-1] = 0;
+}
+
+int getHapticFlag(int ch)
+{
+  return p->hapticFlag[ch-1];
+}
+
+
 //void setTareEncoderBit(void)
 //{
 //  s->cntrl_bit.encoderTare = 1;

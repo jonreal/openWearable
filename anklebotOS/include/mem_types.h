@@ -88,6 +88,7 @@ typedef struct{
   volatile uint32_t frq_hz;
   volatile uint32_t frq_clock_ticks;
   volatile uint32_t hapticMode;
+  volatile int8_t hapticFlag[8];
   iir_coeff_t filt;
   iir_buff_t filtBuffer[6];
 

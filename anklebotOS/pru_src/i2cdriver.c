@@ -17,6 +17,8 @@ void i2cInit(void)
 
   /* Enable */
   I2CMasterEnable(SOC_I2C_1_REGS);
+
+  __delay_cycles(5000);
 }
 
 void i2cCleanUp(void)

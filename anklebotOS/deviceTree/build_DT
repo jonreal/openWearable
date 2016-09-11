@@ -12,4 +12,4 @@ echo "Copying to /lib/firmware "
 
 rm -f /lib/firmware/$DEVICE_TREE.dtbo
 
-cp -f $DEVICE_TREE.dtbo /lib/firmware/$DEVICE_TREE.dtbo
+cp -f ./$DEVICE_TREE.dtbo /lib/firmware/$DEVICE_TREE.dtbo

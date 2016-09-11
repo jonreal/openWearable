@@ -130,57 +130,15 @@ void initialize(void)
 
   // Modules
   i2cInit();
-  __delay_cycles(100000);
 
-
-  i2cBusChannelOn(I2C_BUS_CH1_EN);
-
-  debugBuffer[0] = 0xFF;
-  __delay_cycles(100000);
-
-
+  // Periph.
   hapticInit();
-  __delay_cycles(100000);
-  debugBuffer[1] = 0xAA;
-  hapticSetWaveForm();
-  __delay_cycles(100000);
 
-//  i2cBusChannelOn(I2C_BUS_CH1_EN);
-//  __delay_cycles(100000);
-//  hapticInit();
-//  __delay_cycles(100000);
-//  hapticSetWaveForm();
-//  __delay_cycles(100000);
-//
-//
-//  i2cBusChannelOn(I2C_BUS_CH2_EN);
-//  __delay_cycles(100000);
-//  hapticInit();
-//  __delay_cycles(100000);
-//  hapticSetWaveForm();
-//  __delay_cycles(100000);
-//
-//  i2cBusChannelOn(I2C_BUS_CH3_EN);
-//  __delay_cycles(100000);
-//  hapticInit();
-//  __delay_cycles(100000);
-//  hapticSetWaveForm();
-//  __delay_cycles(100000);
-//
-//  i2cBusChannelOn(I2C_BUS_CH4_EN);
-//  __delay_cycles(100000);
-//  hapticInit();
-//  __delay_cycles(100000);
-//  hapticSetWaveForm();
-//  __delay_cycles(100000);
-//
-//  i2cBusChannelOn(I2C_BUS_CH5_EN);
-//  __delay_cycles(100000);
-//  hapticInit();
-//  __delay_cycles(100000);
-//  hapticSetWaveForm();
-//  __delay_cycles(100000);
-//
+
+  //%i2cBusChannelOn(1);
+  //%__delay_cycles(100000);
+  //%hapticSetWaveForm();
+  //%__delay_cycles(100000);
 }
 
 
@@ -193,7 +151,37 @@ void updateCounters(uint32_t* cnt, uint32_t* si)
 
 void updateControl(uint32_t cnt, uint32_t si)
 {
-  //setAmplitude(cnt,50);
+  for (int ch=2; i<7; i++)
+  {
+    setAmplitude(ch, cnt, 100);
+  }
+
+//  if (p->hapticMode == 1){
+//
+//    // Driver 1
+//    setAmplitude(1, cnt, 50);
+//
+//    // Driver 2
+//    setAmplitude(2, cnt, 50);
+//
+//    // Driver 3
+//    setAmplitude(3, cnt, 50);
+//
+//    // Driver 4
+//    setAmplitude(4, cnt, 50);
+//
+//    // Driver 5
+//    setAmplitude(5, cnt, 50);
+//
+//    // Driver 6
+//    setAmplitude(6, cnt, 50);
+//
+//  }
+//  else if (p->hapticMode == 2){
+//  }
+//  else if (p->hapticMode == 3){
+//  }
+//
 }
 
 void updateState(uint32_t cnt, uint32_t si)
