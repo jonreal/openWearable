@@ -209,10 +209,10 @@ void updateState(uint32_t cnt, uint32_t si)
   s->state[si].adc[3] = adc[3];
   //s->state[si].adc[4] = (int16_t)fix16_to_int(s2);
   s->state[si].adc[4] = adc[4];
-  s->state[si].adc[5] = adc[5];
+  s->state[si].adc[5] = adc[7];
   s->state[si].adc[6] = adc[6];
   ////s->state[si].adc[7] = (int16_t)fix16_to_int(s5);
-  s->state[si].adc[7] = adc[7];
+  s->state[si].adc[7] = adc[5];
 
   s->state[si].adc[0] = adc[0];
   s->state[si].adc[1] = adc[1];
@@ -220,7 +220,6 @@ void updateState(uint32_t cnt, uint32_t si)
 
 void updateControl(uint32_t cnt, uint32_t si)
 {
-
 }
 
 void updateCounters(uint32_t *cnt, uint32_t *si)

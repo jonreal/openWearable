@@ -1,7 +1,10 @@
 #include "i2cBusPCA9548A.h"
 
-void i2cBusChannelOn(uint8_t ch_id)
+
+// valid channels 1-8
+void i2cBusChannelOn(uint8_t channel)
 {
+
   i2cClearInterrupts();
 
   /* Slave address */
@@ -28,7 +31,7 @@ void i2cBusChannelOn(uint8_t ch_id)
   while(!(I2CMasterIntStatusEx(SOC_I2C_1_REGS, I2C_INT_TRANSMIT_READY)));
 
   /* Write ch_id to fifo */
-  I2CMasterDataPut(SOC_I2C_1_REGS, ch_id);
+  I2CMasterDataPut(SOC_I2C_1_REGS, (1 << (channel-1)));
 
   /* Clear int */
   I2CMasterIntClearEx(SOC_I2C_1_REGS, I2C_INT_TRANSMIT_READY);
