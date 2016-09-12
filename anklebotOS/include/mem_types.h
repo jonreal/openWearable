@@ -47,7 +47,7 @@ typedef struct{
   volatile uint32_t timeStamp;
   volatile uint32_t sync;
   volatile int16_t adc[NUM_ADC];
-  volatile int8_t hapticAmp[8];
+  volatile int16_t hapticAmp[8];
 } state_t;
 
 
@@ -88,7 +88,12 @@ typedef struct{
   volatile uint32_t frq_hz;
   volatile uint32_t frq_clock_ticks;
   volatile uint32_t hapticMode;
-  volatile int8_t hapticFlag[8];
+  volatile uint32_t threshold;
+  volatile uint32_t saturation;
+  volatile uint32_t hapticMaxAmp;
+  volatile fix16_t slope;
+  volatile fix16_t intercept;
+
   iir_coeff_t filt;
   iir_buff_t filtBuffer[6];
 

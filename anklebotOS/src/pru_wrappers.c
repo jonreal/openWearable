@@ -702,14 +702,21 @@ void saveParameters(char* file)
 int loadParameters(char* file)
 {
   FILE* fp = fopen(file, "r");
-  float t1;
 
   if(fp != NULL){
     fscanf(fp, "%u%*[^\n]\n", &p->frq_hz);
     fscanf(fp, "%u%*[^\n]\n", &p->frq_clock_ticks);
     fscanf(fp, "%u%*[^\n]\n", &p->hapticMode);
+
+    fscanf(fp, "%u%*[^\n]\n", &p->threshold);
+
+    fscanf(fp, "%u%*[^\n]\n", &p->saturation);
+
+    fscanf(fp, "%u%*[^\n]\n", &p->hapticMaxAmp);
+
     fclose(fp);
     p->frq_clock_ticks = hzToPruTicks(p->frq_hz);
+
 
     return 0;
   }
@@ -911,21 +918,6 @@ int getHapticMode(void)
 void setHapticMode(int mode)
 {
   p->hapticMode = mode;
-}
-
-void onHapticFlag(int ch)
-{
-  p->hapticFlag[ch-1] = 1;
-}
-
-void offHapticFlag(int ch)
-{
-  p->hapticFlag[ch-1] = 0;
-}
-
-int getHapticFlag(int ch)
-{
-  return p->hapticFlag[ch-1];
 }
 
 

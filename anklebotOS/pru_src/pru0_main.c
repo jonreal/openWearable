@@ -174,48 +174,41 @@ void updateState(uint32_t cnt, uint32_t si)
   s->state[si].sync = viconSync();
 
   // Insole samples
-  adcSample_2(adc);
-  adcSample_3(adc);
+  adcSample_2(adc); // adc[2,3,4]
+  adcSample_3(adc); // adc[5,6,7]
 
-  /* Filter insoles heel */
-//  s1 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-//                 p->filtBuffer[0].x, p->filtBuffer[0].y,
-//                 adc[4]);
-//
-//  s2 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-//                 p->filtBuffer[1].x, p->filtBuffer[1].y,
-//                 (int16_t) fix16_to_int(s1));
-//
-//  s3 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-//                 p->filtBuffer[2].x, p->filtBuffer[2].y,
-//                 (int16_t) fix16_to_int(s2));
-//
-//
-//  s4 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-//                 p->filtBuffer[3].x, p->filtBuffer[3].y,
-//                 adc[7]);
-//
-//  s5 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-//                 p->filtBuffer[4].x, p->filtBuffer[4].y,
-//                 (int16_t) fix16_to_int(s4));
-//
-//  s6 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-//                 p->filtBuffer[5].x, p->filtBuffer[5].y,
-//                 (int16_t) fix16_to_int(s5));
-//
-//
-  /* Pack Stuct */
-  s->state[si].adc[2] = adc[2];
-  s->state[si].adc[3] = adc[3];
-  //s->state[si].adc[4] = (int16_t)fix16_to_int(s2);
-  s->state[si].adc[4] = adc[4];
-  s->state[si].adc[5] = adc[7];
-  s->state[si].adc[6] = adc[6];
-  ////s->state[si].adc[7] = (int16_t)fix16_to_int(s5);
-  s->state[si].adc[7] = adc[5];
+  // Filter insoles heel
+  s1 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
+                 p->filtBuffer[0].x, p->filtBuffer[0].y,
+                 adc[2]);
 
-  s->state[si].adc[0] = adc[0];
-  s->state[si].adc[1] = adc[1];
+  s2 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
+                 p->filtBuffer[1].x, p->filtBuffer[1].y,
+                 adc[3]);
+
+  s3 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
+                 p->filtBuffer[2].x, p->filtBuffer[2].y,
+                 adc[4]);
+
+  s4 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
+                 p->filtBuffer[3].x, p->filtBuffer[3].y,
+                 adc[5]);
+
+  s5 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
+                 p->filtBuffer[4].x, p->filtBuffer[4].y,
+                 adc[6]);
+
+  s6 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
+                 p->filtBuffer[5].x, p->filtBuffer[5].y,
+                 adc[7]);
+
+  // Pack Stuct
+  s->state[si].adc[2] = (int16_t) fix16_to_int(s1);  // toe
+  s->state[si].adc[3] = (int16_t) fix16_to_int(s2);  // .
+  s->state[si].adc[4] = (int16_t) fix16_to_int(s3);  // .
+  s->state[si].adc[7] = (int16_t) fix16_to_int(s4);  // .
+  s->state[si].adc[6] = (int16_t) fix16_to_int(s5);  // .
+  s->state[si].adc[5] = (int16_t) fix16_to_int(s6);  // heal
 }
 
 void updateControl(uint32_t cnt, uint32_t si)
