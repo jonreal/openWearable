@@ -31,6 +31,12 @@ void debugPinLow(void);
 void interruptInit(void);
 void clearInterrupt(void);
 
+void initSlope(void);
+void setAllAmps(uint32_t cnt, uint32_t si);
+void mode1(uint32_t si);
+void mode0(uint32_t si);
+int16_t force2Haptic(int16_t force);
+
 // Globals -------------------------------------------------------------------
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
@@ -134,11 +140,7 @@ void initialize(void)
   // Periph.
   hapticInit();
 
-
-  //%i2cBusChannelOn(1);
-  //%__delay_cycles(100000);
-  //%hapticSetWaveForm();
-  //%__delay_cycles(100000);
+  initSlope();
 }
 
 
@@ -151,37 +153,12 @@ void updateCounters(uint32_t* cnt, uint32_t* si)
 
 void updateControl(uint32_t cnt, uint32_t si)
 {
-  for (int ch=2; i<7; i++)
-  {
-    setAmplitude(ch, cnt, 100);
-  }
+  if (p->hapticMode == 1)
+    mode1(si);
+  else
+    mode0(si);
 
-//  if (p->hapticMode == 1){
-//
-//    // Driver 1
-//    setAmplitude(1, cnt, 50);
-//
-//    // Driver 2
-//    setAmplitude(2, cnt, 50);
-//
-//    // Driver 3
-//    setAmplitude(3, cnt, 50);
-//
-//    // Driver 4
-//    setAmplitude(4, cnt, 50);
-//
-//    // Driver 5
-//    setAmplitude(5, cnt, 50);
-//
-//    // Driver 6
-//    setAmplitude(6, cnt, 50);
-//
-//  }
-//  else if (p->hapticMode == 2){
-//  }
-//  else if (p->hapticMode == 3){
-//  }
-//
+  setAllAmps(cnt, si);
 }
 
 void updateState(uint32_t cnt, uint32_t si)
@@ -256,4 +233,47 @@ void clearInterrupt(void)
   CT_INTC.SECR1 = 0xFFFFFFFF;
    __R31 = 0x00000000;
 }
+
+
+/// Haptic
+void setAllAmps(uint32_t cnt, uint32_t si)
+{
+  for (int i=1; i<7; i++){
+    setAmplitude(i, cnt, s->state[si].hapticAmp[i-1]);
+  }
+}
+
+void mode1(uint32_t si)
+{
+  for (int i=1; i<7; i++){
+    if (s->state[si].adc[i+1] >= p->threshold)
+      s->state[si].hapticAmp[i-1] = force2Haptic(s->state[si].adc[i-1]);
+    else
+      s->state[si].hapticAmp[i-1] = 0;
+  }
+}
+
+void mode0(uint32_t si)
+{
+  for (int i=1; i<7; i++)
+    s->state[si].hapticAmp[i-1] = 0;
+}
+
+int16_t force2Haptic(int16_t force)
+{
+  return (int16_t) fix16_to_int(
+          fix16_sadd(fix16_smul(p->slope, fix16_from_int(force)), p->intercept));
+}
+
+
+void initSlope(void)
+{
+  fix16_t num = fix16_from_int(p->hapticMaxAmp);
+  fix16_t den = fix16_ssub(fix16_from_int(p->saturation),
+                           fix16_from_int(p->threshold));
+  p->slope = fix16_sdiv(num,den);
+  fix16_t negSlope = fix16_smul(p->slope,fix16_from_int(-1));
+  p->intercept = fix16_smul(negSlope,fix16_from_int(p->threshold));
+}
+
 

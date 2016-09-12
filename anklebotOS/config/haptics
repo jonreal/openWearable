@@ -1,3 +1,7 @@
 500	// Freq.
 0	  // Freq. Ticks
 0	// Haptic Mode
+500 // threshold
+4095 // saturation
+127 // max haptic amp
+
