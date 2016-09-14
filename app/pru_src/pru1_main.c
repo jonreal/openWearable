@@ -261,8 +261,14 @@ void mode0(uint32_t si)
 
 int16_t force2Haptic(int16_t force)
 {
-  return (int16_t) fix16_to_int(
-          fix16_sadd(fix16_smul(p->slope, fix16_from_int(force)), p->intercept));
+  int16_t amp = fix16_to_int(fix16_sadd(fix16_smul(p->slope,
+                             fix16_from_int(force)), p->intercept));
+  if (amp > 127)
+    amp = 127;
+  else if (amp < 0)
+    amp = 0;
+
+  return amp;
 }
 
 

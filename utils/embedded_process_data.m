@@ -2,7 +2,7 @@ function rtn = embedded_process_data(trialName)
   lineCnt = 0;
 
   % Check file exists
-  file = ['./',trialName];
+  file = trialName;
   if exist(file,'file') ~= 2
     fprintf('\n\tEmbedded file not found\n');
     rtn = []
@@ -47,26 +47,26 @@ function rtn = embedded_process_data(trialName)
   rtn.params.frq_ticks = fscanf(fid,'#\tTicks = %i\n',1);
   lineCnt = lineCnt + 1;
 
-  rtn.params.Kp = fscanf(fid,'#\tKp = %f\n',1);
+  rtn.params.hapticMode = fscanf(fid,'#\thapticMode = %f\n',1);
   lineCnt = lineCnt + 1;
 
-  rtn.params.Kd = fscanf(fid,'#\tKd = %f\n',1);
-  lineCnt = lineCnt + 1;
-
-  rtn.params.pos0 = fscanf(fid,'#\tanklePos0 = %f\n',1);
-  lineCnt = lineCnt + 1;
-
-  rtn.params.l_forceThrs = fscanf(fid,'#\tl_forceThrs = %f\n',1);
-  lineCnt = lineCnt + 1;
-
-  rtn.params.l_d_forceThrs = fscanf(fid,'#\tl_d_forceThrs = %f\n',1);
-  lineCnt = lineCnt + 1;
-
-  rtn.params.r_forceThrs = fscanf(fid,'#\tr_forceThrs = %f\n',1);
-  lineCnt = lineCnt + 1;
-
-  rtn.params.r_d_forceThrs = fscanf(fid,'#\tr_d_forceThrs = %f\n',1);
-  lineCnt = lineCnt + 1;
+%  rtn.params.Kd = fscanf(fid,'#\tKd = %f\n',1);
+%  lineCnt = lineCnt + 1;
+%
+%  rtn.params.pos0 = fscanf(fid,'#\tanklePos0 = %f\n',1);
+%  lineCnt = lineCnt + 1;
+%
+%  rtn.params.l_forceThrs = fscanf(fid,'#\tl_forceThrs = %f\n',1);
+%  lineCnt = lineCnt + 1;
+%
+%  rtn.params.l_d_forceThrs = fscanf(fid,'#\tl_d_forceThrs = %f\n',1);
+%  lineCnt = lineCnt + 1;
+%
+%  rtn.params.r_forceThrs = fscanf(fid,'#\tr_forceThrs = %f\n',1);
+%  lineCnt = lineCnt + 1;
+%
+%  rtn.params.r_d_forceThrs = fscanf(fid,'#\tr_d_forceThrs = %f\n',1);
+%  lineCnt = lineCnt + 1;
 
   % Skip 1 line
   tline = fgetl(fid);
@@ -109,8 +109,8 @@ function rtn = embedded_process_data(trialName)
     return
   end
 
-  % Remove unsynced data
-  D(D(:,2) ~= 1,:) = [];
+%  % Remove unsynced data
+%  D(D(:,2) ~= 1,:) = [];
 
   figure;
     plot(D(:,1))
@@ -147,105 +147,105 @@ function rtn = embedded_process_data(trialName)
   %                                 HSn-1,HSn]
 
   % Remove repeated hs
-  l_hs = unique(rtn.data.l_hs);
-  r_hs = unique(rtn.data.r_hs);
-  l_hs(l_hs < rtn.data.frame(1)) = [];
-  r_hs(r_hs < rtn.data.frame(1)) = [];
-
-  % Find hs indice w.r.t frame ID
-  r_ii = [];
-  for i=1:numel(r_hs)
-    [~,ii] = min(abs(rtn.data.frame - r_hs(i)));
-    r_ii(i) = ii;
-  end
-  l_ii = [];
-  for i=1:numel(l_hs)
-    [~,ii] = min(abs(rtn.data.frame - l_hs(i)));
-    l_ii(i) = ii;
-  end
-
-  % Last
-  if (numel(r_ii) > 2)
-    r_ii(end) = [];
-    r_ii(1) = [];
-  else
-    r_ii = [];
-  end
-
-  % Remove first and last
-  if (numel(l_ii) > 2)
-    l_ii(end) = [];
-    l_ii(1) = [];
-  else
-    l_ii = [];
-  end
-
-  % Segment gait cycles
-  if (numel(l_ii) > 1)
-    for i=1:(numel(l_ii)-1)
-      rtn.segmentedGaitCycles.l.index(i,:) = [l_ii(i),l_ii(i+1)];
-    end
-  else
-    rtn.segmentedGaitCycles.l.index = [];
-  end
-
-  if (numel(r_ii) > 1)
-    for i=1:(numel(r_ii)-1)
-      rtn.segmentedGaitCycles.r.index(i,:) = [r_ii(i),r_ii(i+1)];
-    end
-  else
-    rtn.segmentedGaitCycles.r.index = [];
-  end
-
-  % Remove gait cycle immediatly before and after and missing data chunck
-  if (numel(l_ii) > 1)
-    for i=1:numel(startMissingData_index)
-      [~,ii] = min(abs(startMissingData_index ...
-                        - rtn.segmentedGaitCycles.l.index(:,1)));
-      rtn.segmentedGaitCycles.l.index(ii,:) = [];
-    end
-
-    for i=1:numel(endMissingData_index)
-      [~,ii] = min(abs(endMissingData_index ...
-                        - rtn.segmentedGaitCycles.l.index(:,2)));
-      rtn.segmentedGaitCycles.l.index(ii,:) = [];
-    end
-  end
-
-  if (numel(r_ii) > 1)
-    for i=1:numel(startMissingData_index)
-      [~,ii] = min(abs(startMissingData_index ...
-                        - rtn.segmentedGaitCycles.r.index(:,1)));
-      rtn.segmentedGaitCycles.r.index(ii,:) = [];
-    end
-
-    for i=1:numel(endMissingData_index)
-      [~,ii] = min(abs(endMissingData_index ...
-                        - rtn.segmentedGaitCycles.r.index(:,2)));
-      rtn.segmentedGaitCycles.r.index(ii,:) = [];
-    end
-  end
-
-
-
-  % Convert to index to time
-  if (numel(l_ii) > 1)
-    for i=1:numel(rtn.segmentedGaitCycles.l.index(:,1))
-      rtn.segmentedGaitCycles.l.time(i,:) = ...
-                  [rtn.data.time(rtn.segmentedGaitCycles.l.index(i,1)), ...
-                   rtn.data.time(rtn.segmentedGaitCycles.l.index(i,2))];
-    end
-  else
-    rtn.segmentedGaitCycles.l.time = [];
-  end
-
-  if (numel(r_ii) > 1)
-    for i=1:numel(rtn.segmentedGaitCycles.r.index(:,1))
-      rtn.segmentedGaitCycles.r.time(i,:) = ...
-                  [rtn.data.time(rtn.segmentedGaitCycles.r.index(i,1)), ...
-                   rtn.data.time(rtn.segmentedGaitCycles.r.index(i,2))];
-    end
-  else
-    rtn.segmentedGaitCycles.r.time = [];
-  end
+%  l_hs = unique(rtn.data.l_hs);
+%  r_hs = unique(rtn.data.r_hs);
+%  l_hs(l_hs < rtn.data.frame(1)) = [];
+%  r_hs(r_hs < rtn.data.frame(1)) = [];
+%
+%  % Find hs indice w.r.t frame ID
+%  r_ii = [];
+%  for i=1:numel(r_hs)
+%    [~,ii] = min(abs(rtn.data.frame - r_hs(i)));
+%    r_ii(i) = ii;
+%  end
+%  l_ii = [];
+%  for i=1:numel(l_hs)
+%    [~,ii] = min(abs(rtn.data.frame - l_hs(i)));
+%    l_ii(i) = ii;
+%  end
+%
+%  % Last
+%  if (numel(r_ii) > 2)
+%    r_ii(end) = [];
+%    r_ii(1) = [];
+%  else
+%    r_ii = [];
+%  end
+%
+%  % Remove first and last
+%  if (numel(l_ii) > 2)
+%    l_ii(end) = [];
+%    l_ii(1) = [];
+%  else
+%    l_ii = [];
+%  end
+%
+%  % Segment gait cycles
+%  if (numel(l_ii) > 1)
+%    for i=1:(numel(l_ii)-1)
+%      rtn.segmentedGaitCycles.l.index(i,:) = [l_ii(i),l_ii(i+1)];
+%    end
+%  else
+%    rtn.segmentedGaitCycles.l.index = [];
+%  end
+%
+%  if (numel(r_ii) > 1)
+%    for i=1:(numel(r_ii)-1)
+%      rtn.segmentedGaitCycles.r.index(i,:) = [r_ii(i),r_ii(i+1)];
+%    end
+%  else
+%    rtn.segmentedGaitCycles.r.index = [];
+%  end
+%
+%  % Remove gait cycle immediatly before and after and missing data chunck
+%  if (numel(l_ii) > 1)
+%    for i=1:numel(startMissingData_index)
+%      [~,ii] = min(abs(startMissingData_index ...
+%                        - rtn.segmentedGaitCycles.l.index(:,1)));
+%      rtn.segmentedGaitCycles.l.index(ii,:) = [];
+%    end
+%
+%    for i=1:numel(endMissingData_index)
+%      [~,ii] = min(abs(endMissingData_index ...
+%                        - rtn.segmentedGaitCycles.l.index(:,2)));
+%      rtn.segmentedGaitCycles.l.index(ii,:) = [];
+%    end
+%  end
+%
+%  if (numel(r_ii) > 1)
+%    for i=1:numel(startMissingData_index)
+%      [~,ii] = min(abs(startMissingData_index ...
+%                        - rtn.segmentedGaitCycles.r.index(:,1)));
+%      rtn.segmentedGaitCycles.r.index(ii,:) = [];
+%    end
+%
+%    for i=1:numel(endMissingData_index)
+%      [~,ii] = min(abs(endMissingData_index ...
+%                        - rtn.segmentedGaitCycles.r.index(:,2)));
+%      rtn.segmentedGaitCycles.r.index(ii,:) = [];
+%    end
+%  end
+%
+%
+%
+%  % Convert to index to time
+%  if (numel(l_ii) > 1)
+%    for i=1:numel(rtn.segmentedGaitCycles.l.index(:,1))
+%      rtn.segmentedGaitCycles.l.time(i,:) = ...
+%                  [rtn.data.time(rtn.segmentedGaitCycles.l.index(i,1)), ...
+%                   rtn.data.time(rtn.segmentedGaitCycles.l.index(i,2))];
+%    end
+%  else
+%    rtn.segmentedGaitCycles.l.time = [];
+%  end
+%
+%  if (numel(r_ii) > 1)
+%    for i=1:numel(rtn.segmentedGaitCycles.r.index(:,1))
+%      rtn.segmentedGaitCycles.r.time(i,:) = ...
+%                  [rtn.data.time(rtn.segmentedGaitCycles.r.index(i,1)), ...
+%                   rtn.data.time(rtn.segmentedGaitCycles.r.index(i,2))];
+%    end
+%  else
+%    rtn.segmentedGaitCycles.r.time = [];
+%  end
 end
