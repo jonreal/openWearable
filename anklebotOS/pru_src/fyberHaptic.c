@@ -4,7 +4,7 @@
 
 void hapticInit(void)
 {
-  for (int i=2; i<7; i++)
+  for (int i=1; i<7; i++)
   {
     // Mux I2C bus
     i2cBusChannelOn(i);

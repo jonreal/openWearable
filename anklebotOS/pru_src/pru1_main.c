@@ -247,7 +247,7 @@ void mode1(uint32_t si)
 {
   for (int i=1; i<7; i++){
     if (s->state[si].adc[i+1] >= p->threshold)
-      s->state[si].hapticAmp[i-1] = force2Haptic(s->state[si].adc[i-1]);
+      s->state[si].hapticAmp[i-1] = force2Haptic(s->state[si].adc[i+1]);
     else
       s->state[si].hapticAmp[i-1] = 0;
   }
