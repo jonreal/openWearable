@@ -1,6 +1,10 @@
-Embedded
+openWearble
+===========
 
-This directory contains all embedded software for ankleBot.
+OpenWearable is an open source hardware/software project aimed at developing
+tools for wearable robotics.
+
+Currently in development.
 
 -------------------------------------------------------------------------------
 
