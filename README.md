@@ -1,4 +1,4 @@
-openWearble
+openWearable
 ===========
 
 OpenWearable is an open source hardware/software project aimed at developing
