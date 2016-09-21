@@ -58,7 +58,7 @@ int main(int argc, char **argv)
   initDebugBuffer();
 
   // Load parameters from file to memory.
-  if(loadParameters("config/PA_A01") != 0){
+  if(loadParameters("config/PA_A02") != 0){
     printf("\nParameter file not found!\n");
   }
   printParameters(stdout);
@@ -70,7 +70,7 @@ int main(int argc, char **argv)
   printFirCoeff(stdout);
 
   // Load lookup table from file to memory.
-  if(loadLookUpTable("config/uff_1") != 0){
+  if(loadLookUpTable("config/uff_0") != 0){
     printf("\nLookup table file not found!\n");
   }
 //  printFFLookUpTable(stdout);
