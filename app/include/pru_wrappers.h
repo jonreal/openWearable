@@ -65,6 +65,7 @@ void setAnklePos0(float pos0);
 float getKp(void);
 float getKd(void);
 float getAnklePos0(void);
+float getAnklePos(void);
 
 void printParameters(FILE* fp);
 void sprintParameters(char* buffer);
