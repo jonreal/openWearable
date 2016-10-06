@@ -73,7 +73,7 @@ void io_cb(int sig)
 void tui_menu(void)
 {
   printf("\n\n---------------------------------------------------------------------\n"
-          "Kp = %3.2f, Kd = %3.2f, pos0 = %3.2f, FF enabled = %d, FFgain = %3.2f\n"
+          "Kp = %3.2f, Kd = %3.2f, pos0 = %3.2f, pos = %3.2f, FF enabled = %d, FFgain = %3.2f\n"
           "Menu: a - Enter new Kp\n"
           "      s - Enter new Kd\n"
           "      d - Enter new pos_0 (deg)\n"
@@ -88,7 +88,7 @@ void tui_menu(void)
           "      q - Step Response\n"
           "      e - exit\n"
           "-----------------------------------------------------------------------\n",
-          getKp(), getKd(), getAnklePos0(), getFFenable(), getFFgain());
+          getKp(), getKd(), getAnklePos0(), getAnklePos(), getFFenable(), getFFgain());
   fflush(stdout);
 }
 

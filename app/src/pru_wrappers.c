@@ -709,6 +709,11 @@ float getAnklePos0(void)
   return fix16_to_float(p->anklePos0);
 }
 
+float getAnklePos(void)
+{
+  return fix16_to_float(s->state[s->stateIndex].anklePos);
+}
+
 /* ----------------------------------------------------------------------------
  * Functions: int logFileInit(char* fileName)
  *
