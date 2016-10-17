@@ -29,7 +29,7 @@ extern volatile uint32_t *debugBuffer;
 void motorInit(void);
 void motorCleanUp(void);
 uint16_t motorCurrent2CmpValue(fix16_t u);
-void motorSetCurrent(fix16_t u, volatile fix16_t *motorPwmCmpValue);
+void motorSetCurrent(fix16_t u, volatile uint32_t *motorPwmCmpValue);
 void motorEnable(void);
 void motorDisable(void);
 

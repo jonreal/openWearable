@@ -1,7 +1,7 @@
 1000	// Freq.
 0	  // Freq. Ticks
 88	// Subject Mass
-2	// Kp
+0.5	// Kp
 0	// Kd
 0	    // anklePos0
 250  // l_forceThrs
