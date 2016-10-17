@@ -70,7 +70,7 @@ int main(int argc, char **argv)
   printFirCoeff(stdout);
 
   // Load lookup table from file to memory.
-  if(loadLookUpTable("config/uff_0") != 0){
+  if(loadLookUpTable("config/sine_20amps") != 0){
     printf("\nLookup table file not found!\n");
   }
 //  printFFLookUpTable(stdout);
