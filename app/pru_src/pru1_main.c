@@ -98,8 +98,8 @@ int main(void)
     s->cntrl_bit.pru0_done = 0;
 
     // Update Control
-    calibratePWMcmp2current(cnt, stateIndx, &cmpValue);
-//    updateControl(cnt, stateIndx);
+    //calibratePWMcmp2current(cnt, stateIndx, &cmpValue);
+    updateControl(cnt, stateIndx);
 
     // Set done bit (control update done)
     s->cntrl_bit.pru1_done = 1;
@@ -236,7 +236,7 @@ void updateControl(uint32_t cnt, uint32_t si)
   }
 
   // Send command/store command
-  motorSetDuty(fix16_sadd(u_ff, u_fb), &s->state[si].motorDuty);
+  motorSetCurrent(fix16_sadd(u_ff,u_fb), &s->state[si].motorCmpValue);
   s->state[si].u_ff = u_ff;
   s->state[si].u_fb = u_fb;
 }
@@ -331,14 +331,14 @@ void calibratePWMcmp2current(uint32_t cnt, uint32_t si, uint16_t *cmpValue)
     }
 
     pwmSetCmpValue(*cmpValue);
-    s->state[si].motorDuty = fix16_from_int(*cmpValue);
+    s->state[si].motorCmpValue = fix16_from_int(*cmpValue);
 
     uint16_t val = 10000;
-    s->state[si].motorDuty = fix16_from_int(val);
+    s->state[si].motorCmpValue = fix16_from_int(val);
     pwmSetCmpValue(val);
   }
   else
-    s->state[si].motorDuty = 0;
+    s->state[si].motorCmpValue = 0;
 
 
 }
