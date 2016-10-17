@@ -324,7 +324,7 @@ void zeroState(uint32_t si)
   s->state[si].l_percentGait = 0;
   s->state[si].r_gaitPhase = 0;
   s->state[si].l_gaitPhase = 0;
-  s->state[si].motorDuty = 0;
+  s->state[si].motorCmpValue = 0;
   s->state[si].anklePos = 0;
   s->state[si].ankleVel = 0;
   s->state[si].u_fb = 0;
@@ -450,7 +450,7 @@ void printState(uint32_t si, FILE *fp)
           "%u\t"    // l_percentGait - uint16_t
           "%u\t"    // r_gaitPhase - uint16_t
           "%u\t"    // l_gaitPhase - uint16_t
-          "%.2f\t"  // motorDuty - fix16_t (convert to float)
+          "%u\t"    // motorCmpValue - fix16_t (convert to float)
           "%.2f\t"  // anklePos - fix16_t (convert to float)
           "%.2f\t"  // ankleVel - fix16_t (convert to float)
           "%.2f\t"  // u_fb - fix16_t (convert to float)
@@ -481,7 +481,7 @@ void printState(uint32_t si, FILE *fp)
                 s->state[si].l_percentGait,
                 s->state[si].r_gaitPhase,
                 s->state[si].l_gaitPhase,
-                fix16_to_float(s->state[si].motorDuty),
+                s->state[si].motorCmpValue,
                 fix16_to_float(s->state[si].anklePos),
                 fix16_to_float(s->state[si].ankleVel),
                 fix16_to_float(s->state[si].u_fb),
@@ -519,7 +519,7 @@ void sprintState(uint8_t si, char* buffer)
           "%u\t"    // l_percentGait - uint16_t
           "%u\t"    // r_gaitPhase - uint16_t
           "%u\t"    // l_gaitPhase - uint16_t
-          "%.2f\t"  // motorDuty - fix16_t (convert to float)
+          "%u\t"    // motorCmpValue - fix16_t (convert to float)
           "%.2f\t"  // anklePos - fix16_t (convert to float)
           "%.2f\t"  // ankleVel - fix16_t (convert to float)
           "%.2f\t"  // u_fb - fix16_t (convert to float)
@@ -550,7 +550,7 @@ void sprintState(uint8_t si, char* buffer)
                 s->state[si].l_percentGait,
                 s->state[si].r_gaitPhase,
                 s->state[si].l_gaitPhase,
-                fix16_to_float(s->state[si].motorDuty),
+                s->state[si].motorCmpValue,
                 fix16_to_float(s->state[si].anklePos),
                 fix16_to_float(s->state[si].ankleVel),
                 fix16_to_float(s->state[si].u_fb),

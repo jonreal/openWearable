@@ -55,7 +55,8 @@ typedef struct{
   volatile uint16_t l_gaitPhase;
   volatile uint16_t r_gaitPhase;
 
-  volatile fix16_t motorDuty;
+  volatile uint16_t motorCmpValue;
+  volatile uint16_t pad;
   volatile fix16_t anklePos;
   volatile fix16_t ankleVel;
   volatile fix16_t u_fb;

@@ -4,34 +4,39 @@
 #include "fix16.h"
 #include "maxonmotor.h"
 
-// Motor using analog set point (via filtered PWM)
+// Motor used analog set point (via filtered PWM)
 //
-// 20 amps -> 100% duty
-// -20 amps -> 0% duty
+// 20 amps -> 0 PWM cmpValue
+// -20 amps -> 10000 PWM cmpValue
+//
+// cmpValue = K * current_d + B
+// K & B are were found experiemtnally.
 
 void motorInit(void)
 {
   motorDisable();
   pwmInit();
-  pwmSetCmpValue(duty2cmpval(FIX16_50));
+  pwmSetCmpValue(motorCurrent2CmpValue(0));
   motorEnable();
 }
 
 void motorCleanUp(void)
 {
   motorDisable();
-  pwmSetCmpValue(duty2cmpval(FIX16_50));
+  pwmSetCmpValue(motorCurrent2CmpValue(0));
   pwmCleanUp();
 }
 
-
-void motorSetDuty(fix16_t u, volatile fix16_t *motorDuty)
+uint16_t motorCurrent2CmpValue(fix16_t u)
 {
-  // Convert current to duty
-  // duty = 5/2 * current + 50
-  fix16_t duty = fix16_sadd(fix16_smul(-FIX16_K, u), FIX16_50);
-  pwmSetCmpValue(duty2cmpval(duty));
-  *motorDuty = duty;
+  return (uint16_t)fix16_to_int(fix16_sadd(fix16_smul(FIX16_K,u),FIX16_B));
+}
+
+void motorSetCurrent(fix16_t u, volatile fix16_t *motorPwmCmpValue)
+{
+  uint16_t cmpValue = motorCurrent2CmpValue(u);
+  pwmSetCmpValue(cmpValue);
+  (*motorPwmCmpValue) = cmpValue;
 }
 
 void motorEnable(void)
@@ -45,13 +50,3 @@ void motorDisable(void)
   // Active Low
   __R30 |= (1 << ENABLE_PIN);
 }
-
-uint16_t duty2cmpval(fix16_t duty)
-{
-  // 100% duty at 0 cmp
-  // 0% duty at 10000 cmp
-  // cmp = -100 * duty + 10000
-  fix16_t cmpval = fix16_sadd(fix16_smul(-FIX16_100, duty), FIX16_10000);
-  return (uint16_t) fix16_to_int(cmpval);
-}
-

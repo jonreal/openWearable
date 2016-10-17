@@ -9,21 +9,14 @@
 #define FIX16_MAX_DUTY  0x5A0000
 #define FIX16_MIN_DUTY  0xA0000
 
+// Linear fit current -> PWMcmpValue
+#define FIX16_K      0xFF999A     // 255.6 in fix16_t
+#define FIX16_B      0x144E0000   // 5198 in fix16_t
 
-// 5/2 in fix16
-#define FIX16_K       0x28000
-
-// 10 in fix16
-#define FIX16_10      0xA0000
-
-// 100 in fix16
-#define FIX16_100     0x640000
-
-// 50 in fix16
-#define FIX16_50    0x320000
-
-// 10000 in fix16
-#define FIX16_10000   0x27100000
+#define FIX16_10      0xA0000     // 10 in fix16
+#define FIX16_100     0x640000    // 100 in fix16
+#define FIX16_50      0x320000    // 50 in fix16
+#define FIX16_10000   0x27100000  // 10000 in fix16
 
 
 // --- Digital output reg.
@@ -35,10 +28,9 @@ extern volatile uint32_t *debugBuffer;
 // ---- Prototypes ----
 void motorInit(void);
 void motorCleanUp(void);
-void motorSetDuty(fix16_t u, volatile int32_t *motorDuty);
+uint16_t motorCurrent2CmpValue(fix16_t u);
+void motorSetCurrent(fix16_t u, volatile fix16_t *motorPwmCmpValue);
 void motorEnable(void);
 void motorDisable(void);
-void motorSetDir(uint8_t dorsiflex);
-uint16_t duty2cmpval(fix16_t duty);
 
 #endif
