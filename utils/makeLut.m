@@ -1,5 +1,13 @@
 function makeLut(func,varargin)
-
+%
+% makeLut(@(t)f(t))
+% makeLut(fun)
+% makelut(fun,'filename','lut1')
+%
+% Makes a look up table and saves to file.
+%
+%  Input: fun - function handle
+%
   nVarargin = length(varargin);
 
   if ((nVarargin == 3) && strCmp(varargin{1},'filename'))
@@ -18,7 +26,7 @@ function makeLut(func,varargin)
     xlabel('% gait','fontsize',20);
 
   writeFlag = 1;
-  file = ['../app/config/','filename'];
+  file = ['../app/config/',filename];
   if exist(file,'file') == 2
     fprintf('\n\t\tFile already exist');
     usr_input = input(' overwrite? [y/n]','s');
