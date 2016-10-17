@@ -366,7 +366,7 @@ void printStateHeader(FILE *fp)
           "l_Pgait\t"
           "r_gp\t"
           "l_gp\t"
-          "duty\t"
+          "cmpValue\t"
           "ankPos\t"
           "ankVel\t"
           "u_fb\t"
@@ -404,7 +404,7 @@ void sprintStateHeader(char* buffer)
           "l_Pgait\t"
           "r_gp\t"
           "l_gp\t"
-          "duty\t"
+          "cmpValue\t"
           "ankPos\t"
           "ankVel\t"
           "u_fb\t"
@@ -916,7 +916,8 @@ int loadLookUpTable(char* file)
   if(fp != NULL){
     for(int i=0; i<NUM_FF_LT; i++){
       fscanf(fp, "%f\n", &value);
-      // Scale signal by 1000
+
+      // Scale signal by 1000 to store as int16_t
       l->u_ff[i] = (int16_t) fix16_to_int(fix16_from_float(value * 1000.0));
     }
     fclose(fp);

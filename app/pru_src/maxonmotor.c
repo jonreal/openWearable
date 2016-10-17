@@ -32,7 +32,7 @@ uint16_t motorCurrent2CmpValue(fix16_t u)
   return (uint16_t)fix16_to_int(fix16_sadd(fix16_smul(FIX16_K,u),FIX16_B));
 }
 
-void motorSetCurrent(fix16_t u, volatile fix16_t *motorPwmCmpValue)
+void motorSetCurrent(fix16_t u, volatile uint32_t *motorPwmCmpValue)
 {
   uint16_t cmpValue = motorCurrent2CmpValue(u);
   pwmSetCmpValue(cmpValue);
