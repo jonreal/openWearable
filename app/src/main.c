@@ -58,7 +58,7 @@ int main(int argc, char **argv)
   initDebugBuffer();
 
   // Load parameters from file to memory.
-  if(loadParameters("config/StaticTest") != 0){
+  if(loadParameters("config/PA_A02") != 0){
     printf("\nParameter file not found!\n");
   }
   printParameters(stdout);
