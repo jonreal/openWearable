@@ -30,18 +30,16 @@ void motorCleanUp(void)
 uint16_t motorCurrent2CmpValue(fix16_t u)
 {
   int32_t temp = fix16_to_int(fix16_sadd(fix16_smul(FIX16_K,u),FIX16_B));
-
-  // Saturation
-  if (temp > 10000)
-    temp = 10000;
-  else if (temp < 0);
-    temp = 0;
-
   return (uint16_t)temp;
 }
 
 void motorSetCurrent(fix16_t u, volatile uint32_t *motorPwmCmpValue)
 {
+  if (u > fix16_from_int(20))
+    u = fix16_from_int(20);
+  else if (u < fix16_from_int(-20))
+    u = fix16_from_int(-20);
+
   uint16_t cmpValue = motorCurrent2CmpValue(u);
   pwmSetCmpValue(cmpValue);
   (*motorPwmCmpValue) = cmpValue;
