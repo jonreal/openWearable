@@ -210,8 +210,12 @@ void updateControl(uint32_t cnt, uint32_t si)
   // Impedance and feedforward
   else{
 
-    // Impedance
-    u_fb = fix16_smul(p->Kp, fix16_ssub(p->anklePos0, s->state[si].anklePos));
+    // Impedance feedback
+    //u_fb = fix16_smul(p->Kp, fix16_ssub(p->anklePos0, s->state[si].anklePos));
+
+    // Constant current offset
+    u_fb = p->Kp;
+
 
     // Feedforward
     if ((s->cntrl_bit.doFeedForward) && (p->gaitDetectReady)){
