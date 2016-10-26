@@ -17,7 +17,7 @@
 #include "pwmdriver.h"
 
 #define FIX16_1000  0x3E80000
-
+#define FIX16_MAX_ANGLE 0xFFE98000 // -22.5 (deg)
 
 // Prototypes ----------------------------------------------------------------
 void initialize(void);
@@ -202,9 +202,13 @@ void updateControl(uint32_t cnt, uint32_t si)
 
     s->state[si].l_percentGait = t_cnts;
 
-    // Scale ff
-    u_ff = fix16_smul(p->FFgain,
-                      fix16_sdiv(fix16_from_int(l->u_ff[t_cnts]), FIX16_1000));
+    // Check to see if the ankle angle is at the hard limit
+    if (s->state[si].anklePos < FIX16_MAX_ANGLE)
+      u_ff = p->Kp;
+    else
+      // Scale ff
+      u_ff = fix16_smul(p->FFgain,
+                fix16_sdiv(fix16_from_int(l->u_ff[t_cnts]), FIX16_1000));
   }
 
   // Impedance and feedforward
@@ -233,9 +237,14 @@ void updateControl(uint32_t cnt, uint32_t si)
       // Store percent gait
       s->state[si].l_percentGait = t_cnts;
 
-      // Scale ff
-      u_ff = fix16_smul(p->FFgain,
-                        fix16_sdiv(fix16_from_int(l->u_ff[t_cnts]), FIX16_1000));
+
+      // Check to see if the ankle angle is at the hard limit
+      if (s->state[si].anklePos < FIX16_MAX_ANGLE)
+        u_ff = 0;
+      else
+        // Scale ff
+        u_ff = fix16_smul(p->FFgain,
+                  fix16_sdiv(fix16_from_int(l->u_ff[t_cnts]), FIX16_1000));
     }
   }
 
