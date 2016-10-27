@@ -3,7 +3,7 @@
 88	// Subject Mass
 0	// Kp
 0	// Kd
-0	    // anklePos0
+-20.0	    // anklePos0
 250  // l_forceThrs
 50    // l_d_forceThrs
 300   // r_forceThrs

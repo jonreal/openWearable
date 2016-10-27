@@ -17,7 +17,6 @@
 #include "pwmdriver.h"
 
 #define FIX16_1000  0x3E80000
-#define FIX16_MAX_ANGLE 0xFFE98000 // -22.5 (deg)
 
 // Prototypes ----------------------------------------------------------------
 void initialize(void);
@@ -172,6 +171,7 @@ void updateControl(uint32_t cnt, uint32_t si)
 {
   fix16_t u_fb = 0;
   fix16_t u_ff = 0;
+
   uint32_t t_cnts, t1, Tp;
 
   // Step Response
@@ -197,6 +197,9 @@ void updateControl(uint32_t cnt, uint32_t si)
   // Feedforward Test
   else if (s->cntrl_bit.testFF == 1){
 
+    // Bias
+    u_fb = p->Kp;
+
     // If first call, store cnt (so waveform starts at 0)
     if (s->cntrl_bit.testFF_flag == 0) {
       s->cntrl_bit.testFF_flag = 1;
@@ -208,9 +211,9 @@ void updateControl(uint32_t cnt, uint32_t si)
 
     s->state[si].l_percentGait = t_cnts;
 
-    // Check to see if the ankle angle is at the hard limit
-    if (s->state[si].anklePos < FIX16_MAX_ANGLE)
-      u_ff = p->Kp;
+    // Check to see if we are close to hard limit using velocity of motor
+    if (s->state[si].anklePos < p->anklePos0)
+      u_ff = 0;
     else
       // Scale ff
       u_ff = fix16_smul(p->FFgain,
@@ -243,9 +246,8 @@ void updateControl(uint32_t cnt, uint32_t si)
       // Store percent gait
       s->state[si].l_percentGait = t_cnts;
 
-
-      // Check to see if the ankle angle is at the hard limit
-      if (s->state[si].anklePos < FIX16_MAX_ANGLE)
+      // Check to see if we are close to hard limit using velocity of motor
+      if (s->state[si].anklePos < p->anklePos0)
         u_ff = 0;
       else
         // Scale ff
@@ -266,11 +268,6 @@ void updateState(uint32_t cnt, uint32_t si)
 
   if (p->encoderDetect){
     encoderSample(&(s->state[si].anklePos));
-
-//    //filter encoder for vel
-//    s1 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-//                   p->filtBuffer[6].x, p->filtBuffer[6].y,
-//                   (int16_t) fix16_to_int(s->state[si].anklePos)
   }
   else
     s->state[si].anklePos = 0;
@@ -369,4 +366,3 @@ void calibratePWMcmp2current(uint32_t cnt, uint32_t si, uint16_t *cmpValue)
 
 
 }
-
