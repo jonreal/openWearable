@@ -10,7 +10,7 @@ function makeLut(func,varargin)
 %
   nVarargin = length(varargin);
 
-  if ((nVarargin == 3) && strCmp(varargin{1},'filename'))
+  if ((nVarargin == 2) && strcmp(varargin{1},'filename'))
     filename = varargin{2};
   else
     filename = 'lut';
@@ -21,12 +21,13 @@ function makeLut(func,varargin)
   y = func(x);
 
   figure;
-    plot(x,y,'k')
+    plot(x,y,'-ok')
     ylabel('current (A)','fontsize',20);
     xlabel('% gait','fontsize',20);
 
   writeFlag = 1;
-  file = ['../app/config/',filename];
+  file = ['~/gitrepo_master/openWearable/app/config/',filename];
+  file
   if exist(file,'file') == 2
     fprintf('\n\t\tFile already exist');
     usr_input = input(' overwrite? [y/n]','s');
@@ -38,6 +39,7 @@ function makeLut(func,varargin)
     end
   end
   if writeFlag
+    file
     fid = fopen(file,'w');
     fprintf(fid,'%f\n',y);
     fclose(fid);

@@ -11,6 +11,6 @@ function rtn = bits2Rpms(velocity_in_bits)
   m = - (20000 - (-20000)) / 2^12;
   b = - (-20000);
 
-  rtn = m.* current_in_bits + b;
+  rtn = m.* velocity_in_bits + b;
 
 end
