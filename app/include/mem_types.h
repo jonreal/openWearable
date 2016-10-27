@@ -39,6 +39,18 @@
 #define PRU0 0
 #define PRU1 1
 
+
+// ADC mux
+// 0 - motor current
+// 1 - motor velocity
+// 2 - Force sensor 1.1
+// 3 - Force sensor 1.2
+// 4 - Force sensor 1.3
+// 5 - Force sensor 2.1
+// 6 - Force sensor 2.2
+// 7 - Force sensor 2.3
+
+
 // Structures ----------------------------------------------------------------
 
 // Anklebot state
@@ -86,8 +98,9 @@ typedef struct{
       unsigned gaitPhaseReady: 1;   // bit 6 (set by pru0, read by pru1)
       unsigned resetGaitPhase : 1;  // bit 7
       unsigned testFF : 1;          // bit 8 (set by arm, reset by arm)
-      unsigned stepResp : 1;        // bit 9 (set by arm, reset by pru1)
-      unsigned rsvd : 6;            // bits 10-15 reserved
+      unsigned testFF_flag : 1;     // bit 9 (set by pru1)
+      unsigned stepResp : 1;        // bit 10 (set by arm, reset by pru1)
+      unsigned rsvd : 5;            // bits 11-15 reserved
    } cntrl_bit;
   };
 } shared_mem_t;
@@ -137,6 +150,7 @@ typedef struct{
   volatile fix16_t stepCurrent;
 
   volatile fix16_t FFgain;
+  volatile fix16_t FFtestT0;
 
   volatile uint32_t encoderDetect;
   volatile uint32_t imuDetect;

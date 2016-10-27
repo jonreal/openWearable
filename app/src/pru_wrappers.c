@@ -372,7 +372,7 @@ void printStateHeader(FILE *fp)
           "u_fb\t"
           "u_ff\t"
           "mtrCurr\t"
-          "mtrCurr_d\t"
+          "mtrVel\t"
           "l_s1\t"
           "l_s2\t"
           "l_s3\t"
@@ -410,7 +410,7 @@ void sprintStateHeader(char* buffer)
           "u_fb\t"
           "u_ff\t"
           "mtrCurr\t"
-          "mtrCurr_d\t"
+          "mtrVel\t"
           "l_s1\t"
           "l_s2\t"
           "l_s3\t"
@@ -456,7 +456,7 @@ void printState(uint32_t si, FILE *fp)
           "%.2f\t"  // u_fb - fix16_t (convert to float)
           "%.2f\t"  // u_ff - fix16_t (convert to float)
           "%i\t"    // adc[0] (motor actual current) - int16_t
-          "%i\t"    // adc[1] (motor demand current) - int16_t
+          "%i\t"    // adc[1] (motor actual velocity) - int16_t
           "%i\t"    // adc[2] (amp1s1) - int16_t
           "%i\t"    // adc[3] (amp1s2) - int16_t
           "%i\t"    // adc[4] (amp1s3) - int16_t

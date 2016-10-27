@@ -4,6 +4,7 @@
 #include "fix16.h"
 #include "filter.h"
 
+// TODO: Change filter to take fix16 as input
 
 // ----------------------------------------------------------------------------
 // Initialize filter buffers

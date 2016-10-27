@@ -197,8 +197,14 @@ void updateControl(uint32_t cnt, uint32_t si)
   // Feedforward Test
   else if (s->cntrl_bit.testFF == 1){
 
+    // If first call, store cnt (so waveform starts at 0)
+    if (s->cntrl_bit.testFF_flag == 0) {
+      s->cntrl_bit.testFF_flag = 1;
+      p->FFtestT0 = cnt;
+    }
+
     // Calculate lut index t = (cnt % Tp) / Tp
-    t_cnts = (cnt % 250) * 4;
+    t_cnts = ((cnt - p->FFtestT0) % 250) * 4;
 
     s->state[si].l_percentGait = t_cnts;
 
@@ -256,8 +262,16 @@ void updateControl(uint32_t cnt, uint32_t si)
 
 void updateState(uint32_t cnt, uint32_t si)
 {
-  if (p->encoderDetect)
+  fix16_t s1;
+
+  if (p->encoderDetect){
     encoderSample(&(s->state[si].anklePos));
+
+//    //filter encoder for vel
+//    s1 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
+//                   p->filtBuffer[6].x, p->filtBuffer[6].y,
+//                   (int16_t) fix16_to_int(s->state[si].anklePos)
+  }
   else
     s->state[si].anklePos = 0;
 }
