@@ -9,7 +9,6 @@
 #include "mem_types.h"
 #include "hw_types.h"
 
-//#include "imu_mpu9150.h"
 #include "adcdriver.h"
 #include "gaitPhase.h"
 #include "viconsync.h"
@@ -147,7 +146,6 @@ void initialize(void)
 
   /* Add pru dependent peripheral init methods here */
   adcInit();
-  //imuInit();
   gaitPhaseInit();
 
   /* Init filter buffers */
@@ -196,7 +194,7 @@ void updateState(uint32_t cnt, uint32_t si)
   adcSample_2(adc);
   adcSample_3(adc);
 
-  /* Filter insoles heel */
+  // Filter heel sensors for gaitphase
   s1 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
                  p->filtBuffer[0].x, p->filtBuffer[0].y,
                  adc[4]);
@@ -223,7 +221,7 @@ void updateState(uint32_t cnt, uint32_t si)
                  (int16_t) fix16_to_int(s5));
 
 
-  /* Pack Stuct */
+  // Pack Stuct
   s->state[si].adc[2] = adc[2];
   s->state[si].adc[3] = adc[3];
   s->state[si].adc[4] = (int16_t)fix16_to_int(s2);
@@ -233,6 +231,7 @@ void updateState(uint32_t cnt, uint32_t si)
   s->state[si].d_heelForce[0] = (int16_t)fix16_to_int(fix16_ssub(s2, s3));
   s->state[si].d_heelForce[1] = (int16_t)fix16_to_int(fix16_ssub(s5, s6));
 
+  // Gait phase
   leftGaitPhaseDetect(cnt, s->state[si].adc[4], s->state[si].d_heelForce[0]);
 
   s->state[si].l_meanGaitPeriod = p->l_prevPeriod;
@@ -245,7 +244,7 @@ void updateState(uint32_t cnt, uint32_t si)
   s->state[si].r_gaitPhase = p->r_prevGaitPhase;
   s->state[si].r_hsStamp = p->r_prevHsStamp;
 
-  /* Motor analog samples */
+  // Motor analog samples
   adcSample_1(adc);
   s->state[si].adc[0] = adc[0];
   s->state[si].adc[1] = adc[1];
@@ -270,7 +269,6 @@ void cleanUp(void)
 {
   // Add pru dependent peripheral cleanup methods here
   adcCleanUp();
-  //imuCleanUp();
 
   // Clear all interrupts
   clearIepInterrupt();
