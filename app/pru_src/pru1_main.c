@@ -14,6 +14,7 @@
 #include "maxonmotor.h"
 #include "fix16.h"
 
+#include "mpu9150imu.h"
 #include "pwmdriver.h"
 
 #define FIX16_1000  0x3E80000
@@ -31,7 +32,7 @@ void debugPinLow(void);
 void interruptInit(void);
 void clearInterrupt(void);
 
-void calibratePWMcmp2current(uint32_t cnt, uint32_t si, uint16_t *cmpValue);
+void calibratePWMcmp2current(uint32_t cnt, uint32_t si);
 
 // Globals -------------------------------------------------------------------
 volatile register uint32_t __R30;
@@ -63,7 +64,6 @@ int main(void)
 {
   uint32_t cnt = 0;
   uint32_t stateIndx = 0;
-  uint16_t cmpValue = 0;
 
   initialize();
 
@@ -97,8 +97,8 @@ int main(void)
     s->cntrl_bit.pru0_done = 0;
 
     // Update Control
-    //calibratePWMcmp2current(cnt, stateIndx, &cmpValue);
-    updateControl(cnt, stateIndx);
+    calibratePWMcmp2current(cnt, stateIndx);
+    //updateControl(cnt, stateIndx);
 
     // Set done bit (control update done)
     s->cntrl_bit.pru1_done = 1;
@@ -147,6 +147,11 @@ void initialize(void)
     p->encoderDetect = 1;
   else
     p->encoderDetect = 0;
+
+  if (imuInit() == 0)
+    p->imuDetect = 1;
+  else
+    p->imuDetect = 0;
 
   motorInit();
 
@@ -264,13 +269,13 @@ void updateControl(uint32_t cnt, uint32_t si)
 
 void updateState(uint32_t cnt, uint32_t si)
 {
-  fix16_t s1;
-
-  if (p->encoderDetect){
+  // encoder
+  if (p->encoderDetect)
     encoderSample(&(s->state[si].anklePos));
-  }
-  else
-    s->state[si].anklePos = 0;
+
+  // imu
+  if (p->imuDetect)
+    imuSample(s->state[si].imu);
 }
 
 void cleanUp(void)
@@ -278,6 +283,7 @@ void cleanUp(void)
   // Add pru dependent peripheral cleanup methods here
   encoderCleanUp();
   motorCleanUp();
+  imuCleanUp();
 
   // Cleanup modules
   spiCleanUp();
@@ -342,27 +348,13 @@ void clearInterrupt(void)
 }
 
 
-void calibratePWMcmp2current(uint32_t cnt, uint32_t si, uint16_t *cmpValue)
+void calibratePWMcmp2current(uint32_t cnt, uint32_t si)
 {
-  // Wait 10s before starting cmpValue sweep
   if (cnt > 10000){
-
-    // Increase cmpValues every sec.
-    if ((cnt % 1000) == 0){
-      (*cmpValue) = (*cmpValue) + 100;
-      if (*cmpValue >= 10000)
-        (*cmpValue) = 0;
-    }
-
-    pwmSetCmpValue(*cmpValue);
-    s->state[si].motorCmpValue = fix16_from_int(*cmpValue);
-
-    uint16_t val = 10000;
-    s->state[si].motorCmpValue = fix16_from_int(val);
+    uint16_t val = 0;
+    s->state[si].motorCmpValue = val;
     pwmSetCmpValue(val);
   }
   else
-    s->state[si].motorCmpValue = 0;
-
-
+    s->state[si].motorCmpValue = 5000;
 }

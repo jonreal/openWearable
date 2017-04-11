@@ -24,12 +24,12 @@ BUILD_DIR = ./build
 
 # Compiler
 CC = gcc
-CFLAGS = -std=gnu99 -Wall -g -O3 -mtune=cortex-a8 -march=armv7-a
+CFLAGS = -std=gnu99 -Wall -g -O4 -mtune=cortex-a8 -march=armv7-a
 LDFLAGS =
 
 # PRU compiler
 PRU_CC = clpru
-PRU_CFLAGS = -q --c99 -v3 --define=am3359d -O3
+PRU_CFLAGS = -q --c99 -v3 --define=am3359d -O4
 PRU_LDFLAGS =
 
 # PRU hex

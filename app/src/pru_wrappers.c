@@ -450,7 +450,7 @@ void printState(uint32_t si, FILE *fp)
           "%u\t"    // l_percentGait - uint16_t
           "%u\t"    // r_gaitPhase - uint16_t
           "%u\t"    // l_gaitPhase - uint16_t
-          "%u\t"    // motorCmpValue - fix16_t (convert to float)
+          "%u\t"    // motorCmpValue - uint32_t
           "%.2f\t"  // anklePos - fix16_t (convert to float)
           "%.2f\t"  // ankleVel - fix16_t (convert to float)
           "%.2f\t"  // u_fb - fix16_t (convert to float)
@@ -519,7 +519,7 @@ void sprintState(uint8_t si, char* buffer)
           "%u\t"    // l_percentGait - uint16_t
           "%u\t"    // r_gaitPhase - uint16_t
           "%u\t"    // l_gaitPhase - uint16_t
-          "%u\t"    // motorCmpValue - fix16_t (convert to float)
+          "%u\t"    // motorCmpValue - uint32_t
           "%.2f\t"  // anklePos - fix16_t (convert to float)
           "%.2f\t"  // ankleVel - fix16_t (convert to float)
           "%.2f\t"  // u_fb - fix16_t (convert to float)

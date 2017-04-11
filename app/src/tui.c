@@ -448,6 +448,7 @@ int start_tui(void)
           fflush(stdout);
           ptui->io_ready = 0;
           break;
+
       }
     }
   }

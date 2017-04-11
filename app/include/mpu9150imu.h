@@ -14,7 +14,7 @@
 extern volatile uint32_t *debugBuffer;
 
 /* ---- Prototypes ---- */
-void imuInit(void);
+int8_t imuInit(void);
 void imuCleanUp(void);
 void imuSample(volatile int16_t imu[6]);
 
