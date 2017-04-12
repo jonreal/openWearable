@@ -97,8 +97,8 @@ int main(void)
     s->cntrl_bit.pru0_done = 0;
 
     // Update Control
-    calibratePWMcmp2current(cnt, stateIndx);
-    //updateControl(cnt, stateIndx);
+    //calibratePWMcmp2current(cnt, stateIndx);
+    updateControl(cnt, stateIndx);
 
     // Set done bit (control update done)
     s->cntrl_bit.pru1_done = 1;
@@ -148,10 +148,10 @@ void initialize(void)
   else
     p->encoderDetect = 0;
 
-  if (imuInit() == 0)
-    p->imuDetect = 1;
-  else
-    p->imuDetect = 0;
+  //if (imuInit() == 0)
+  //  p->imuDetect = 1;
+  //else
+  //  p->imuDetect = 0;
 
   motorInit();
 
@@ -211,8 +211,8 @@ void updateControl(uint32_t cnt, uint32_t si)
       p->FFtestT0 = cnt;
     }
 
-    // Calculate lut index t = (cnt % Tp) / Tp
-    t_cnts = ((cnt - p->FFtestT0) % 250) * 4;
+    // Calculate lut index t = (cnt % Tp) * (1/Tp * 1000)
+    t_cnts = ((cnt - p->FFtestT0) % 1000) * 1;
 
     s->state[si].l_percentGait = t_cnts;
 
@@ -274,8 +274,8 @@ void updateState(uint32_t cnt, uint32_t si)
     encoderSample(&(s->state[si].anklePos));
 
   // imu
-  if (p->imuDetect)
-    imuSample(s->state[si].imu);
+  //if (p->imuDetect)
+  //  imuSample(s->state[si].imu);
 }
 
 void cleanUp(void)
@@ -283,7 +283,7 @@ void cleanUp(void)
   // Add pru dependent peripheral cleanup methods here
   encoderCleanUp();
   motorCleanUp();
-  imuCleanUp();
+  //imuCleanUp();
 
   // Cleanup modules
   spiCleanUp();
@@ -351,7 +351,7 @@ void clearInterrupt(void)
 void calibratePWMcmp2current(uint32_t cnt, uint32_t si)
 {
   if (cnt > 10000){
-    uint16_t val = 0;
+    uint16_t val = 10000;
     s->state[si].motorCmpValue = val;
     pwmSetCmpValue(val);
   }

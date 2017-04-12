@@ -3,15 +3,14 @@
 
 #define ENABLE_PIN    9
 #define DIR_PIN       10
-#define MAX_DUTY      90
-#define MIN_DUTY      10
-
-#define FIX16_MAX_DUTY  0x5A0000
-#define FIX16_MIN_DUTY  0xA0000
 
 // Linear fit current -> PWMcmpValue
-#define FIX16_K      0xFF999A     // 255.6 in fix16_t
-#define FIX16_B      0x144E0000   // 5198 in fix16_t
+#define FIX16_K      0x180E666    // 384.9 in fix16_t
+#define FIX16_B      0x130C0000  // 4876 in fix16_t
+
+// Max and min current (found from fit e.g., cmpValue = [0, 10000])
+#define FIX16_MAX_CURRENT 0xD4CCD // 13.3 amps
+#define FIX16_MIN_CURRENT 0xC999A // 12.6 amps
 
 #define FIX16_10      0xA0000     // 10 in fix16
 #define FIX16_100     0x640000    // 100 in fix16

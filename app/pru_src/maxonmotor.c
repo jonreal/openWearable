@@ -6,11 +6,15 @@
 
 // Motor used analog set point (via filtered PWM)
 //
-// 20 amps -> 0 PWM cmpValue
-// -20 amps -> 10000 PWM cmpValue
+// Motor Setting on ESCON Studio
+// 14 amps -> 3.5 V
+// -14 amps -> 0 V
 //
+// Experimental fit:
 // cmpValue = K * current_d + B
-// K & B are were found experiemtnally.
+//
+// K = 384.9
+// B = 4876
 
 void motorInit(void)
 {
@@ -30,15 +34,19 @@ void motorCleanUp(void)
 uint16_t motorCurrent2CmpValue(fix16_t u)
 {
   int32_t temp = fix16_to_int(fix16_sadd(fix16_smul(FIX16_K,u),FIX16_B));
+
   return (uint16_t)temp;
 }
 
 void motorSetCurrent(fix16_t u, volatile uint32_t *motorPwmCmpValue)
 {
-  if (u > fix16_from_int(20))
-    u = fix16_from_int(20);
-  else if (u < fix16_from_int(-20))
-    u = fix16_from_int(-20);
+
+  if (u > FIX16_MAX_CURRENT){
+    u = FIX16_MAX_CURRENT;
+  }
+  else if (u < -FIX16_MIN_CURRENT) {
+    u = -FIX16_MIN_CURRENT;
+  }
 
   uint16_t cmpValue = motorCurrent2CmpValue(u);
   pwmSetCmpValue(cmpValue);
