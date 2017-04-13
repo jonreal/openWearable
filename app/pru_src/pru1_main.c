@@ -148,10 +148,10 @@ void initialize(void)
   else
     p->encoderDetect = 0;
 
-  //if (imuInit() == 0)
-  //  p->imuDetect = 1;
-  //else
-  //  p->imuDetect = 0;
+  if (imuInit() == 0)
+    p->imuDetect = 1;
+  else
+    p->imuDetect = 0;
 
   motorInit();
 
@@ -274,8 +274,8 @@ void updateState(uint32_t cnt, uint32_t si)
     encoderSample(&(s->state[si].anklePos));
 
   // imu
-  //if (p->imuDetect)
-  //  imuSample(s->state[si].imu);
+  if (p->imuDetect)
+    imuSample(s->state[si].imu);
 }
 
 void cleanUp(void)
@@ -283,7 +283,7 @@ void cleanUp(void)
   // Add pru dependent peripheral cleanup methods here
   encoderCleanUp();
   motorCleanUp();
-  //imuCleanUp();
+  imuCleanUp();
 
   // Cleanup modules
   spiCleanUp();
