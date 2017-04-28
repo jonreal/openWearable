@@ -10,7 +10,7 @@ function rtn = heelStrikeCheck(trialName)
         plot(rtn.segmentedGaitCycles.l.time(i,1),0,'og')
         plot(rtn.segmentedGaitCycles.l.time(i,2),100,'or')
       end
-      plot(rtn.data.time,rtn.data.l_gp.*max(rtn.data.l_s3),'--g')
+      plot(rtn.data.time,rtn.data.l_gp.*max(rtn.data.l_s3),'--b')
       title('Left heel sensor','fontsize',20)
       xlabel('Time (s)','fontsize',20);
       ylabel('Bits','fontsize',20);
@@ -33,7 +33,7 @@ function rtn = heelStrikeCheck(trialName)
         plot(rtn.segmentedGaitCycles.r.time(i,1),0,'og')
         plot(rtn.segmentedGaitCycles.r.time(i,2),100,'or')
       end
-      plot(rtn.data.time,rtn.data.r_gp.*max(rtn.data.r_s3),'--g')
+      plot(rtn.data.time,rtn.data.r_gp.*max(rtn.data.r_s3),'--b')
       title('Left heel sensor','fontsize',20)
       xlabel('Time (s)','fontsize',20);
       ylabel('Bits','fontsize',20);
