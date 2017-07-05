@@ -133,7 +133,7 @@ void initialize(void)
 
   // Zero detect flags
   p->encoderDetect = 0;
-  p->imuDetect = 0;
+//  p->imuDetect = 0;
 
   // Memory and Interrupt
   initMemory();
@@ -148,10 +148,10 @@ void initialize(void)
   else
     p->encoderDetect = 0;
 
-  if (imuInit() == 0)
-    p->imuDetect = 1;
-  else
-    p->imuDetect = 0;
+//  if (imuInit() == 0)
+//    p->imuDetect = 1;
+//  else
+//    p->imuDetect = 0;
 
   motorInit();
 
@@ -212,16 +212,14 @@ void updateControl(uint32_t cnt, uint32_t si)
     }
 
     // Calculate lut index t = (cnt % Tp) * (1/Tp * 1000)
-    t_cnts = ((cnt - p->FFtestT0) % 1000) * 1;
+    t_cnts = ((cnt - p->FFtestT0) % 1000) * 1; // 1Hz
+    // t_cnts = ((cnt - p->FFtestT0) % 500) * 2; // 2 Hz
+    //t_cnts = ((cnt - p->FFtestT0) % 250) * 4; // 4 Hz
 
     s->state[si].l_percentGait = t_cnts;
 
-    // Check to see if we are close to hard limit using velocity of motor
-    if (s->state[si].anklePos < p->anklePos0)
-      u_ff = 0;
-    else
-      // Scale ff
-      u_ff = fix16_smul(p->FFgain,
+    // Scale ff
+    u_ff = fix16_smul(p->FFgain,
                 fix16_sdiv(fix16_from_int(l->u_ff[t_cnts]), FIX16_1000));
   }
 
@@ -251,12 +249,8 @@ void updateControl(uint32_t cnt, uint32_t si)
       // Store percent gait
       s->state[si].l_percentGait = t_cnts;
 
-      // Check to see if we are close to hard limit using velocity of motor
-      if (s->state[si].anklePos < p->anklePos0)
-        u_ff = 0;
-      else
-        // Scale ff
-        u_ff = fix16_smul(p->FFgain,
+      // Scale ff
+      u_ff = fix16_smul(p->FFgain,
                   fix16_sdiv(fix16_from_int(l->u_ff[t_cnts]), FIX16_1000));
     }
   }
@@ -274,8 +268,8 @@ void updateState(uint32_t cnt, uint32_t si)
     encoderSample(&(s->state[si].anklePos));
 
   // imu
-  if (p->imuDetect)
-    imuSample(s->state[si].imu);
+//  if (p->imuDetect)
+//    imuSample(s->state[si].imu);
 }
 
 void cleanUp(void)
@@ -283,7 +277,7 @@ void cleanUp(void)
   // Add pru dependent peripheral cleanup methods here
   encoderCleanUp();
   motorCleanUp();
-  imuCleanUp();
+//  imuCleanUp();
 
   // Cleanup modules
   spiCleanUp();
