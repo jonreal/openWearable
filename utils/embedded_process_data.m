@@ -1,6 +1,9 @@
 function rtn = embedded_process_data(trialName)
   lineCnt = 0;
 
+
+  doplot = 0;
+
   % Check file exists
   file = ['./',trialName];
   if exist(file,'file') ~= 2
@@ -112,21 +115,24 @@ function rtn = embedded_process_data(trialName)
   % Remove unsynced data
   D(D(:,2) ~= 1,:) = [];
 
+  if(doplot)
   figure;
     plot(D(:,1))
     xlabel('Data Point','fontsize',20)
     ylabel('Time Stamp','fontsize',20)
-
+  end
 
   % Time stamp difference: dt = 1 for all points unless data chunk is missing
   dt = D(2:end,1) - D(1:end-1,1);
   startMissingData_index = find(dt ~= 1);
   endMissingData_index = startMissingData_index + 1;
 
+  if(doplot)
   figure;
     plot(1:numel(D(1:end-1,1)),dt)
     xlabel('Data Point','fontsize',20)
     ylabel('Stamp[k+1] - Stamp[k]','fontsize',20)
+  end
 
   % Calculate time vector
   rtn.data.time = (D(:,1) - D(1,1)).*(1/rtn.params.frq);
@@ -225,8 +231,6 @@ function rtn = embedded_process_data(trialName)
       rtn.segmentedGaitCycles.r.index(ii,:) = [];
     end
   end
-
-
 
   % Convert to index to time
   if (numel(l_ii) > 1)
