@@ -16,6 +16,7 @@
 
 #include "mpu9150imu.h"
 #include "pwmdriver.h"
+#include "gaitPhase.h"
 
 #define FIX16_1000  0x3E80000
 
@@ -236,18 +237,37 @@ void updateControl(uint32_t cnt, uint32_t si)
     // Feedforward
     if ((s->cntrl_bit.doFeedForward) && (p->gaitDetectReady)){
 
-      // Time since hs
-      t1 = (cnt - s->state[si].l_hsStamp) * 1000;
 
-      t_cnts = t1 / (s->state[si].l_meanGaitPeriod -
-                     s->state[si].l_meanGaitPeriod / 1000);
+      if (PROS_ON_LEFT) {
+        // Time since hs
+        t1 = (cnt - s->state[si].l_hsStamp) * 1000;
 
-      // Saturate t_cnts;
-      if (t_cnts >= NUM_FF_LT)
-        t_cnts = NUM_FF_LT-1;
+        t_cnts = t1 / (s->state[si].l_meanGaitPeriod -
+                       s->state[si].l_meanGaitPeriod / 1000);
 
-      // Store percent gait
-      s->state[si].l_percentGait = t_cnts;
+        // Saturate t_cnts;
+        if (t_cnts >= NUM_FF_LT)
+          t_cnts = NUM_FF_LT-1;
+
+        // Store percent gait
+        s->state[si].l_percentGait = t_cnts;
+      }
+      else {
+        // Time since hs
+        t1 = (cnt - s->state[si].r_hsStamp) * 1000;
+
+        t_cnts = t1 / (s->state[si].r_meanGaitPeriod -
+                       s->state[si].r_meanGaitPeriod / 1000);
+
+        // Saturate t_cnts;
+        if (t_cnts >= NUM_FF_LT)
+          t_cnts = NUM_FF_LT-1;
+
+        // Store percent gait
+        s->state[si].r_percentGait = t_cnts;
+      }
+
+
 
       // Scale ff
       u_ff = fix16_smul(p->FFgain,

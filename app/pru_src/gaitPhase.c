@@ -3,6 +3,7 @@
 #include "gaitPhase.h"
 
 
+
 void gaitPhaseInit(void)
 {
   for (int i=1; i>3; i++){
@@ -43,13 +44,15 @@ void leftGaitPhaseDetect(uint32_t cnt,
         fix16_sdiv(fix16_sadd(fix16_sadd(p->l_period[0],
                       p->l_period[1]), p->l_period[2]), fix16_from_int(3)));
 
+      if (PROS_ON_LEFT) {
       // Increment step
-      p->numOfSteps++;
-      if (p->numOfSteps > 5)
-        p->numOfSteps = 5;
+        p->numOfSteps++;
+        if (p->numOfSteps > 5)
+          p->numOfSteps = 5;
 
-      if (p->numOfSteps >= 5)
-        p->gaitDetectReady = 1;
+        if (p->numOfSteps >= 5)
+          p->gaitDetectReady = 1;
+      }
 
     }
     else{
@@ -100,13 +103,16 @@ void rightGaitPhaseDetect(uint32_t cnt,
         fix16_sdiv(fix16_sadd(fix16_sadd(p->r_period[0],
                       p->r_period[1]), p->r_period[2]), fix16_from_int(3)));
 
-      // Increment step
-//      p->numOfSteps++;
-//      if (p->numOfSteps > 5)
-//        p->numOfSteps = 5;
-//
-//      if (p->numOfSteps >= 5)
-//        p->gaitDetectReady = 1;
+
+      if (!PROS_ON_LEFT){
+        // Increment step
+        p->numOfSteps++;
+        if (p->numOfSteps > 5)
+          p->numOfSteps = 5;
+
+        if (p->numOfSteps >= 5)
+          p->gaitDetectReady = 1;
+      }
 
     }
     else{
