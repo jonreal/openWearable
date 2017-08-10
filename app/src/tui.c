@@ -178,7 +178,6 @@ int start_tui(void)
           scanf(" %c", &inChar);
           if (inChar == 'y')
             setProsSide( !getProsSide());
-
           tui_menu();
           ptui->io_ready = 0;
           break;
