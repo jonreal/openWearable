@@ -44,7 +44,7 @@ void leftGaitPhaseDetect(uint32_t cnt,
         fix16_sdiv(fix16_sadd(fix16_sadd(p->l_period[0],
                       p->l_period[1]), p->l_period[2]), fix16_from_int(3)));
 
-      if (PROS_ON_LEFT) {
+      if (p->isProsLeft) {
       // Increment step
         p->numOfSteps++;
         if (p->numOfSteps > 5)
@@ -104,7 +104,7 @@ void rightGaitPhaseDetect(uint32_t cnt,
                       p->r_period[1]), p->r_period[2]), fix16_from_int(3)));
 
 
-      if (!PROS_ON_LEFT){
+      if (!p->isProsLeft){
         // Increment step
         p->numOfSteps++;
         if (p->numOfSteps > 5)

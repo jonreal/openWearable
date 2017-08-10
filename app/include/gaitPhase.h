@@ -3,8 +3,6 @@
 
 #include "mem_types.h"
 
-#define PROS_ON_LEFT 1
-
 /* Global ------------------------------------------------------------------ */
 extern volatile uint32_t *debugBuffer;
 extern param_mem_t *p;
