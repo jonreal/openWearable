@@ -1,4 +1,4 @@
-function rtn = bits2Amps(current_in_bits)
+function rtn = bits2Amps(current_in_bits,maxAmp)
 % bits2Amps(current_in_bits)
 %
 % Opposite convention motor drive
@@ -7,7 +7,8 @@ function rtn = bits2Amps(current_in_bits)
 % 2^12 bits (1.8 volts) <--> max amps
 %
 
-  maxAmp = 14;
+  %maxAmp = 14;
+
   % negative sign for opposite sign convention
   m = - (maxAmp - (-maxAmp)) / 2^12;
   b = - (-maxAmp);
