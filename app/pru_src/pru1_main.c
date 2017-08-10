@@ -16,23 +16,31 @@
 
 #include "mpu9150imu.h"
 #include "pwmdriver.h"
+#include "gaitPhase.h"
 
 #define FIX16_1000  0x3E80000
 
 // Prototypes ----------------------------------------------------------------
+
+// --------------------------------------
+// Edit these to customize
+// --------------------------------------
 void initialize(void);
-void initMemory(void);
 void updateState(uint32_t cnt, uint32_t si);
 void updateControl(uint32_t cnt, uint32_t si);
-void updateCounters(uint32_t *cnt, uint32_t *si);
 void cleanUp(void);
+
+// --------------------------------------
+// Helpers
+// --------------------------------------
+void calibratePWMcmp2current(uint32_t cnt, uint32_t si);
+void initMemory(void);
+void updateCounters(uint32_t *cnt, uint32_t *si);
 void debugPinHigh(void);
 void debugPinLow(void);
-
 void interruptInit(void);
 void clearInterrupt(void);
 
-void calibratePWMcmp2current(uint32_t cnt, uint32_t si);
 
 // Globals -------------------------------------------------------------------
 volatile register uint32_t __R30;
@@ -83,12 +91,11 @@ int main(void)
 
     debugPinHigh();
 
-    // Update State
     updateState(cnt, stateIndx);
 
     debugPinLow();
 
-    // Poll for pru0 done bit (updating state)
+    // Poll for pru0 done bit
     while(!(s->cntrl_bit.pru0_done));
 
     debugPinHigh();
@@ -97,13 +104,12 @@ int main(void)
     s->cntrl_bit.pru0_done = 0;
 
     // Update Control
+    // use to calibrate pwm instead of updateControl
     //calibratePWMcmp2current(cnt, stateIndx);
     updateControl(cnt, stateIndx);
 
-    // Set done bit (control update done)
     s->cntrl_bit.pru1_done = 1;
 
-    // Increment state index
     updateCounters(&cnt, &stateIndx);
 
     // Check enable bit
@@ -121,6 +127,12 @@ int main(void)
   return 0;
 }
 
+// ----------------------------------------------------------------------------
+//
+// initialize(), cleanup(), updateState(), updateControl()
+// can be modified to customize behavior
+//
+// ----------------------------------------------------------------------------
 void initialize(void)
 {
   /*** Init Pru ***/
@@ -155,8 +167,6 @@ void initialize(void)
 
   motorInit();
 
-  //encoderSetZeroAngle();
-
   // Zero some stuff
   p->stepRespCnt = 0;
   p->stepRespFlag = 0;
@@ -165,19 +175,12 @@ void initialize(void)
 }
 
 
-void updateCounters(uint32_t* cnt, uint32_t* si)
-{
-  (*cnt)++;
-  (*si)++;
-  (*si) %= SIZE_STATE_BUFF;
-}
-
 void updateControl(uint32_t cnt, uint32_t si)
 {
   fix16_t u_fb = 0;
   fix16_t u_ff = 0;
 
-  uint32_t t_cnts, t1, Tp;
+  uint32_t t_cnts, t1;
 
   // Step Response
   if (s->cntrl_bit.stepResp == 1){
@@ -203,7 +206,7 @@ void updateControl(uint32_t cnt, uint32_t si)
   else if (s->cntrl_bit.testFF == 1){
 
     // Bias
-    u_fb = p->Kp;
+    u_fb = p->u_bias;
 
     // If first call, store cnt (so waveform starts at 0)
     if (s->cntrl_bit.testFF_flag == 0) {
@@ -229,25 +232,43 @@ void updateControl(uint32_t cnt, uint32_t si)
     // Impedance feedback
     //u_fb = fix16_smul(p->Kp, fix16_ssub(p->anklePos0, s->state[si].anklePos));
 
-    // Constant current offset
-    u_fb = p->Kp;
+    // Bias
+    u_fb = p->u_bias;
 
 
     // Feedforward
     if ((s->cntrl_bit.doFeedForward) && (p->gaitDetectReady)){
 
-      // Time since hs
-      t1 = (cnt - s->state[si].l_hsStamp) * 1000;
 
-      t_cnts = t1 / (s->state[si].l_meanGaitPeriod -
-                     s->state[si].l_meanGaitPeriod / 1000);
+      if (p->isProsLeft) {
 
-      // Saturate t_cnts;
-      if (t_cnts >= NUM_FF_LT)
-        t_cnts = NUM_FF_LT-1;
+        // Time since hs
+        t1 = (cnt - s->state[si].l_hsStamp - p->hs_delay) * 1000;
 
-      // Store percent gait
-      s->state[si].l_percentGait = t_cnts;
+        t_cnts = t1 / (s->state[si].l_meanGaitPeriod -
+                       s->state[si].l_meanGaitPeriod / 1000);
+
+        // Saturate t_cnts;
+        if (t_cnts >= NUM_FF_LT)
+          t_cnts = NUM_FF_LT-1;
+
+        // Store percent gait
+        s->state[si].l_percentGait = t_cnts;
+      }
+      else {
+        // Time since hs
+        t1 = (cnt - s->state[si].r_hsStamp - p->hs_delay) * 1000;
+
+        t_cnts = t1 / (s->state[si].r_meanGaitPeriod -
+                       s->state[si].r_meanGaitPeriod / 1000);
+
+        // Saturate t_cnts;
+        if (t_cnts >= NUM_FF_LT)
+          t_cnts = NUM_FF_LT-1;
+
+        // Store percent gait
+        s->state[si].r_percentGait = t_cnts;
+      }
 
       // Scale ff
       u_ff = fix16_smul(p->FFgain,
@@ -286,6 +307,16 @@ void cleanUp(void)
   clearInterrupt();
   CT_INTC.SECR0 = 0xFFFFFFFF;
   CT_INTC.SECR1 = 0xFFFFFFFF;
+}
+
+// ----------------------------------------------------------------------------
+// Helper Functions
+// ----------------------------------------------------------------------------
+void updateCounters(uint32_t* cnt, uint32_t* si)
+{
+  (*cnt)++;
+  (*si)++;
+  (*si) %= SIZE_STATE_BUFF;
 }
 
 void debugPinHigh(void)

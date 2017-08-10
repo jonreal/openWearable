@@ -9,7 +9,8 @@
 #include <string.h>
 
 #include "gpio.h"
-#include "control.h"
+//#include "control.h"
+#include "common.h"
 #include "pru_wrappers.h"
 #include "tui.h"
 
@@ -72,11 +73,18 @@ void io_cb(int sig)
  * ------------------------------------------------------------------------- */
 void tui_menu(void)
 {
+  char side;
+
+  if (getProsSide() == 1)
+    side = 'L';
+  else
+    side = 'R';
+
   printf("\n\n---------------------------------------------------------------------\n"
-          "Kp = %3.2f, Kd = %3.2f, pos0 = %3.2f, pos = %3.2f, FF enabled = %d, FFgain = %3.2f\n"
-          "Menu: a - Enter new Kp\n"
-          "      s - Enter new Kd\n"
-          "      d - Enter new pos_0 (deg)\n"
+          "hs_delay = %i, u_bias = %3.2f, ProsSide = %c, FF enabled = %d, FFgain = %3.2f\n"
+          "Menu: a - Enter new hs_delay\n"
+          "      s - Enter new u_bias\n"
+          "      d - Change prosthetic limb side\n"
           "      f - Collect trial\n"
           "      g - Save parameters\n"
           "      h - Load parameters\n"
@@ -87,7 +95,7 @@ void tui_menu(void)
           "      q - Step Response\n"
           "      e - exit\n"
           "-----------------------------------------------------------------------\n",
-          getKp(), getKd(), getAnklePos0(), getAnklePos(), getFFenable(), getFFgain());
+          geths_delay(), getu_bias(), side, getFFenable(), getFFgain());
   fflush(stdout);
 }
 
@@ -96,7 +104,6 @@ void tui_menu(void)
  * ------------------------------------------------------------------------- */
 int start_tui(void)
 {
-  char lastBufferRead = 0;
   char inChar;
   float inFloat;
   char inString[256];
@@ -123,9 +130,9 @@ int start_tui(void)
         case 'e' :
           return 1;
 
-        // ---- Set Kp --------------------------------------------------------
+        // ---- Set hs_delay --------------------------------------------------
         case 'a' :
-          printf("\t\tEnter new Kp: ");
+          printf("\t\tEnter new hs_delay: ");
           fflush(stdout);
           ptui->io_ready = 0;
 
@@ -135,14 +142,14 @@ int start_tui(void)
               break;
 
           scanf(" %f", &inFloat);
-          setKp(inFloat);
+          seths_delay((uint32_t)inFloat);
           tui_menu();
           ptui->io_ready = 0;
           break;
 
-        // ---- Set Kd --------------------------------------------------------
+        // ---- Set u_bias ----------------------------------------------------
         case 's' :
-          printf("\t\tEnter new Kd: ");
+          printf("\t\tEnter new u_bias: ");
           fflush(stdout);
           ptui->io_ready = 0;
 
@@ -152,14 +159,14 @@ int start_tui(void)
               break;
 
           scanf(" %f", &inFloat);
-          setKd(inFloat);
+          setu_bias(inFloat);
           tui_menu();
           ptui->io_ready = 0;
           break;
 
-        // ---- Set pos0 ------------------------------------------------------
+        // ---- Set ProSide------------------------------------------------------
         case 'd' :
-          printf("\t\tEnter new pos0: ");
+          printf("\t\tChange ProsSide [y/n]? ");
           fflush(stdout);
           ptui->io_ready = 0;
 
@@ -168,8 +175,10 @@ int start_tui(void)
             if(ptui->io_ready)
               break;
 
-          scanf(" %f", &inFloat);
-          setAnklePos0(inFloat);
+          scanf(" %c", &inChar);
+          if (inChar == 'y')
+            setProsSide( !getProsSide());
+
           tui_menu();
           ptui->io_ready = 0;
           break;

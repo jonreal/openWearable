@@ -59,13 +59,12 @@ void enablePru(int en);
 uint32_t hzToPruTicks(float freq_hz);
 float pruTicksToHz(uint32_t ticks);
 
-void setKp(float Kp);
-void setKd(float Kd);
-void setAnklePos0(float pos0);
-float getKp(void);
-float getKd(void);
-float getAnklePos0(void);
-float getAnklePos(void);
+void setu_bias(float newu_bias);
+void seths_delay(float newHS_delay);
+void setProsSide(uint32_t left);
+float getu_bias(void);
+uint32_t geths_delay(void);
+uint32_t getProsSide(void);
 
 void printParameters(FILE* fp);
 void sprintParameters(char* buffer);
