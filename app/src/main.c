@@ -13,7 +13,6 @@
 #include "pru_wrappers.h"
 #include "gpio.h"
 #include "common.h"
-#include "control.h"
 #include "tui.h"
 
 // Global --------------------------------------------------------------------
