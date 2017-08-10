@@ -124,9 +124,9 @@ typedef struct{
   volatile uint32_t frq_clock_ticks;
   volatile uint32_t mass;
 
-  volatile fix16_t Kp;
-  volatile fix16_t Kd;
-  volatile fix16_t anklePos0;
+  volatile uint32_t hs_delay;
+  volatile fix16_t u_bias;
+  volatile uint32_t isProsLeft;
 
   volatile int32_t l_forceThrs;
   volatile int32_t r_forceThrs;

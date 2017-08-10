@@ -13,7 +13,6 @@
 #include "pru_wrappers.h"
 #include "gpio.h"
 #include "common.h"
-#include "control.h"
 #include "tui.h"
 
 // Global --------------------------------------------------------------------
@@ -58,7 +57,7 @@ int main(int argc, char **argv)
   initDebugBuffer();
 
   // Load parameters from file to memory.
-  if(loadParameters("config/PA_A02") != 0){
+  if(loadParameters("config/PA_A03") != 0){
     printf("\nParameter file not found!\n");
   }
   printParameters(stdout);

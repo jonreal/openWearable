@@ -15,17 +15,23 @@
 #include "filter.h"
 
 
-// Prototypes ----------------------------------------------------------------
+// Prototypes -----------------------------------------------------------------
+
+// --------------------------------------
+// Edit these to customize
+// --------------------------------------
 void initialize(void);
-void initMemory(void);
-void updateLocalParams(void);
 void updateState(uint32_t cnt, uint32_t si);
 void updateControl(uint32_t cnt, uint32_t si);
-void updateCounters(uint32_t *cnt, uint32_t *si);
 void cleanUp(void);
+
+// --------------------------------------
+// Helpers do not modify
+// --------------------------------------
+void initMemory(void);
+void updateCounters(uint32_t *cnt, uint32_t *si);
 void debugPinHigh(void);
 void debugPinLow(void);
-
 void iepTimerInit(uint32_t count);
 void iepInterruptInit(void);
 void startTimer(void);
@@ -82,34 +88,25 @@ int main(void)
     clearTimerFlag();
     debugPinHigh();
 
-    // Shadow enable bit
     s->cntrl_bit.shdw_enable = s->cntrl_bit.enable;
 
-    // Mirror params
-    updateLocalParams();
-
-    // Reset Gait phase if needed
     if(s->cntrl_bit.resetGaitPhase){
       s->cntrl_bit.resetGaitPhase = 0;
       gaitPhaseInit();
     }
 
-    // Update State
     updateState(cnt, stateIndx);
 
-    // Set done bit (update state done)
     s->cntrl_bit.pru0_done = 1;
 
-    // Poll for pru1 to be done (control update done)
+    // Poll for pru1 to be done
     while(!(s->cntrl_bit.pru1_done));
 
-    // Reset done bit
+    // Reset pru1 done bit
     s->cntrl_bit.pru1_done = 0;
 
-    // Increment state index
     updateCounters(&cnt, &stateIndx);
 
-    // Check enable bit
     if(!(s->cntrl_bit.shdw_enable))
         break;
 
@@ -123,32 +120,38 @@ int main(void)
   return 0;
 }
 
+// ----------------------------------------------------------------------------
+//
+// initialize(), cleanup(), updateState(), updateControl()
+// can be modified to customize behavior
+//
+// ----------------------------------------------------------------------------
 void initialize(void)
 {
   /*** Init Pru ***/
 
-  /* Clear SYSCFG[STANDBY_INIT] to enable OCP master port */
+  // Clear SYSCFG[STANDBY_INIT] to enable OCP master port
   CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
 
-  /* PRU CTRL: CTR_EN = 0x1 - enable cycle counter */
+  // PRU CTRL: CTR_EN = 0x1 - enable cycle counter
   HWREG(PRU_CTRL_BASE) |= (1 << 3);
 
-  /* Pin Mux */
+  // Pin Mux
   CT_CFG.GPCFG0 = 0;
 
   /*** Memory ***/
   initMemory();
 
-  /* Init timer */
+  // Init timer
   iepInterruptInit();
   iepTimerInit(p->frq_clock_ticks);
   clearIepInterrupt();
 
-  /* Add pru dependent peripheral init methods here */
+  // Add pru dependent peripheral init methods here
   adcInit();
   gaitPhaseInit();
 
-  /* Init filter buffers */
+  // Init filter buffers
   fix16_iirInit(p->filtBuffer[0].x, p->filtBuffer[0].y, MAX_IIR_ORDER+1);
   fix16_iirInit(p->filtBuffer[1].x, p->filtBuffer[1].y, MAX_IIR_ORDER+1);
   fix16_iirInit(p->filtBuffer[2].x, p->filtBuffer[2].y, MAX_IIR_ORDER+1);
@@ -157,29 +160,15 @@ void initialize(void)
   fix16_iirInit(p->filtBuffer[5].x, p->filtBuffer[5].y, MAX_IIR_ORDER+1);
 }
 
-void initMemory(void)
+void cleanUp(void)
 {
-  void *ptr = NULL;
+  // Add pru dependent peripheral cleanup methods here
+  adcCleanUp();
 
-  // Memory map for shared memory
-  ptr = (void *)PRU_L_SHARED_DRAM;
-  s = (shared_mem_t *) ptr;
-
-  // Memory map for parameters (pru0 DRAM)
-  ptr = (void *) PRU_DRAM;
-  p = (param_mem_t *) ptr;
-
-  // Memory map for feedforward lookup table (pru1 DRAM)
-  ptr = (void *) PRU_OTHER_DRAM;
-  l = (lookUp_mem_t *) ptr;
-
-  // Point global debug buffer
-  debugBuffer = &(p->debugBuffer[0]);
-}
-
-void updateLocalParams(void)
-{
-  //gaitPhaseUpdateParams(p);
+  // Clear all interrupts
+  clearIepInterrupt();
+  CT_INTC.SECR0 = 0xFFFFFFFF;
+  CT_INTC.SECR1 = 0xFFFFFFFF;
 }
 
 void updateState(uint32_t cnt, uint32_t si)
@@ -255,6 +244,29 @@ void updateControl(uint32_t cnt, uint32_t si)
 
 }
 
+// ----------------------------------------------------------------------------
+// Helper Functions
+// ----------------------------------------------------------------------------
+void initMemory(void)
+{
+  void *ptr = NULL;
+
+  // Memory map for shared memory
+  ptr = (void *)PRU_L_SHARED_DRAM;
+  s = (shared_mem_t *) ptr;
+
+  // Memory map for parameters (pru0 DRAM)
+  ptr = (void *) PRU_DRAM;
+  p = (param_mem_t *) ptr;
+
+  // Memory map for feedforward lookup table (pru1 DRAM)
+  ptr = (void *) PRU_OTHER_DRAM;
+  l = (lookUp_mem_t *) ptr;
+
+  // Point global debug buffer
+  debugBuffer = &(p->debugBuffer[0]);
+}
+
 void updateCounters(uint32_t *cnt, uint32_t *si)
 {
   // Set buffer location for circ buffer
@@ -263,17 +275,6 @@ void updateCounters(uint32_t *cnt, uint32_t *si)
   (*cnt)++;
   (*si)++;
   (*si) %= SIZE_STATE_BUFF;
-}
-
-void cleanUp(void)
-{
-  // Add pru dependent peripheral cleanup methods here
-  adcCleanUp();
-
-  // Clear all interrupts
-  clearIepInterrupt();
-  CT_INTC.SECR0 = 0xFFFFFFFF;
-  CT_INTC.SECR1 = 0xFFFFFFFF;
 }
 
 void debugPinHigh(void)
