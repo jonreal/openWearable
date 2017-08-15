@@ -24,7 +24,6 @@
 #include <string.h>
 
 #include "gpio.h"
-//#include "control.h"
 #include "common.h"
 #include "pru_wrappers.h"
 #include "tui.h"

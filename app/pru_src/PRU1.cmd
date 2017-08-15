@@ -1,3 +1,5 @@
+/* Modified by Jonathan Realmuto (c) 2017 */
+
 /****************************************************************************/
 /*  AM335x_PRU.cmd                                                          */
 /*  Copyright (c) 2014  Texas Instruments Incorporated                      */
