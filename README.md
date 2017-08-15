@@ -3,15 +3,21 @@ openWearable
 
 OpenWearable is an open source hardware/software project aimed at developing
 tools for wearable robotics. The hardware is designed on top of the TI
-Beaglebone Black.
+Beaglebone Black (Linux beaglebone 3.8.13-bone79).
 
-Currently in development.
+Currently in development and only supports powered ankle-foot prosthesis. More
+to come. 
 
+Connect with battery, plug to host CPU with USB connection (OSX):
 ~~~~
 > screen /dev/tty.usb--
 > ./openWearable/scripts/wifi-up
 > ./openWearable/scripts/pru_enable
 > exit
+~~~
+
+Unplug USB, then ssh to access user interface:
+~~~
 
 > ssh beaglebone.local
 > cd openWearable/app
@@ -66,6 +72,9 @@ Menu: a - Enter new hs_delay
 -----------------------------------------------------------------------
 
 ~~~~
+
+
+
 
 -------------------------------------------------------------------------------
 
