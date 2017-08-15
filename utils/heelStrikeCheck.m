@@ -5,11 +5,11 @@ function rtn = heelStrikeCheck(trialName)
 
   rtn = embedded_process_data(trialName,'hsDetect',0);
 
-  l_thr = 100;
-  l_d_thr = 10;
+  l_thr = 500;
+  l_d_thr = 50;
 
-  r_thr = 200;
-  r_d_thr = 10;
+  r_thr = 500;
+  r_d_thr = 50;
 
   for i=1:numel(rtn.data.time)
   
