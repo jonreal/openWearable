@@ -14,10 +14,10 @@ Connect with battery, plug to host CPU with USB connection (OSX):
 > ./openWearable/scripts/wifi-up
 > ./openWearable/scripts/pru_enable
 > exit
-~~~
+~~~~
 
 Unplug USB, then ssh to access user interface:
-~~~
+~~~~
 
 > ssh beaglebone.local
 > cd openWearable/app
