@@ -56,7 +56,7 @@ int main(int argc, char **argv)
   // Welcome
   if(!(debug)){
     printf("\n---------------------\n");
-    printf("Welcome to AnklebotOS\n");
+    printf("Welcome to openWearable v0.1\n");
     printf("---------------------\n");
   }
   else{
