@@ -10,6 +10,8 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 
+#include <errno.h>
+
 #include <prussdrv.h>
 #include <pruss_intc_mapping.h>
 
@@ -744,12 +746,18 @@ int logFileInit(char* fileName)
   }
 
   // memory map file
-  dataLog.addr = mmap(0, LOGSIZE, PROT_WRITE, MAP_SHARED, dataLog.fd, 0);
+  dataLog.addr = mmap(0, LOGSIZE,
+                         PROT_WRITE,
+                         MAP_SHARED | MAP_POPULATE,
+                         dataLog.fd, 0);
   if (dataLog.addr == MAP_FAILED){
-    printf("mmap failed\n");
+    int er = errno;
+    printf("mmap failed, %i\n",er);
     close(dataLog.fd);
     return -1;
   }
+
+  mlock(dataLog.addr, LOGSIZE);
 
   // Log time
   memcpy(dataLog.writeBuffer, "#Date: ", 7);
@@ -791,6 +799,28 @@ int logFileInit(char* fileName)
   return 0;
 }
 
+int closeLogFile(void)
+{
+
+  munlock(dataLog.addr, LOGSIZE);
+
+  // Unmap and truncate file
+  if (munmap(dataLog.addr, LOGSIZE) == -1){
+    close(dataLog.fd);
+    printf("unmap failed\n");
+    return -1;
+  }
+  if (ftruncate(dataLog.fd, dataLog.location) == -1){
+    close(dataLog.fd);
+    printf("Error truncating file.\n");
+    return -1;
+  }
+  close(dataLog.fd);
+
+  return 0;
+}
+
+
 
 /* ----------------------------------------------------------------------------
  * Functions: void saveParameters(char* file)
@@ -801,7 +831,6 @@ void saveParameters(char* file)
 {
   FILE* fp = fopen(file, "w");
   if(fp != NULL){
-    fprintf(fp, "%i\t// Freq.\n", p->frq_hz);
     fprintf(fp, "%i\t// Freq. Ticks\n", 0);
     fprintf(fp, "%i\t// Subject Mass\n", p->mass);
     fprintf(fp, "%i\t// hs_delay\n", p->hs_delay);
@@ -1039,23 +1068,6 @@ void stopFFtest(void)
   s->cntrl_bit.testFF = 0;
 }
 
-
-int closeLogFile(void)
-{
-  // Unmap and truncate file
-  if (munmap(dataLog.addr, LOGSIZE) == -1){
-    close(dataLog.fd);
-    printf("unmap failed\n");
-    return -1;
-  }
-  if (ftruncate(dataLog.fd, dataLog.location) == -1){
-    close(dataLog.fd);
-    printf("Error truncating file.\n");
-    return -1;
-  }
-  close(dataLog.fd);
-  return 0;
-}
 
 //void setTareEncoderBit(void)
 //{

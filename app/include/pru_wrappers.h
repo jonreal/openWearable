@@ -4,9 +4,11 @@
 #include "fix16.h"
 #include "mem_types.h"
 
-#define LOGSIZE         (1e9 + 1)
+#define LOGSIZE   (4096 * 4096)
 #define TEMP_BUFF_SIZE  255
 #define WRITE_BUFF_SIZE 65536
+
+
 // Stuct ---------------------------------------------------------------------
 
 // Log File Struct

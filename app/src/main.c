@@ -24,6 +24,8 @@ void sigintHandler(int sig);
 int loadPruSoftware(void);
 void startPruLoop(void);
 
+
+
 // ---------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
@@ -57,7 +59,7 @@ int main(int argc, char **argv)
   initDebugBuffer();
 
   // Load parameters from file to memory.
-  if(loadParameters("config/PA_A03") != 0){
+  if(loadParameters("config/PA_A02") != 0){
     printf("\nParameter file not found!\n");
   }
   printParameters(stdout);

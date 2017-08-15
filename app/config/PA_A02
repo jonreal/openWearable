@@ -1,10 +1,10 @@
 1000	// Freq.
 0	  // Freq. Ticks
-88	// Subject Mass
-0	// Kp
-0	// Kd
--40.0	    // anklePos0
-250  // l_forceThrs
+87	// Subject Mass
+40	// hs_delay
+1	// u_bias
+1	    // isProsLeft
+500  // l_forceThrs
 50    // l_d_forceThrs
-300   // r_forceThrs
+500   // r_forceThrs
 50    // r_d_forceThrs

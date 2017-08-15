@@ -464,10 +464,10 @@ int start_tui(void)
 
 void logData(void)
 {
+ //gpio_set_value(gpio_debug, HIGH);
  circBuffUpdate();
- gpio_set_value(gpio_debug, HIGH);
  writeState();
- gpio_set_value(gpio_debug, LOW);
+ //gpio_set_value(gpio_debug, LOW);
 }
 
 int tui_cleanup(void)
