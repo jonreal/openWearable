@@ -1,8 +1,8 @@
 /*
 
-Modified by J. Realmuto realmuto@uw.edu
+Modified by Jonathan Realmuto realmuto@uw.edu
 
-(c) 2015
+(c) 2017
 
 */
 

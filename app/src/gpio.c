@@ -1,6 +1,10 @@
 /*
-  Modified by J. Realmuto
- */
+
+Modified by Jonathan Realmuto realmuto@uw.edu
+
+(c) 2017
+
+*/
 /*
 Copyright (c) 2013 Adafruit
 
