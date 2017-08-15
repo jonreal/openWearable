@@ -243,7 +243,7 @@ void updateControl(uint32_t cnt, uint32_t si)
       if (p->isProsLeft) {
 
         // Time since hs
-        t1 = (cnt - s->state[si].l_hsStamp - p->hs_delay) * 1000;
+        t1 = (cnt - (s->state[si].l_hsStamp - p->hs_delay)) * 1000;
 
         t_cnts = t1 / (s->state[si].l_meanGaitPeriod -
                        s->state[si].l_meanGaitPeriod / 1000);
@@ -257,7 +257,7 @@ void updateControl(uint32_t cnt, uint32_t si)
       }
       else {
         // Time since hs
-        t1 = (cnt - s->state[si].r_hsStamp - p->hs_delay) * 1000;
+        t1 = (cnt - (s->state[si].r_hsStamp - p->hs_delay)) * 1000;
 
         t_cnts = t1 / (s->state[si].r_meanGaitPeriod -
                        s->state[si].r_meanGaitPeriod / 1000);
