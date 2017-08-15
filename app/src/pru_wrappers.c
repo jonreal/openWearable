@@ -1,3 +1,18 @@
+/* Copyright 2017 Jonathan Realmuto
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+=============================================================================*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -9,6 +24,8 @@
 #include <time.h>
 #include <sys/types.h>
 #include <sys/mman.h>
+
+#include <errno.h>
 
 #include <prussdrv.h>
 #include <pruss_intc_mapping.h>
@@ -744,12 +761,18 @@ int logFileInit(char* fileName)
   }
 
   // memory map file
-  dataLog.addr = mmap(0, LOGSIZE, PROT_WRITE, MAP_SHARED, dataLog.fd, 0);
+  dataLog.addr = mmap(0, LOGSIZE,
+                         PROT_WRITE,
+                         MAP_SHARED | MAP_POPULATE,
+                         dataLog.fd, 0);
   if (dataLog.addr == MAP_FAILED){
-    printf("mmap failed\n");
+    int er = errno;
+    printf("mmap failed, %i\n",er);
     close(dataLog.fd);
     return -1;
   }
+
+  mlock(dataLog.addr, LOGSIZE);
 
   // Log time
   memcpy(dataLog.writeBuffer, "#Date: ", 7);
@@ -791,6 +814,28 @@ int logFileInit(char* fileName)
   return 0;
 }
 
+int closeLogFile(void)
+{
+
+  munlock(dataLog.addr, LOGSIZE);
+
+  // Unmap and truncate file
+  if (munmap(dataLog.addr, LOGSIZE) == -1){
+    close(dataLog.fd);
+    printf("unmap failed\n");
+    return -1;
+  }
+  if (ftruncate(dataLog.fd, dataLog.location) == -1){
+    close(dataLog.fd);
+    printf("Error truncating file.\n");
+    return -1;
+  }
+  close(dataLog.fd);
+
+  return 0;
+}
+
+
 
 /* ----------------------------------------------------------------------------
  * Functions: void saveParameters(char* file)
@@ -801,7 +846,6 @@ void saveParameters(char* file)
 {
   FILE* fp = fopen(file, "w");
   if(fp != NULL){
-    fprintf(fp, "%i\t// Freq.\n", p->frq_hz);
     fprintf(fp, "%i\t// Freq. Ticks\n", 0);
     fprintf(fp, "%i\t// Subject Mass\n", p->mass);
     fprintf(fp, "%i\t// hs_delay\n", p->hs_delay);
@@ -1039,23 +1083,6 @@ void stopFFtest(void)
   s->cntrl_bit.testFF = 0;
 }
 
-
-int closeLogFile(void)
-{
-  // Unmap and truncate file
-  if (munmap(dataLog.addr, LOGSIZE) == -1){
-    close(dataLog.fd);
-    printf("unmap failed\n");
-    return -1;
-  }
-  if (ftruncate(dataLog.fd, dataLog.location) == -1){
-    close(dataLog.fd);
-    printf("Error truncating file.\n");
-    return -1;
-  }
-  close(dataLog.fd);
-  return 0;
-}
 
 //void setTareEncoderBit(void)
 //{
