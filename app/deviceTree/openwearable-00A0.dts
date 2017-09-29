@@ -18,7 +18,7 @@
   compatible = "ti,beaglebone", "ti,beaglebone-black";
 
   /* identification */
-  part-number = "ANKLEBOT";
+  part-number = "OPENWEARABLE";
   version = "00A0";
 
   /* state the resources this cape uses */
@@ -158,15 +158,15 @@
       #address-cells = <1>;
       #size-cells = <1>;
 
-      anklebot {
-        compatible = "anklebot";
+      openwearable {
+        compatible = "openwearable";
         status = "okay";
 
         pinctrl-names = "default";
         pinctrl-0 = <&pwm_pins>;
 
         pwms = <&ehrpwm2 0 500000 0>;
-        pwm-names = "anklebot";
+        pwm-names = "openwearable";
 
         pwm-frequency = <9250>;
         pwm-duty-cycle = <50>;
@@ -192,7 +192,7 @@
       spidev@1 {
         spi-max-frequency = <24000000>;
         reg = <0>;
-        compatible = "linux,spidev,anklebot";
+        compatible = "linux,spidev,openwearable";
       };
     };
   };
