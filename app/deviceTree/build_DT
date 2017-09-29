@@ -2,7 +2,7 @@
 
 # Device tree overlay compile script
 
-DEVICE_TREE=anklebot-00A0
+DEVICE_TREE=openwearable-00A0
 
 echo -n "Building device tree ..."
 
