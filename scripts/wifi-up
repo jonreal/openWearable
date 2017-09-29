@@ -1,7 +1,0 @@
-#!/bin/sh -e
-
-echo 'Starting wifi ...'
-ifdown -v wlan0
-ifup -v wlan0
-echo 'Wifi should be up now, exiting.'
-
