@@ -10,8 +10,12 @@ Currently in develoment for upper arm exoskeletons.
 (Linux beaglebone 4.4.54-ti-r93)
 
 
-Powered ankle-foot:
+### Powered ankle-foot ###
 https://github.com/jonreal/openWearable/tree/poweredAnkle
 
-Haptic Feedback for lower limb prostheses:
+### Haptic Feedback for lower limb prostheses ###
 https://github.com/jonreal/openWearable/tree/hapticFeedback
+
+Sie A, Realmuto J, Rombokas E. A Lower Limb Prosthesis Haptic Feedback System
+for Stair Descent. ASME. Frontiers in Biomedical Devices, 2017 Design of
+Medical Devices Conference ():V001T05A004. doi:10.1115/DMD2017-3409.
