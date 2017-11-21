@@ -20,29 +20,16 @@
 #include <pru_iep.h>
 #include <pru_intc.h>
 
-#include "rsc_table.h"
+#include "rsc_table_pru0.h"
 #include "mem_types.h"
 #include "hw_types.h"
 
 #include "adcdriver.h"
-#include "gaitPhase.h"
-#include "viconsync.h"
-#include "filter.h"
-
+#include "udf.h"
 
 // Prototypes -----------------------------------------------------------------
-
-// --------------------------------------
-// Edit these to customize
-// --------------------------------------
 void initialize(void);
-void updateState(uint32_t cnt, uint32_t si);
-void updateControl(uint32_t cnt, uint32_t si);
-void cleanUp(void);
-
-// --------------------------------------
-// Helpers do not modify
-// --------------------------------------
+void cleanup(void);
 void initMemory(void);
 void updateCounters(uint32_t *cnt, uint32_t *si);
 void debugPinHigh(void);
@@ -52,7 +39,6 @@ void iepInterruptInit(void);
 void startTimer(void);
 void clearTimerFlag(void);
 void clearIepInterrupt(void);
-void pru0ToArmInterrupt(void);
 
 // Globals -------------------------------------------------------------------
 volatile register uint32_t __R30;
@@ -86,11 +72,14 @@ int main(void)
   uint32_t cnt = 0;
   uint32_t stateIndx = 0;
 
+  debugBuffer[0] = 0xA;
+
+  s->state[0].timeStamp = 1;
   initialize();
 
-  // Wait for host (ARM) interrupt
-  while( (__R31 & HOST0_MASK) == 0){}
 
+  // wait till enabled
+  while(s->cntrl_bit.enable == 0){}
   clearIepInterrupt();
   startTimer();
 
@@ -100,46 +89,39 @@ int main(void)
     // Poll for IEP timer interrupt
     while((CT_INTC.SECR0 & (1 << 7)) == 0){}
 
+    // Pre bookkeeping
     clearTimerFlag();
     debugPinHigh();
-
     s->cntrl_bit.shdw_enable = s->cntrl_bit.enable;
+    s->state[stateIndx].timeStamp = cnt;
 
-    if(s->cntrl_bit.resetGaitPhase){
-      s->cntrl_bit.resetGaitPhase = 0;
-      gaitPhaseInit();
-    }
+    // Estimate
+    updateState_pru0(cnt, stateIndx);
 
-    updateState(cnt, stateIndx);
-
+    // Wait for pru1 to be done
     s->cntrl_bit.pru0_done = 1;
-
-    // Poll for pru1 to be done
     while(!(s->cntrl_bit.pru1_done));
-
-    // Reset pru1 done bit
     s->cntrl_bit.pru1_done = 0;
 
-    updateCounters(&cnt, &stateIndx);
+    // Control
+    updateControl_pru0(cnt, stateIndx);
 
+    // Post bookkeeping
+    updateCounters(&cnt, &stateIndx);
     if(!(s->cntrl_bit.shdw_enable))
         break;
-
     clearIepInterrupt();
     debugPinLow();
- }
 
+    debugBuffer[0] = s->cntrl;
+    debugBuffer[1] = cnt;
+ }
   debugPinLow();
-  cleanUp();
+  cleanup();
   __halt();
   return 0;
 }
 
-// ----------------------------------------------------------------------------
-//
-// initialize(), cleanup(), updateState(), updateControl()
-// can be modified to customize behavior
-//
 // ----------------------------------------------------------------------------
 void initialize(void)
 {
@@ -162,106 +144,29 @@ void initialize(void)
   iepTimerInit(p->frq_clock_ticks);
   clearIepInterrupt();
 
-  // Add pru dependent peripheral init methods here
+  // drivers
   adcInit();
-  gaitPhaseInit();
 
-  // Init filter buffers
-  fix16_iirInit(p->filtBuffer[0].x, p->filtBuffer[0].y, MAX_IIR_ORDER+1);
-  fix16_iirInit(p->filtBuffer[1].x, p->filtBuffer[1].y, MAX_IIR_ORDER+1);
-  fix16_iirInit(p->filtBuffer[2].x, p->filtBuffer[2].y, MAX_IIR_ORDER+1);
-  fix16_iirInit(p->filtBuffer[3].x, p->filtBuffer[3].y, MAX_IIR_ORDER+1);
-  fix16_iirInit(p->filtBuffer[4].x, p->filtBuffer[4].y, MAX_IIR_ORDER+1);
-  fix16_iirInit(p->filtBuffer[5].x, p->filtBuffer[5].y, MAX_IIR_ORDER+1);
+  // user defined inits
+  init_pru0();
+
 }
 
-void cleanUp(void)
+void cleanup(void)
 {
-  // Add pru dependent peripheral cleanup methods here
-  adcCleanUp();
-
   // Clear all interrupts
   clearIepInterrupt();
   CT_INTC.SECR0 = 0xFFFFFFFF;
   CT_INTC.SECR1 = 0xFFFFFFFF;
-}
 
-void updateState(uint32_t cnt, uint32_t si)
-{
-  int16_t adc[8];
-  fix16_t s1, s2, s3, s4, s5, s6;
+  // drivers
+  adcCleanup();
 
-  s->state[si].timeStamp = cnt;
-  s->state[si].sync = viconSync();
-
-  // Insole samples
-  adcSample_2(adc);
-  adcSample_3(adc);
-
-  // Filter heel sensors for gaitphase
-  s1 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-                 p->filtBuffer[0].x, p->filtBuffer[0].y,
-                 adc[4]);
-
-  s2 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-                 p->filtBuffer[1].x, p->filtBuffer[1].y,
-                 (int16_t) fix16_to_int(s1));
-
-  s3 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-                 p->filtBuffer[2].x, p->filtBuffer[2].y,
-                 (int16_t) fix16_to_int(s2));
-
-
-  s4 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-                 p->filtBuffer[3].x, p->filtBuffer[3].y,
-                 adc[7]);
-
-  s5 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-                 p->filtBuffer[4].x, p->filtBuffer[4].y,
-                 (int16_t) fix16_to_int(s4));
-
-  s6 = fix16_iir(p->filt.N, p->filt.b, p->filt.a,
-                 p->filtBuffer[5].x, p->filtBuffer[5].y,
-                 (int16_t) fix16_to_int(s5));
-
-
-  // Pack Stuct
-  s->state[si].adc[2] = adc[2];
-  s->state[si].adc[3] = adc[3];
-  s->state[si].adc[4] = (int16_t)fix16_to_int(s2);
-  s->state[si].adc[5] = adc[5];
-  s->state[si].adc[6] = adc[6];
-  s->state[si].adc[7] = (int16_t)fix16_to_int(s5);
-  s->state[si].d_heelForce[0] = (int16_t)fix16_to_int(fix16_ssub(s2, s3));
-  s->state[si].d_heelForce[1] = (int16_t)fix16_to_int(fix16_ssub(s5, s6));
-
-  // Gait phase
-  leftGaitPhaseDetect(cnt, s->state[si].adc[4], s->state[si].d_heelForce[0]);
-
-  s->state[si].l_meanGaitPeriod = p->l_prevPeriod;
-  s->state[si].l_gaitPhase = p->l_prevGaitPhase;
-  s->state[si].l_hsStamp = p->l_prevHsStamp;
-
-  rightGaitPhaseDetect(cnt, s->state[si].adc[7], s->state[si].d_heelForce[1]);
-
-  s->state[si].r_meanGaitPeriod = p->r_prevPeriod;
-  s->state[si].r_gaitPhase = p->r_prevGaitPhase;
-  s->state[si].r_hsStamp = p->r_prevHsStamp;
-
-  // Motor analog samples
-  adcSample_1(adc);
-  s->state[si].adc[0] = adc[0];
-  s->state[si].adc[1] = adc[1];
-}
-
-void updateControl(uint32_t cnt, uint32_t si)
-{
+  // user defined cleanups
+  cleanup_pru0();
 
 }
 
-// ----------------------------------------------------------------------------
-// Helper Functions
-// ----------------------------------------------------------------------------
 void initMemory(void)
 {
   void *ptr = NULL;
@@ -372,16 +277,9 @@ void clearTimerFlag(void)
   CT_IEP.TMR_CMP_STS_bit.CMP_HIT = 0xFF;
 }
 
-void pru0ToArmInterrupt(void)
-{
-  __R31 = PRU0_ARM_INT;
-}
-
 void clearIepInterrupt(void)
 {
     // Clear interrupt status
     CT_INTC.SECR0 = (1<<7);
     __R31 = 0x00000000;
 }
-
-
