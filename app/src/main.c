@@ -21,9 +21,6 @@
 #include <time.h>
 #include <string.h>
 
-#include <prussdrv.h>
-#include <pruss_intc_mapping.h>
-
 #include "mem_types.h"
 #include "pru_wrappers.h"
 #include "gpio.h"
@@ -39,11 +36,10 @@ void sigintHandler(int sig);
 int loadPruSoftware(void);
 void startPruLoop(void);
 
-
-
 // ---------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
+
   // Command Line Inputs
   if(argc != 1){
     if(strcmp(argv[1], "-v") == 0)
@@ -66,15 +62,14 @@ int main(int argc, char **argv)
     signal(SIGINT, sigintHandler);
   }
 
-  // Initialize the library, PRUs and interrupts.
-  if(pru_init() != 0)
+  // Map pru mem to userspace
+  if(pru_mmap() != 0){
+    printf("pru_mem_init() failed.");
     return -1;
-
-  // Initialize debug buffer.
-  initDebugBuffer();
+  }
 
   // Load parameters from file to memory.
-  if(loadParameters("config/PA_A02") != 0){
+  if(loadParameters("config/default") != 0){
     printf("\nParameter file not found!\n");
   }
   printParameters(stdout);
@@ -89,22 +84,22 @@ int main(int argc, char **argv)
   if(loadLookUpTable("config/sine_13amps_1Hz") != 0){
     printf("\nLookup table file not found!\n");
   }
-//  printFFLookUpTable(stdout);
+  //  printFFLookUpTable(stdout);
 
-  // Load binaries to PRUs IRAM.
-  if(loadPruSoftware() != 0)
+  // Initialize the library, PRUs and interrupts.
+  if(pru_init() != 0)
     return -1;
 
-  clearFlowBitField();
+  sleep(1);
 
-  // Enable PRUs
-  enablePru(1);
+  printDebugBuffer();
 
   // Start control loop
   printf("\n\nPress enter to start\n\n");
   getchar();
 
-  startPruLoop();
+  // Start PRUs
+  enablePru(1);
 
   // Debug Loop
   if(debug){
@@ -114,10 +109,6 @@ int main(int argc, char **argv)
     }
     enablePru(0);
     printDebugBuffer();
-
-    // Cleanup
-    pru_cleanup();
-    printf("pru0 and pru1 cleaned up.\n");
   }
 
   // TUI
@@ -129,16 +120,14 @@ int main(int argc, char **argv)
 
     // UI loop
     if(start_tui() == 1){
-        enablePru(0);
-        printDebugBuffer();
-
-        // Cleanup
-        pru_cleanup();
-        printf("pru0 and pru1 cleaned up.\n");
-        raise(SIGINT);
+      enablePru(0);
+      printDebugBuffer();
+      raise(SIGINT);
     }
   }
   return 0;
+
+
 }
 
 /* Methods ----------------------------------------------------------------- */
@@ -148,26 +137,3 @@ void sigintHandler(int sig)
   doneFlag = 1;
 }
 
-int loadPruSoftware(void)
-{
-  int rtn = 0;
-
-  // Run PRU0 software
-  if( (rtn = pru_run(PRU0, "./bin/pru0_main_text.bin")) != 0){
-    printf("pru_run() failed (PRU0)");
-    return -1;
-  }
-
-  // Run PRU1 software
-  if( (rtn = pru_run(PRU1, "./bin/pru1_main_text.bin")) != 0){
-    printf("pru_run() failed (PRU1)");
-    return -1;
-  }
-  return rtn;
-}
-
-void startPruLoop(void)
-{
-  armToPru1Interrupt();
-  armToPru0Interrupt();
-}

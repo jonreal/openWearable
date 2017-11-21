@@ -48,9 +48,9 @@
 
 
 #define TSCADC_FORCE_IDLE                      (0)
- 
+
 #define TSCADC_NO_IDLE                         (1)
- 
+
 #define TSCADC_SMART_IDLE                      (2)
 
 #define TSCADC_SMART_IDLE_WAKEUP               (3)
@@ -85,7 +85,7 @@
 
 #define TSCADC_FIVE_WIRE_MODE                   (2)
 
-#define TSCADC_GENERAL_PURPOSE_MODE             (0) 
+#define TSCADC_GENERAL_PURPOSE_MODE             (0)
 
 #define TSCADC_PEN_IRQ_0                        (0)
 
@@ -117,7 +117,7 @@
 
 #define TSCADC_HW_INPUT_EVENT                   (1)
 
-#define TSCADC_PEN_TOUCH                        (0) 
+#define TSCADC_PEN_TOUCH                        (0)
 
 #define TSCADC_TRANSISTOR_DISABLE               (0)
 
@@ -131,63 +131,63 @@
 
 #define TSCADC_MODULE_ENABLE                    (1)
 
-#define TSCADC_NEGATIVE_REF_VSSA                (0) 
+#define TSCADC_NEGATIVE_REF_VSSA                (0)
 
-#define TSCADC_NEGATIVE_REF_XNUR                (1)   
+#define TSCADC_NEGATIVE_REF_XNUR                (1)
 
-#define TSCADC_NEGATIVE_REF_YNLR                (2)   
+#define TSCADC_NEGATIVE_REF_YNLR                (2)
 
 #define TSCADC_NEGATIVE_REF_ADCREFM             (3)
 
 #define TSCADC_POSITIVE_REF_VDDA                (0)
 
-#define TSCADC_POSITIVE_REF_XPUL                (1)  
+#define TSCADC_POSITIVE_REF_XPUL                (1)
 
 #define TSCADC_POSITIVE_REF_YPLL                (2)
 
 #define TSCADC_POSITIVE_REF_ADCREFP             (3)
 
 #define TSCADC_POSITIVE_INP_CHANNEL1            (0)
- 
-#define TSCADC_POSITIVE_INP_CHANNEL2            (1) 
 
-#define TSCADC_POSITIVE_INP_CHANNEL3            (2)   
+#define TSCADC_POSITIVE_INP_CHANNEL2            (1)
 
-#define TSCADC_POSITIVE_INP_CHANNEL4            (3)   
+#define TSCADC_POSITIVE_INP_CHANNEL3            (2)
 
-#define TSCADC_POSITIVE_INP_CHANNEL5            (4)   
+#define TSCADC_POSITIVE_INP_CHANNEL4            (3)
 
-#define TSCADC_POSITIVE_INP_CHANNEL6            (5) 
+#define TSCADC_POSITIVE_INP_CHANNEL5            (4)
 
-#define TSCADC_POSITIVE_INP_CHANNEL7            (6) 
+#define TSCADC_POSITIVE_INP_CHANNEL6            (5)
 
-#define TSCADC_POSITIVE_INP_CHANNEL8            (7) 
+#define TSCADC_POSITIVE_INP_CHANNEL7            (6)
 
-#define TSCADC_POSITIVE_INP_ADCREFM             (8) 
+#define TSCADC_POSITIVE_INP_CHANNEL8            (7)
 
-#define TSCADC_NEGATIVE_INP_CHANNEL1            (0)    
+#define TSCADC_POSITIVE_INP_ADCREFM             (8)
 
-#define TSCADC_NEGATIVE_INP_CHANNEL2            (1)  
+#define TSCADC_NEGATIVE_INP_CHANNEL1            (0)
 
-#define TSCADC_NEGATIVE_INP_CHANNEL3            (2)  
+#define TSCADC_NEGATIVE_INP_CHANNEL2            (1)
 
-#define TSCADC_NEGATIVE_INP_CHANNEL4            (3) 
+#define TSCADC_NEGATIVE_INP_CHANNEL3            (2)
 
-#define TSCADC_NEGATIVE_INP_CHANNEL5            (4) 
+#define TSCADC_NEGATIVE_INP_CHANNEL4            (3)
 
-#define TSCADC_NEGATIVE_INP_CHANNEL6            (5) 
+#define TSCADC_NEGATIVE_INP_CHANNEL5            (4)
 
-#define TSCADC_NEGATIVE_INP_CHANNEL7            (6) 
+#define TSCADC_NEGATIVE_INP_CHANNEL6            (5)
+
+#define TSCADC_NEGATIVE_INP_CHANNEL7            (6)
 
 #define TSCADC_NEGATIVE_INP_CHANNEL8            (7)
 
 #define TSCADC_NEGATIVE_INP_ADCREFM             (8)
 
-#define TSCADC_XPPSW_PIN_ON                     (1) 
+#define TSCADC_XPPSW_PIN_ON                     (1)
 
 #define TSCADC_XPPSW_PIN_OFF                    (0)
 
-#define TSCADC_XNNSW_PIN_ON                     (1) 
+#define TSCADC_XNNSW_PIN_ON                     (1)
 
 #define TSCADC_XNNSW_PIN_OFF                    (0)
 
@@ -209,7 +209,7 @@
 
 #define TSCADC_WPNSW_PIN_ON                     (1)
 
-#define TSCADC_WPNSW_PIN_OFF                    (0)   
+#define TSCADC_WPNSW_PIN_OFF                    (0)
 
 
 void TSCADCSetADCPowerDown(unsigned int baseAdd);
@@ -224,7 +224,7 @@ unsigned int TSCADCSequencerCurrentStepID(unsigned int baseAdd);
 void TSCADCTSModeConfig(unsigned int baseAdd, unsigned int tsMode);
 void TSCADCIdleModeSet(unsigned int baseAdd, unsigned int idleMode);
 void TSCADCHWEventMapSet(unsigned int baseAdd, unsigned int hwEvent);
-unsigned int TSCADCSequencerPenIrqStatusRead(unsigned int baseAdd, 
+unsigned int TSCADCSequencerPenIrqStatusRead(unsigned int baseAdd,
                                           unsigned int penIRQSel);
 void TSCADCTSStepModeConfig(unsigned int baseAdd, unsigned int stepSel,
                    unsigned int mode);
@@ -265,7 +265,7 @@ void TSCADCChargeStepAnalogSupplyConfig(unsigned int baseAdd, unsigned int xppsw
 void TSCADCChargeStepAnalogSupplyConfig(unsigned int baseAdd, unsigned int xppsw,
                                      unsigned int xnpsw, unsigned int yppsw);
 void TSCADCIdleStepConfig(unsigned int baseAdd, unsigned int adcNegativeRef,
-                       unsigned int adcPositiveInp, unsigned int adcNegativeInp, 
+                       unsigned int adcPositiveInp, unsigned int adcNegativeInp,
                        unsigned int adcPositiveRef);
 void TSCADCConfigureMisc(unsigned int baseAdd, unsigned char spareInputVal,
           unsigned char spareOutputVal);
@@ -300,8 +300,8 @@ void TSCADCTSTransistorConfig(unsigned int baseAdd, unsigned int enableTSTransis
 void TSCADCConfigHWEventPrempt(unsigned int baseAdd, unsigned int enableHWEventPreempt);
 void TSCADCFIFOIRQThresholdLevelConfig(unsigned int baseAdd, unsigned char FIFOSel,
                                     unsigned char numberOfSamples);
-void TSCADCFIFODMAThresholdLevelConfig(unsigned int baseAdd, 
-                                    unsigned int FIFOSel, 
+void TSCADCFIFODMAThresholdLevelConfig(unsigned int baseAdd,
+                                    unsigned int FIFOSel,
                                     unsigned int numberOfSamples);
 
 unsigned int TSCADCIntStatus(unsigned int baseAdd);

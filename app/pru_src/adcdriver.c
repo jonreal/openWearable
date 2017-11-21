@@ -44,7 +44,7 @@ void adcInit(void)
   /**** Step configs - All steps configured for fifo0 ****/
 
   /* ------------------------------------------------------------------------*/
-  /* STEP 1 -> CH0 (Motor ao1) ***/
+  /* STEP 1 -> CH0  ***/
 
   /* STEPCONFIG1: FIFO_select = 0x0
    *              SEL_INP_SWC_3_0 = 0x0 - ch0
@@ -57,7 +57,7 @@ void adcInit(void)
   HWREG(SOC_ADC_TSC_0_REGS + 0x68) = (sampleDelay << 24) | openDelay;
 
   /* ------------------------------------------------------------------------*/
-  /* STEP 2 -> CH1 (Motor ao2) ***/
+  /* STEP 2 -> CH1  ***/
 
   /* STEPCONFIG2: FIFO_select = 0x0
    *              SEL_INP_SWC_3_0 = 0x1 - ch1
@@ -70,7 +70,7 @@ void adcInit(void)
   HWREG(SOC_ADC_TSC_0_REGS + 0x70) = (sampleDelay << 24) | openDelay;
 
   /* ------------------------------------------------------------------------*/
-  /* STEP 3 -> MUX0 & CH2 (ForceSenor1 ao1) ***/
+  /* STEP 3 -> CH2 ***/
 
   /* STEPCONFIG3: FIFO_select = 0x0
    *              SEL_INP_SWC_3_0 = 0x2 - ch2
@@ -83,7 +83,7 @@ void adcInit(void)
   HWREG(SOC_ADC_TSC_0_REGS + 0x78) = (sampleDelay << 24) | openDelay;
 
   /* ------------------------------------------------------------------------*/
-  /* STEP 4 -> MUX0 & CH3 (ForceSenor1 ao2) ***/
+  /* STEP 4 -> CH3 ***/
 
   /* STEPCONFIG4: FIFO_select = 0x0
    *              SEL_INP_SWC_3_0 = 0x3 - ch3
@@ -96,7 +96,7 @@ void adcInit(void)
   HWREG(SOC_ADC_TSC_0_REGS + 0x80) = (sampleDelay << 24) | openDelay;
 
   /* ------------------------------------------------------------------------*/
-  /* STEP 5 -> MUX0 & CH4 (ForceSenor1 ao3) ***/
+  /* STEP 5 -> CH4 ***/
 
   /* STEPCONFIG5: FIFO_select = 0x0
    *              SEL_INP_SWC_3_0 = 0x4 - ch4
@@ -109,57 +109,43 @@ void adcInit(void)
   HWREG(SOC_ADC_TSC_0_REGS + 0x88) = (sampleDelay << 24) | openDelay;
 
   /* ------------------------------------------------------------------------*/
-  /* STEP 6 -> MUX1 & CH2 (ForceSenor2 ao1) ***/
+  /* STEP 6 -> CH5 ***/
 
   /* STEPCONFIG6: FIFO_select = 0x0
-   *              SEL_INP_SWC_3_0 = 0x2 - ch2
+   *              SEL_INP_SWC_3_0 = 0x5 - ch5
    *              Averaging = 0x2 - 4 samples
    *              Mode = 0x0 - SW enabled, one-shot */
-  HWREG(SOC_ADC_TSC_0_REGS + 0x8C) = (0x0 << 26) | (0x2 << 19) | (avrg << 2) | (0x0);
+  HWREG(SOC_ADC_TSC_0_REGS + 0x8C) = (0x0 << 26) | (0x5 << 19) | (avrg << 2) | (0x0);
 
   /* STEPDELAY6:  SampleDelay = sampleDelay - number of clks to sample
    *              OpenDelay = openDelay - clks to wait */
   HWREG(SOC_ADC_TSC_0_REGS + 0x90) = (sampleDelay << 24) | openDelay;
 
   /* ------------------------------------------------------------------------*/
-  /* STEP 7 -> MUX1 & CH3 (ForceSenor2 ao2) ***/
+  /* STEP 7 -> CH6 ***/
 
   /* STEPCONFIG7: FIFO_select = 0x0
-   *              SEL_INP_SWC_3_0 = 0x3 - ch3
+   *              SEL_INP_SWC_3_0 = 0x6 - ch6
    *              Averaging = 0x2 - 4 samples
    *              Mode = 0x0 - SW enabled, one-shot */
-  HWREG(SOC_ADC_TSC_0_REGS + 0x94) = (0x0 << 26) | (0x3 << 19) | (avrg << 2) | (0x0);
+  HWREG(SOC_ADC_TSC_0_REGS + 0x94) = (0x0 << 26) | (0x6 << 19) | (avrg << 2) | (0x0);
 
   /* STEPDELAY7:  SampleDelay = sampleDelay - number of clks to sample
    *              OpenDelay = openDelay - clks to wait */
   HWREG(SOC_ADC_TSC_0_REGS + 0x98) = (sampleDelay << 24) | openDelay;
 
   /* ------------------------------------------------------------------------*/
-  /* STEP 8 -> MUX1 & CH4 (ForceSenor2 ao3) ***/
+  /* STEP 8 -> CH7 (VADC) ***/
 
   /* STEPCONFIG8: FIFO_select = 0x0
-   *              SEL_INP_SWC_3_0 = 0x4 - ch4
+   *              SEL_INP_SWC_3_0 = 0x7 - ch4
    *              Averaging = 0x2 - 4 samples
    *              Mode = 0x0 - SW enabled, one-shot */
-  HWREG(SOC_ADC_TSC_0_REGS + 0x9C) = (0x0 << 26) | (0x4 << 19) | (avrg << 2) | (0x0);
+  HWREG(SOC_ADC_TSC_0_REGS + 0x9C) = (0x0 << 26) | (0x7 << 19) | (avrg << 2) | (0x0);
 
   /* STEPDELAY8:  SampleDelay = sampleDelay - number of clks to sample
    *              OpenDelay = openDelay - clks to wait */
   HWREG(SOC_ADC_TSC_0_REGS + 0xA0) = (sampleDelay << 24) | openDelay;
-
-  /* ------------------------------------------------------------------------*/
-  /* STEP 9 -> CH7 (VADC) ***/
-
-  /* STEPCONFIG9: FIFO_select = 0x0
-   *              SEL_INP_SWC_3_0 = 0x7 - ch7
-   *              Averaging = 0x2 - 4 samples
-   *              Mode = 0x0 - SW enabled, one-shot */
-  HWREG(SOC_ADC_TSC_0_REGS + 0xA4) = (0x0 << 26) | (0x7 << 19) | (avrg << 2) | (0x0);
-
-  /* STEPDELAY9:  SampleDelay = sampleDelay - number of clks to sample
-   *              OpenDelay = openDelay - clks to wait */
-  HWREG(SOC_ADC_TSC_0_REGS + 0xA8) = (sampleDelay << 24) | openDelay;
-
 
   /**** Turn off other steps ****/
 
@@ -200,99 +186,94 @@ void adcInit(void)
   HWREG(SOC_ADC_TSC_0_REGS + 0x28) = 0x7FF;
 }
 
-void adcSample_1(int16_t adc[8])
+uint32_t adcSampleCh(uint8_t ch)
 {
   volatile uint32_t *FIFO =  (uint32_t *) (SOC_ADC_TSC_0_REGS + 0x100);
 
-  /* FIFO0THRESHOLD: FIFO0_threshold_Level = 1 (2-1) */
-  HWREG(SOC_ADC_TSC_0_REGS + 0xE8) = 0x1;
+  /* FIFO0THRESHOLD: FIFO0_threshold_Level = 0 (1-1) */
+  HWREG(SOC_ADC_TSC_0_REGS + 0xE8) = 0x0;
 
-  /* Enalbe steps: 1 - motor ao1
-   *               2 - motor ao2 */
-  HWREG(SOC_ADC_TSC_0_REGS + 0x54) = (1 << 2) | (1 << 1);
+  /* Enalbe steps: */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x54) = (1 << ch);
 
   /* IRQSTATUS: poll for interrupt */
   while( (HWREG(SOC_ADC_TSC_0_REGS + 0x28) & (1 << 2)) == 0){}
 
   /* Write to memory */
-  adc[0] = (int16_t) (FIFO[0] & 0xFFF);
-  adc[1] = (int16_t) (FIFO[1] & 0xFFF);
-
-  /* IRQSTATUS: Clear all interrupts */
-  HWREG(SOC_ADC_TSC_0_REGS + 0x28) = 0x7FF;
-}
-
-
-void adcSample_2(int16_t adc[8])
-{
-  volatile uint32_t *FIFO =  (uint32_t *) (SOC_ADC_TSC_0_REGS + 0x100);
-
-  /* Mux pin low (Mux0) */
-  __R30 &= ~(1 << MUX_SEL_PIN);
-
-  __delay_cycles(250);
-
-  /* FIFO0THRESHOLD: FIFO0_threshold_Level = 2 (3-1) */
-  HWREG(SOC_ADC_TSC_0_REGS + 0xE8) = 0x2;
-
-  /* Enalbe steps: 3 - forcesenor1 ao1
-   *               4 - forcesenor1 ao2
-   *               5 - forcesenor1 ao3 */
-  HWREG(SOC_ADC_TSC_0_REGS + 0x54) = (1 << 5) | (1 << 4) | (1 << 3);
-
-  /* IRQSTATUS: poll for interrupt */
-  while( (HWREG(SOC_ADC_TSC_0_REGS + 0x28) & (1 << 2)) == 0){}
-
-  /* Write to memory */
-  adc[2] = (int16_t) (FIFO[0] & 0xFFF);
-  adc[3] = (int16_t) (FIFO[1] & 0xFFF);
-  adc[4] = (int16_t) (FIFO[2] & 0xFFF);
+  uint32_t value = (uint32_t) (FIFO[0] & 0xFFF);
 
   /* IRQSTATUS: Clear all interrupts */
   HWREG(SOC_ADC_TSC_0_REGS + 0x28) = 0x7FF;
 
-  /* Mux pin high (Mux1) */
-  __R30 |= (1 << MUX_SEL_PIN);
+  return value;
 }
 
-void adcSample_3(int16_t adc[8])
-{
-  volatile uint32_t *FIFO =  (uint32_t *) (SOC_ADC_TSC_0_REGS + 0x100);
 
-  /* Mux pin high (Mux1) */
-  __R30 |= (1 << MUX_SEL_PIN);
+//uint32_t adcSample_2(uint8_t ch)
+//{
+//  volatile uint32_t *FIFO =  (uint32_t *) (SOC_ADC_TSC_0_REGS + 0x100);
+//
+//  /* FIFO0THRESHOLD: FIFO0_threshold_Level = 2 (3-1) */
+//  HWREG(SOC_ADC_TSC_0_REGS + 0xE8) = 0x2;
+//
+//  /* Enalbe steps: 3 - forcesenor1 ao1
+//   *               4 - forcesenor1 ao2
+//   *               5 - forcesenor1 ao3 */
+//  HWREG(SOC_ADC_TSC_0_REGS + 0x54) = (1 << 5) | (1 << 4) | (1 << 3);
+//
+//  /* IRQSTATUS: poll for interrupt */
+//  while( (HWREG(SOC_ADC_TSC_0_REGS + 0x28) & (1 << 2)) == 0){}
+//
+//  /* Write to memory */
+//  adc[2] = (int16_t) (FIFO[0] & 0xFFF);
+//  adc[3] = (int16_t) (FIFO[1] & 0xFFF);
+//  adc[4] = (int16_t) (FIFO[2] & 0xFFF);
+//
+//  /* IRQSTATUS: Clear all interrupts */
+//  HWREG(SOC_ADC_TSC_0_REGS + 0x28) = 0x7FF;
+//
+//  /* Mux pin high (Mux1) */
+//  __R30 |= (1 << MUX_SEL_PIN);
+//}
+//
+//void adcSample_3(int16_t adc[8])
+//{
+//  volatile uint32_t *FIFO =  (uint32_t *) (SOC_ADC_TSC_0_REGS + 0x100);
+//
+//  /* Mux pin high (Mux1) */
+//  __R30 |= (1 << MUX_SEL_PIN);
+//
+//  __delay_cycles(250);
+//
+//  /* FIFO0THRESHOLD: FIFO0_threshold_Level = 3 (4-1) */
+//  HWREG(SOC_ADC_TSC_0_REGS + 0xE8) = 0x3;
+//
+//  /* Enalbe steps: 6 - forcesenor2 ao1
+//   *               7 - forcesenor2 ao2
+//   *               8 - forcesenor2 ao3
+//   *               9 - Vadc */
+//  HWREG(SOC_ADC_TSC_0_REGS + 0x54) = (1 << 9) | (1 << 8) | (1 << 7)
+//                                      | (1 << 6);
+//
+//  /* IRQSTATUS: poll for interrupt */
+//  while( (HWREG(SOC_ADC_TSC_0_REGS + 0x28) & (1 << 2)) == 0){}
+//
+//  /* Write to memory */
+//  adc[5] = (int16_t) (FIFO[0] & 0xFFF);
+//  adc[6] = (int16_t) (FIFO[1] & 0xFFF);
+//  adc[7] = (int16_t) (FIFO[2] & 0xFFF);
+//
+//  /* Vadc */
+//  uint16_t temp = FIFO[3] & 0xFFF;
+//
+//  /* IRQSTATUS: Clear all interrupts */
+//  HWREG(SOC_ADC_TSC_0_REGS + 0x28) = 0x7FF;
+//
+//  /* Mux pin low (Mux0) */
+//  __R30 &= ~(1 << MUX_SEL_PIN);
+//}
 
-  __delay_cycles(250);
-
-  /* FIFO0THRESHOLD: FIFO0_threshold_Level = 3 (4-1) */
-  HWREG(SOC_ADC_TSC_0_REGS + 0xE8) = 0x3;
-
-  /* Enalbe steps: 6 - forcesenor2 ao1
-   *               7 - forcesenor2 ao2
-   *               8 - forcesenor2 ao3
-   *               9 - Vadc */
-  HWREG(SOC_ADC_TSC_0_REGS + 0x54) = (1 << 9) | (1 << 8) | (1 << 7)
-                                      | (1 << 6);
-
-  /* IRQSTATUS: poll for interrupt */
-  while( (HWREG(SOC_ADC_TSC_0_REGS + 0x28) & (1 << 2)) == 0){}
-
-  /* Write to memory */
-  adc[5] = (int16_t) (FIFO[0] & 0xFFF);
-  adc[6] = (int16_t) (FIFO[1] & 0xFFF);
-  adc[7] = (int16_t) (FIFO[2] & 0xFFF);
-
-  /* Vadc */
-  uint16_t temp = FIFO[3] & 0xFFF;
-
-  /* IRQSTATUS: Clear all interrupts */
-  HWREG(SOC_ADC_TSC_0_REGS + 0x28) = 0x7FF;
-
-  /* Mux pin low (Mux0) */
-  __R30 &= ~(1 << MUX_SEL_PIN);
-}
-
-void adcCleanUp(void)
+void adcCleanup(void)
 {
   /* Set to disable */
   HWREG(SOC_ADC_TSC_0_REGS + 0x40) &= ~0x1;

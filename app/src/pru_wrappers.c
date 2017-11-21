@@ -24,20 +24,15 @@
 #include <time.h>
 #include <sys/types.h>
 #include <sys/mman.h>
-
 #include <errno.h>
 
-#include <prussdrv.h>
-#include <pruss_intc_mapping.h>
-
+#include "pru.h"
 #include "mem_types.h"
 #include "pru_wrappers.h"
 #include "fix16.h"
 
-
-#define M_PI (3.14159265359)
-
 #define AM33XX
+
 
 // Global variables ----------------------------------------------------------
 
@@ -70,10 +65,8 @@ void circBuffInit(void)
 // ---------------------------------------------------------------------------
 void circBuffUpdate(void)
 {
-  int endOfData = s->stateIndex;
-
-  if (cbuff.end != endOfData)
-    cbuff.end = endOfData;
+  if (cbuff.end != s->stateIndex)
+    cbuff.end = s->stateIndex;
 }
 
 // ---------------------------------------------------------------------------
@@ -103,119 +96,109 @@ void printDebugBuffer(void)
 }
 
 // ---------------------------------------------------------------------------
-// Function: int pru_run(const int pruNum, const char *const path)
+// Function: int pru_init(void)
 //
-//  This function load a binary file into pru IRAM, and starts the software.
+//  This function initializes restarts prus, then ensures prus are running.
 //
-// Inputs:    pruNum  -   which pru (0|1)
-//            path    -   path to binary file
-//
-// Outputs:   1 for success
+// Outputs:   0 for success
 // ---------------------------------------------------------------------------
-int pru_run(const int pruNum, const char* const path)
+int pru_init(void)
 {
-  int rtn = 0;
+  int bind_fd;
 
-  if( (rtn = prussdrv_exec_program(pruNum, path)) != 0){
-    printf("prussdrv_exec_program() failed with %i.\n", rtn);
-    return rtn;
+  if(pru_restart() == -1){
+    printf("restart pru failed.\n");
+    return -1;
   }
+  // open file descriptors for pru rproc driver
+  bind_fd = open(PRU_BIND, O_WRONLY);
+  if(bind_fd == -1){
+    printf("ERROR: pru-rproc driver missing\n");
+    return -1;
+  }
+  // if pru0 is not loaded, load it
+  if(access(PRU0_UEVENT, F_OK)!=0){
+    if(write(bind_fd, PRU0_NAME, PRU_NAME_LEN)<0){
+      printf("ERROR: pru0 bind failed\n");
+      return -1;
+    }
+  }
+  // if pru1 is not loaded, load it
+  if(access(PRU1_UEVENT, F_OK)!=0){
+    if(write(bind_fd, PRU1_NAME, PRU_NAME_LEN)<0){
+      printf("ERROR: pru1 bind failed\n");
+      return -1;
+    }
+  }
+  close(bind_fd);
   return 0;
 }
 
 // ---------------------------------------------------------------------------
-// Function: int pru_init(void)
+// Function: int pru_restart(void)
 //
-//  This function initializes pru library in linux space and opens 2 interrupts
-//  PRU_EVTOUT_0 and PRU_EVTOUT_1.
+//  This function restarts pru cores.
 //
-// Outputs:   1 for success
+// Outputs:   0 for success
 // ---------------------------------------------------------------------------
-int pru_init(void)
+int pru_restart(void)
 {
-  int rtn = 0;
+  int unbind_fd, bind_fd;
 
-  tpruss_intc_initdata intc = PRUSS_INTC_INITDATA;
-
-  // Initialize PRUs
-  if( (rtn = prussdrv_init()) != 0){
-    printf("prusdrv_init() failed with %i.\n", rtn);
-    return rtn;
-  }
-
-  // Open interrupt PRU0
-  if( (rtn = prussdrv_open(PRU_EVTOUT_0)) != 0){
-    printf("prussdrv_open() failed with %i.\n", rtn);
-    return rtn;
-  }
-
-  // Open interrupt PRU1
-  if( (rtn = prussdrv_open(PRU_EVTOUT_1)) != 0){
-    printf("prussdrv_open() failed with %i.\n", rtn);
-    return rtn;
-  }
-
-  // Initialize Interrupt
-  if( (rtn = prussdrv_pruintc_init(&intc)) != 0){
-    printf("prussdrv_pruintc_init() failed with %i.\n", rtn);
-    return rtn;
-  }
-
-  // Initialize memory
-  if( (rtn = pru_mem_init()) != 0){
-    printf("pru_mem_init() failedi!\n");
+  // open file descriptors for pru rproc driver
+  unbind_fd = open(PRU_UNBIND, O_WRONLY);
+  if(unbind_fd == -1){
+    printf("open unbind fail\n");
     return -1;
   }
+  bind_fd = open(PRU_BIND, O_WRONLY);
+  if(bind_fd == -1){
+    printf("open bind fail\n");
+    return -1;
+  }
+
+  // if pru0 is loaded, unload it
+  if(access(PRU0_UEVENT, F_OK)==0){
+    if(write(unbind_fd, PRU0_NAME, PRU_NAME_LEN)<0){
+      printf("ERROR: pru0 unbind failed\n");
+      return -1;
+    }
+  }
+  // if pru1 is loaded, unload it
+  if(access(PRU1_UEVENT, F_OK)==0){
+    if(write(unbind_fd, PRU1_NAME, PRU_NAME_LEN)<0){
+      printf("ERROR: pru1 unbind failed\n");
+      return -1;
+    }
+  }
+
+  // now bind both
+  if(write(bind_fd, PRU0_NAME, PRU_NAME_LEN)<0){
+    printf("ERROR: pru0 bind failed\n");
+    return -1;
+  }
+  if(write(bind_fd, PRU1_NAME, PRU_NAME_LEN)<0){
+    printf("ERROR: pru1 bind failed\n");
+    return -1;
+  }
+  close(unbind_fd);
+  close(bind_fd);
   return 0;
 }
 
 // ---------------------------------------------------------------------------
 // Function: int pru_cleanup(const int pruNum)
 //
-//  This function clears event interrupts, diables pru and realeases pru
-//  clocks.
-//
-// Inputs:    pruNum    -   which pru (0|1)
 //
 // Outputs:   0 for success
 // ---------------------------------------------------------------------------
 int pru_cleanup(void)
 {
-  int rtn = 0;
-
-  // clear the event (if asserted)
-  if(prussdrv_pru_clear_event(PRU_EVTOUT_0, PRU0_ARM_INTERRUPT)) {
-    printf("prussdrv_pru_clear_event() failed with %i\n", rtn);
-    rtn = -1;
+  if(pru_restart() == -1){
+    printf("restart pru failed.\n");
+    return -1;
   }
-
-  // clear the event (if asserted)
-  if(prussdrv_pru_clear_event(PRU_EVTOUT_1, PRU1_ARM_INTERRUPT)) {
-    printf("prussdrv_pru_clear_event() failed with %i\n", rtn);
-    rtn = -1;
-  }
-
-  sleep(1);
-
-  // halt and disable the PRU (if running)
-  if( (rtn = prussdrv_pru_disable(PRU0)) != 0) {
-    printf("prussdrv_pru_disable() failed with %i\n", rtn);
-    rtn = -1;
-   }
-
-  // halt and disable the PRU (if running)
-  if( (rtn = prussdrv_pru_disable(PRU1)) != 0) {
-    printf("prussdrv_pru_disable() failed with %i\n", rtn);
-    rtn = -1;
-   }
-
-  // release the PRU clocks and disable prussdrv module
-  if( (rtn = prussdrv_exit()) != 0) {
-    fprintf(stderr, "prussdrv_exit() failed\n");
-    rtn = -1;
-  }
-
-  return rtn;
+  return 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -225,46 +208,58 @@ int pru_cleanup(void)
 //
 // Outputs:  returns 0 on success
 // ---------------------------------------------------------------------------
-int pru_mem_init(void)
+int pru_mmap(void)
 {
-  int rtn = 0;
   void* ptr = NULL;
+  int fd;
+  char buf[1024] = {0,};
+
+  fd = open("/dev/mem", O_RDWR | O_SYNC);
 
   // Memory Map for params (pru0 DRAM)
-  ptr = NULL;
-  if( (rtn = prussdrv_map_prumem(PRUSS0_PRU0_DATARAM, &ptr)) != 0){
-    printf("prussdrv_map_prumem() failed with %i\n", rtn);
-    return -1;
+  ptr = mmap(0, sizeof(param_mem_t),
+             PROT_READ | PROT_WRITE, MAP_SHARED, fd, PRU0_DRAM);
+  if (ptr == MAP_FAILED) {
+    printf ("ERROR: could not map memory.\n\n");
+    return 1;
   }
-  p = (param_mem_t*) ptr;
+  p = (param_mem_t *) ptr;
+  ptr = NULL;
+  initDebugBuffer();
 
-  // Memory Map for feedforward lookup table (pru1 DRAM)
-  ptr = NULL;
-  if( (rtn = prussdrv_map_prumem(PRUSS0_PRU1_DATARAM, &ptr)) != 0){
-    printf("prussdrv_map_prumem() failed with %i\n", rtn);
-    return -1;
+  // Memory Map for lookup table (pru1 DRAM)
+  ptr = mmap(0, sizeof(lookUp_mem_t),
+             PROT_READ | PROT_WRITE, MAP_SHARED, fd, PRU1_DRAM);
+  if (ptr == MAP_FAILED) {
+    printf ("ERROR: could not map memory.\n\n");
+    return 1;
   }
-  l = (lookUp_mem_t*) ptr;
+  l = (lookUp_mem_t *) ptr;
+  ptr = NULL;
 
-  // Memory Map for shared memory
-  ptr = NULL;
-  if( (rtn = prussdrv_map_prumem(PRUSS0_SHARED_DATARAM, &ptr)) != 0){
-    printf("prussdrv_map_prumem() failed with %i\n", rtn);
-    return -1;
+  // Memory Map for state (shared DRAM)
+  ptr = mmap(0, sizeof(shared_mem_t),
+             PROT_READ | PROT_WRITE, MAP_SHARED, fd, PRU_SHARED_DRAM);
+  if (ptr == MAP_FAILED) {
+    printf ("ERROR: could not map memory.\n\n");
+    return 1;
   }
-  s = (shared_mem_t*) ptr;
+  s = (shared_mem_t *) ptr;
 
   // Zero State
   for(int i=0; i<SIZE_STATE_BUFF; i++)
-    zeroState(i);
+    memset(&(s->state[i]), 0, sizeof(state_t));
 
-  printMemoryAllocation(stdout);
+  clearFlowBitField();
+  sprintMemoryAllocation(buf);
+  fprintf(stdout,buf);
+  close(fd);
+
   return 0;
 }
 
 // ---------------------------------------------------------------------------
-// Function: void printMemoryAllocation(FILE* fp)
-//           void sprintMemoryAllocation(char* buffer)
+// Function: void sprintMemoryAllocation(char* buffer)
 //
 //  This function prints the size of each chunk of memory, eg, shared memory,
 //  parameter memory and lookupt table. The second function stores the string
@@ -272,94 +267,14 @@ int pru_mem_init(void)
 //
 //  Input: pointer to file or buffer
 // ---------------------------------------------------------------------------
-void printMemoryAllocation(FILE* fp)
-{
-  fprintf(fp,
-          "#\n#Memory Allocation:\n"
-          "#\tParameter memory: %i bytes.\n"
-          "#\tLookup table memory: %i bytes.\n"
-          "#\tData memory: %i bytes.\n#",
-          sizeof(*p), sizeof(*l), sizeof(*s));
-  fflush(fp);
-}
-
 void sprintMemoryAllocation(char* buffer)
 {
   sprintf(buffer,
           "#\n#Memory Allocation:\n"
-          "#\tParameter memory: %i bytes.\n"
-          "#\tLookup table memory: %i bytes.\n"
-          "#\tData memory: %i bytes.\n#",
-          sizeof(*p), sizeof(*l), sizeof(*s));
-}
-
-// ----------------------------------------------------------------------------
-// Function: int armToPru0Interrupt(void)
-//
-//  This function sends an interrupt to pru0 from the arm.
-//
-// Outputs:  returns 0 on success
-// ------------------------------------------------------------------------- */
-int armToPru0Interrupt(void)
-{
-  int rtn = 0;
-
-  if( (rtn = prussdrv_pru_send_event(ARM_PRU0_INTERRUPT)) != 0){
-    printf("prussdrv_pru_send_event() failed with %i\n", rtn);
-    return -1;
-  }
-  return 0;
-}
-
-int armToPru1Interrupt(void)
-{
-  int rtn = 0;
-
-  if( (rtn = prussdrv_pru_send_event(ARM_PRU1_INTERRUPT)) != 0){
-    printf("prussdrv_pru_send_event() failed with %i\n", rtn);
-    return -1;
-  }
-  return 0;
-}
-
-// ---------------------------------------------------------------------------
-// Function: void zeroState(uint32_t si)
-//
-//  This function zeros state[si], where si is the index.
-//
-// Inputs:  si  -   state index
-// ---------------------------------------------------------------------------
-void zeroState(uint32_t si)
-{
-  s->state[si].timeStamp = 0;
-  s->state[si].sync = 0;
-  s->state[si].r_hsStamp = 0;
-  s->state[si].l_hsStamp = 0;
-  s->state[si].r_meanGaitPeriod = 0;
-  s->state[si].l_meanGaitPeriod = 0;
-  s->state[si].r_percentGait = 0;
-  s->state[si].l_percentGait = 0;
-  s->state[si].r_gaitPhase = 0;
-  s->state[si].l_gaitPhase = 0;
-  s->state[si].motorCmpValue = 0;
-  s->state[si].anklePos = 0;
-  s->state[si].ankleVel = 0;
-  s->state[si].u_fb = 0;
-  s->state[si].u_ff = 0;
-  s->state[si].adc[0] = 0;
-  s->state[si].adc[1] = 0;
-  s->state[si].adc[2] = 0;
-  s->state[si].adc[3] = 0;
-  s->state[si].adc[4] = 0;
-  s->state[si].adc[5] = 0;
-  s->state[si].adc[6] = 0;
-  s->state[si].adc[7] = 0;
-  s->state[si].imu[0] = 0;
-  s->state[si].imu[1] = 0;
-  s->state[si].imu[2] = 0;
-  s->state[si].imu[3] = 0;
-  s->state[si].imu[4] = 0;
-  s->state[si].imu[5] = 0;
+          "#\tParameter memory: %i bytes. p -> %p\n"
+          "#\tLookup table memory: %i bytes. l -> %p\n"
+          "#\tData memory: %i bytes. s -> %p\n#",
+          sizeof(*p), p, sizeof(*l), l, sizeof(*s), s);
 }
 
 // ---------------------------------------------------------------------------
@@ -374,36 +289,7 @@ void printStateHeader(FILE *fp)
 {
   fprintf(fp,
           "\n# frame\t"
-          "sync\t"
-          "r_hs\t"
-          "l_hs\t"
-          "r_Tp\t"
-          "l_Tp\t"
-          "r_Pgait\t"
-          "l_Pgait\t"
-          "r_gp\t"
-          "l_gp\t"
-          "cmpValue\t"
-          "ankPos\t"
-          "ankVel\t"
-          "u_fb\t"
-          "u_ff\t"
-          "mtrCurr\t"
-          "mtrVel\t"
-          "l_s1\t"
-          "l_s2\t"
-          "l_s3\t"
-          "r_s1\t"
-          "r_s2\t"
-          "r_s3\t"
-          "l_d_s3\t"
-          "r_d_s3\t"
-          "imu0\t"
-          "imu1\t"
-          "imu2\t"
-          "imu3\t"
-          "imu4\t"
-          "imu5"
+          "emg_raw\t"
           "\n");
   fflush(fp);
 }
@@ -412,36 +298,7 @@ void sprintStateHeader(char* buffer)
 {
   sprintf(buffer,
           "\n# frame\t"
-          "sync\t"
-          "r_hs\t"
-          "l_hs\t"
-          "r_Tp\t"
-          "l_Tp\t"
-          "r_Pgait\t"
-          "l_Pgait\t"
-          "r_gp\t"
-          "l_gp\t"
-          "cmpValue\t"
-          "ankPos\t"
-          "ankVel\t"
-          "u_fb\t"
-          "u_ff\t"
-          "mtrCurr\t"
-          "mtrVel\t"
-          "l_s1\t"
-          "l_s2\t"
-          "l_s3\t"
-          "r_s1\t"
-          "r_s2\t"
-          "r_s3\t"
-          "l_d_s3\t"
-          "r_d_s3\t"
-          "imu0\t"
-          "imu1\t"
-          "imu2\t"
-          "imu3\t"
-          "imu4\t"
-          "imu5"
+          "emg_raw\t"
           "\n");
 }
 
@@ -458,67 +315,9 @@ void printState(uint32_t si, FILE *fp)
   fflush(fp);
   fprintf(fp,
           "%u\t"    // timeStamp - uint32_t
-          "%u\t"    // sync - uint16_t
-          "%u\t"    // r_hsStamp - uint32_t
-          "%u\t"    // l_hsStamp - uint32_t
-          "%u\t"    // r_meanGaitPeriod - uint16_t
-          "%u\t"    // l_meanGaitPeriod - uint16_t
-          "%u\t"    // r_percentGait - uint16_t
-          "%u\t"    // l_percentGait - uint16_t
-          "%u\t"    // r_gaitPhase - uint16_t
-          "%u\t"    // l_gaitPhase - uint16_t
-          "%u\t"    // motorCmpValue - uint32_t
-          "%.2f\t"  // anklePos - fix16_t (convert to float)
-          "%.2f\t"  // ankleVel - fix16_t (convert to float)
-          "%.2f\t"  // u_fb - fix16_t (convert to float)
-          "%.2f\t"  // u_ff - fix16_t (convert to float)
-          "%i\t"    // adc[0] (motor actual current) - int16_t
-          "%i\t"    // adc[1] (motor actual velocity) - int16_t
-          "%i\t"    // adc[2] (amp1s1) - int16_t
-          "%i\t"    // adc[3] (amp1s2) - int16_t
-          "%i\t"    // adc[4] (amp1s3) - int16_t
-          "%i\t"    // adc[5] (amp2s1) - int16_t
-          "%i\t"    // adc[6] (amp2s2) - int16_t
-          "%i\t"    // adc[7] (amp2s3) - int16_t
-          "%i\t"    // heelVel - int16_t
-          "%i\t"    // heelVel - int16_t
-          "%i\t"    // imu[0] - int16_t
-          "%i\t"    // imu[1] - int16_t
-          "%i\t"    // imu[2] - int16_t
-          "%i\t"    // imu[3] - int16_t
-          "%i\t"    // imu[4] - int16_t
-          "%i\t"    // imu[5] - int16_t
+          "%u\t"    // emg_raw - uint32_t
           "\n", s->state[si].timeStamp,
-                s->state[si].sync,
-                s->state[si].r_hsStamp,
-                s->state[si].l_hsStamp,
-                s->state[si].r_meanGaitPeriod,
-                s->state[si].l_meanGaitPeriod,
-                s->state[si].r_percentGait,
-                s->state[si].l_percentGait,
-                s->state[si].r_gaitPhase,
-                s->state[si].l_gaitPhase,
-                s->state[si].motorCmpValue,
-                fix16_to_float(s->state[si].anklePos),
-                fix16_to_float(s->state[si].ankleVel),
-                fix16_to_float(s->state[si].u_fb),
-                fix16_to_float(s->state[si].u_ff),
-                s->state[si].adc[0],
-                s->state[si].adc[1],
-                s->state[si].adc[2],
-                s->state[si].adc[3],
-                s->state[si].adc[4],
-                s->state[si].adc[5],
-                s->state[si].adc[6],
-                s->state[si].adc[7],
-                s->state[si].d_heelForce[0],
-                s->state[si].d_heelForce[1],
-                s->state[si].imu[0],
-                s->state[si].imu[1],
-                s->state[si].imu[2],
-                s->state[si].imu[3],
-                s->state[si].imu[4],
-                s->state[si].imu[5]
+                s->state[si].emg_raw
                );
   fflush(fp);
 }
@@ -527,67 +326,9 @@ void sprintState(uint8_t si, char* buffer)
 {
   sprintf(buffer,
           "%u\t"    // timeStamp - uint32_t
-          "%u\t"    // sync - uint16_t
-          "%u\t"    // r_hsStamp - uint32_t
-          "%u\t"    // l_hsStamp - uint32_t
-          "%u\t"    // r_meanGaitPeriod - uint16_t
-          "%u\t"    // l_meanGaitPeriod - uint16_t
-          "%u\t"    // r_percentGait - uint16_t
-          "%u\t"    // l_percentGait - uint16_t
-          "%u\t"    // r_gaitPhase - uint16_t
-          "%u\t"    // l_gaitPhase - uint16_t
-          "%u\t"    // motorCmpValue - uint32_t
-          "%.2f\t"  // anklePos - fix16_t (convert to float)
-          "%.2f\t"  // ankleVel - fix16_t (convert to float)
-          "%.2f\t"  // u_fb - fix16_t (convert to float)
-          "%.2f\t"  // u_ff - fix16_t (convert to float)
-          "%i\t"    // adc[0] (motor current) - int16_t
-          "%i\t"    // adc[1] (motor vel) - int16_t
-          "%i\t"    // adc[2] (amp1s1) - int16_t
-          "%i\t"    // adc[3] (amp1s2) - int16_t
-          "%i\t"    // adc[4] (amp1s3) - int16_t
-          "%i\t"    // adc[5] (amp2s1) - int16_t
-          "%i\t"    // adc[6] (amp2s2) - int16_t
-          "%i\t"    // adc[7] (amp2s3) - int16_t
-          "%i\t"    // heelVel - int16_t
-          "%i\t"    // heelVel - int16_t
-          "%i\t"    // imu[0] - int16_t
-          "%i\t"    // imu[1] - int16_t
-          "%i\t"    // imu[2] - int16_t
-          "%i\t"    // imu[3] - int16_t
-          "%i\t"    // imu[4] - int16_t
-          "%i"    // imu[5] - int16_t
+          "%u\t"    // emg_raw - uint32_t
           "\n", s->state[si].timeStamp,
-                s->state[si].sync,
-                s->state[si].r_hsStamp,
-                s->state[si].l_hsStamp,
-                s->state[si].r_meanGaitPeriod,
-                s->state[si].l_meanGaitPeriod,
-                s->state[si].r_percentGait,
-                s->state[si].l_percentGait,
-                s->state[si].r_gaitPhase,
-                s->state[si].l_gaitPhase,
-                s->state[si].motorCmpValue,
-                fix16_to_float(s->state[si].anklePos),
-                fix16_to_float(s->state[si].ankleVel),
-                fix16_to_float(s->state[si].u_fb),
-                fix16_to_float(s->state[si].u_ff),
-                s->state[si].adc[0],
-                s->state[si].adc[1],
-                s->state[si].adc[2],
-                s->state[si].adc[3],
-                s->state[si].adc[4],
-                s->state[si].adc[5],
-                s->state[si].adc[6],
-                s->state[si].adc[7],
-                s->state[si].d_heelForce[0],
-                s->state[si].d_heelForce[1],
-                s->state[si].imu[0],
-                s->state[si].imu[1],
-                s->state[si].imu[2],
-                s->state[si].imu[3],
-                s->state[si].imu[4],
-                s->state[si].imu[5]
+                s->state[si].emg_raw
                );
 }
 
@@ -684,47 +425,6 @@ uint32_t hzToPruTicks(float freq_hz)
 float pruTicksToHz(uint32_t ticks)
 {
   return 1/((float)ticks/200000000.0);
-}
-
-/* ----------------------------------------------------------------------------
- * Functions: void setN(float N)
- *
- * These function set params - where N is the param.
- * ------------------------------------------------------------------------- */
-void setu_bias(float newu_bias)
-{
-  p->u_bias = (fix16_t) fix16_from_float(newu_bias);
-}
-
-void seths_delay(float newHS_delay)
-{
-  p->hs_delay = (uint32_t) newHS_delay;
-}
-
-void setProsSide(uint32_t left)
-{
-  p->isProsLeft = left;
-}
-
-/* ----------------------------------------------------------------------------
- * Functions: uint16_t getN(float N)
- *
- * These functions return param values - where N is the param.
- * ------------------------------------------------------------------------- */
-float getu_bias(void)
-{
-  return fix16_to_float(p->u_bias);
-}
-
-uint32_t geths_delay(void)
-{
-  return p->hs_delay;
-}
-
-
-uint32_t getProsSide(void)
-{
-  return p->isProsLeft;
 }
 
 /* ----------------------------------------------------------------------------
@@ -847,14 +547,6 @@ void saveParameters(char* file)
   FILE* fp = fopen(file, "w");
   if(fp != NULL){
     fprintf(fp, "%i\t// Freq. Ticks\n", 0);
-    fprintf(fp, "%i\t// Subject Mass\n", p->mass);
-    fprintf(fp, "%i\t// hs_delay\n", p->hs_delay);
-    fprintf(fp, "%.2f\t// u_bias\n", fix16_to_float(p->u_bias));
-    fprintf(fp, "%i\t// isProsLeft\n", p->isProsLeft);
-    fprintf(fp, "%i\t// l_forceThrs\n", p->l_forceThrs);
-    fprintf(fp, "%i\t// l_d_forceThrs\n", p->l_d_forceThrs);
-    fprintf(fp, "%i\t// r_forceThrs\n", p->r_forceThrs);
-    fprintf(fp, "%i\t// l_d_forceThrs\n", p->r_d_forceThrs);
     fclose(fp);
   }
   else{
@@ -870,24 +562,9 @@ void saveParameters(char* file)
 int loadParameters(char* file)
 {
   FILE* fp = fopen(file, "r");
-  float t1;
 
   if(fp != NULL){
     fscanf(fp, "%u%*[^\n]\n", &p->frq_hz);
-    fscanf(fp, "%u%*[^\n]\n", &p->frq_clock_ticks);
-    fscanf(fp, "%u%*[^\n]\n", &p->mass);
-
-    fscanf(fp, "%u%*[^\n]\n", &p->hs_delay);
-
-    fscanf(fp, "%f%*[^\n]\n", &t1);
-    p->u_bias = fix16_from_float(t1);
-
-    fscanf(fp, "%u%*[^\n]\n", &p->isProsLeft);
-    fscanf(fp, "%u%*[^\n]\n", &p->l_forceThrs);
-    fscanf(fp, "%u%*[^\n]\n", &p->l_d_forceThrs);
-    fscanf(fp, "%u%*[^\n]\n", &p->r_forceThrs);
-    fscanf(fp, "%u%*[^\n]\n", &p->r_d_forceThrs);
-
 
     fclose(fp);
     p->frq_clock_ticks = hzToPruTicks(p->frq_hz);
@@ -905,38 +582,16 @@ int loadParameters(char* file)
 void printParameters(FILE *fp)
 {
   fprintf(fp, "\n#Parameters:\n"
-          "#\tFrq = %i (Hz)\n"
-          "#\tTicks = %i\n"
-          "#\ths_delay = %i\n"
-          "#\tu_bias = %.4f\n"
-          "#\tisProsLeft = %i\n"
-          "#\tl_forceThrs = %i\n"
-          "#\tl_d_forceThrs = %i\n"
-          "#\tr_forceThrs = %i\n"
-          "#\tr_d_forceThrs = %i\n#",
-          p->frq_hz, p->frq_clock_ticks,
-          p->hs_delay, fix16_to_float(p->u_bias),
-          p->isProsLeft, p->l_forceThrs,
-          p->l_d_forceThrs, p->r_forceThrs, p->r_d_forceThrs);
+          "#\tFrq = %i (Hz)\n#\n",
+          p->frq_hz );
   fflush(fp);
 }
 
 void sprintParameters(char* buffer)
 {
   sprintf(buffer, "\n#Parameters:\n"
-          "#\tFrq = %i (Hz)\n"
-          "#\tTicks = %i\n"
-          "#\ths_delay = %i\n"
-          "#\tu_bias = %.4f\n"
-          "#\tisProsLeft = %i\n"
-          "#\tl_forceThrs = %i\n"
-          "#\tl_d_forceThrs = %i\n"
-          "#\tr_forceThrs = %i\n"
-          "#\tr_d_forceThrs = %i\n#",
-          p->frq_hz, p->frq_clock_ticks,
-          p->hs_delay, fix16_to_float(p->u_bias),
-          p->isProsLeft, p->l_forceThrs,
-          p->l_d_forceThrs, p->r_forceThrs, p->r_d_forceThrs);
+          "#\tFrq = %i (Hz)\n#\n",
+          p->frq_hz);
 }
 
 
@@ -1043,73 +698,4 @@ void printFFLookUpTable(FILE *fp)
     fprintf(fp, "\t%i\t%i\n", i, l->u_ff[i]);
   }
 }
-
-void setFFenable(int en)
-{
-  if(en == 1){
-    s->cntrl_bit.doFeedForward = 1;
-    p->FFgain = 0;
-  }
-  else {
-    s->cntrl_bit.doFeedForward = 0;
-    p->FFgain = 0;
-  }
-}
-
-int getFFenable(void)
-{
-  return (s->cntrl_bit.doFeedForward);
-}
-
-float getFFgain(void)
-{
-  return fix16_to_float(p->FFgain);
-}
-
-void setFFgain(float gain)
-{
-  if (gain > 1.0)
-    gain = 1.0;
-  p->FFgain = fix16_from_float(gain);
-}
-
-void startFFtest(void)
-{
-  s->cntrl_bit.testFF = 1;
-}
-
-void stopFFtest(void)
-{
-  s->cntrl_bit.testFF = 0;
-}
-
-
-//void setTareEncoderBit(void)
-//{
-//  s->cntrl_bit.encoderTare = 1;
-//}
-
-void setStepCurrent(float cur)
-{
-  p->stepCurrent = fix16_from_float(cur);
-}
-
-void startStepResponse(void)
-{
-  s->cntrl_bit.stepResp = 1;
-}
-
-void resetStepRespVars(void)
-{
-  s->cntrl_bit.stepResp = 0;
-  p->stepCurrent = 0;
-  p->stepRespFlag = 0;
-  p->stepRespCnt = 0;
-}
-
-void resetGP(void)
-{
-  s->cntrl_bit.resetGaitPhase = 1;
-}
-
 

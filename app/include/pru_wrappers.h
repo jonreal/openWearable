@@ -20,9 +20,8 @@
 #include "mem_types.h"
 
 #define LOGSIZE   (4096 * 4096)
-#define TEMP_BUFF_SIZE  255
+#define TEMP_BUFF_SIZE  1024
 #define WRITE_BUFF_SIZE 65536
-
 
 // Stuct ---------------------------------------------------------------------
 
@@ -50,21 +49,20 @@ log_t dataLog;
 circbuff_t cbuff;
 
 // Prototypes ----------------------------------------------------------------
+
+
 void printDebugBuffer(void);
 void initDebugBuffer(void);
 
 void circBuffInit(void);
 void circBuffUpdate(void);
 
-int pru_run(const int pruNum, const char *const path);
+int pru_restart(void);
 int pru_init(void);
 int pru_cleanup(void);
-int pru_mem_init(void);
+int pru_mmap(void);
 void printMemoryAllocation(FILE *fp);
 void sprintMemoryAllocation(char* buffer);
-
-int armToPru0Interrupt(void);
-int armToPru1Interrupt(void);
 
 void zeroState(uint32_t si);
 void printState(uint32_t si, FILE* fp);
@@ -90,7 +88,7 @@ void sprintFirCoeff(char* buffer);
 void printFFLookUpTable(FILE* fp);
 
 void printStateHeader(FILE *fp);
-void sprintStateHeader(char* buffer);
+//void sprintStateHeader(char* buffer);
 
 int logFileInit(char* fileName);
 int closeLogFile(void);
