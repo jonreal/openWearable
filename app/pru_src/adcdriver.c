@@ -18,10 +18,11 @@
 #include "soc_AM33XX.h"
 #include "hw_types.h"
 #include "adcdriver.h"
+#include "tsc_adc.h"
 
 void adcInit(void)
 {
-  uint8_t sampleDelay = 255;
+  uint8_t sampleDelay = 254;
   uint16_t openDelay = 2000;
   uint8_t avrg = 0x0;
   uint16_t adc_clk_div = 0x0;
@@ -170,8 +171,8 @@ void adcInit(void)
   /* STEPCONFIG16: off */
   HWREG(SOC_ADC_TSC_0_REGS + 0xDC) = 0x0;
 
-  /* SYSCONFIG: IdleMode = 0x2 - Smart-Idel Mode */
-  HWREG(SOC_ADC_TSC_0_REGS + 0x10) = (0x2 << 2);
+  /* SYSCONFIG: IdleMode = 0x0 - Force Idle Mode */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x10) = (0x0 << 2);
 
   /* IRQENABLE_SET: FIFO0_Threshold = 0x1 - enable FIFO int */
   HWREG(SOC_ADC_TSC_0_REGS + 0x2C) = (1 << 2);
@@ -189,23 +190,28 @@ void adcInit(void)
 uint32_t adcSampleCh(uint8_t ch)
 {
   volatile uint32_t *FIFO =  (uint32_t *) (SOC_ADC_TSC_0_REGS + 0x100);
+  uint32_t rtn = 0;
 
   /* FIFO0THRESHOLD: FIFO0_threshold_Level = 0 (1-1) */
   HWREG(SOC_ADC_TSC_0_REGS + 0xE8) = 0x0;
 
-  /* Enalbe steps: */
-  HWREG(SOC_ADC_TSC_0_REGS + 0x54) = (1 << ch);
+  /* Enable steps: */
+  HWREG(SOC_ADC_TSC_0_REGS + 0x54) = (1 << (ch+1));
+
+  debugBuffer[8] = HWREG(SOC_ADC_TSC_0_REGS + 0x24);
 
   /* IRQSTATUS: poll for interrupt */
   while( (HWREG(SOC_ADC_TSC_0_REGS + 0x28) & (1 << 2)) == 0){}
 
   /* Write to memory */
-  uint32_t value = (uint32_t) (FIFO[0] & 0xFFF);
+  rtn = (uint32_t) (FIFO[0] & 0xFFF);
 
   /* IRQSTATUS: Clear all interrupts */
   HWREG(SOC_ADC_TSC_0_REGS + 0x28) = 0x7FF;
 
-  return value;
+  debugBuffer[9] = HWREG(SOC_ADC_TSC_0_REGS + 0x24);
+
+  return rtn;
 }
 
 

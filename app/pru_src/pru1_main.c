@@ -76,7 +76,7 @@ int main(void)
     debugPinHigh();
 
     // Estimate
-    updateState_pru1(cnt, stateIndx);
+    pru1UpdateState(cnt, stateIndx);
 
     // Wait for pru0 to be done
     debugPinLow();
@@ -85,7 +85,7 @@ int main(void)
     s->cntrl_bit.pru0_done = 0;
 
     // Control
-    updateControl_pru1(cnt, stateIndx);
+    pru1UpdateControl(cnt, stateIndx);
 
     // Post bookkeeping
     s->cntrl_bit.pru1_done = 1;
@@ -116,12 +116,12 @@ void initialize(void)
   initMemory();
 
   // user defined inits
-  init_pru1();
+  pru1Init();
 }
 
 void cleanup(void)
 {
-  cleanup_pru1();
+  pru1Cleanup();
 }
 
 void updateCounters(uint32_t* cnt, uint32_t* si)

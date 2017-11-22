@@ -30,7 +30,7 @@
 // Prototypes -----------------------------------------------------------------
 void initialize(void);
 void cleanup(void);
-void initMemory(void);
+void memInit(void);
 void updateCounters(uint32_t *cnt, uint32_t *si);
 void debugPinHigh(void);
 void debugPinLow(void);
@@ -72,11 +72,7 @@ int main(void)
   uint32_t cnt = 0;
   uint32_t stateIndx = 0;
 
-  debugBuffer[0] = 0xA;
-
-  s->state[0].timeStamp = 1;
   initialize();
-
 
   // wait till enabled
   while(s->cntrl_bit.enable == 0){}
@@ -96,7 +92,7 @@ int main(void)
     s->state[stateIndx].timeStamp = cnt;
 
     // Estimate
-    updateState_pru0(cnt, stateIndx);
+    pru0UpdateState(cnt, stateIndx);
 
     // Wait for pru1 to be done
     s->cntrl_bit.pru0_done = 1;
@@ -104,7 +100,7 @@ int main(void)
     s->cntrl_bit.pru1_done = 0;
 
     // Control
-    updateControl_pru0(cnt, stateIndx);
+    pru0UpdateControl(cnt, stateIndx);
 
     // Post bookkeeping
     updateCounters(&cnt, &stateIndx);
@@ -113,8 +109,6 @@ int main(void)
     clearIepInterrupt();
     debugPinLow();
 
-    debugBuffer[0] = s->cntrl;
-    debugBuffer[1] = cnt;
  }
   debugPinLow();
   cleanup();
@@ -137,7 +131,7 @@ void initialize(void)
   CT_CFG.GPCFG0 = 0;
 
   /*** Memory ***/
-  initMemory();
+  memInit();
 
   // Init timer
   iepInterruptInit();
@@ -148,7 +142,7 @@ void initialize(void)
   adcInit();
 
   // user defined inits
-  init_pru0();
+  pru0Init();
 
 }
 
@@ -163,11 +157,11 @@ void cleanup(void)
   adcCleanup();
 
   // user defined cleanups
-  cleanup_pru0();
+  pru0Cleanup();
 
 }
 
-void initMemory(void)
+void memInit(void)
 {
   void *ptr = NULL;
 

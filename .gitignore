@@ -2,6 +2,7 @@
 */bin
 */build
 *.swp
+*/datalog
 tags
 types_c.taghl
 types_matlab.taghl
