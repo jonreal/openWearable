@@ -12,8 +12,13 @@ int main(int argc, char **argv)
     return -1;
   }
 
-  printf("Floating point: %4.3f\n"
-         "Fix16: 0x%X\n", strtod(argv[1],NULL),
-          fix16_from_float(strtod(argv[1],NULL)));
+  float in = strtod(argv[1],NULL);
+  fix16_t convert = fix16_from_float(in);
+  float reconvert = fix16_to_float(convert);
+
+  printf("Floating point: %4.8f\n"
+         "Fix16: 0x%X\n"
+         "Floating point: %4.8f\n",
+         in, convert, reconvert);
   return 0;
 }

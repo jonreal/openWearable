@@ -101,11 +101,8 @@ void tui_menu(void)
 int start_tui(void)
 {
   char inChar;
-  float inFloat;
   char inString[256];
-
   char logFile[256] = "datalog/";
-  char configFile[256] = "config/";
 
   tui_menu();
   fflush(stdout);
@@ -113,7 +110,6 @@ int start_tui(void)
 
     // Clear inputs
     inChar = ' ';
-    inFloat = 0.0;
     inString[0] = '\0';
 
     // Wait for user input.

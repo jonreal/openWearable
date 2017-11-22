@@ -289,7 +289,7 @@ void printStateHeader(FILE *fp)
 {
   fprintf(fp,
           "\n# frame\t"
-          "emg_raw\t"
+          "emg_raw"
           "\n");
   fflush(fp);
 }
@@ -298,7 +298,7 @@ void sprintStateHeader(char* buffer)
 {
   sprintf(buffer,
           "\n# frame\t"
-          "emg_raw\t"
+          "emg_raw"
           "\n");
 }
 
@@ -315,9 +315,9 @@ void printState(uint32_t si, FILE *fp)
   fflush(fp);
   fprintf(fp,
           "%u\t"    // timeStamp - uint32_t
-          "%u\t"    // emg_raw - uint32_t
+          "%4.3f"    // emg_raw - fix16_t -> float
           "\n", s->state[si].timeStamp,
-                s->state[si].emg_raw
+                fix16_to_float(s->state[si].emg_raw)
                );
   fflush(fp);
 }
@@ -326,9 +326,9 @@ void sprintState(uint8_t si, char* buffer)
 {
   sprintf(buffer,
           "%u\t"    // timeStamp - uint32_t
-          "%u\t"    // emg_raw - uint32_t
+          "%4.3f"    // emg_raw - fix16_t -> float
           "\n", s->state[si].timeStamp,
-                s->state[si].emg_raw
+                fix16_to_float(s->state[si].emg_raw)
                );
 }
 
@@ -582,7 +582,7 @@ int loadParameters(char* file)
 void printParameters(FILE *fp)
 {
   fprintf(fp, "\n#Parameters:\n"
-          "#\tFrq = %i (Hz)\n#\n",
+          "#\tFrq = %i (Hz)\n#",
           p->frq_hz );
   fflush(fp);
 }
@@ -590,7 +590,7 @@ void printParameters(FILE *fp)
 void sprintParameters(char* buffer)
 {
   sprintf(buffer, "\n#Parameters:\n"
-          "#\tFrq = %i (Hz)\n#\n",
+          "#\tFrq = %i (Hz)\n#",
           p->frq_hz);
 }
 

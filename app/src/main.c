@@ -90,10 +90,6 @@ int main(int argc, char **argv)
   if(pru_init() != 0)
     return -1;
 
-  sleep(1);
-
-  printDebugBuffer();
-
   // Start control loop
   printf("\n\nPress enter to start\n\n");
   getchar();

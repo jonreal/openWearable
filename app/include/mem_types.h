@@ -33,7 +33,7 @@
 // Structures ----------------------------------------------------------------
 typedef struct{
   volatile uint32_t timeStamp;
-  volatile uint32_t emg_raw;
+  volatile fix16_t emg_raw;
 } state_t;
 
 // Shared Memory -> mapped to SRAM

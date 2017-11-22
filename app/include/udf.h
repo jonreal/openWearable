@@ -25,13 +25,13 @@ extern shared_mem_t *s;
 extern lookUp_mem_t *l;
 
 // Prototypes ---------------------------------------------------------------
-void init_pru0(void);
-void init_pru1(void);
-void updateState_pru0(uint32_t cnt, uint32_t si);
-void updateState_pru1(uint32_t cnt, uint32_t si);
-void updateControl_pru0(uint32_t cnt, uint32_t si);
-void updateControl_pru1(uint32_t cnt, uint32_t si);
-void cleanup_pru0(void);
-void cleanup_pru1(void);
+void pru0Init(void);
+void pru0UpdateState(uint32_t cnt, uint32_t si);
+void pru0UpdateControl(uint32_t cnt, uint32_t si);
+void pru0Cleanup(void);
+void pru1Init(void);
+void pru1UpdateState(uint32_t cnt, uint32_t si);
+void pru1UpdateControl(uint32_t cnt, uint32_t si);
+void pru1Cleanup(void);
 
 #endif
