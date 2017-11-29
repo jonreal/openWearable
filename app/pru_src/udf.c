@@ -16,6 +16,8 @@ void pru0Init(void)
 void pru0UpdateState(uint32_t cnt, uint32_t si)
 {
   s->state[si].emg_raw = emgSampleBicep();
+  
+
 }
 
 void pru0UpdateControl(uint32_t cnt, uint32_t si)

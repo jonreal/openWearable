@@ -17,12 +17,13 @@
 #define _MEM_TYPES_
 
 #include "fix16.h"
+#include "filter.h"
+#include "nonlinBayes.h"
 
 #define PRU_CTRL_BASE   0x00022000
 #define PRU_CLK         (200000000)
 #define SIZE_STATE_BUFF   149
 #define NUM_FF_LT         1000
-#define MAX_IIR_ORDER     3
 #define NUM_ADC           8
 #define NUM_IMU           6
 
@@ -55,28 +56,11 @@ typedef struct{
   };
 } shared_mem_t;
 
-// Filter IIR buffers
-typedef struct{
-  volatile fix16_t x[MAX_IIR_ORDER+1];
-  volatile fix16_t y[MAX_IIR_ORDER+1];
-} iir_buff_t;
-
-// IIR Coefficients
-typedef struct{
-  uint32_t N;
-  fix16_t b[MAX_IIR_ORDER+1];
-  fix16_t a[MAX_IIR_ORDER+1];
-} iir_coeff_t;
-
 // Parameter Struct -> mapped to pr0 DRAM
 typedef struct{
+  volatile uint32_t debugBuffer[10];
   volatile uint32_t frq_hz;
   volatile uint32_t frq_clock_ticks;
-
-  iir_coeff_t filt;
-  iir_buff_t filtBuffer[6];
-
-  volatile uint32_t debugBuffer[10];
 } param_mem_t;
 
 

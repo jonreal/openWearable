@@ -13,31 +13,23 @@
  limitations under the License.
 =============================================================================*/
 
-#ifndef _FILTER_H_
-#define _FILTER_H_
+#include "nonlinBayes.h"
 
-#include "fix16.h"
 
-#define MAX_IIR_ORDER (3)
+void nonlinBayesFiltInit(nonlinBayes_t* nlb, fix16_t alphaIn, fix16_t betaIn)
+{
+  nlb->alpha = alphaIn;
+  nlb->beta = betaIn;
 
-// Filter IIR buffers
-typedef struct{
-  volatile fix16_t x[MAX_IIR_ORDER+1];
-  volatile fix16_t y[MAX_IIR_ORDER+1];
-} iir_buff_t;
+  for(int i=0; i<N_BAYESBINS; i++){
+    nlb->prior[i] =
+      fix16_sdiv(fix16_from_int(i+1),fix16_from_int(N_BAYESBINS));
+  }
+}
 
-// IIR Coefficients
-typedef struct{
-  uint32_t N;
-  fix16_t b[MAX_IIR_ORDER+1];
-  fix16_t a[MAX_IIR_ORDER+1];
-} iir_coeff_t;
+fix16_t nonlinBayesFilt(nonlinBayes_t* nlb, fix16_t in)
+{
 
-// --- Global Debug Buffer
-extern volatile uint32_t *debugBuffer;
 
-// --- Prototypes
-void fix16_iirInit(volatile fix16_t *x, volatile fix16_t *y, uint32_t len);
-fix16_t fix16_iir(uint32_t N, fix16_t *b, fix16_t *a,
-                  volatile fix16_t *x, volatile fix16_t *y, fix16_t in);
-#endif
+  return fix16_from_int(0xFF);
+}
