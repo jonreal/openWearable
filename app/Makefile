@@ -108,4 +108,18 @@ clean:
 	@echo " $(RM) -r $(BUILD_DIR)"; $(RM) -r $(BUILD_DIR)
 	@echo " $(RM) -r $(TARGET_DIR)"; $(RM) -r $(TARGET_DIR)
 
+
 .PHONY: clean
+
+
+# -----------------------------------------------------------------------------
+# Test Filters
+# -----------------------------------------------------------------------------
+
+# Link C
+filtTest:
+	@echo "\n Linking application... \n";
+	@mkdir -p $(TARGET_DIR)
+	$(CC) $(CFLAGS) -o $(TARGET_DIR)/filtTest $(PRU_CSRC_DIR)/fix16.c $(PRU_CSRC_DIR)/filter.c $(CSRC_DIR)/testFilters.c -I$(CINC_DIR) $(CLIB) -lm
+
+

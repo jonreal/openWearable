@@ -15,21 +15,16 @@
 
 #include "nonlinBayes.h"
 
-
-void nonlinBayesFiltInit(nonlinBayes_t* nlb, fix16_t alphaIn, fix16_t betaIn)
+void nlbInit(volatile nlb_buff_t* filter, nlb_param_t param)
 {
-  nlb->alpha = alphaIn;
-  nlb->beta = betaIn;
-
   for(int i=0; i<N_BAYESBINS; i++){
-    nlb->prior[i] =
+    filter->prior[i] =
       fix16_sdiv(fix16_from_int(i+1),fix16_from_int(N_BAYESBINS));
   }
+  filter->maxPosterior = 0;
 }
 
-fix16_t nonlinBayesFilt(nonlinBayes_t* nlb, fix16_t in)
+fix16_t nlbFilt(volatile nlb_buff_t* filter, nlb_param_t param, fix16_t in)
 {
-
-
   return fix16_from_int(0xFF);
 }

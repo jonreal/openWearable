@@ -18,28 +18,25 @@
 
 #include "fix16.h"
 
-#define N_BAYESBINS (100)
+#define N_BAYESBINS (32)
 
 // --- Global Debug Buffer
 extern volatile uint32_t *debugBuffer;
 
 // --- Structs
 typedef struct{
-
-  // parameters
+  uint32_t fs;
   fix16_t alpha;
   fix16_t beta;
+} nlb_param_t;
 
-  // state
+typedef struct{
   volatile fix16_t prior[N_BAYESBINS];
-
-} nonlinBayes_t;
+  volatile fix16_t maxPosterior;
+} nlb_buff_t;
 
 // --- Prototypes
-void nonlinBayesFiltInit(nonlinBayes_t* nlb, fix16_t alphaIn, fix16_t betaIn);
-fix16_t nonlinBayesFilt(nonlinBayes_t* nlb, fix16_t in);
-
-
-
+void nlbInit(volatile nlb_buff_t* filter, nlb_param_t param);
+fix16_t nlbFilt(volatile nlb_buff_t* filter, nlb_param_t param, fix16_t in);
 
 #endif
