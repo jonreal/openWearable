@@ -37,7 +37,6 @@ typedef struct{
 extern volatile uint32_t *debugBuffer;
 
 // --- Prototypes
-void fix16_iirInit(volatile fix16_t *x, volatile fix16_t *y, uint32_t len);
-fix16_t fix16_iir(uint32_t N, fix16_t *b, fix16_t *a,
-                  volatile fix16_t *x, volatile fix16_t *y, fix16_t in);
+void iirInit(volatile iir_buff_t* filter, iir_coeff_t coeff);
+fix16_t iirFilt(volatile iir_buff_t* filter, iir_coeff_t coeff, fix16_t in);
 #endif

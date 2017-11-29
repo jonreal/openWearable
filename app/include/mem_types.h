@@ -59,14 +59,17 @@ typedef struct{
 // Parameter Struct -> mapped to pr0 DRAM
 typedef struct{
   volatile uint32_t debugBuffer[10];
-  volatile uint32_t frq_hz;
-  volatile uint32_t frq_clock_ticks;
+  uint32_t frq_hz;
+  uint32_t frq_clock_ticks;
+  nlb_param_t nlbFiltParam;
+  iir_coeff_t iirFiltCoeff;
+
 } param_mem_t;
 
-
-// Feedforward lookup table -> mapped to pru1 DRAM
+// Filters
 typedef struct{
-  int16_t u_ff[NUM_FF_LT];
+  nlb_buff_t nlbFilter;
+  iir_buff_t iirFilter;
 } lookUp_mem_t;
 
 #endif
