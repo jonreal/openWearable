@@ -14,5 +14,5 @@ figure; hold all;
 fileID = fopen('./filtTestData.txt','w');
 fprintf(fileID,'%u\n',numel(t));
 for i=1:numel(t)
-  fprintf(fileID,'%f\n',y_(i));
+  fprintf(fileID,'%f\n',y(i));
 end
