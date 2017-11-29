@@ -11,7 +11,7 @@ figure; hold all;
   plot(t,y,'r');
   plot(t,y_,'k');
 
-fileID = fopen('./test.txt','w');
+fileID = fopen('./filtTestData.txt','w');
 fprintf(fileID,'%u\n',numel(t));
 for i=1:numel(t)
   fprintf(fileID,'%f\n',y_(i));
