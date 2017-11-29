@@ -19,8 +19,6 @@
 #include "fix16.h"
 #include "filter.h"
 
-// TODO: Change filter to take fix16 as input
-
 // ----------------------------------------------------------------------------
 // Initialize filter buffers
 void fix16_iirInit(volatile fix16_t *x, volatile fix16_t *y, uint32_t len)
@@ -34,7 +32,7 @@ void fix16_iirInit(volatile fix16_t *x, volatile fix16_t *y, uint32_t len)
 // ----------------------------------------------------------------------------
 // Fixed point Q16.16 (really Q15.16) iir filter
 fix16_t fix16_iir(uint32_t N, fix16_t *b, fix16_t *a,
-                  volatile fix16_t *x, volatile fix16_t *y, int16_t in)
+                  volatile fix16_t *x, volatile fix16_t *y, fix16_t in)
 {
   fix16_t bx, ay, out;
 
@@ -45,7 +43,7 @@ fix16_t fix16_iir(uint32_t N, fix16_t *b, fix16_t *a,
   }
 
   // new Sample
-  x[0] = fix16_from_int((int32_t)in);
+  x[0] = in;
 
   // difference eq.
   out = fix16_smul(b[0], x[0]);
