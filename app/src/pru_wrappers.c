@@ -600,27 +600,27 @@ void sprintParameters(char* buffer)
  *
  * This function loads lookup table (Feedforward) from file to memory.
  * ------------------------------------------------------------------------- */
-int loadLookUpTable(char* file)
-{
-  FILE* fp = fopen(file, "r");
-  float value;
-
-  if(fp != NULL){
-    for(int i=0; i<NUM_FF_LT; i++){
-      fscanf(fp, "%f\n", &value);
-
-      // Scale signal by 1000 to store as int16_t
-      l->u_ff[i] = (int16_t) fix16_to_int(fix16_from_float(value * 1000.0));
-    }
-    fclose(fp);
-    return 0;
-  }
-  printf("File not found\n");
-  return -1;
-}
+//int loadLookUpTable(char* file)
+//{
+//  FILE* fp = fopen(file, "r");
+//  float value;
+//
+//  if(fp != NULL){
+//    for(int i=0; i<NUM_FF_LT; i++){
+//      fscanf(fp, "%f\n", &value);
+//
+//      // Scale signal by 1000 to store as int16_t
+//      l->u_ff[i] = (int16_t) fix16_to_int(fix16_from_float(value * 1000.0));
+//    }
+//    fclose(fp);
+//    return 0;
+//  }
+//  printf("File not found\n");
+//  return -1;
+//}
 
 /* ----------------------------------------------------------------------------
- * Functions: void loadFilterCoeff(char* file)
+ * Functions: void loadIirFilterCoeff(char* file)
  *
  * This function loads filter coeff from file to memory.
  *
@@ -647,18 +647,18 @@ int loadIirFilterCoeff(char *file)
   if(fp != NULL){
 
     // First element is filter order
-    fscanf(fp, "%u\n", &p->filt.N);
+    fscanf(fp, "%u\n", &p->iirFiltCoeff.N);
 
     // Numerator coefficients, b
-    for(int i=0; i<p->filt.N+1; i++){
+    for(int i=0; i<p->iirFiltCoeff.N+1; i++){
       fscanf(fp,"%f\n", &v);
-      p->filt.b[i] = fix16_from_float(v);
+      p->iirFiltCoeff.b[i] = fix16_from_float(v);
     }
 
     // Denominator coefficients, a
-    for(int i=0; i<p->filt.N+1; i++){
+    for(int i=0; i<p->iirFiltCoeff.N+1; i++){
       fscanf(fp,"%f\n", &v);
-      p->filt.a[i] = fix16_from_float(v);
+      p->iirFiltCoeff.a[i] = fix16_from_float(v);
     }
     fclose(fp);
     return 0;
@@ -667,11 +667,11 @@ int loadIirFilterCoeff(char *file)
 }
 void printFirCoeff(FILE *fp)
 {
-  fprintf(fp, "\n#Filter Coefficients (N = %i):\n", p->filt.N);
-  for(int i=0; i<p->filt.N+1; i++){
+  fprintf(fp, "\n#Filter Coefficients (N = %i):\n", p->iirFiltCoeff.N);
+  for(int i=0; i<p->iirFiltCoeff.N+1; i++){
     fprintf(fp, "#\tb[%i] : %8.8f\ta[%i] : %8.8f\n",
-            i, fix16_to_float(p->filt.b[i]),
-            i, fix16_to_float(p->filt.a[i]));
+            i, fix16_to_float(p->iirFiltCoeff.b[i]),
+            i, fix16_to_float(p->iirFiltCoeff.a[i]));
   }
   fprintf(fp, "#");
   fflush(fp);
@@ -681,21 +681,51 @@ void sprintFirCoeff(char* buffer)
 {
   char temp[1024];
 
-  sprintf(buffer, "\n#Filter Coefficients (N = %i):\n", p->filt.N);
-  for(int i=0; i<p->filt.N+1; i++){
+  sprintf(buffer, "\n#Filter Coefficients (N = %i):\n", p->iirFiltCoeff.N);
+  for(int i=0; i<p->iirFiltCoeff.N+1; i++){
     sprintf(temp, "#\tb[%i] : %8.8f\ta[%i] : %8.8f\n",
-            i, fix16_to_float(p->filt.b[i]),
-            i, fix16_to_float(p->filt.a[i]));
+            i, fix16_to_float(p->iirFiltCoeff.b[i]),
+            i, fix16_to_float(p->iirFiltCoeff.a[i]));
     strcat(buffer, temp);
     temp[0] = '\0';
   }
   strcat(buffer, "#");
 }
 
-void printFFLookUpTable(FILE *fp)
+
+/* ----------------------------------------------------------------------------
+ * Functions: void loadNlbFilterParam(char* file)
+ *
+ * This function loads filter coeff from file to memory.
+ *
+ * file format:
+ *    fs (must be less than samping frequency of main loop)
+ *    alpha
+ *    beta
+ * ------------------------------------------------------------------------- */
+int loadNlbFilterParam(char *file)
 {
-  for(int i=0; i<NUM_FF_LT; i++){
-    fprintf(fp, "\t%i\t%i\n", i, l->u_ff[i]);
+  FILE* fp = fopen(file, "r");
+  float v;
+
+  if(fp != NULL){
+
+    // First element is frequency
+    fscanf(fp, "%u\n", &p->nlbFiltParam.fs);
+
+    // alpha
+    fscanf(fp,"%f\n", &v);
+    p->nlbFiltParam.alpha = fix16_from_float(v);
+
+    // alpha
+    fscanf(fp,"%f\n", &v);
+    p->nlbFiltParam.beta = fix16_from_float(v);
+
+    fclose(fp);
+    return 0;
   }
+  return -1;
 }
+
+
 

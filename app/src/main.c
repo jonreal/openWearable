@@ -80,11 +80,10 @@ int main(int argc, char **argv)
   }
   printFirCoeff(stdout);
 
-  // Load lookup table from file to memory.
-  if(loadLookUpTable("config/sine_13amps_1Hz") != 0){
-    printf("\nLookup table file not found!\n");
+  // Load nlb filter coefficients from file to memory.
+  if(loadNlbFilterParam("config/nonlinBayes")){
+      printf("\nBayes filter parameters file not found!\n");
   }
-  //  printFFLookUpTable(stdout);
 
   // Initialize the library, PRUs and interrupts.
   if(pru_init() != 0)
