@@ -16,19 +16,12 @@
 #ifndef _TUI_H__
 #define _TUI_H_
 
+#include "pru.h"
 
-typedef struct{
-  volatile sig_atomic_t io_ready;
-  char input_char[2];
-  char input_float[10];
-} tui_t;
+int TuiInit(void);
+void TuiInputCallback(int sig);
+void TuiPrintMenu(void);
+int TuiLoop(const pru_mem_t* pru_mem);
+int TuiCleanup(void);
 
-
-/* prototypes ------------------------------------------------------------- */
-int init_tui(void);
-void io_cb(int sig);
-void tui_menu(void);
-int start_tui(void);
-int tui_cleanup(void);
-void logData(void);
-#endif
+#endif /* _TUI_H_ */

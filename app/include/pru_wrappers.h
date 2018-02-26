@@ -50,24 +50,42 @@ circbuff_t cbuff;
 
 // Prototypes ----------------------------------------------------------------
 
+// pru
+
+
+
+
+
+
+
+// Printing
+void sprintMemoryAllocation(char* buffer, pru_mem_t* pru_mem);
+
+// Control
+void resetPruCtl(pru_ctl_t* ctl);
+void enablePru(pru_ctl_t* ctl);
+void disablePru(pru_ctl_t* ctl);
+
+// Load + saving
+void saveParameters(char* file, pru_mem_t* pru_mem);
+int loadParameters(char* file, pru_mem_t* pru_mem);
+//int loadLookUpTable(char* file, pru_mem_t* pru_mem);
+//int loadIirFilterCoeff(char* file, pru_mem_t* pru_mem);
+//int loadNlbFilterParam(char* file, pru_mem_t* pru_mem);
+
+
+
 
 void printDebugBuffer(void);
 void initDebugBuffer(void);
 
 void circBuffInit(void);
-void circBuffUpdate(void);
+void circBuffUpdate(shared_mem_t s_);
 
-int pru_restart(void);
-int pru_init(void);
-int pru_cleanup(void);
-int pru_mmap(void);
-void sprintMemoryAllocation(char* buffer);
 
 void printState(uint32_t si, FILE* fp);
 void writeState(void);
 
-void clearFlowBitField(void);
-void enablePru(int en);
 
 uint32_t hzToPruTicks(float freq_hz);
 float pruTicksToHz(uint32_t ticks);
@@ -82,11 +100,5 @@ void printStateHeader(FILE *fp);
 
 int logFileInit(char* fileName);
 int closeLogFile(void);
-void saveParameters(char* file);
-int loadParameters(char* file);
-//int loadLookUpTable(char* file);
-int loadIirFilterCoeff(char* file);
-int loadNlbFilterParam(char* file);
-
 
 #endif

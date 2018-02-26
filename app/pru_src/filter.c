@@ -21,37 +21,35 @@
 
 // ----------------------------------------------------------------------------
 // Initialize filter buffers
-void iirInit(volatile iir_buff_t* filter, iir_coeff_t coeff)
-{
-  for(int i=0; i<coeff.N+1; i++){
-    filter->x[i] = 0;
-    filter->y[i] = 0;
+void IirInit(const iir_param_t* param, volatile iir_filt_t* filt) {
+  for(int i=0; i<param->N+1; i++){
+    filt->x[i] = 0;
+    filt->y[i] = 0;
   }
 }
 
 // ----------------------------------------------------------------------------
 // Fixed point Q16.16 (really Q15.16) iir filter
-fix16_t iirFilt(volatile iir_buff_t* filter, iir_coeff_t coeff, fix16_t in)
-{
+fix16_t IirFilt(fix16_t in, const iir_param_t* param,
+                volatile iir_filt_t* filt) {
   fix16_t bx, ay, out;
 
   // Shift samples back in time
-  for(int i=coeff.N; i>0; i--){
-    filter->x[i] = filter->x[i-1];
-    filter->y[i] = filter->y[i-1];
+  for(int i=param->N; i>0; i--){
+    filt->x[i] = filt->x[i-1];
+    filt->y[i] = filt->y[i-1];
   }
 
   // new Sample
-  filter->x[0] = in;
+  filt->x[0] = in;
 
   // difference eq.
-  out = fix16_smul(coeff.b[0], filter->x[0]);
-  for(int k=1; k<coeff.N+1; k++) {
-    bx = fix16_smul(coeff.b[k], filter->x[k]);
-    ay = fix16_smul(coeff.a[k], filter->y[k]);
+  out = fix16_smul(param->b[0], filt->x[0]);
+  for(int k=1; k<param->N+1; k++) {
+    bx = fix16_smul(param->b[k], filt->x[k]);
+    ay = fix16_smul(param->a[k], filt->y[k]);
     out = fix16_sadd(out, fix16_ssub(bx, ay));
   }
-  filter->y[0] = out;
+  filt->y[0] = out;
   return out;
 }
-

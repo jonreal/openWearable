@@ -129,7 +129,8 @@ void adcInit(void)
    *              SEL_INP_SWC_3_0 = 0x6 - ch6
    *              Averaging = 0x2 - 4 samples
    *              Mode = 0x0 - SW enabled, one-shot */
-  HWREG(SOC_ADC_TSC_0_REGS + 0x94) = (0x0 << 26) | (0x6 << 19) | (avrg << 2) | (0x0);
+  HWREG(SOC_ADC_TSC_0_REGS + 0x94) = (0x0 << 26) | (0x6 << 19)
+                                    | (avrg << 2) | (0x0);
 
   /* STEPDELAY7:  SampleDelay = sampleDelay - number of clks to sample
    *              OpenDelay = openDelay - clks to wait */
@@ -142,7 +143,8 @@ void adcInit(void)
    *              SEL_INP_SWC_3_0 = 0x7 - ch4
    *              Averaging = 0x2 - 4 samples
    *              Mode = 0x0 - SW enabled, one-shot */
-  HWREG(SOC_ADC_TSC_0_REGS + 0x9C) = (0x0 << 26) | (0x7 << 19) | (avrg << 2) | (0x0);
+  HWREG(SOC_ADC_TSC_0_REGS + 0x9C) = (0x0 << 26) | (0x7 << 19)
+                                    | (avrg << 2) | (0x0);
 
   /* STEPDELAY8:  SampleDelay = sampleDelay - number of clks to sample
    *              OpenDelay = openDelay - clks to wait */
@@ -192,24 +194,20 @@ uint32_t adcSampleCh(uint8_t ch)
   volatile uint32_t *FIFO =  (uint32_t *) (SOC_ADC_TSC_0_REGS + 0x100);
   uint32_t rtn = 0;
 
-  /* FIFO0THRESHOLD: FIFO0_threshold_Level = 0 (1-1) */
+  // FIFO0THRESHOLD: FIFO0_threshold_Level = 0 (1-1) 
   HWREG(SOC_ADC_TSC_0_REGS + 0xE8) = 0x0;
 
-  /* Enable steps: */
+  // Enable steps:
   HWREG(SOC_ADC_TSC_0_REGS + 0x54) = (1 << (ch+1));
 
-  debugBuffer[8] = HWREG(SOC_ADC_TSC_0_REGS + 0x24);
-
-  /* IRQSTATUS: poll for interrupt */
+  // IRQSTATUS: poll for interrupt
   while( (HWREG(SOC_ADC_TSC_0_REGS + 0x28) & (1 << 2)) == 0){}
 
-  /* Write to memory */
+  // Write to memory
   rtn = (uint32_t) (FIFO[0] & 0xFFF);
 
-  /* IRQSTATUS: Clear all interrupts */
+  // IRQSTATUS: Clear all interrupts
   HWREG(SOC_ADC_TSC_0_REGS + 0x28) = 0x7FF;
-
-  debugBuffer[9] = HWREG(SOC_ADC_TSC_0_REGS + 0x24);
 
   return rtn;
 }

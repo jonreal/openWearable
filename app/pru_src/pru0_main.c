@@ -25,13 +25,14 @@
 #include "hw_types.h"
 
 #include "adcdriver.h"
+#include "i2cdriver.h"
 #include "udf.h"
 
 // Prototypes -----------------------------------------------------------------
-void initialize(void);
+void initialize(pru_mem_t* pru_mem);
 void cleanup(void);
-void memInit(void);
-void updateCounters(uint32_t *cnt, uint32_t *si);
+void memInit(pru_mem_t* pru_mem);
+void updateCounters(uint32_t* cnt, uint32_t* si);
 void debugPinHigh(void);
 void debugPinLow(void);
 void iepTimerInit(uint32_t count);
@@ -54,61 +55,52 @@ volatile pruCfg CT_CFG
 volatile far pruIep CT_IEP
   __attribute__((cregister("PRU_IEP", near), peripheral));
 
-// Shared memory pointer
-shared_mem_t *s;
-
-// Param pointer
-param_mem_t *p;
-
-// LookUp tables
-lookUp_mem_t *l;
-
 // Debug Buffer
-volatile uint32_t *debugBuffer;
+volatile uint32_t *debug_buff;
 
 // Main ----------------------------------------------------------------------
 int main(void)
 {
   uint32_t cnt = 0;
-  uint32_t stateIndx = 0;
+  uint32_t si = 0;
+  pru_mem_t m;
 
-  initialize();
+  initialize(&m);
 
   // wait till enabled
-  while(s->cntrl_bit.enable == 0){}
+  while(m.s->pru_ctl.bit.enable == 0);
+  m.s->pru_ctl.bit.shdw_enable = m.s->pru_ctl.bit.enable;
   clearIepInterrupt();
   startTimer();
 
   // Control Loop
-  while(1){
+  while(m.s->pru_ctl.bit.shdw_enable){
 
     // Poll for IEP timer interrupt
-    while((CT_INTC.SECR0 & (1 << 7)) == 0){}
+    while((CT_INTC.SECR0 & (1 << 7)) == 0);
 
     // Pre bookkeeping
     clearTimerFlag();
     debugPinHigh();
-    s->cntrl_bit.shdw_enable = s->cntrl_bit.enable;
-    s->state[stateIndx].timeStamp = cnt;
+    m.s->pru_ctl.bit.shdw_enable = m.s->pru_ctl.bit.enable;
+    m.s->state[si].time_stamp = cnt;
 
     // Estimate
-    pru0UpdateState(cnt, stateIndx);
+    pru0UpdateState(cnt, si, &m);
 
     // Wait for pru1 to be done
-    s->cntrl_bit.pru0_done = 1;
-    while(!(s->cntrl_bit.pru1_done));
-    s->cntrl_bit.pru1_done = 0;
+    m.s->pru_ctl.bit.pru0_done = 1;
+    while(!(m.s->pru_ctl.bit.pru1_done));
+    m.s->pru_ctl.bit.pru1_done = 0;
 
     // Control
-    pru0UpdateControl(cnt, stateIndx);
+    pru0UpdateControl(cnt, si, &m);
 
     // Post bookkeeping
-    updateCounters(&cnt, &stateIndx);
-    if(!(s->cntrl_bit.shdw_enable))
-        break;
+    m.s->cbuff_index = si;
+    updateCounters(&cnt, &si);
     clearIepInterrupt();
     debugPinLow();
-
  }
   debugPinLow();
   cleanup();
@@ -117,7 +109,7 @@ int main(void)
 }
 
 // ----------------------------------------------------------------------------
-void initialize(void)
+void initialize(pru_mem_t* pru_mem)
 {
   /*** Init Pru ***/
 
@@ -130,16 +122,16 @@ void initialize(void)
   // Pin Mux
   CT_CFG.GPCFG0 = 0;
 
-  /*** Memory ***/
-  memInit();
+  memInit(pru_mem);
 
   // Init timer
   iepInterruptInit();
-  iepTimerInit(p->frq_clock_ticks);
+  iepTimerInit(pru_mem->p->fs_ticks);
   clearIepInterrupt();
 
   // drivers
   adcInit();
+  i2cInit();
 
   // user defined inits
   pru0Init();
@@ -155,40 +147,38 @@ void cleanup(void)
 
   // drivers
   adcCleanup();
+  i2cCleanUp();
 
   // user defined cleanups
   pru0Cleanup();
 
 }
 
-void memInit(void)
+void memInit(pru_mem_t* pru_mem)
 {
   void *ptr = NULL;
 
   // Memory map for shared memory
   ptr = (void *)PRU_L_SHARED_DRAM;
-  s = (shared_mem_t *) ptr;
+  pru_mem->s = (shared_mem_t *) ptr;
 
   // Memory map for parameters (pru0 DRAM)
   ptr = (void *) PRU_DRAM;
-  p = (param_mem_t *) ptr;
+  pru_mem->p = (param_mem_t *) ptr;
 
   // Memory map for feedforward lookup table (pru1 DRAM)
   ptr = (void *) PRU_OTHER_DRAM;
-  l = (lookUp_mem_t *) ptr;
+  pru_mem->l = (lookUp_mem_t *) ptr;
 
   // Point global debug buffer
-  debugBuffer = &(p->debugBuffer[0]);
+  debug_buff = &(pru_mem->p->debug_buff[0]);
 }
 
-void updateCounters(uint32_t *cnt, uint32_t *si)
+void updateCounters(uint32_t* cnt, uint32_t* si)
 {
-  // Set buffer location for circ buffer
-  s->stateIndex = (*si);
-
   (*cnt)++;
   (*si)++;
-  (*si) %= SIZE_STATE_BUFF;
+  (*si) %= STATE_BUFF_LEN;
 }
 
 void debugPinHigh(void)

@@ -26,10 +26,10 @@
 #include "udf.h"
 
 // Prototypes ----------------------------------------------------------------
-void initialize(void);
+void initialize(pru_mem_t* pru_mem);
 void cleanup(void);
-void initMemory(void);
-void updateCounters(uint32_t *cnt, uint32_t *si);
+void memInit(pru_mem_t* pru_mem);
+void updateCounters(uint32_t* cnt, uint32_t* si);
 void debugPinHigh(void);
 void debugPinLow(void);
 
@@ -43,31 +43,23 @@ volatile far pruIntc CT_INTC
 volatile pruCfg CT_CFG
   __attribute__((cregister("PRU_CFG", near), peripheral));
 
-// State pointer
-shared_mem_t *s;
-
-// Param pointer
-param_mem_t *p;
-
-// Feedforward lookup table pointer
-lookUp_mem_t *l;
-
 // Debug Buffer
-volatile uint32_t *debugBuffer;
+volatile uint32_t *debug_buff;
 
 // Main ----------------------------------------------------------------------
 int main(void)
 {
   uint32_t cnt = 0;
-  uint32_t stateIndx = 0;
+  uint32_t si = 0;
+  pru_mem_t m;
 
-  initialize();
+  initialize(&m);
 
   // wait till enabled
-  while(s->cntrl_bit.enable == 0){}
+  while(m.s->pru_ctl.bit.shdw_enable == 0);
 
   // Control Loop
-  while(1){
+  while(m.s->pru_ctl.bit.shdw_enable){
 
     // Poll of IEP timer interrupt
     while((CT_INTC.SECR0 & (1 << 7)) == 0);
@@ -76,22 +68,20 @@ int main(void)
     debugPinHigh();
 
     // Estimate
-    pru1UpdateState(cnt, stateIndx);
+    pru1UpdateState(cnt, si, &m);
 
     // Wait for pru0 to be done
     debugPinLow();
-    while(!(s->cntrl_bit.pru0_done));
+    while(!(m.s->pru_ctl.bit.pru0_done));
     debugPinHigh();
-    s->cntrl_bit.pru0_done = 0;
+    m.s->pru_ctl.bit.pru0_done = 0;
 
     // Control
-    pru1UpdateControl(cnt, stateIndx);
+    pru1UpdateControl(cnt, si, &m);
 
     // Post bookkeeping
-    s->cntrl_bit.pru1_done = 1;
-    updateCounters(&cnt, &stateIndx);
-    if(!(s->cntrl_bit.shdw_enable))
-        break;
+    m.s->pru_ctl.bit.pru1_done = 1;
+    updateCounters(&cnt, &si);
     while(CT_INTC.SECR0 & (1 << 7));
     debugPinLow();
   }
@@ -102,7 +92,7 @@ int main(void)
 }
 
 // ----------------------------------------------------------------------------
-void initialize(void)
+void initialize(pru_mem_t* pru_mem)
 {
   /*** Init Pru ***/
 
@@ -113,7 +103,7 @@ void initialize(void)
   CT_CFG.GPCFG0 = 0;
 
   // Memory
-  initMemory();
+  memInit(pru_mem);
 
   // user defined inits
   pru1Init();
@@ -128,7 +118,7 @@ void updateCounters(uint32_t* cnt, uint32_t* si)
 {
   (*cnt)++;
   (*si)++;
-  (*si) %= SIZE_STATE_BUFF;
+  (*si) %= STATE_BUFF_LEN;
 }
 
 void debugPinHigh(void)
@@ -141,23 +131,23 @@ void debugPinLow(void)
   __R30 &= ~(1 << PRU1_DEBUG_PIN);
 }
 
-void initMemory(void)
+void memInit(pru_mem_t* pru_mem)
 {
   void *ptr = NULL;
 
   // Memory map for shared memory
   ptr = (void *)PRU_L_SHARED_DRAM;
-  s = (shared_mem_t *) ptr;
+  pru_mem->s = (shared_mem_t *) ptr;
 
   // Memory map for parameters (pru0 DRAM)
   ptr = (void *) PRU_OTHER_DRAM;
-  p = (param_mem_t *) ptr;
+  pru_mem->p = (param_mem_t *) ptr;
 
   // Memory map for feedforward lookup table (pru1 DRAM)
   ptr = (void *) PRU_DRAM;
-  l = (lookUp_mem_t *) ptr;
+  pru_mem->l = (lookUp_mem_t *) ptr;
 
   // Point global debug buffer
-  debugBuffer = &(p->debugBuffer[0]);
+  debug_buff = &(pru_mem->p->debug_buff[0]);
 }
 

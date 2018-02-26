@@ -20,18 +20,15 @@
 
 // Global ---------------------------------------------------------------------
 extern volatile uint32_t *debugBuffer;
-extern param_mem_t *p;
-extern shared_mem_t *s;
-extern lookUp_mem_t *l;
 
 // Prototypes ---------------------------------------------------------------
 void pru0Init(void);
-void pru0UpdateState(uint32_t cnt, uint32_t si);
-void pru0UpdateControl(uint32_t cnt, uint32_t si);
+void pru0UpdateState(uint32_t cnt, uint32_t si, pru_mem_t* pru_mem);
+void pru0UpdateControl(uint32_t cnt, uint32_t si, pru_mem_t* pru_mem);
 void pru0Cleanup(void);
 void pru1Init(void);
-void pru1UpdateState(uint32_t cnt, uint32_t si);
-void pru1UpdateControl(uint32_t cnt, uint32_t si);
+void pru1UpdateState(uint32_t cnt, uint32_t si, pru_mem_t* pru_mem);
+void pru1UpdateControl(uint32_t cnt, uint32_t si, pru_mem_t* pru_mem);
 void pru1Cleanup(void);
 
 #endif

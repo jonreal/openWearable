@@ -25,7 +25,7 @@
 #define SPI_ENCODER_CHAN    0x1
 
 // Global ---------------------------------------------------------------------
-extern volatile uint32_t *debugBuffer;
+extern volatile uint32_t *debug_buff;
 
 // Prototypes -----------------------------------------------------------------
 int8_t encoderInit(void);
