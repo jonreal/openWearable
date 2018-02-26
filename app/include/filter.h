@@ -18,25 +18,26 @@
 
 #include "fix16.h"
 
-#define MAX_IIR_ORDER (3)
+#define MAX_IIR_ORDER 3
 
 // Filter IIR buffers
 typedef struct{
   volatile fix16_t x[MAX_IIR_ORDER+1];
   volatile fix16_t y[MAX_IIR_ORDER+1];
-} iir_buff_t;
+} iir_filt_t;
 
 // IIR Coefficients
 typedef struct{
   uint32_t N;
   fix16_t b[MAX_IIR_ORDER+1];
   fix16_t a[MAX_IIR_ORDER+1];
-} iir_coeff_t;
+} iir_param_t;
 
 // --- Global Debug Buffer
-extern volatile uint32_t *debugBuffer;
+extern volatile uint32_t *debug_buff;
 
 // --- Prototypes
-void iirInit(volatile iir_buff_t* filter, iir_coeff_t coeff);
-fix16_t iirFilt(volatile iir_buff_t* filter, iir_coeff_t coeff, fix16_t in);
+void IirInit(const iir_param_t* param, volatile iir_filt_t* filt);
+fix16_t IirFilt(fix16_t in, const iir_param_t* param,
+                volatile iir_filt_t* filt);
 #endif

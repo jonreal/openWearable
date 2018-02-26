@@ -20,115 +20,100 @@
 #include <unistd.h>
 #include <time.h>
 #include <string.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 
 #include "mem_types.h"
-#include "pru_wrappers.h"
-#include "gpio.h"
-#include "common.h"
+#include "pru.h"
+#include "log.h"
 #include "tui.h"
 
-// Global --------------------------------------------------------------------
 int debug;
 volatile int doneFlag = 0;
 
-// Protoypes -----------------------------------------------------------------
-void sigintHandler(int sig);
-int loadPruSoftware(void);
-void startPruLoop(void);
+void sigintHandler(int sig) {
+  signal(sig, SIG_IGN);
+  doneFlag = 1;
+}
 
 // ---------------------------------------------------------------------------
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
+  char buff[65536] = {0,};
 
-  // Command Line Inputs
-  if(argc != 1){
-    if(strcmp(argv[1], "-v") == 0)
-      debug = 1;
-  }
-  else{
+  if (argc != 1) {
+    if (strcmp(argv[1], "-v") == 0) debug = 1;
+  } else {
     debug = 0;
   }
 
-  // Welcome
-  if(!(debug)){
+  if (!debug) {
     printf("\n---------------------\n");
     printf("Welcome to openWearable v0.1\n");
     printf("---------------------\n");
-  }
-  else{
+  } else {
     printf("\n---------------------\n");
     printf(" DEBUG MODE \n");
     printf("---------------------\n");
     signal(SIGINT, sigintHandler);
   }
 
-  // Map pru mem to userspace
-  if(pru_mmap() != 0){
+  pru_mem_t pru_mem;
+  if (PruMemMap(&pru_mem) != 0) {
     printf("pru_mem_init() failed.");
     return -1;
   }
 
-  // Load parameters from file to memory.
-  if(loadParameters("config/default") != 0){
+  if (PruLoadParams("config/default", pru_mem.p) != 0) {
     printf("\nParameter file not found!\n");
   }
-  printParameters(stdout);
+  buff[0] = '\0';
+  PruSprintParams(pru_mem.p, buff);
+  fprintf(stdout,buff);
 
-  // Load iir filter coefficients from file to memory.
-  if(loadIirFilterCoeff("config/lowpass_1_6Hz")){
+  if (PruLoadIirFilterParams("config/lowpass_1_6Hz", &pru_mem.p->iir_param)) {
       printf("\nFilter coefficient file not found!\n");
   }
-  printFirCoeff(stdout);
+  buff[0] = '\0';
+  PruSprintIirParams(&pru_mem.p->iir_param, buff);
+  fprintf(stdout,buff);
 
-  // Load nlb filter coefficients from file to memory.
-  if(loadNlbFilterParam("config/nonlinBayes")){
+  if (PruLoadNlbFilterParams("config/nonlinBayes", &pru_mem.p->nlb_param)) {
       printf("\nBayes filter parameters file not found!\n");
   }
+  buff[0] = '\0';
+  PruSprintNlbParams(&pru_mem.p->nlb_param, buff);
+  fprintf(stdout,buff);
 
-  // Initialize the library, PRUs and interrupts.
-  if(pru_init() != 0)
+  if(PruInit() != 0)
     return -1;
 
   // Start control loop
   printf("\n\nPress enter to start\n\n");
   getchar();
 
-  // Start PRUs
-  enablePru(1);
+  PruEnable(1, &pru_mem.s->pru_ctl);
 
-  // Debug Loop
   if(debug){
-    circBuffInit();
+    circbuff_t* cb = LogNewCircBuff();
     while(!(doneFlag)){
-      logData();
+      LogDebugWriteState(pru_mem.s, cb, buff);
     }
-    enablePru(0);
-    printDebugBuffer();
-  }
-
-  // TUI
-  else {
-    if(init_tui() != 0){
+    PruEnable(0, &pru_mem.s->pru_ctl);
+    free(cb);
+    PruPrintDebugBuffer(pru_mem.p->debug_buff);
+  } else {
+    if (TuiInit() != 0) {
       printf("TUI init fail.");
       return -1;
     }
-
-    // UI loop
-    if(start_tui() == 1){
-      enablePru(0);
-      printDebugBuffer();
+    if(TuiLoop(&pru_mem) == 1){
+      PruEnable(0, &pru_mem.s->pru_ctl);
+      PruPrintDebugBuffer(pru_mem.p->debug_buff);
       raise(SIGINT);
     }
   }
   return 0;
-
-
 }
 
 /* Methods ----------------------------------------------------------------- */
-void sigintHandler(int sig)
-{
-  signal(sig, SIG_IGN);
-  doneFlag = 1;
-}
 

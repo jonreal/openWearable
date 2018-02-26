@@ -17,7 +17,7 @@
 #define _PWMDRIVER_H_
 
 /* ---- Global ---- */
-extern volatile uint32_t *debugBuffer;
+extern volatile uint32_t *debug_buff;
 
 /* ---- Prototype ---- */
 void pwmInit(void);

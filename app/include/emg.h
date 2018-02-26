@@ -7,7 +7,7 @@
 #define FIX16_BITS2VOLTS (0x708A)
 
 //---- Global ----
-extern volatile uint32_t *debugBuffer;
+extern volatile uint32_t *debug_buff;
 
 //---- Prototypes ----
 void emgInit(void);

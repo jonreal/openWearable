@@ -2,6 +2,7 @@
 
 // Include sensor/actuator drivers here
 #include "emg.h"
+#include "pressureSensor.h"
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -10,17 +11,16 @@
 // ---------------------------------------------------------------------------
 void pru0Init(void)
 {
-  emgInit();
+//  emgInit();
+//  pressureSensorInit();
 }
 
-void pru0UpdateState(uint32_t cnt, uint32_t si)
+void pru0UpdateState(uint32_t cnt, uint32_t si, pru_mem_t* pru_mem)
 {
-  s->state[si].emg_raw = emgSampleBicep();
-  
-
+//  pru_mem->s->state[si].emg_raw = emgSampleBicep();
 }
 
-void pru0UpdateControl(uint32_t cnt, uint32_t si)
+void pru0UpdateControl(uint32_t cnt, uint32_t si, pru_mem_t* pru_mem)
 {
 }
 
@@ -38,11 +38,11 @@ void pru1Init(void)
 {
 }
 
-void pru1UpdateState(uint32_t cnt, uint32_t si)
+void pru1UpdateState(uint32_t cnt, uint32_t si, pru_mem_t* pru_mem)
 {
 }
 
-void pru1UpdateControl(uint32_t cnt, uint32_t si)
+void pru1UpdateControl(uint32_t cnt, uint32_t si, pru_mem_t* pru_mem)
 {
 }
 

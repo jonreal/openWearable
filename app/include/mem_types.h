@@ -18,59 +18,63 @@
 
 #include "fix16.h"
 #include "filter.h"
-#include "nonlinBayes.h"
+#include "nlb_filter.h"
 
-#define PRU_CTRL_BASE   0x00022000
-#define PRU_CLK         (200000000)
-#define SIZE_STATE_BUFF   149
-#define NUM_FF_LT         1000
-#define NUM_ADC           8
-#define NUM_IMU           6
+#define PRU_CTRL_BASE     0x00022000
+#define STATE_BUFF_LEN    149
 
 // Debug pins
 #define PRU0_DEBUG_PIN  5
 #define PRU1_DEBUG_PIN  8
 
 // Structures ----------------------------------------------------------------
-typedef struct{
-  volatile uint32_t timeStamp;
+
+// Flow control
+typedef union {
+  volatile uint16_t reg;
+  volatile struct {
+    unsigned enable : 1;            // bit 0 (set by ARM and shadowed)
+    unsigned pru0_done : 1;         // bit 1 (set by pru0, read/reset by pru1)
+    unsigned pru1_done : 1;         // bit 2 (set by pru1, read/reset by pru0)
+    unsigned shdw_enable : 1;       // bit 3 (shawdow reg. for enable)
+    unsigned rsvd : 12;             // bits 11-15 reserved
+ } bit;
+} pru_ctl_t;
+
+// State
+typedef struct {
+  volatile uint32_t time_stamp;
   volatile fix16_t emg_raw;
 } state_t;
 
 // Shared Memory -> mapped to SRAM
-typedef struct{
-  state_t state[SIZE_STATE_BUFF];
-  volatile uint32_t stateIndex;
-
-  // Flow control
-  union{
-    volatile uint16_t cntrl;
-
-    volatile struct{
-      unsigned enable : 1;          // bit 0 (set by ARM and shadowed)
-      unsigned pru0_done : 1;       // bit 1 (set by pru0, read/reset by pru1)
-      unsigned pru1_done : 1;       // bit 2 (set by pru1, read/reset by pru0)
-      unsigned shdw_enable : 1;     // bit 3 (shawdow reg. for enable)
-      unsigned rsvd : 12;            // bits 11-15 reserved
-   } cntrl_bit;
-  };
+typedef struct {
+  volatile uint32_t cbuff_index;
+  state_t state[STATE_BUFF_LEN];
+  pru_ctl_t pru_ctl;
 } shared_mem_t;
 
 // Parameter Struct -> mapped to pr0 DRAM
-typedef struct{
-  volatile uint32_t debugBuffer[10];
-  uint32_t frq_hz;
-  uint32_t frq_clock_ticks;
-  nlb_param_t nlbFiltParam;
-  iir_coeff_t iirFiltCoeff;
-
+typedef struct {
+  volatile uint32_t debug_buff[10];
+  uint32_t fs_hz;
+  uint32_t fs_ticks;
+  nlb_param_t nlb_param;
+  iir_param_t iir_param;
 } param_mem_t;
 
 // Filters
-typedef struct{
-  nlb_buff_t nlbFilter;
-  iir_buff_t iirFilter;
+typedef struct {
+  nlb_filt_t nlb_filt;
+  iir_filt_t iir_filt;
 } lookUp_mem_t;
+
+// Pointers to memory
+typedef struct {
+  shared_mem_t* s;
+  param_mem_t* p;
+  lookUp_mem_t* l;
+} pru_mem_t;
 
 #endif
 

@@ -51,17 +51,17 @@ int main(int argc, char **argv)
 
   // Read in input file data
   FILE* fp = fopen(file, "r");
-  FILE* fout = fopen("./out", "w");
+  FILE* fout = fopen("./out.txt", "w");
 
   // First element lenght
-  fscanf(fp, "%u\n", dataLength);
+  fscanf(fp, "%u\n", &dataLength);
 
   // make fix16_t array of data
-  fix16_t data[length];
-  fix16_t out[length];
+  fix16_t data[dataLength];
+  fix16_t out[dataLength];
   float v;
 
-  for(int i=0; i<length; i++){
+  for(int i=0; i<dataLength; i++){
     fscanf(fp, "%f\n", &v);
     data[i] = fix16_from_float(v);
     out[i] = iirFilt(&filter, coeff, data[i]);

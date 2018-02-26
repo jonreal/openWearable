@@ -22,7 +22,7 @@
 volatile register uint32_t __R31;
 
 /* Global ------------------------------------------------------------------ */ 
-extern volatile uint32_t *debugBuffer;
+extern volatile uint32_t *debug_buff;
 
 /* Prototypes -------------------------------------------------------------- */
 uint16_t viconSync(void);

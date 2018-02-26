@@ -7,6 +7,7 @@
 TARGET = main
 PRU0_TARGET = pru0_main
 PRU1_TARGET = pru1_main
+SRC_IGNORE = testFilters
 
 # C Source Directories
 CSRC_DIR = ./src
@@ -24,12 +25,12 @@ BUILD_DIR = ./build
 
 # Compiler
 CC = gcc
-CFLAGS = -std=gnu99 -Wall -g -O4 -mtune=cortex-a8 -march=armv7-a
+CFLAGS = -std=gnu99 -Wall -g -O4 -mtune=cortex-a8 -march=armv7-a -D=am335x
 LDFLAGS =
 
 # PRU compiler
 PRU_CC = clpru
-PRU_CFLAGS = -q --c99 -v3 --define=am3359d -O4
+PRU_CFLAGS = -q --c99 -v3 --define=am3359d -O4 -D=am335x
 PRU_LDFLAGS =
 
 # Install stuff
@@ -37,8 +38,9 @@ INSTALL = install -m 755
 INSTALLDIR = install -d -m 755
 INSTALLNONEXEC = install -m 644
 
-# Filter out source/target files
-SOURCES = $(filter-out $(CSRC_DIR)/$(TARGET).c, $(wildcard $(CSRC_DIR)/*.c))
+# Filter out source/target files and other targets
+SOURCES_PRE = $(filter-out $(CSRC_DIR)/$(TARGET).c, $(wildcard $(CSRC_DIR)/*.c))
+SOURCES = $(filter-out $(CSRC_DIR)/$(SRC_IGNORE).c, $(SOURCES_PRE))
 OBJECTS = $(patsubst $(CSRC_DIR)/%,$(BUILD_DIR)/%,$(SOURCES:.c=.o))
 
 PRU0_SOURCE = $(filter-out $(PRU_CSRC_DIR)/$(PRU0_TARGET).c $(PRU_CSRC_DIR)/$(PRU1_TARGET).c, $(wildcard $(PRU_CSRC_DIR)/*.c))
@@ -70,10 +72,10 @@ $(BUILD_DIR)/%.o: $(CSRC_DIR)/%.c
 	$(CC) $(CFLAGS) -I$(CINC_DIR) -c -o $@ $< $(CLIB) -lm
 
 # -----------------------------------------------------------------------------
-#  PRU0
+#  PRU
 # -----------------------------------------------------------------------------
 
-# Link PRU0
+# Link PRU
 $(BUILD_DIR)/$(PRU0_TARGET).elf: $(PRU0_OBJECTS) $(BUILD_DIR)/$(PRU0_TARGET).o
 	@echo "\n Linking pru0... \n"
 	@mkdir -p $(TARGET_DIR)

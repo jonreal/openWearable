@@ -13,80 +13,48 @@
  limitations under the License.
 =============================================================================*/
 
+#include "tui.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <math.h>
-#include <termios.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <string.h>
+#include "log.h"
 
-#include "gpio.h"
-#include "common.h"
-#include "pru_wrappers.h"
-#include "tui.h"
+volatile sig_atomic_t input_ready;
 
-#define DEBUG_PIN "P8_15"
-
-tui_t *ptui;
-
-uint32_t gpio_debug;
-
-/* ----------------------------------------------------------------------------
- * Function init_tui()
- * ------------------------------------------------------------------------- */
-int init_tui(void)
-{
+// ----------------------------------------------------------------------------
+// Function init_tui()
+// ----------------------------------------------------------------------------
+int TuiInit(void) {
+  // Setup action for SIGIO for user inputs
   struct sigaction action_ui;
-
-  ptui = malloc(sizeof(tui_t));
-  ptui->io_ready = 0;
-
-  /* Set up action for SIGIO */
-  action_ui.sa_handler = io_cb;
+  action_ui.sa_handler = TuiInputCallback;
   sigemptyset(&action_ui.sa_mask);
   action_ui.sa_flags = 0;
-  if(sigaction(SIGIO, &action_ui, NULL) == -1)
+  if (sigaction(SIGIO, &action_ui, NULL) == -1)
     printf("Error sigaction\n");
 
-  /* Set up file descriptor */
-  if(fcntl(0, F_SETOWN, getpid()) == -1){
+  // Setup stdin flags
+  if (fcntl(0, F_SETOWN, getpid()) == -1) {
     printf("F_SETOWN error.\n");
     return -1;
   }
-  if(fcntl(0, F_SETFL, fcntl(0, F_GETFL) | O_ASYNC | O_NONBLOCK) == -1){
+  if (fcntl(0, F_SETFL, fcntl(0, F_GETFL) | O_ASYNC | O_NONBLOCK) == -1) {
     printf("Error setting stdin fd flags.\n");
     return -1;
   }
   printf("TUI initialized.\n");
-
-  /* Debug pin */
-  /* set enable pins */
-  if(get_gpio_number(DEBUG_PIN, &gpio_debug) != 0){
-    printf("Error getting gpio number.\n");
-    return -1;
-  }
-  gpio_export(gpio_debug);
-  gpio_set_direction(gpio_debug, OUTPUT);
-
+  fflush(stdout);
   return 0;
 }
 
-/* ----------------------------------------------------------------------------
- * Function io_cb()
- * ------------------------------------------------------------------------- */
-void io_cb(int sig)
-{
-  ptui->io_ready = 1;
+void TuiInputCallback(int sig) {
+  input_ready = 1;
 }
 
-/* ----------------------------------------------------------------------------
- * Function ui_menu_cb()
- * ------------------------------------------------------------------------- */
-void tui_menu(void)
-{
+void TuiPrintMenu(void) {
   printf(
   "\n\n---------------------------------------------------------------------\n"
   "Menu: f - Collect trial\n"
@@ -95,28 +63,22 @@ void tui_menu(void)
   fflush(stdout);
 }
 
-/* ----------------------------------------------------------------------------
- * Function tui()
- * ------------------------------------------------------------------------- */
-int start_tui(void)
-{
-  char inChar;
-  char inString[256];
-  char logFile[256] = "datalog/";
+int TuiLoop(const pru_mem_t* pru_mem) {
+  char input_char = 0;
+  char input_string[256] = {0};
+  char log_file[256] = "datalog/";
 
-  tui_menu();
-  fflush(stdout);
-  while(1){
-
+  TuiPrintMenu();
+  while (1) {
     // Clear inputs
-    inChar = ' ';
-    inString[0] = '\0';
+    input_char = ' ';
+    input_string[0] = '\0';
 
     // Wait for user input.
-    if(ptui->io_ready){
-      scanf(" %c", &inChar);
+    if (input_ready) {
+      scanf(" %c", &input_char);
 
-      switch(inChar){
+      switch(input_char){
 
         // ---- Exit ----------------------------------------------------------
         case 'e' :
@@ -126,65 +88,53 @@ int start_tui(void)
         case 'f' :
           printf("\t\tEnter trial name: ");
           fflush(stdout);
-          ptui->io_ready = 0;
+          input_ready = 0;
 
           // Wait for input.
-          while(1)
-            if(ptui->io_ready)
+          while (1)
+            if (input_ready)
               break;
 
-          scanf(" %s", inString);
-          strcat(logFile, inString);
-          printf("\t\tSaving data to %s\n",logFile);
+          scanf(" %s", input_string);
+          strcat(log_file, input_string);
+          printf("\t\tSaving data to %s\n",log_file);
 
-          // Init file and circbuff
-          logFileInit(logFile);
-          circBuffInit();
+          log_t* log = LogFileOpen(pru_mem, log_file);
 
           // Wait for enter to start saving data
           printf("\t\tPress enter to start collection...\n");
           fflush(stdout);
-          ptui->io_ready = 0;
-          while(1)
-            if(ptui->io_ready)
+          input_ready = 0;
+          while (1)
+            if (input_ready)
               break;
-          scanf(" %c", &inChar);
+          scanf(" %c", &input_char);
 
           // Wait for enter to stop collection
           printf("\t\tPress enter to stop collection...\n");
           fflush(stdout);
-          ptui->io_ready = 0;
+          input_ready = 0;
 
           // Data collection loop
-          while(1){
-
-            logData();
-
-            // Check for input
-            if(ptui->io_ready)
+          while (1) {
+            LogWriteStateToFile(pru_mem, log);
+            if(input_ready)
               break;
           }
-          scanf(" %c", &inChar);
-
-          closeLogFile();
-          logFile[0] = '\0';
-          strcat(logFile, "datalog/");
-          tui_menu();
+          scanf(" %c", &input_char);
+          LogFileClose(log);
+          log_file[0] = '\0';
+          strcat(log_file, "datalog/");
+          TuiPrintMenu();
           fflush(stdout);
-          ptui->io_ready = 0;
+          input_ready = 0;
           break;
       }
     }
   }
 }
 
-void logData(void)
-{
- circBuffUpdate();
- writeState();
-}
-
-int tui_cleanup(void)
+int TuiCleanup(void)
 {
   if(fcntl(0, F_SETOWN, NULL) == -1){
     printf("F_SETOWN error.\n");
@@ -194,8 +144,6 @@ int tui_cleanup(void)
     printf("Error setting stdin fd flags.\n");
     return -1;
   }
-  free(ptui);
-  ptui = NULL;
 
   printf("TUI cleaned up.\n");
   return 0;

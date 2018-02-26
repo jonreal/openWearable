@@ -255,4 +255,83 @@ void i2cTxByte(uint8_t addr, uint8_t reg, uint8_t tx)
 }
 
 
+void i2cRxBurstNoReg(uint8_t addr, uint16_t len, uint8_t *buffer)
+{
+  uint16_t i = 0;
+
+  i2cClearInterrupts();
+
+  /* Slave address */
+  I2CMasterSlaveAddrSet(SOC_I2C_1_REGS, addr);
+
+//  /* Configure as master transmitter */
+//  I2CMasterControl(SOC_I2C_1_REGS, I2C_CFG_MST_TX);
+//
+//  /* Tx 1 byte first - devReg */
+//  I2CSetDataCount(SOC_I2C_1_REGS, 0x1);
+//
+//  /* Enable transmit, recieve and registers ready interrupt */
+//  I2CMasterIntEnableEx(SOC_I2C_1_REGS, I2C_INT_TRANSMIT_READY
+//                                  | I2C_INT_RECV_READY
+//                                  | I2C_INT_ADRR_READY_ACESS);
+//
+//  /* Make sure bus is free */
+//  while(I2CMasterBusBusy(SOC_I2C_1_REGS));
+//
+//  /* Start condition */
+//  I2CMasterStart(SOC_I2C_1_REGS);
+//
+//  /* Wait for transmit ready */
+//  while(!(I2CMasterIntStatusEx(SOC_I2C_1_REGS, I2C_INT_TRANSMIT_READY)));
+//
+//  /* Write devive register (devReg) to fifo */
+//  I2CMasterDataPut(SOC_I2C_1_REGS, reg);
+//
+//  /* Clear int */
+//  I2CMasterIntClearEx(SOC_I2C_1_REGS, I2C_INT_TRANSMIT_READY);
+//
+//  /* Wait for registers ready int */
+//  while(!(I2CMasterIntStatusEx(SOC_I2C_1_REGS, I2C_INT_ADRR_READY_ACESS)));
+//
+//  /* Clear int */
+//  I2CMasterIntClearEx(SOC_I2C_1_REGS, I2C_INT_ADRR_READY_ACESS);
+
+  /* Configure as master reciever */
+  I2CMasterControl(SOC_I2C_1_REGS, I2C_CFG_MST_RX);
+
+  /* Enable transmit, recieve and registers ready interrupt */
+  I2CMasterIntEnableEx(SOC_I2C_1_REGS, I2C_INT_TRANSMIT_READY
+                                  | I2C_INT_RECV_READY
+                                  | I2C_INT_ADRR_READY_ACESS);
+
+  /* Rx bytes (num of data bytes) */
+  I2CSetDataCount(SOC_I2C_1_REGS, len);
+
+  /* Start condition */
+  I2CMasterStart(SOC_I2C_1_REGS);
+
+  while(I2CDataCountGet(SOC_I2C_1_REGS) != 0){
+
+    /* Wait for receive ready */
+    while(!(I2CMasterIntStatusEx(SOC_I2C_1_REGS, I2C_INT_RECV_READY)));
+
+    buffer[i++] = I2CMasterDataGet(SOC_I2C_1_REGS);
+
+    /* Clear int */
+    I2CMasterIntClearEx(SOC_I2C_1_REGS, I2C_INT_RECV_READY);
+  }
+
+  /* Wait for registers ready */
+  while(!(I2CMasterIntStatusEx(SOC_I2C_1_REGS, I2C_INT_ADRR_READY_ACESS)));
+
+  /* Clear int */
+  I2CMasterIntClearEx(SOC_I2C_1_REGS, I2C_INT_ADRR_READY_ACESS);
+
+  /* Stop condition */
+  I2CMasterStop(SOC_I2C_1_REGS);
+
+  i2cClearInterrupts();
+}
+
+
 

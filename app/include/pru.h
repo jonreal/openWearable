@@ -1,12 +1,14 @@
 #ifndef _PRU_H_
 #define _PRU_H_
 
-// PRU Memory Map
-#define PRU_GLOBAL_BASE		0x4A300000
+#include "mem_types.h"
 
-// PRU Global Offsets
-#define PRU0_DRAM		(PRU_GLOBAL_BASE)
-#define PRU1_DRAM		(PRU_GLOBAL_BASE + 0x00002000)
+#define HZ_TO_TICKS(hz) ((uint32_t)((float)PRU_CLK/hz))
+
+#define PRU_CLK           200000000
+#define PRU_GLOBAL_BASE		0x4A300000
+#define PRU0_DRAM		      (PRU_GLOBAL_BASE)
+#define PRU1_DRAM		      (PRU_GLOBAL_BASE + 0x00002000)
 #define PRU_SHARED_DRAM		(PRU_GLOBAL_BASE + 0x00010000)
 
 // remote proc driver paths
@@ -17,5 +19,23 @@
 #define PRU_NAME_LEN 13
 #define PRU0_UEVENT "/sys/bus/platform/drivers/pru-rproc/4a334000.pru0/uevent"
 #define PRU1_UEVENT "/sys/bus/platform/drivers/pru-rproc/4a338000.pru1/uevent"
+
+
+int PruMemMap(pru_mem_t* pru_mem);
+int PruInit(void);
+int PruRestart(void);
+int PruCleanup(void);
+void PruCtlReset(pru_ctl_t* ctl);
+void PruSprintMalloc(const pru_mem_t* pru_mem, char* buff);
+int PruLoadParams(const char* file, param_mem_t* param);
+void PruSprintParams(const param_mem_t* param, char* buff);
+int PruLoadIirFilterParams(const char* file, iir_param_t* param);
+void PruSprintIirParams(const iir_param_t* param, char* buff);
+int PruLoadNlbFilterParams(const char* file, nlb_param_t* param);
+void PruSprintNlbParams(const nlb_param_t* param, char* buff);
+void PruEnable(int en, pru_ctl_t* ctl);
+void PruPrintDebugBuffer(const volatile uint32_t* db);
+void PruSprintState(const state_t* st, char* buff);
+void PruSprintStateHeader(char* buff);
 
 #endif /* _PRU_H_ */
