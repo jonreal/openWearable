@@ -47,8 +47,7 @@ volatile pruCfg CT_CFG
 volatile uint32_t *debug_buff;
 
 // Main ----------------------------------------------------------------------
-int main(void)
-{
+int main(void) {
   uint32_t cnt = 0;
   uint32_t si = 0;
   pru_mem_t m;
@@ -56,33 +55,33 @@ int main(void)
   initialize(&m);
 
   // wait till enabled
-  while(m.s->pru_ctl.bit.shdw_enable == 0);
+  while (m.s->pru_ctl.bit.shdw_enable == 0);
 
   // Control Loop
-  while(m.s->pru_ctl.bit.shdw_enable){
+  while (m.s->pru_ctl.bit.shdw_enable) {
 
     // Poll of IEP timer interrupt
-    while((CT_INTC.SECR0 & (1 << 7)) == 0);
+    while ((CT_INTC.SECR0 & (1 << 7)) == 0);
 
     // Pre bookkeeping
     debugPinHigh();
 
     // Estimate
-    pru1UpdateState(cnt, si, &m);
+    Pru1UpdateState(cnt, si, &m);
 
     // Wait for pru0 to be done
     debugPinLow();
-    while(!(m.s->pru_ctl.bit.pru0_done));
+    while (!(m.s->pru_ctl.bit.pru0_done));
     debugPinHigh();
     m.s->pru_ctl.bit.pru0_done = 0;
 
     // Control
-    pru1UpdateControl(cnt, si, &m);
+    Pru1UpdateControl(cnt, si, &m);
 
     // Post bookkeeping
     m.s->pru_ctl.bit.pru1_done = 1;
     updateCounters(&cnt, &si);
-    while(CT_INTC.SECR0 & (1 << 7));
+    while (CT_INTC.SECR0 & (1 << 7));
     debugPinLow();
   }
   debugPinLow();
@@ -92,10 +91,7 @@ int main(void)
 }
 
 // ----------------------------------------------------------------------------
-void initialize(pru_mem_t* pru_mem)
-{
-  /*** Init Pru ***/
-
+void initialize(pru_mem_t* pru_mem) {
   // Clear SYSCFG[STANDBY_INIT] to enable OCP master port
   CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
 
@@ -106,46 +102,39 @@ void initialize(pru_mem_t* pru_mem)
   memInit(pru_mem);
 
   // user defined inits
-  pru1Init();
+  Pru1Init();
 }
 
-void cleanup(void)
-{
-  pru1Cleanup();
+void cleanup(void) {
+  Pru1Cleanup();
 }
 
-void updateCounters(uint32_t* cnt, uint32_t* si)
-{
+void updateCounters(uint32_t* cnt, uint32_t* si) {
   (*cnt)++;
   (*si)++;
   (*si) %= STATE_BUFF_LEN;
 }
 
-void debugPinHigh(void)
-{
+void debugPinHigh(void) {
   __R30 |= (1 << PRU1_DEBUG_PIN);
 }
 
-void debugPinLow(void)
-{
+void debugPinLow(void) {
   __R30 &= ~(1 << PRU1_DEBUG_PIN);
 }
 
-void memInit(pru_mem_t* pru_mem)
-{
-  void *ptr = NULL;
-
+void memInit(pru_mem_t* pru_mem) {
   // Memory map for shared memory
-  ptr = (void *)PRU_L_SHARED_DRAM;
-  pru_mem->s = (shared_mem_t *) ptr;
+  void* ptr = (void*) PRU_L_SHARED_DRAM;
+  pru_mem->s = (shared_mem_t*) ptr;
 
   // Memory map for parameters (pru0 DRAM)
-  ptr = (void *) PRU_OTHER_DRAM;
-  pru_mem->p = (param_mem_t *) ptr;
+  ptr = (void*) PRU_OTHER_DRAM;
+  pru_mem->p = (param_mem_t*) ptr;
 
   // Memory map for feedforward lookup table (pru1 DRAM)
-  ptr = (void *) PRU_DRAM;
-  pru_mem->l = (lookUp_mem_t *) ptr;
+  ptr = (void*) PRU_DRAM;
+  pru_mem->l = (lookUp_mem_t*) ptr;
 
   // Point global debug buffer
   debug_buff = &(pru_mem->p->debug_buff[0]);

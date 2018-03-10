@@ -10,8 +10,8 @@
 extern volatile uint32_t *debug_buff;
 
 //---- Prototypes ----
-void emgInit(void);
-void emgCleanup(void);
-fix16_t emgSampleBicep(void);
+void EmgInit(void);
+void EmgCleanup(void);
+fix16_t EmgSampleBicep(void);
 
 #endif
