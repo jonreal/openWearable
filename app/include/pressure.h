@@ -21,7 +21,7 @@
 #define SENSOR_1 0x28
 
 // max output in counts (2^14)
-#define FIX16_RES 0x4
+#define FIX16_RESOLUTION 0x4
 
 // max pressure (150 psi -> 1054.20 pascal)
 #define FIX16_PRESSURE_MAX 0x40A35C0
@@ -32,7 +32,6 @@ extern volatile uint32_t *debug_buff;
 
 // Prototypes -----------------------------------------------------------------
 void pressureSensorInit(void);
-//void pressureSensorCleanUp(void);
-//fix16_t pressureSensorSample(char sensorID);
+fix16_t pressureSensorSample(char sensorID);
 
 #endif

@@ -19,16 +19,16 @@
 #include "mem_types.h"
 
 // Global ---------------------------------------------------------------------
-extern volatile uint32_t *debugBuffer;
+extern volatile uint32_t* debug_buff;
 
 // Prototypes ---------------------------------------------------------------
-void pru0Init(void);
-void pru0UpdateState(uint32_t cnt, uint32_t si, pru_mem_t* pru_mem);
-void pru0UpdateControl(uint32_t cnt, uint32_t si, pru_mem_t* pru_mem);
-void pru0Cleanup(void);
-void pru1Init(void);
-void pru1UpdateState(uint32_t cnt, uint32_t si, pru_mem_t* pru_mem);
-void pru1UpdateControl(uint32_t cnt, uint32_t si, pru_mem_t* pru_mem);
-void pru1Cleanup(void);
+void Pru0Init(void);
+void Pru0UpdateState(uint32_t cnt, uint32_t si, pru_mem_t* pru_mem);
+void Pru0UpdateControl(uint32_t cnt, uint32_t si, pru_mem_t* pru_mem);
+void Pru0Cleanup(void);
+void Pru1Init(void);
+void Pru1UpdateState(uint32_t cnt, uint32_t si, pru_mem_t* pru_mem);
+void Pru1UpdateControl(uint32_t cnt, uint32_t si, pru_mem_t* pru_mem);
+void Pru1Cleanup(void);
 
 #endif

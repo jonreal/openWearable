@@ -19,11 +19,9 @@
 #include <pru_ctrl.h>
 #include <pru_iep.h>
 #include <pru_intc.h>
-
 #include "rsc_table_pru0.h"
 #include "mem_types.h"
 #include "hw_types.h"
-
 #include "adcdriver.h"
 #include "i2cdriver.h"
 #include "udf.h"
@@ -59,8 +57,7 @@ volatile far pruIep CT_IEP
 volatile uint32_t *debug_buff;
 
 // Main ----------------------------------------------------------------------
-int main(void)
-{
+int main(void) {
   uint32_t cnt = 0;
   uint32_t si = 0;
   pru_mem_t m;
@@ -68,16 +65,16 @@ int main(void)
   initialize(&m);
 
   // wait till enabled
-  while(m.s->pru_ctl.bit.enable == 0);
+  while (m.s->pru_ctl.bit.enable == 0);
   m.s->pru_ctl.bit.shdw_enable = m.s->pru_ctl.bit.enable;
   clearIepInterrupt();
   startTimer();
 
   // Control Loop
-  while(m.s->pru_ctl.bit.shdw_enable){
+  while (m.s->pru_ctl.bit.shdw_enable) {
 
     // Poll for IEP timer interrupt
-    while((CT_INTC.SECR0 & (1 << 7)) == 0);
+    while ((CT_INTC.SECR0 & (1 << 7)) == 0);
 
     // Pre bookkeeping
     clearTimerFlag();
@@ -86,7 +83,7 @@ int main(void)
     m.s->state[si].time_stamp = cnt;
 
     // Estimate
-    pru0UpdateState(cnt, si, &m);
+    Pru0UpdateState(cnt, si, &m);
 
     // Wait for pru1 to be done
     m.s->pru_ctl.bit.pru0_done = 1;
@@ -94,7 +91,7 @@ int main(void)
     m.s->pru_ctl.bit.pru1_done = 0;
 
     // Control
-    pru0UpdateControl(cnt, si, &m);
+    Pru0UpdateControl(cnt, si, &m);
 
     // Post bookkeeping
     m.s->cbuff_index = si;
@@ -109,10 +106,7 @@ int main(void)
 }
 
 // ----------------------------------------------------------------------------
-void initialize(pru_mem_t* pru_mem)
-{
-  /*** Init Pru ***/
-
+void initialize(pru_mem_t* pru_mem) {
   // Clear SYSCFG[STANDBY_INIT] to enable OCP master port
   CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
 
@@ -134,12 +128,10 @@ void initialize(pru_mem_t* pru_mem)
   i2cInit();
 
   // user defined inits
-  pru0Init();
-
+  Pru0Init();
 }
 
-void cleanup(void)
-{
+void cleanup(void) {
   // Clear all interrupts
   clearIepInterrupt();
   CT_INTC.SECR0 = 0xFFFFFFFF;
@@ -150,25 +142,21 @@ void cleanup(void)
   i2cCleanUp();
 
   // user defined cleanups
-  pru0Cleanup();
-
+  Pru0Cleanup();
 }
 
-void memInit(pru_mem_t* pru_mem)
-{
-  void *ptr = NULL;
-
+void memInit(pru_mem_t* pru_mem) {
   // Memory map for shared memory
-  ptr = (void *)PRU_L_SHARED_DRAM;
-  pru_mem->s = (shared_mem_t *) ptr;
+  void* ptr = (void*) PRU_L_SHARED_DRAM;
+  pru_mem->s = (shared_mem_t*) ptr;
 
   // Memory map for parameters (pru0 DRAM)
-  ptr = (void *) PRU_DRAM;
-  pru_mem->p = (param_mem_t *) ptr;
+  ptr = (void*) PRU_DRAM;
+  pru_mem->p = (param_mem_t*) ptr;
 
   // Memory map for feedforward lookup table (pru1 DRAM)
-  ptr = (void *) PRU_OTHER_DRAM;
-  pru_mem->l = (lookUp_mem_t *) ptr;
+  ptr = (void*) PRU_OTHER_DRAM;
+  pru_mem->l = (lookUp_mem_t*) ptr;
 
   // Point global debug buffer
   debug_buff = &(pru_mem->p->debug_buff[0]);
