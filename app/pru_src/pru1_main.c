@@ -100,6 +100,10 @@ void initialize(pru_mem_t* mem) {
 
   // user defined inits
   Pru1Init();
+
+  // clear gpio
+  __R30 = 0x0;
+  __R31 = 0x0;
 }
 
 void cleanup(void) {
