@@ -76,5 +76,11 @@ typedef struct {
   lookUp_mem_t* l;
 } pru_mem_t;
 
+// Counters
+typedef struct {
+  uint32_t frame;
+  uint32_t index;
+} pru_count_t;
+
 #endif
 
