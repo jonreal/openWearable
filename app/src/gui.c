@@ -1,4 +1,4 @@
-/* Copyright 2017 Jonathan Realmuto
+/* Copyright 2018 Jonathan Realmuto
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -13,24 +13,21 @@
  limitations under the License.
 =============================================================================*/
 
-#include "pressure.h"
-#include <stdint.h>
-#include "i2cdriver.h"
+#include "gui.h"
 
-void PressureSensorInit(void) {
-  uint8_t buffer[2] = {0};
+#include "gnuplot_i.h"
 
-  // Check Status Bits
-  i2cRxBurstNoReg(SENSOR_1, 2, buffer);
+int GuiInit(void) {
+  return 0;
 }
 
-fix16_t PressureSensorSample(uint8_t addr) {
-  uint8_t buffer[4] = {0};
-  i2cRxBurstNoReg(SENSOR_1, 4, buffer);
-
-  uint32_t bits = (((uint32_t) (buffer[0] & ~0xC0)) << 8)
-                  | ((uint32_t) buffer[1]);
-
-  return fix16_smul(fix16_from_int(bits),BITS2PSI);
-
-}
+//int GuiLoop(const pru_mem* pru_mem) {
+//  gnuplot_ctrl* h;
+//  h = gnuplot_init();
+//
+//
+//
+//}
+//
+//int GuiCleanup(void) {
+//}

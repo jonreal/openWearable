@@ -26,12 +26,15 @@
 // max pressure (150 psi -> 1054.20 pascal)
 #define FIX16_PRESSURE_MAX 0x40A35C0
 
+// scaling (150 psi / 2^14 bits)
+#define BITS2PSI 0x258
+
 
 // Global ---------------------------------------------------------------------
 extern volatile uint32_t *debug_buff;
 
 // Prototypes -----------------------------------------------------------------
-void pressureSensorInit(void);
-fix16_t pressureSensorSample(char sensorID);
+void PressureSensorInit(void);
+fix16_t PressureSensorSample(uint8_t sensorID);
 
 #endif
