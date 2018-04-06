@@ -80,7 +80,7 @@ int main(void) {
     mem.s->state[counter.index].time_stamp = counter.frame;
 
     // Estimate
-    Pru0UpdateState(&counter, __R30, __R31, &mem);
+    Pru0UpdateState(&counter, &mem);
 
     // Wait for pru1 to be done
     mem.s->pru_ctl.bit.pru0_done = 1;
@@ -88,7 +88,7 @@ int main(void) {
     mem.s->pru_ctl.bit.pru1_done = 0;
 
     // Control
-    Pru0UpdateControl(&counter, __R30, __R31, &mem);
+    Pru0UpdateControl(&counter, &mem);
 
     // Post bookkeeping
     mem.s->cbuff_index = counter.index;

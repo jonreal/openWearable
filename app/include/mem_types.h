@@ -44,7 +44,11 @@ typedef union {
 // State
 typedef struct {
   volatile uint32_t time_stamp;
-  volatile fix16_t emg_raw;
+  volatile fix16_t interaction_force;
+  volatile fix16_t flexion_pressure;
+  volatile fix16_t extension_pressure;
+  volatile int32_t flexion_cmd;
+  volatile int32_t extension_cmd;
 } state_t;
 
 // Shared Memory -> mapped to SRAM

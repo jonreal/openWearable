@@ -344,17 +344,28 @@ void PruSprintNlbParams(const nlb_param_t* param, char* buff) {
 // ---------------------------------------------------------------------------
 void PruSprintState(const state_t* st, char* buff) {
   sprintf(buff,
-          "%u\t"    // timeStamp - uint32_t
-          "%4.3f"    // emg_raw - fix16_t -> float
+          "%u\t"        // timeStamp - uint32_t
+          "%4.3f\t"     // interaction_force - fix16_t -> float
+          "%4.3f\t"     // flexion_pressure - fix16_t -> float
+          "%4.3f\t"     // extension_pressure - fix16_t -> float
+          "%i\t"        // flexion_cmd - int32_t
+          "%i\t"        // extension_cmd - int32_t
           "\n",
           st->time_stamp,
-          fix16_to_float(st->emg_raw));
+          fix16_to_float(st->interaction_force),
+          fix16_to_float(st->flexion_pressure),
+          fix16_to_float(st->extension_pressure),
+          st->flexion_cmd,
+          st->extension_cmd
+          );
 }
 
 void PruSprintStateHeader(char* buff) {
   sprintf(buff,
           "\n# frame\t"
-          "emg_raw"
+          "interaction_force\t"
+          "flexion_pressure\t"
+          "extension_pressure\t"
           "\n");
 }
 
