@@ -47,6 +47,8 @@ typedef struct {
   volatile fix16_t interaction_force;
   volatile fix16_t flexion_pressure;
   volatile fix16_t extension_pressure;
+  volatile fix16_t flexion_pressure_d;
+  volatile fix16_t extension_pressure_d;
   volatile int32_t flexion_cmd;
   volatile int32_t extension_cmd;
 } state_t;

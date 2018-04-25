@@ -14,23 +14,61 @@
 =============================================================================*/
 
 #include "pressure.h"
-#include <stdint.h>
+#include <stdlib.h>
 #include "i2cdriver.h"
 
-void PressureSensorInit(void) {
-  uint8_t buffer[2] = {0};
+sensor_i2c_t* PressureSensorInit(uint8_t address, uint8_t mux_pin,
+                                    uint8_t mux_ch) {
+  sensor_i2c_t* sens = malloc(sizeof(sensor_i2c_t));
+  sens->addr = address;
+  sens->mux = MuxInit(mux_pin, mux_ch);
 
-  // Check Status Bits
-  i2cRxBurstNoReg(SENSOR_1, 2, buffer);
+  uint8_t buffer[2] = {0};
+  MuxSetCh(sens->mux);
+  i2cRxBurstNoReg(sens->addr, 2, buffer);
+  return sens;
 }
 
-fix16_t PressureSensorSample(uint8_t addr) {
+fix16_t PressureSensorSample(const sensor_i2c_t* sens) {
   uint8_t buffer[4] = {0};
-  i2cRxBurstNoReg(SENSOR_1, 4, buffer);
+
+  MuxSetCh(sens->mux);
+  i2cRxBurstNoReg(sens->addr, 4, buffer);
 
   uint32_t bits = (((uint32_t) (buffer[0] & ~0xC0)) << 8)
                   | ((uint32_t) buffer[1]);
 
-  return fix16_smul(fix16_from_int(bits),BITS2PSI);
+  return fix16_smul(fix16_ssub(fix16_from_int(bits),FIX16_Kp),FIX16_Mp);
+}
 
+
+void PressureSensorFree(sensor_i2c_t* sens){
+  MuxFree(sens->mux);
+  free(sens);
+}
+
+static mux_t* MuxInit(uint8_t mux_pin, uint8_t mux_ch){
+  mux_t* m = malloc(sizeof(mux_t));
+  m->pin = mux_pin;
+  m->ch = mux_ch;
+  debug_buff[0] = m->pin;
+  return m;
+}
+
+static void MuxFree(mux_t* m) {
+  free(m);
+}
+
+static void MuxSetCh(const mux_t* m) {
+  __delay_cycles(250);
+  switch (m->ch) {
+    case 0:
+      __R30 &= ~(1 << m->pin);
+      __delay_cycles(500);
+      break;
+    case 1:
+      __R30 |= (1 << m->pin);
+      __delay_cycles(500);
+      break;
+  }
 }

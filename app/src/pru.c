@@ -348,6 +348,8 @@ void PruSprintState(const state_t* st, char* buff) {
           "%4.3f\t"     // interaction_force - fix16_t -> float
           "%4.3f\t"     // flexion_pressure - fix16_t -> float
           "%4.3f\t"     // extension_pressure - fix16_t -> float
+          "%4.3f\t"     // flexion_pressure_d - fix16_t -> float
+          "%4.3f\t"     // extension_pressure_d - fix16_t -> float
           "%i\t"        // flexion_cmd - int32_t
           "%i\t"        // extension_cmd - int32_t
           "\n",
@@ -355,6 +357,8 @@ void PruSprintState(const state_t* st, char* buff) {
           fix16_to_float(st->interaction_force),
           fix16_to_float(st->flexion_pressure),
           fix16_to_float(st->extension_pressure),
+          fix16_to_float(st->flexion_pressure_d),
+          fix16_to_float(st->extension_pressure_d),
           st->flexion_cmd,
           st->extension_cmd
           );

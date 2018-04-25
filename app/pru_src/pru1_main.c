@@ -51,8 +51,6 @@ int main(void) {
 
   initialize(&mem);
 
- // debugPinHigh();
-
   // wait till enabled
   while (mem.s->pru_ctl.bit.shdw_enable == 0);
 
@@ -104,7 +102,7 @@ void initialize(pru_mem_t* mem) {
   memInit(mem);
 
   // user defined inits
-  Pru1Init();
+  Pru1Init(mem);
 
   // clear gpio
   __R30 = 0x0;

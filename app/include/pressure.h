@@ -18,23 +18,37 @@
 
 #include "fix16.h"
 
-#define SENSOR_1 0x28
+// P = (bits - res * 0.1) * Pmax/ (res*0.8)
+//   = (bits - 2^14 * 0.1) * Pmax/(2^14*0.8)
+//   = (bits - Kp) * Mp; K = 2^14*0.1, M = 1.05420 kPa / (0.8 * 2^14)
+#define FIX16_Kp 0x6666668
+// kPa
+//#define FIX16_Mp 0xD7E6
+// psi
+#define FIX16_Mp 0x2EE
 
-// max output in counts (2^14)
-#define FIX16_RESOLUTION 0x4
+typedef struct {
+  uint8_t pin;          // mux select pin
+  uint8_t ch;           // mux channel (1 | 0)
+} mux_t;
 
-// max pressure (150 psi -> 1054.20 pascal)
-#define FIX16_PRESSURE_MAX 0x40A35C0
-
-// scaling (150 psi / 2^14 bits)
-#define BITS2PSI 0x258
-
+typedef struct {
+  uint8_t addr;         // i2c address
+  uint8_t res;          // pad
+  mux_t* mux;           // mux struct
+} sensor_i2c_t;
 
 // Global ---------------------------------------------------------------------
+volatile register uint32_t __R30;
 extern volatile uint32_t *debug_buff;
 
 // Prototypes -----------------------------------------------------------------
-void PressureSensorInit(void);
-fix16_t PressureSensorSample(uint8_t sensorID);
+sensor_i2c_t* PressureSensorInit(uint8_t address, uint8_t mux_pin,
+                                    uint8_t mux_ch);
+void PressureSensorFree(sensor_i2c_t* sens);
+fix16_t PressureSensorSample(const sensor_i2c_t* sens);
+static mux_t* MuxInit(uint8_t mux_pin, uint8_t mux_ch);
+static void MuxFree(mux_t* m);
+static void MuxSetCh(const mux_t* m);
 
 #endif

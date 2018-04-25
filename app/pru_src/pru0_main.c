@@ -125,7 +125,7 @@ void initialize(pru_mem_t* mem) {
   i2cInit();
 
   // user defined inits
-  Pru0Init();
+  Pru0Init(mem);
 }
 
 void cleanup(void) {

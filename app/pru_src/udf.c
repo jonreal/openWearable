@@ -1,36 +1,32 @@
 #include "udf.h"
 
-// Include sensor/actuator/algorithmic drivers here
-#include "adcdriver.h"
+// Include sensor/actuator/algorithmic here
 #include "emg.h"
-#include "pressure.h"
-#include "solenoid.h"
+#include "pam.h"
 
-#define MUX_SEL 6
-
-#define FLEX_V_HP 8
-#define FLEX_V_LP 10
-#define EXT_V_HP 9
-#define EXT_V_LP 11
-
-#define BITS2FORCE 0x10000000
-#define FORCEBIAS 0x8000000
-
+// Define globals (scope is this module only)
 volatile register uint32_t __R30;
+pam_t* flx_pam;
+pam_t* ext_pam;
 
 // ---------------------------------------------------------------------------
 // PRU0
 //
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
-void Pru0Init(void) {
+void Pru0Init(pru_mem_t* mem) {
 }
 
 void Pru0UpdateState(const pru_count_t* c, pru_mem_t* mem) {
 
-  uint32_t bits = adcSampleCh(0);
-  mem->s->state[c->index].interaction_force =
-    fix16_from_int((int16_t)bits - 2048);
+//  uint32_t bits = adcSampleCh(0);
+//  mem->s->state[c->index].interaction_force =
+//    fix16_sdiv(fix16_from_int((int16_t)bits - 2048),FORCEBIAS);
+//
+//  mem->s->state[c->index].flexion_pressure_d = fix16_from_int(10);
+//  mem->s->state[c->index].extension_pressure_d = fix16_from_int(10);
+//
+
 }
 void Pru0UpdateControl(const pru_count_t* c, pru_mem_t* mem) {
 }
@@ -43,26 +39,34 @@ void Pru0Cleanup(void) {
 //
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
-void Pru1Init(void) {
- // PressureSensorInit();
+void Pru1Init(pru_mem_t* mem) {
+  flx_pam =
+    PamInitMuscle(SENSOR_ADD, MUX_SEL, 1, FLEX_V_HP, FLEX_V_LP, 1, FIX16_1);
+  ext_pam =
+    PamInitMuscle(SENSOR_ADD, MUX_SEL, 0, EXT_V_HP, EXT_V_LP, 1, FIX16_1);
 }
 
 void Pru1UpdateState(const pru_count_t* c, pru_mem_t* mem) {
-
-  __R30 |= (1 << MUX_SEL);
-  mem->s->state[c->index].flexion_pressure = PressureSensorSample(SENSOR_1);
-  __delay_cycles(500);
-
-  __R30 &= ~(1 << MUX_SEL);
-  __delay_cycles(500);
-  mem->s->state[c->index].extension_pressure = PressureSensorSample(SENSOR_1);
-
+  PamSamplePressure(flx_pam, &mem->s->state[c->index].flexion_pressure);
+  PamSamplePressure(ext_pam, &mem->s->state[c->index].extension_pressure);
 }
 
 void Pru1UpdateControl(const pru_count_t* c, pru_mem_t* mem) {
+
+
+  volatile fix16_t pd = mem->l->
+  debug_buff[1] = flx_pam->thr;
+
+  PamUpdateControl(flx_pam,
+                   &mem->s->state[c->index].flexion_pressure,
+                   &pd,
+                   &mem->s->state[c->index].flexion_cmd);
+
 }
 
 void Pru1Cleanup(void) {
+  PamFreeMuscle(flx_pam);
+  PamFreeMuscle(ext_pam);
 }
 
 // ---------------------------------------------------------------------------
