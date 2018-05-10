@@ -13,13 +13,19 @@
  limitations under the License.
 =============================================================================*/
 
-#ifndef _GUI_H__
-#define _GUI_H_
+#ifndef _INTERACTION_H_
+#define _INTERACTION_H_
 
-#include "pru.h"
+#include <stdint.h>
+#include "fix16.h"
 
-int GuiInit(void);
-int GuiLoop(const pru_mem_t* pru_mem);
-int GuiCleanup(void);
+typedef struct {
+  uint8_t adc_ch;
+} interact_t;
 
-#endif /* _GUI_H_ */
+interact_t* InteractionInit(uint8_t chan);
+void InteractionSampleForce(const interact_t* sens,
+                            volatile fix16_t* interforce);
+void InteractionFree(interact_t* sens);
+
+#endif /* _INTERACTION_H_ */

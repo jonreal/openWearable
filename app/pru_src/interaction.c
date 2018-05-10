@@ -13,13 +13,25 @@
  limitations under the License.
 =============================================================================*/
 
-#ifndef _GUI_H__
-#define _GUI_H_
+#include "interaction.h"
+#include <stdlib.h>
+#include "adcdriver.h"
 
-#include "pru.h"
+#define FORCEBIAS  0x8000000
 
-int GuiInit(void);
-int GuiLoop(const pru_mem_t* pru_mem);
-int GuiCleanup(void);
+interact_t* InteractionInit(uint8_t chan){
+  interact_t* sens = malloc(sizeof(interact_t));
+  sens->adc_ch = chan;
+  return sens;
+}
 
-#endif /* _GUI_H_ */
+void InteractionSampleForce(const interact_t* sens,
+                            volatile fix16_t* interforce){
+  *interforce =
+    fix16_sdiv(fix16_from_int((int16_t)adcSampleCh(sens->adc_ch) - 2048),
+               FORCEBIAS);
+}
+
+void InteractionFree(interact_t* sens) {
+  free(sens);
+}
