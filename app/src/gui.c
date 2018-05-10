@@ -14,20 +14,29 @@
 =============================================================================*/
 
 #include "gui.h"
-
 #include "gnuplot_i.h"
 
 int GuiInit(void) {
+  printf("GUI initialized.\n");
   return 0;
 }
 
-//int GuiLoop(const pru_mem* pru_mem) {
-//  gnuplot_ctrl* h;
-//  h = gnuplot_init();
-//
-//
-//
-//}
-//
-//int GuiCleanup(void) {
-//}
+int GuiLoop(const pru_mem_t* pru_mem) {
+  gnuplot_ctrl* h = gnuplot_init();
+
+  double d[10] = {0,};
+
+  for (int i=0; i<100; i++) {
+    d[i%10] = i;
+    gnuplot_plot_x(h, d, 10,"");
+    sleep(1);
+  }
+
+  gnuplot_close(h);
+  return 0;
+}
+
+int GuiCleanup(void) {
+  return 0;
+}
+

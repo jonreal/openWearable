@@ -127,11 +127,11 @@ int main(int argc, char **argv) {
         printf("Tui init failed.\n");
         return -1;
       }
-      //if (GuiLoop(&pru_mem) == 1) {
-      //  PruEnable(0, &pru_mem.s->pru_ctl);
-      //  PruPrintDebugBuffer(pru_mem.p->debug_buff);
-      //  raise(SIGINT);
-      //}
+      if (GuiLoop(&pru_mem) == 1) {
+        PruEnable(0, &pru_mem.s->pru_ctl);
+        PruPrintDebugBuffer(pru_mem.p->debug_buff);
+        raise(SIGINT);
+      }
       break;
 
     case TUI:
