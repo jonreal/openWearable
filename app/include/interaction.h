@@ -24,8 +24,8 @@ typedef struct {
 } interact_t;
 
 interact_t* InteractionInit(uint8_t chan);
-void InteractionSampleForce(const interact_t* sens,
-                            volatile fix16_t* interforce);
+fix16_t InteractionSampleForce(const interact_t* sens);
+fix16_t InteractionSampleStretch(const interact_t* sens);
 void InteractionFree(interact_t* sens);
 
 #endif /* _INTERACTION_H_ */

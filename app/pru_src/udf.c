@@ -10,6 +10,9 @@ volatile register uint32_t __R30;
 pam_t* flx_pam;
 pam_t* ext_pam;
 interact_t* s1;
+interact_t* s2;
+iir_filt_t* lp_1_10Hz_1;
+iir_filt_t* lp_1_10Hz_2;
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -17,15 +20,23 @@ interact_t* s1;
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem) {
+
+  lp_1_10Hz_1 = IirInit(1, (fix16_t[]){0x7CD, 0x7CD},
+                           (fix16_t[]){0x10000, 0xFFFF0F9A});
+  lp_1_10Hz_2 = IirInit(1, (fix16_t[]){0x7CD, 0x7CD},
+                           (fix16_t[]){0x10000, 0xFFFF0F9A});
+
   s1 = InteractionInit(0);
+  s2 = InteractionInit(1);
 }
 
-void Pru0UpdateState(const pru_count_t* c, pru_mem_t* mem) {
-  InteractionSampleForce(s1,
-                         &mem->s->state[c->index].interaction_force);
+void Pru0UpdateState(const pru_count_t* c, state_t* s_) {
+  s_->inter_force = InteractionSampleForce(s1);
+  s_->flx_strtch = IirFilt(InteractionSampleStretch(s2),lp_1_10Hz_1);
+  s_->dflx_strtch = s_->flx_strtch - IirFilt(s_->flx_strtch,lp_1_10Hz_2);
 }
 
-void Pru0UpdateControl(const pru_count_t* c, pru_mem_t* mem) {
+void Pru0UpdateControl(const pru_count_t* c, state_t* s_) {
 }
 
 void Pru0Cleanup(void) {
@@ -43,23 +54,36 @@ void Pru1Init(pru_mem_t* mem) {
     PamInitMuscle(SENSOR_ADD, MUX_SEL, 0, EXT_V_HP, EXT_V_LP, 1, FIX16_1);
 }
 
-void Pru1UpdateState(const pru_count_t* c, pru_mem_t* mem) {
-  PamSamplePressure(flx_pam, &mem->s->state[c->index].flexion_pressure);
-  PamSamplePressure(ext_pam, &mem->s->state[c->index].extension_pressure);
+void Pru1UpdateState(const pru_count_t* c, state_t* s_) {
+
+  debug_buff[2] = 0xAA;
+  PamSamplePressure(flx_pam, &s_->flx_p);
+  debug_buff[2] = 0xBB;
+  __delay_cycles(1000);
+  PamSamplePressure(ext_pam, &s_->ext_p);
+  debug_buff[2] = 0x00;
 }
 
-void Pru1UpdateControl(const pru_count_t* c, pru_mem_t* mem) {
 
-  volatile fix16_t pd = fix16_from_int(40);
+void Pru1UpdateControl(const pru_count_t* c, state_t* s_) {
 
+  s_->flx_pd = fix16_from_int(40);
   PamUpdateControl(flx_pam,
-                   &mem->s->state[c->index].flexion_pressure,
-                   &pd,
-                   &mem->s->state[c->index].flexion_cmd);
+                   &s_->flx_p,
+                   &s_->flx_pd,
+                   &s_->flx_u);
+
+  s_->ext_pd = fix16_from_int(1);
+  PamUpdateControl(ext_pam,
+                   &s_->ext_p,
+                   &s_->ext_pd,
+                   &s_->ext_u);
 
 }
 
 void Pru1Cleanup(void) {
+
+  // Set muscle to 0 psi
   PamFreeMuscle(flx_pam);
   PamFreeMuscle(ext_pam);
 }

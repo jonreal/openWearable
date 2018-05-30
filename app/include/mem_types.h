@@ -16,6 +16,7 @@
 #ifndef _MEM_TYPES_
 #define _MEM_TYPES_
 
+#include "state.h"
 #include "fix16.h"
 #include "filter.h"
 #include "nlb_filter.h"
@@ -41,17 +42,6 @@ typedef union {
  } bit;
 } pru_ctl_t;
 
-// State
-typedef struct {
-  volatile uint32_t time_stamp;
-  volatile fix16_t interaction_force;
-  volatile fix16_t flexion_pressure;
-  volatile fix16_t extension_pressure;
-  volatile fix16_t flexion_pressure_d;
-  volatile fix16_t extension_pressure_d;
-  volatile int32_t flexion_cmd;
-  volatile int32_t extension_cmd;
-} state_t;
 
 // Shared Memory -> mapped to SRAM
 typedef struct {
@@ -60,19 +50,9 @@ typedef struct {
   pru_ctl_t pru_ctl;
 } shared_mem_t;
 
-// Parameter Struct -> mapped to pr0 DRAM
+// Lookuptable
 typedef struct {
-  volatile uint32_t debug_buff[10];
-  uint32_t fs_hz;
-  uint32_t fs_ticks;
-  nlb_param_t nlb_param;
-  iir_param_t iir_param;
-} param_mem_t;
-
-// Filters
-typedef struct {
-  nlb_filt_t nlb_filt;
-  iir_filt_t iir_filt;
+  uint32_t res;
 } lookUp_mem_t;
 
 // Pointers to memory

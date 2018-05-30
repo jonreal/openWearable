@@ -233,107 +233,6 @@ void PruSprintParams(const param_mem_t* param, char* buff) {
           param->fs_hz);
 }
 
-// ----------------------------------------------------------------------------
-// Functions: void loadIirFilterCoeff(char* file)
-//
-// This function loads filter coeff from file to memory.
-//
-// file format:
-//    FilterOrder
-//    b(1)
-//    .
-//    .
-//    .
-//    b(FilterOrder+1)
-//    a(1)
-//    .
-//    .
-//    .
-//    a(FilterOrder+1)
-//
-// NOTE: Coefficients must be represted as floating point
-// ----------------------------------------------------------------------------
-int PruLoadIirFilterParams(const char *file, iir_param_t* param) {
-  FILE* fp = fopen(file, "r");
-  float v;
-
-  if (fp != NULL) {
-    // First element is filter order
-    fscanf(fp, "%u\n", &param->N);
-
-    // Numerator coefficients
-    for (int i=0; i<param->N+1; i++) {
-      fscanf(fp,"%f\n", &v);
-      param->b[i] = fix16_from_float(v);
-    }
-
-    // Denominator coefficients
-    for (int i=0; i<param->N+1; i++) {
-      fscanf(fp,"%f\n", &v);
-      param->a[i] = fix16_from_float(v);
-    }
-    fclose(fp);
-    return 0;
-  }
-  return -1;
-}
-
-void PruSprintIirParams(const iir_param_t* param, char* buff) {
-  char temp[1024];
-
-  sprintf(buff, "\n#IIR Filter Parameters(N = %i):\n", param->N);
-  for (int i=0; i<param->N+1; i++) {
-    sprintf(temp, "#\tb[%i] = %8.8f\ta[%i] = %8.8f\n",
-            i, fix16_to_float(param->b[i]),
-            i, fix16_to_float(param->a[i]));
-    strcat(buff, temp);
-    temp[0] = '\0';
-  }
-  strcat(buff, "#");
-}
-
-// ----------------------------------------------------------------------------
-// Functions: void PruLoadNlbFilterParams(char* file)
-//
-// This function loads filter coeff from file to memory.
-//
-// file format:
-//    fs (must be less than samping frequency of main loop)
-//    alpha
-//    beta
-// ----------------------------------------------------------------------------
-int PruLoadNlbFilterParams(const char* file, nlb_param_t* param) {
-  FILE* fp = fopen(file, "r");
-  float v;
-
-  if (fp != NULL) {
-    // First element is frequency
-    fscanf(fp, "%u\n", &param->fs);
-
-    // alpha
-    fscanf(fp,"%f\n", &v);
-    param->alpha = fix16_from_float(v);
-
-    // alpha
-    fscanf(fp,"%f\n", &v);
-    param->beta = fix16_from_float(v);
-
-    fclose(fp);
-    return 0;
-  }
-  return -1;
-}
-
-void PruSprintNlbParams(const nlb_param_t* param, char* buff) {
-  sprintf(buff, "\n#NLB Filter Parameters:\n"
-          "#\tFs = %i (Hz)\n"
-          "#\talpha = %f\n"
-          "#\tbeta = %f\n#",
-          param->fs,
-          fix16_to_float(param->alpha),
-          fix16_to_float(param->beta));
-}
-
 // ---------------------------------------------------------------------------
 // Function: void printState(uint8_t si, FILE *fp)
 //           void sprintState(uint8_t si, char* buff)
@@ -345,7 +244,9 @@ void PruSprintNlbParams(const nlb_param_t* param, char* buff) {
 void PruSprintState(const state_t* st, char* buff) {
   sprintf(buff,
           "%u\t"        // timeStamp - uint32_t
+          "%4.3f\t"     // stretch_force - fix16_t -> float
           "%4.3f\t"     // interaction_force - fix16_t -> float
+          "%4.3f\t"     // flexion_pressure - fix16_t -> float
           "%4.3f\t"     // flexion_pressure - fix16_t -> float
           "%4.3f\t"     // extension_pressure - fix16_t -> float
           "%4.3f\t"     // flexion_pressure_d - fix16_t -> float
@@ -353,23 +254,31 @@ void PruSprintState(const state_t* st, char* buff) {
           "%i\t"        // flexion_cmd - int32_t
           "%i\t"        // extension_cmd - int32_t
           "\n",
-          st->time_stamp,
-          fix16_to_float(st->interaction_force),
-          fix16_to_float(st->flexion_pressure),
-          fix16_to_float(st->extension_pressure),
-          fix16_to_float(st->flexion_pressure_d),
-          fix16_to_float(st->extension_pressure_d),
-          st->flexion_cmd,
-          st->extension_cmd
+          st->time,
+          fix16_to_float(st->inter_force),
+          fix16_to_float(st->flx_strtch),
+          fix16_to_float(st->dflx_strtch),
+          fix16_to_float(st->flx_p),
+          fix16_to_float(st->ext_p),
+          fix16_to_float(st->flx_pd),
+          fix16_to_float(st->ext_pd),
+          st->flx_u,
+          st->ext_u
           );
 }
 
 void PruSprintStateHeader(char* buff) {
   sprintf(buff,
           "\n# frame\t"
-          "interaction_force\t"
-          "flexion_pressure\t"
-          "extension_pressure\t"
+          "force\t"
+          "stretch\t"
+          "dstretch\t"
+          "flx_p\t"
+          "ext_p\t"
+          "flx_pd\t"
+          "ext_pd\t"
+          "flx_u\t"
+          "ext_u\t"
           "\n");
 }
 

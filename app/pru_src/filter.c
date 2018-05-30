@@ -13,29 +13,37 @@
  limitations under the License.
 =============================================================================*/
 
-#include <stdint.h>
-#include <stdio.h>
-
-#include "fix16.h"
 #include "filter.h"
+#include <stdlib.h>
+#include "fix16.h"
 
 // ----------------------------------------------------------------------------
 // Initialize filter buffers
-void IirInit(const iir_param_t* param, volatile iir_filt_t* filt) {
-  for(int i=0; i<param->N+1; i++){
+iir_filt_t* IirInit(const uint32_t filtorder,
+                    const fix16_t* b_coeff, const fix16_t* a_coeff) {
+
+  iir_filt_t* filt = malloc(sizeof(iir_filt_t));
+  filt->N = filtorder;
+  filt->b = malloc(sizeof(fix16_t)*(filtorder+1));
+  filt->a = malloc(sizeof(fix16_t)*(filtorder+1));
+  filt->x = malloc(sizeof(fix16_t)*(filtorder+1));
+  filt->y = malloc(sizeof(fix16_t)*(filtorder+1));
+  for (int i=0; i<filtorder+1; i++) {
     filt->x[i] = 0;
     filt->y[i] = 0;
+    filt->b[i] = b_coeff[i];
+    filt->a[i] = a_coeff[i];
   }
+  return filt;
 }
 
 // ----------------------------------------------------------------------------
-// Fixed point Q16.16 (really Q15.16) iir filter
-fix16_t IirFilt(fix16_t in, const iir_param_t* param,
-                volatile iir_filt_t* filt) {
+// Fixed point Q16.16 iir filter
+fix16_t IirFilt(fix16_t in, iir_filt_t* filt) {
   fix16_t bx, ay, out;
 
   // Shift samples back in time
-  for(int i=param->N; i>0; i--){
+  for(int i=filt->N; i>0; i--){
     filt->x[i] = filt->x[i-1];
     filt->y[i] = filt->y[i-1];
   }
@@ -44,10 +52,10 @@ fix16_t IirFilt(fix16_t in, const iir_param_t* param,
   filt->x[0] = in;
 
   // difference eq.
-  out = fix16_smul(param->b[0], filt->x[0]);
-  for(int k=1; k<param->N+1; k++) {
-    bx = fix16_smul(param->b[k], filt->x[k]);
-    ay = fix16_smul(param->a[k], filt->y[k]);
+  out = fix16_smul(filt->b[0], filt->x[0]);
+  for(int k=1; k<filt->N+1; k++) {
+    bx = fix16_smul(filt->b[k], filt->x[k]);
+    ay = fix16_smul(filt->a[k], filt->y[k]);
     out = fix16_sadd(out, fix16_ssub(bx, ay));
   }
   filt->y[0] = out;

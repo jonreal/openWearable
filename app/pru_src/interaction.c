@@ -18,6 +18,7 @@
 #include "adcdriver.h"
 
 #define FORCEBIAS  0x8000000
+#define ADC_RES 0x10000000
 
 interact_t* InteractionInit(uint8_t chan){
   interact_t* sens = malloc(sizeof(interact_t));
@@ -25,11 +26,14 @@ interact_t* InteractionInit(uint8_t chan){
   return sens;
 }
 
-void InteractionSampleForce(const interact_t* sens,
-                            volatile fix16_t* interforce){
-  *interforce =
-    fix16_sdiv(fix16_from_int((int16_t)adcSampleCh(sens->adc_ch) - 2048),
-               FORCEBIAS);
+fix16_t InteractionSampleForce(const interact_t* sens) {
+  return fix16_sdiv(
+          fix16_from_int((int16_t)adcSampleCh(sens->adc_ch) - 2048),FORCEBIAS);
+}
+
+fix16_t InteractionSampleStretch(const interact_t* sens) {
+  return
+    fix16_sdiv(fix16_from_int((int16_t)adcSampleCh(sens->adc_ch)),ADC_RES);
 }
 
 void InteractionFree(interact_t* sens) {

@@ -77,10 +77,10 @@ int main(void) {
     clearTimerFlag();
     debugPinHigh();
     mem.s->pru_ctl.bit.shdw_enable = mem.s->pru_ctl.bit.enable;
-    mem.s->state[counter.index].time_stamp = counter.frame;
+    mem.s->state[counter.index].time = counter.frame;
 
     // Estimate
-    Pru0UpdateState(&counter, &mem);
+    Pru0UpdateState(&counter, &mem.s->state[counter.index]);
 
     // Wait for pru1 to be done
     mem.s->pru_ctl.bit.pru0_done = 1;
@@ -88,7 +88,7 @@ int main(void) {
     mem.s->pru_ctl.bit.pru1_done = 0;
 
     // Control
-    Pru0UpdateControl(&counter, &mem);
+    Pru0UpdateControl(&counter, &mem.s->state[counter.index]);
 
     // Post bookkeeping
     mem.s->cbuff_index = counter.index;

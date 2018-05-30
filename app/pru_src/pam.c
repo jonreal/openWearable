@@ -35,6 +35,10 @@ void PamFreeMuscle(pam_t* pam) {
    __R30 |= (1 << pam->lp_pin);
    __R30 &= ~(1 << pam->hp_pin);
 
+  __delay_cycles(100000000);
+
+   __R30 &= ~(1 << pam->lp_pin);
+
   PressureSensorFree(pam->sensor);
   free(pam);
 }
@@ -46,7 +50,7 @@ void PamSamplePressure(const pam_t* pam, volatile fix16_t* p_m){
 void PamUpdateControl(const pam_t* pam,
                       const volatile fix16_t* p_m,
                       const volatile fix16_t* p_d,
-                      volatile int32_t* valve_cmd) {
+                      volatile int16_t* valve_cmd) {
   fix16_t error = *p_d - *p_m;
 
   if ((fix16_sadd(error, pam->thr) >= 0)
@@ -61,7 +65,7 @@ void PamUpdateControl(const pam_t* pam,
 }
 
 static void PamSetValveCommand(const pam_t* pam,
-                               const volatile int32_t* valve_cmd) {
+                               const volatile int16_t* valve_cmd) {
   switch (*valve_cmd) {
     case 0:
       __R30 &= ~(1 << pam->hp_pin) & ~(1 << pam->lp_pin);
