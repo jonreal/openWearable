@@ -49,11 +49,11 @@ void LogCircBuffUpdate(const volatile uint32_t new_cb_index, circbuff_t* cb) {
 }
 
 void LogDebugWriteState(const shared_mem_t* sm, circbuff_t* cb, char* buff) {
-    if (cb->start != sm->state[0].time_stamp){
+    if (cb->start != sm->state[0].time){
       PruSprintState(&sm->state[0], buff);
       fprintf(stdout, buff);
       buff[0] = '\0';
-      cb->start = sm->state[0].time_stamp;
+      cb->start = sm->state[0].time;
     }
 }
 
@@ -128,13 +128,6 @@ log_t* LogFileOpen(const pru_mem_t* pru_mem, char* file)
   log->location += len;
   log->write_buff[0] = '\0';
 
-  // Log Fir Coeff
-  PruSprintIirParams(&pru_mem->p->iir_param, log->write_buff);
-  len = strlen(log->write_buff);
-  memcpy(log->addr + log->location, log->write_buff, len);
-  log->location += len;
-  log->write_buff[0] = '\0';
-
   // Log header
   PruSprintStateHeader(log->write_buff);
   len = strlen(log->write_buff);
@@ -188,5 +181,3 @@ int LogFileClose(log_t* log) {
   free(log);
   return 0;
 }
-
-

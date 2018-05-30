@@ -48,9 +48,9 @@ void PamFreeMuscle(pam_t* pam);
 void PamSamplePressure(const pam_t* pam, volatile fix16_t* p_m);
 void PamUpdateControl(const pam_t* pam, const volatile fix16_t* p_m,
                         const volatile fix16_t* p_d,
-                        volatile int32_t* valve_cmd);
+                        volatile int16_t* valve_cmd);
 static void PamSetValveCommand(const pam_t* pam,
-                                const volatile int32_t* valve_cmd);
+                                const volatile int16_t* valve_cmd);
 
 
 

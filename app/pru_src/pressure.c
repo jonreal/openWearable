@@ -60,15 +60,15 @@ static void MuxFree(mux_t* m) {
 }
 
 static void MuxSetCh(const mux_t* m) {
-  __delay_cycles(250);
+  __delay_cycles(1000);
   switch (m->ch) {
     case 0:
       __R30 &= ~(1 << m->pin);
-      __delay_cycles(500);
+      __delay_cycles(1000);
       break;
     case 1:
       __R30 |= (1 << m->pin);
-      __delay_cycles(500);
+      __delay_cycles(1000);
       break;
   }
 }

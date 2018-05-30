@@ -44,7 +44,6 @@ void sigintHandler(int sig) {
 // ---------------------------------------------------------------------------
 int main(int argc, char **argv) {
   char buff[65536] = {0,};
-
   ow_mode_t mode;
   if (argc != 1) {
     if (strcmp(argv[1], "-v") == 0) {
@@ -71,20 +70,6 @@ int main(int argc, char **argv) {
   }
   buff[0] = '\0';
   PruSprintParams(pru_mem.p, buff);
-  fprintf(stdout,buff);
-
-  if (PruLoadIirFilterParams("config/lowpass_1_6Hz", &pru_mem.p->iir_param)) {
-      printf("\nFilter coefficient file not found!\n");
-  }
-  buff[0] = '\0';
-  PruSprintIirParams(&pru_mem.p->iir_param, buff);
-  fprintf(stdout,buff);
-
-  if (PruLoadNlbFilterParams("config/nonlinBayes", &pru_mem.p->nlb_param)) {
-      printf("\nBayes filter parameters file not found!\n");
-  }
-  buff[0] = '\0';
-  PruSprintNlbParams(&pru_mem.p->nlb_param, buff);
   fprintf(stdout,buff);
 
   if(PruInit() != 0)
