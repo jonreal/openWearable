@@ -8,7 +8,7 @@ function rtn = embedded_process_data(trialName,varargin)
   for i=1:2:nVarArgs
     switch varargin{i}
       case 'cutOff'
-        % filter cutoff frequency, 4-th order butterworth low-pass 
+        % filter cutoff frequency, 4-th order butterworth low-pass
         cutOff = varargin{i+1};
       otherwise
         fprintf('\n%s option not found!\n',varargin{i});
@@ -32,13 +32,12 @@ function rtn = embedded_process_data(trialName,varargin)
   %
   % parse embedded parameters
   %
-  
+
   % first line is date and time
   rtn.info.date = fscanf(fid,'#Date: %s',1);
   rtn.info.time = fscanf(fid,'%s\n',1);
   rtn.info.file = trialName;
   lineCnt = lineCnt + 1;
-
 
   % skip 2 lines
   tline = fgetl(fid);
@@ -48,7 +47,7 @@ function rtn = embedded_process_data(trialName,varargin)
 
   % memory
   rtn.params.memalloc.parameters = ...
-    fscanf(fid,'#\tParameter memory: %i bytes.\n',1)
+    fscanf(fid,'#\tParameter memory: %i bytes.\n',1);
   lineCnt = lineCnt + 1;
 
   rtn.params.memalloc.lookup =  ...
@@ -70,25 +69,25 @@ function rtn = embedded_process_data(trialName,varargin)
   lineCnt = lineCnt + 1;
 
   % parameters
-  rtn.params.fs = fscanf(fid,'#\tFrq = %i (Hz)\n',1);
+  rtn.params.fs = fscanf(fid,'#\tFs = %i (Hz)\n',1);
   fs = rtn.params.fs;
   lineCnt = lineCnt + 1;
   tline = fgetl(fid);
   lineCnt = lineCnt + 1;
 
-  % filter order
-  rtn.params.filt.N = fscanf(fid,'#Filter Coefficients (N = %i):\n',1);
-  lineCnt = lineCnt + 1;
-  for i=0:rtn.params.filt.N
-    rtn.params.filt.b(i+1) = fscanf(fid,['#\tb[', num2str(i) ,'] : %f '], 1);
-    rtn.params.filt.a(i+1) = fscanf(fid,['a[', num2str(i) ,'] : %f\n'],1);
-    lineCnt = lineCnt + 1;
-  end
-
-
-  % skip 1 line
-  tline = fgetl(fid);
-  lineCnt = lineCnt + 1;
+%  % filter order
+%  rtn.params.filt.N = fscanf(fid,'#IIR Filter Parameters(N = %i):\n',1);
+%  lineCnt = lineCnt + 1;
+%
+%  for i=0:rtn.params.filt.N
+%    rtn.params.filt.b(i+1) = fscanf(fid,['#\tb[', num2str(i) ,'] = %f'], 1);
+%    rtn.params.filt.a(i+1) = fscanf(fid,['\ta[', num2str(i) ,'] = %f\n'],1);
+%    lineCnt = lineCnt + 1;
+%  end
+%
+%  % skip 1 line
+%  tline = fgetl(fid);
+%  lineCnt = lineCnt + 1;
 
   % headers
   tline = fgetl(fid);
@@ -122,7 +121,7 @@ function rtn = embedded_process_data(trialName,varargin)
     D(D(:,2) ~= 1,:) = [];
   end
 
-  % 
+  %
   % Find if/where data bits were dropped
   % Time stamp difference: dt = 1 for all points unless data chunk is missing
   %
@@ -162,7 +161,7 @@ function rtn = embedded_process_data(trialName,varargin)
 %
 %  % store important data
 %  rtn.control.time = rtn.data.time;
-%  rtn.control.u = rtn.data.u_ff + rtn.data.u_fb; 
+%  rtn.control.u = rtn.data.u_ff + rtn.data.u_fb;
 %  rtn.control.i_m = filtfilt(b,a,bits2Amps(rtn.data.mtrCurr,maxMotorAmp));
 %  rtn.control.omega_m_rpm = filtfilt(b,a,bits2Rpm(rtn.data.mtrVel,maxMotorRpm));
 %  rtn.control.omega_m = rpm2radps(rtn.control.omega_m_rpm);
@@ -173,8 +172,8 @@ function rtn = embedded_process_data(trialName,varargin)
 %  rtn.control.P_m_elect = rtn.control.i_m.*rtn.control.V_m;
 %  rtn.control.P_m_mech = rtn.control.tau_m.*rtn.control.omega_m;
 %  rtn.control.ankPos = filtfilt(b,a,deg2rad(rtn.data.ankPos));
-%  rtn.control.d_ankPos = gradient(rtn.control.ankPos)*fs; 
-%  rtn.control.d2_ankPos = gradient(rtn.control.d_ankPos)*fs; 
+%  rtn.control.d_ankPos = gradient(rtn.control.ankPos)*fs;
+%  rtn.control.d2_ankPos = gradient(rtn.control.d_ankPos)*fs;
 %
 %  % remove repeated hs
 %  l_hs = unique(rtn.data.l_hs);
