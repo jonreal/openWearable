@@ -6,15 +6,10 @@
 // State
 typedef struct {
   volatile uint32_t time;
-  volatile fix16_t inter_force;
-  volatile fix16_t flx_strtch;
-  volatile fix16_t dflx_strtch;
-  volatile fix16_t flx_p;
-  volatile fix16_t ext_p;
-  volatile fix16_t flx_pd;
-  volatile fix16_t ext_pd;
-  volatile int16_t flx_u;
-  volatile int16_t ext_u;
+  volatile fix16_t p_m;
+  volatile fix16_t p_d;
+  volatile int16_t u;
+  volatile uint16_t sync_val;
 } state_t;
 
 // Parameters

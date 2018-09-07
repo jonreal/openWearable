@@ -13,18 +13,16 @@
  limitations under the License.
 =============================================================================*/
 
-#include <stdint.h>
-
+#include "adcdriver.h"
 #include "soc_AM33XX.h"
 #include "hw_types.h"
-#include "adcdriver.h"
 #include "tsc_adc.h"
 
 void adcInit(void)
 {
-  uint8_t sampleDelay = 255;
-  uint16_t openDelay = 2000;
-  uint8_t avrg = 0x0;
+  uint8_t sampleDelay = 0xFF;
+  uint16_t openDelay = 0xFFF;
+  uint8_t avrg = 0x2;
   uint16_t adc_clk_div = 0x0;
 
   /* CTRL:  StepConfig_WriteProtext_n_active_low = 0x1 - enable step config
@@ -189,7 +187,7 @@ void adcInit(void)
   HWREG(SOC_ADC_TSC_0_REGS + 0x28) = 0x7FF;
 }
 
-uint32_t adcSampleCh(uint8_t ch)
+uint32_t adcSampleChBits(uint8_t ch)
 {
   volatile uint32_t *FIFO =  (uint32_t *) (SOC_ADC_TSC_0_REGS + 0x100);
   uint32_t rtn = 0;
@@ -211,6 +209,12 @@ uint32_t adcSampleCh(uint8_t ch)
 
   return rtn;
 }
+
+fix16_t adcSampleChmV(uint8_t ch){
+  return fix16_smul(fix16_from_int((int16_t)adcSampleChBits(ch)),
+                    FIX16_BITS2VOLTS);
+}
+
 
 
 //uint32_t adcSample_2(uint8_t ch)

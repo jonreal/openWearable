@@ -13,19 +13,30 @@
  limitations under the License.
 =============================================================================*/
 
-#ifndef _VICONSYNC_H_
-#define _VICONSYNC_H_
+#ifndef _SYNC_H_
+#define _SYNC_H_
 
-#define SYNC_PIN  (16)
+#include <stdint.h>
 
-/* Digital input reg. ------------------------------------------------------ */
+typedef struct {
+  uint8_t pin;
+  uint8_t state;
+} sync_t;
+
+// Digital input reg. ---------------------------------------------------------
 volatile register uint32_t __R31;
+volatile register uint32_t __R30;
 
-/* Global ------------------------------------------------------------------ */ 
+// Global ---------------------------------------------------------------------
 extern volatile uint32_t *debug_buff;
 
-/* Prototypes -------------------------------------------------------------- */
-uint16_t viconSync(void);
+// Prototypes -----------------------------------------------------------------
+//uint16_t viconSync(void);
+sync_t* SyncInitChan(uint8_t pin_);
+void SyncFreeChan(sync_t* syncChan);
+void SyncOutHigh(sync_t* syncChan);
+void SyncOutLow(sync_t* syncChan);
+uint16_t SyncOutState(const sync_t* sync_ch);
 
 #endif
 

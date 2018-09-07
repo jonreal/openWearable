@@ -23,12 +23,24 @@ extern volatile uint32_t* debug_buff;
 
 // Prototypes ---------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem);
-void Pru0UpdateState(const pru_count_t* c, state_t* s_);
-void Pru0UpdateControl(const pru_count_t* c, state_t* s_);
+void Pru0UpdateState(const pru_count_t* c,
+                     const param_mem_t* p_,
+                     state_t* s_,
+                     pru_ctl_t* ctl_);
+void Pru0UpdateControl(const pru_count_t* c,
+                       const param_mem_t* p_,
+                       state_t* s_,
+                       pru_ctl_t* ctl_);
 void Pru0Cleanup(void);
 void Pru1Init(pru_mem_t* mem);
-void Pru1UpdateState(const pru_count_t* c, state_t* s_);
-void Pru1UpdateControl(const pru_count_t* c, state_t* s_);
+void Pru1UpdateState(const pru_count_t* c,
+                     const param_mem_t* p_,
+                     state_t* s_,
+                     pru_ctl_t* ctl_);
+void Pru1UpdateControl(const pru_count_t* c,
+                       const param_mem_t* p_,
+                       state_t* s_,
+                       pru_ctl_t* ctl_);
 void Pru1Cleanup(void);
 
 #endif

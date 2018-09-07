@@ -35,7 +35,7 @@ void PamFreeMuscle(pam_t* pam) {
    __R30 |= (1 << pam->lp_pin);
    __R30 &= ~(1 << pam->hp_pin);
 
-  __delay_cycles(100000000);
+  __delay_cycles(1000000000);
 
    __R30 &= ~(1 << pam->lp_pin);
 
@@ -51,7 +51,7 @@ void PamUpdateControl(const pam_t* pam,
                       const volatile fix16_t* p_m,
                       const volatile fix16_t* p_d,
                       volatile int16_t* valve_cmd) {
-  fix16_t error = *p_d - *p_m;
+  fix16_t error = (*p_d + pam->thr) - *p_m;
 
   if ((fix16_sadd(error, pam->thr) >= 0)
       && (fix16_ssub(error, pam->thr) <= 0)) {
