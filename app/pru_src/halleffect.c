@@ -1,4 +1,4 @@
-/* Copyright 2017 Jonathan Realmuto
+/* Copyright 2018 Jonathan Realmuto
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -13,15 +13,22 @@
  limitations under the License.
 =============================================================================*/
 
-#include <stdint.h>
+#include "halleffect.h"
+#include <stdlib.h>
+#include "adcdriver.h"
 
-#include "viconsync.h"
+hall_t* HallInitSensor(uint8_t chan, fix16_t angle_offset) {
+  hall_t* hall = malloc(sizeof(hall_t));
+  hall->adc_chan = chan;
+  hall->angle_offset_deg = angle_offset;
+  return hall;
+}
 
-/* Sync pin goes high */
-uint16_t viconSync(void)
-{
-  if( (__R31 & (1 << SYNC_PIN)) == (1 << SYNC_PIN)){
-    return 1;
-  }
-  return 0;
+fix16_t HallGetAngleDeg(hall_t* hall) {
+  fix16_t volts = adcSampleChmV(hall->adc_chan);
+  return fix16_smul(volts,FIX16_VOLTS2DEG);
+}
+
+fix16_t HallGetAngleRad(hall_t* hall) {
+  return fix16_smul(HallGetAngleDeg(hall),FIX16_DEG2RAD);
 }

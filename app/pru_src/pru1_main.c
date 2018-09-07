@@ -67,7 +67,10 @@ int main(void) {
 //    debugPinHigh();
 
     // Estimate
-    Pru1UpdateState(&counter, &mem.s->state[counter.index]);
+    Pru1UpdateState(&counter,
+                    mem.p,
+                    &mem.s->state[counter.index],
+                    &mem.s->pru_ctl);
 
     // Wait for pru0 to be done
  //   debugPinLow();
@@ -76,7 +79,10 @@ int main(void) {
     mem.s->pru_ctl.bit.pru0_done = 0;
 
     // Control
-    Pru1UpdateControl(&counter, &mem.s->state[counter.index]);
+    Pru1UpdateControl(&counter,
+                      mem.p,
+                      &mem.s->state[counter.index],
+                      &mem.s->pru_ctl);
 
     // Post bookkeeping
     mem.s->pru_ctl.bit.pru1_done = 1;

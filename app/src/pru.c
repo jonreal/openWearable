@@ -244,41 +244,26 @@ void PruSprintParams(const param_mem_t* param, char* buff) {
 void PruSprintState(const state_t* st, char* buff) {
   sprintf(buff,
           "%u\t"        // timeStamp - uint32_t
-          "%4.3f\t"     // stretch_force - fix16_t -> float
-          "%4.3f\t"     // interaction_force - fix16_t -> float
-          "%4.3f\t"     // flexion_pressure - fix16_t -> float
-          "%4.3f\t"     // flexion_pressure - fix16_t -> float
-          "%4.3f\t"     // extension_pressure - fix16_t -> float
-          "%4.3f\t"     // flexion_pressure_d - fix16_t -> float
-          "%4.3f\t"     // extension_pressure_d - fix16_t -> float
-          "%i\t"        // flexion_cmd - int32_t
-          "%i\t"        // extension_cmd - int32_t
+          "%f\t"        // p_m - fix16_t
+          "%f\t"        // p_d - fix16_t
+          "%u\t"        // u - int16_t
+          "%u\t"        // sync_val - uint16_t
           "\n",
           st->time,
-          fix16_to_float(st->inter_force),
-          fix16_to_float(st->flx_strtch),
-          fix16_to_float(st->dflx_strtch),
-          fix16_to_float(st->flx_p),
-          fix16_to_float(st->ext_p),
-          fix16_to_float(st->flx_pd),
-          fix16_to_float(st->ext_pd),
-          st->flx_u,
-          st->ext_u
+          fix16_to_float(st->p_m),
+          fix16_to_float(st->p_d),
+          st->u,
+          st->sync_val
           );
 }
 
 void PruSprintStateHeader(char* buff) {
   sprintf(buff,
           "\n# frame\t"
-          "force\t"
-          "stretch\t"
-          "dstretch\t"
-          "flx_p\t"
-          "ext_p\t"
-          "flx_pd\t"
-          "ext_pd\t"
-          "flx_u\t"
-          "ext_u\t"
+          "p_m\t"
+          "p_d\t"
+          "u\t"
+          "sync_val\t"
           "\n");
 }
 

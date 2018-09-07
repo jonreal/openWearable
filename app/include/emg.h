@@ -3,8 +3,7 @@
 
 #include "fix16.h"
 
-// Vadc/ADC_resolution (1800 mV / 4095 bits)
-#define FIX16_BITS2VOLTS (0x708A)
+
 
 //---- Global ----
 extern volatile uint32_t *debug_buff;

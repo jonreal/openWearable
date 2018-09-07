@@ -28,12 +28,12 @@ interact_t* InteractionInit(uint8_t chan){
 
 fix16_t InteractionSampleForce(const interact_t* sens) {
   return fix16_sdiv(
-          fix16_from_int((int16_t)adcSampleCh(sens->adc_ch) - 2048),FORCEBIAS);
+          fix16_from_int((int16_t)adcSampleChBits(sens->adc_ch) - 2048),FORCEBIAS);
 }
 
 fix16_t InteractionSampleStretch(const interact_t* sens) {
   return
-    fix16_sdiv(fix16_from_int((int16_t)adcSampleCh(sens->adc_ch)),ADC_RES);
+    fix16_sdiv(fix16_from_int((int16_t)adcSampleChBits(sens->adc_ch)),ADC_RES);
 }
 
 void InteractionFree(interact_t* sens) {

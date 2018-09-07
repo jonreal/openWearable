@@ -58,6 +58,7 @@ void TuiPrintMenu(void) {
   printf(
   "\n\n---------------------------------------------------------------------\n"
   "Menu: f - Collect trial\n"
+  "      s - Start loading exp\n"
   "      e - exit\n"
   "-----------------------------------------------------------------------\n");
   fflush(stdout);
@@ -123,6 +124,47 @@ int TuiLoop(const pru_mem_t* pru_mem) {
           }
           scanf(" %c", &input_char);
           LogFileClose(log);
+          log_file[0] = '\0';
+          strcat(log_file, "datalog/");
+          TuiPrintMenu();
+          fflush(stdout);
+          input_ready = 0;
+          break;
+
+        // ---- Start exp -------------------------------------------------
+        case 's' :
+          printf("\t\tEnter trial name: ");
+          fflush(stdout);
+          input_ready = 0;
+
+          // Wait for input.
+          while (1)
+            if (input_ready)
+              break;
+
+          scanf(" %s", input_string);
+          strcat(log_file, input_string);
+          printf("\t\tSaving data to %s\n",log_file);
+
+          log_t* log_x = LogFileOpen(pru_mem, log_file);
+
+          // Wait for enter to start saving data
+          printf("\t\tPress enter to start experiment...\n");
+          fflush(stdout);
+          input_ready = 0;
+          while (1)
+            if (input_ready)
+              break;
+          scanf(" %c", &input_char);
+          pru_mem->s->pru_ctl.bit.utility = 1;
+
+          // Data collection loop
+          while (1) {
+            LogWriteStateToFile(pru_mem, log_x);
+            if(pru_mem->s->pru_ctl.bit.utility == 0)
+              break;
+          }
+          LogFileClose(log_x);
           log_file[0] = '\0';
           strcat(log_file, "datalog/");
           TuiPrintMenu();
