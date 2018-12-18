@@ -3,10 +3,13 @@ function rtn = embedded_process_data(trialName,varargin)
   nVarArgs = length(varargin);
 
   cutOff = 1;
-  syncVicon = 0;
+  sync = 0;
 
   for i=1:2:nVarArgs
     switch varargin{i}
+      case 'sync'
+        sync = 1;
+        syncColumn = varargin{i+1};
       case 'cutOff'
         % filter cutoff frequency, 4-th order butterworth low-pass
         cutOff = varargin{i+1};
@@ -117,8 +120,8 @@ function rtn = embedded_process_data(trialName,varargin)
   end
 
   % remove unsynced data
-  if (syncVicon)
-    D(D(:,2) ~= 1,:) = [];
+  if (sync)
+    D(D(:,syncColumn) ~= 1,:) = [];
   end
 
   %
