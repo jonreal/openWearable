@@ -18,12 +18,12 @@
 #include "hw_types.h"
 #include "tsc_adc.h"
 
-void adcInit(void)
+void AdcInit(void)
 {
   uint8_t sampleDelay = 0xFF;
   uint16_t openDelay = 0xFFF;
   uint8_t avrg = 0x2;
-  uint16_t adc_clk_div = 0x0;
+  uint16_t adc_clk_div = 0x1;
 
   /* CTRL:  StepConfig_WriteProtext_n_active_low = 0x1 - enable step config
    *        Step_ID_tag = 0x1 - store ch id tag in FIFO
@@ -187,7 +187,7 @@ void adcInit(void)
   HWREG(SOC_ADC_TSC_0_REGS + 0x28) = 0x7FF;
 }
 
-uint32_t adcSampleChBits(uint8_t ch)
+uint32_t AdcSampleChBits(uint8_t ch)
 {
   volatile uint32_t *FIFO =  (uint32_t *) (SOC_ADC_TSC_0_REGS + 0x100);
   uint32_t rtn = 0;
@@ -210,8 +210,8 @@ uint32_t adcSampleChBits(uint8_t ch)
   return rtn;
 }
 
-fix16_t adcSampleChmV(uint8_t ch){
-  return fix16_smul(fix16_from_int((int16_t)adcSampleChBits(ch)),
+fix16_t AdcSampleChmV(uint8_t ch){
+  return fix16_smul(fix16_from_int((int16_t)AdcSampleChBits(ch)),
                     FIX16_BITS2VOLTS);
 }
 
@@ -281,7 +281,7 @@ fix16_t adcSampleChmV(uint8_t ch){
 //  __R30 &= ~(1 << MUX_SEL_PIN);
 //}
 
-void adcCleanup(void)
+void AdcCleanup(void)
 {
   /* Set to disable */
   HWREG(SOC_ADC_TSC_0_REGS + 0x40) &= ~0x1;

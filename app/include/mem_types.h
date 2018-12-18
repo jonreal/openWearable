@@ -17,9 +17,6 @@
 #define _MEM_TYPES_
 
 #include "state.h"
-#include "fix16.h"
-#include "filter.h"
-#include "nlb_filter.h"
 
 #define PRU_CTRL_BASE     0x00022000
 #define STATE_BUFF_LEN    149

@@ -28,17 +28,17 @@
 // R1 = 4.7kOhm
 // R2 = 2.2kOhm
 // Vmax = R2/(R1 + R2) 5V
-// 
 //
-#define FIX16_VOLTS2DEG 0x39CF
+//
+#define FIX16_mVOLTS2DEG 0x39CF
 
 // Rad2deg
 #define FIX16_DEG2RAD 0x478
 
 
 typedef struct {
+  fix16_t angle_offset_deg;
   uint8_t adc_chan;
-  uint8_t angle_offset_deg;
 } hall_t;
 
 

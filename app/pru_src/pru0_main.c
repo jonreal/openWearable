@@ -127,7 +127,7 @@ void initialize(pru_mem_t* mem) {
   clearIepInterrupt();
 
   // drivers
-  adcInit();
+  AdcInit();
   i2cInit();
 
   // user defined inits
@@ -141,7 +141,7 @@ void cleanup(void) {
   CT_INTC.SECR1 = 0xFFFFFFFF;
 
   // drivers
-  adcCleanup();
+  AdcCleanup();
   i2cCleanUp();
 
   // user defined cleanups

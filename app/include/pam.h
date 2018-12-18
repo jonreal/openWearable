@@ -33,11 +33,13 @@
 
 typedef struct {
   sensor_i2c_t* sensor;     // sensor struct (see pressure.h)
+  fix16_t thr;              // threshold for valve control
   uint8_t hp_pin;           // high pressure pin
   uint8_t lp_pin;           // low pressure pin
   uint8_t fs_div;           // sample freq divider
   uint8_t res;              // pad
-  fix16_t thr;              // threshold for valve control
+  uint8_t cnt;              // loop cnt (for downsampling)
+  int8_t prev_cmd;          // prev command
 } pam_t;
 
 
@@ -46,7 +48,7 @@ pam_t* PamInitMuscle(uint8_t address, uint8_t mux_pin, uint8_t mux_ch,
                       uint32_t div, fix16_t threshold);
 void PamFreeMuscle(pam_t* pam);
 void PamSamplePressure(const pam_t* pam, volatile fix16_t* p_m);
-void PamUpdateControl(const pam_t* pam, const volatile fix16_t* p_m,
+void PamUpdateControl(pam_t* pam, const volatile fix16_t* p_m,
                         const volatile fix16_t* p_d,
                         volatile int16_t* valve_cmd);
 static void PamSetValveCommand(const pam_t* pam,

@@ -27,6 +27,8 @@ pam_t* PamInitMuscle(uint8_t address, uint8_t mux_pin, uint8_t mux_ch,
   pam->lp_pin = out_pin;
   pam->fs_div = freq;
   pam->thr = threshold;
+  pam->cnt = 0;
+  pam->prev_cmd = 0;
   return pam;
 }
 
@@ -47,21 +49,40 @@ void PamSamplePressure(const pam_t* pam, volatile fix16_t* p_m){
   *p_m = PressureSensorSample(pam->sensor);
 }
 
-void PamUpdateControl(const pam_t* pam,
+void PamUpdateControl(pam_t* pam,
                       const volatile fix16_t* p_m,
                       const volatile fix16_t* p_d,
                       volatile int16_t* valve_cmd) {
-  fix16_t error = (*p_d + pam->thr) - *p_m;
 
-  if ((fix16_sadd(error, pam->thr) >= 0)
-      && (fix16_ssub(error, pam->thr) <= 0)) {
-    *valve_cmd = 0;
-  } else if (fix16_ssub(error, pam->thr) > 0) {
-    *valve_cmd = 1;
-  } else if (fix16_sadd(error, pam->thr) < 0) {
-    *valve_cmd = -1;
+  fix16_t error = (*p_d + pam->thr) - *p_m;
+  //fix16_t error = *p_d - *p_m;
+
+  if (pam->cnt == (pam->fs_div - 1)){
+    pam->cnt = 0;
+    if ((fix16_sadd(error, pam->thr) >= 0)
+        && (fix16_ssub(error, pam->thr) <= 0)) {
+      *valve_cmd = 0;
+    } else if (fix16_ssub(error, pam->thr) > 0) {
+      *valve_cmd = 1;
+    } else if (fix16_sadd(error, pam->thr) < 0) {
+      *valve_cmd = -1;
+    }
+  } else {
+    // Enforce pusle width min/max
+    if (pam->cnt <= 1) {
+      *valve_cmd = pam->prev_cmd;
+    } else {
+      *valve_cmd = 0;
+    }
+    (pam->cnt)++;
   }
+
+  // ignore threshold if p_d = 0
+  if (*p_d == 0)
+    *valve_cmd = -1;
+
   PamSetValveCommand(pam, valve_cmd);
+  pam->prev_cmd = *valve_cmd;
 }
 
 static void PamSetValveCommand(const pam_t* pam,

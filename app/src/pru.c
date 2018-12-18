@@ -21,7 +21,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/types.h>
-#include"mem_types.h"
+#include "mem_types.h"
 
 // ---------------------------------------------------------------------------
 // Function: int PruMemMap(pru_mem_t)
@@ -244,15 +244,25 @@ void PruSprintParams(const param_mem_t* param, char* buff) {
 void PruSprintState(const state_t* st, char* buff) {
   sprintf(buff,
           "%u\t"        // timeStamp - uint32_t
+          "%f\t"        // emg - fix16_t
+          "%f\t"        // emg - fix16_t
           "%f\t"        // p_m - fix16_t
+          "%f\t"        // dp_m - fix16_t
           "%f\t"        // p_d - fix16_t
-          "%u\t"        // u - int16_t
+          "%f\t"        // angle - fix16_t
+          "%f\t"        // angle_d - fix16_t
+          "%i\t"        // u - int16_t
           "%u\t"        // sync_val - uint16_t
           "\n",
           st->time,
+          fix16_to_float(st->emg),
+          fix16_to_float(st->emg_nlb),
           fix16_to_float(st->p_m),
+          fix16_to_float(st->dp_m),
           fix16_to_float(st->p_d),
-          st->u,
+          fix16_to_float(st->angle),
+          fix16_to_float(st->angle_d),
+          (int32_t)st->u,
           st->sync_val
           );
 }
@@ -260,8 +270,13 @@ void PruSprintState(const state_t* st, char* buff) {
 void PruSprintStateHeader(char* buff) {
   sprintf(buff,
           "\n# frame\t"
+          "emg\t"
+          "emg_nlb\t"
           "p_m\t"
+          "dp_m\t"
           "p_d\t"
+          "angle\t"
+          "angle_d\t"
           "u\t"
           "sync_val\t"
           "\n");

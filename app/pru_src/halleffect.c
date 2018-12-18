@@ -26,7 +26,8 @@ hall_t* HallInitSensor(uint8_t chan, fix16_t angle_offset) {
 
 fix16_t HallGetAngleDeg(hall_t* hall) {
   fix16_t volts = adcSampleChmV(hall->adc_chan);
-  return fix16_smul(volts,FIX16_VOLTS2DEG);
+  return (fix16_ssub(fix16_smul(volts,FIX16_mVOLTS2DEG),
+                     hall->angle_offset_deg));
 }
 
 fix16_t HallGetAngleRad(hall_t* hall) {

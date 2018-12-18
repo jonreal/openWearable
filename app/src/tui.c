@@ -58,7 +58,7 @@ void TuiPrintMenu(void) {
   printf(
   "\n\n---------------------------------------------------------------------\n"
   "Menu: f - Collect trial\n"
-  "      s - Start loading exp\n"
+  "      s - Start Pronation/Supination Exp\n"
   "      e - exit\n"
   "-----------------------------------------------------------------------\n");
   fflush(stdout);
@@ -66,6 +66,7 @@ void TuiPrintMenu(void) {
 
 int TuiLoop(const pru_mem_t* pru_mem) {
   char input_char = 0;
+  float input_float = 0.0;
   char input_string[256] = {0};
   char log_file[256] = "datalog/";
 
@@ -149,13 +150,41 @@ int TuiLoop(const pru_mem_t* pru_mem) {
           log_t* log_x = LogFileOpen(pru_mem, log_file);
 
           // Wait for enter to start saving data
-          printf("\t\tPress enter to start experiment...\n");
+          printf("\t\tEnter desired pressure (psi): ");
+          fflush(stdout);
+          input_ready = 0;
+          while (1)
+            if (input_ready)
+              break;
+          scanf(" %f", &input_float);
+          pru_mem->p->p_d_static = fix16_from_float(input_float);
+
+          // Wait for enter to start saving data
+          printf("\t\tEnter desired angle (deg): ");
+          fflush(stdout);
+          input_ready = 0;
+          while (1)
+            if (input_ready)
+              break;
+          scanf(" %f", &input_float);
+          pru_mem->p->theta_d = fix16_from_float(input_float);
+
+
+          printf("\t\tp_d = %f, theta_d=%f\n",
+                fix16_to_float(pru_mem->p->p_d_static),
+                fix16_to_float(pru_mem->p->theta_d));
+
+
+          // Wait for enter to start saving data
+          printf("\t\tPress enter to start experiment...");
           fflush(stdout);
           input_ready = 0;
           while (1)
             if (input_ready)
               break;
           scanf(" %c", &input_char);
+          printf("\t\t\trunning experiment...\n");
+          fflush(stdout);
           pru_mem->s->pru_ctl.bit.utility = 1;
 
           // Data collection loop
@@ -170,6 +199,8 @@ int TuiLoop(const pru_mem_t* pru_mem) {
           TuiPrintMenu();
           fflush(stdout);
           input_ready = 0;
+          pru_mem->p->theta_d = 0;
+          pru_mem->p->p_d_static = 0;
           break;
       }
     }
