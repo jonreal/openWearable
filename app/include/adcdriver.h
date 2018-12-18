@@ -26,9 +26,9 @@
 extern volatile uint32_t *debug_buff;
 
 // ---- Prototype ----
-void adcInit(void);
-uint32_t adcSampleChBits(uint8_t ch);
-fix16_t adcSampleChmV(uint8_t ch);
-void adcCleanup(void);
+void AdcInit(void);
+uint32_t AdcSampleChBits(uint8_t ch);
+fix16_t AdcSampleChmV(uint8_t ch);
+void AdcCleanup(void);
 
 #endif

@@ -1,36 +1,27 @@
 #include "udf.h"
 
-//
 // Include sensor/actuator/algorithmic modules here
-//
 #include "pam.h"
-#include "filter.h"
-#include "filtcoeff.h"
-#include "emg.h"
+#include "sync.h"
 
-//
 // Define resources
-//
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
-
-iir_filt_t* lp_1_5Hz_1;
-iir_filt_t* lp_1_5Hz_2;
-nlb_filt_t* nlb;
 pam_t* pam;
-emg_t* emg_sensor;
-
+sync_t* sync;
 
 // Pam constants
 const uint8_t div = 1;
 const fix16_t threshold = FIX16_1;
-const fix16_t p_min = 0xF0000; // 15 psi
-const fix16_t k_emg_bias = 0x3780000;
-const fix16_t k_emg_scaling = 0xFA00000;
 
-// NLB constants
-const fix16_t k_alpha = 0x28F;
-const fix16_t k_beta = 0x1;
+// Exp vars/constants
+int32_t flag = 0;
+int32_t t = 0;
+int32_t t_start = 0;
+int32_t t_step = 4000;
+const int32_t n = 20;
+const int32_t  p_0 = 5;
+
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -38,24 +29,12 @@ const fix16_t k_beta = 0x1;
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem) {
-  emg_sensor = EmgInitSensor(0);
-  nlb = FiltNlbInit(8,
-                    fix16_from_int(1000),
-                    0x3E80000,
-                    k_alpha,
-                    k_beta);
 }
 
 void Pru0UpdateState(const pru_count_t* c,
                      const param_mem_t* p_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
-  s_->emg = EmgSample(emg_sensor);
-  fix16_t emg_rect = fix16_ssub(s_->emg,k_emg_bias);
-  if (emg_rect < 0)
-    emg_rect = -emg_rect;
-  emg_rect = fix16_smul(k_emg_scaling,emg_rect);
-  s_->emg_nlb = FiltNlb(emg_rect, nlb);
 }
 
 void Pru0UpdateControl(const pru_count_t* c,
@@ -75,21 +54,14 @@ void Pru0Cleanup(void) {
 void Pru1Init(pru_mem_t* mem) {
   pam = PamInitMuscle(SENSOR_ADD, MUX_SEL, 0, EXT_V_HP, EXT_V_LP, div,
                       threshold);
-  lp_1_5Hz_1 = FiltIirInit(1, k_lp_1_5Hz_b, k_lp_1_5Hz_a);
-  lp_1_5Hz_2 = FiltIirInit(1, k_lp_1_5Hz_b, k_lp_1_5Hz_a);
-
-  mem->s->state->p_d = p_min;
+  sync = SyncInitChan(0x7);
+  SyncOutLow(sync);
 }
 
 void Pru1UpdateState(const pru_count_t* c,
                      const param_mem_t* p_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
-
-  PamSamplePressure(pam, &s_->p_m);
-  s_->angle = s_->p_m;
-  s_->p_m = FiltIir(s_->p_m,lp_1_5Hz_1);
-  s_->dp_m = s_->p_m - FiltIir(s_->p_m,lp_1_5Hz_2);
 }
 
 void Pru1UpdateControl(const pru_count_t* c,
@@ -97,17 +69,35 @@ void Pru1UpdateControl(const pru_count_t* c,
                        state_t* s_,
                        pru_ctl_t* ctl_) {
 
- // s_->p_d = s_->p_d - fix16_smul(K2,s_->dp_m);
+  s_->p_d = fix16_from_int(0);
+  if (ctl_->bit.utility == 1) {
+    if (flag == 0) {
+      flag = 1;
+      t_start = c->frame;
+      SyncOutHigh(sync);
+    }
+    t = c->frame - t_start;
 
- // if (s_->p_d < p_min)
- //   s_->p_d = p_min;
- //
-  s_->p_d = p_min;
+    if (t < ((n+1)*t_step)) {
+      s_->p_d = fix16_from_int(p_0*(t/t_step));
+    } else {
+      s_->p_d = fix16_from_int(p_0*(t/t_step) - 2*p_0*((t/t_step)-n));
+    }
+
+    if (t == ((2*n + 1)*t_step)) {
+      flag = 0;
+      ctl_->bit.utility = 0;
+      SyncOutLow(sync);
+    }
+  }
+  PamSamplePressure(pam, &s_->p_m);
+  s_->sync_val = SyncOutState(sync);
   PamUpdateControl(pam, &s_->p_m, &s_->p_d, &s_->u);
 }
 
 void Pru1Cleanup(void) {
   PamFreeMuscle(pam);
+  SyncFreeChan(sync);
 }
 
 // ---------------------------------------------------------------------------

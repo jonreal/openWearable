@@ -19,7 +19,9 @@
 
 #include "fix16.h"
 #include "filter.h"
+#include "filtcoeff.h"
 
+volatile uint32_t* debug_buff;
 
 
 int main(int argc, char **argv)
@@ -39,15 +41,7 @@ int main(int argc, char **argv)
 
   printf("\n Testing Filters\n");
 
-  iir_coeff_t coeff;
-  iir_buff_t filter;
-  coeff.N = 1;
-  coeff.b[0] = fix16_from_float(0.0185029748827219);
-  coeff.b[1] = fix16_from_float(0.0185029748827219);
-  coeff.a[0] = fix16_from_float(1.0);
-  coeff.a[1] = fix16_from_float(-0.9629940390586853);
-
-  iirInit(&filter, coeff);
+  iir_filt_t* lp_1_5Hz_1 = FiltIirInit(1, k_lp_1_5Hz_b, k_lp_1_5Hz_a);
 
   // Read in input file data
   FILE* fp = fopen(file, "r");
@@ -64,7 +58,7 @@ int main(int argc, char **argv)
   for(int i=0; i<dataLength; i++){
     fscanf(fp, "%f\n", &v);
     data[i] = fix16_from_float(v);
-    out[i] = iirFilt(&filter, coeff, data[i]);
+    out[i] = FiltIir(data[i],lp_1_5Hz_1);
     fprintf(fout,"%f\t%f\t%f\n",
             v, fix16_to_float(data[i]),fix16_to_float(out[i]));
   }

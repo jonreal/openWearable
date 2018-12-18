@@ -26,11 +26,41 @@ typedef struct{
   volatile fix16_t* y;
 } iir_filt_t;
 
+typedef struct{
+  uint32_t N;
+  fix16_t* b;
+  volatile fix16_t* x;
+} fir_filt_t;
+
+typedef struct{
+  uint32_t N;
+  fix16_t kappa;
+  fix16_t eta;
+  fix16_t* x_n;
+  volatile fix16_t* prior;
+  volatile fix16_t* posterior;
+} nlb_filt_t;
+
+
+
 // --- Global Debug Buffer
 extern volatile uint32_t* debug_buff;
 
 // --- Prototypes
-iir_filt_t* IirInit(const uint32_t filtorder,
-                    const fix16_t* b_coeff, const fix16_t* a_coeff);
-fix16_t IirFilt(fix16_t in, iir_filt_t* filt);
+iir_filt_t* FiltIirInit(const uint32_t filtorder,
+                        const fix16_t* b_coeff,
+                        const fix16_t* a_coeff);
+fix16_t FiltIir(fix16_t in, iir_filt_t* filt);
+
+fir_filt_t* FiltFirInit(const uint32_t filtorder, const fix16_t* b_coeff);
+fix16_t FiltFir(fix16_t in, fir_filt_t* filt);
+
+
+nlb_filt_t* FiltNlbInit(const uint32_t nbins,
+                        const fix16_t fs,
+                        const fix16_t max,
+                        const fix16_t alpha,
+                        const fix16_t beta);
+
+fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt);
 #endif

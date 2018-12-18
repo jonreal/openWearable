@@ -27,9 +27,15 @@ MEMORY
    * Lookup tables : PRU1_RAM (3kB)
    * DataRam : PRUn_RAM (4 kB) - n is which ever pru */
 
-  PRU_PARAM     : org = 0x00002000 len = 0x00000400 /* 1kB Parameters */
-  PRU_LUTAB     : org = 0x00000000 len = 0x00000C00 /* 3kB lookup Table */
-  PRU_RAM       : org = 0x00000C00 len = 0x00001000 /* 4kB PRU RAM */
+/*
+  PRU_PARAM     : org = 0x00002000 len = 0x00000400 * 1kB Parameters   *
+  PRU_LUTAB     : org = 0x00000000 len = 0x00000C00 * 3kB lookup Table *
+  PRU_RAM       : org = 0x00000C00 len = 0x00001000 * 4kB PRU RAM      *
+  PRU_SHAREDMEM : org = 0x00010000 len = 0x00003000 * 12kB Shared RAM  *
+*/
+  PRU_PARAM     : org = 0x00002000 len = 0x00000200 /* 0.5kB Parameters */
+  PRU_LUTAB     : org = 0x00000000 len = 0x00000200 /* 0.5kB lookup Table */
+  PRU_RAM       : org = 0x00000200 len = 0x00001C00 /* 7.5kB PRU RAM */
   PRU_SHAREDMEM : org = 0x00010000 len = 0x00003000 /* 12kB Shared RAM */
 
   /* Peripherals */
@@ -38,9 +44,11 @@ MEMORY
   PRU_IEP     : org = 0x0002E000 len = 0x0000031C CREGISTER=26
   PRU_INTC    : org = 0x00020000 len = 0x00001504 CREGISTER=0
 
+  /*
   RSVD10      : org = 0x48318000 len = 0x00000100 CREGISTER=10
   RSVD13      : org = 0x48310000 len = 0x00000100 CREGISTER=13
   RSVD27      : org = 0x00032000 len = 0x00000100 CREGISTER=27
+  */
 }
 
 /* Specify the sections allocation into memory */

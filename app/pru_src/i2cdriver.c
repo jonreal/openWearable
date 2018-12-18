@@ -34,7 +34,8 @@ void i2cInit(void)
   I2CAutoIdleDisable(SOC_I2C_1_REGS);
 
   /* Bus speed 400 kHz */
-  I2CMasterInitExpClk(SOC_I2C_1_REGS, 48000000, 12000000, 400000);
+  //I2CMasterInitExpClk(SOC_I2C_1_REGS, 48000000, 12000000, 400000);
+  I2CMasterInitExpClk(SOC_I2C_1_REGS, 24000000, 6000000, 200000);
 
   /* Enable */
   I2CMasterEnable(SOC_I2C_1_REGS);
