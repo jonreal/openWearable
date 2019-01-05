@@ -86,30 +86,40 @@ fix16_t FiltFir(fix16_t in, fir_filt_t* filt) {
 nlb_filt_t* FiltNlbInit(const uint32_t nbins,
                         const fix16_t fs,
                         const fix16_t max,
-                  const fix16_t alpha, const fix16_t beta){
+                        const fix16_t alpha,
+                        const fix16_t beta){
+
   nlb_filt_t* filt = malloc(sizeof(nlb_filt_t));
   filt->x_n = malloc(sizeof(fix16_t)*nbins);
   filt->prior = malloc(sizeof(fix16_t)*nbins);
   filt->posterior = malloc(sizeof(fix16_t)*nbins);
   filt->N = nbins;
-  filt->kappa = fix16_sdiv(fix16_smul(fix16_smul(nbins,nbins),alpha),fs);
+
+  filt->kappa = fix16_sdiv(fix16_smul(fix16_smul(
+                fix16_from_int(nbins),fix16_from_int(nbins)),alpha),fs);
   filt->eta = fix16_sdiv(beta,fs);
 
-  if (filt->eta < 0x1)
-    filt->eta = 0x1;
+  // Minimum parameters
+  if (fix16_ssub(filt->eta,0x1) < 0) {
+    filt->eta = (fix16_t)0x1;
+  }
+  if (fix16_ssub(filt->kappa,0x1) < 0) {
+    filt->kappa = (fix16_t)0x1;
+  }
 
-  if (filt->kappa < 0x1)
-    filt->kappa = 0x1;
+  printf("kappa = %f\t eta = %f\n",
+        fix16_to_float(filt->kappa),fix16_to_float(filt->eta));
 
-  debug_buff[1] = filt->kappa;
-  debug_buff[2] = filt->eta;
-
-  // BUG:
-  fix16_t spatial_step = fix16_sdiv(fix16_one,fix16_from_int(nbins));
   for (int i=0; i<nbins; i++) {
-    filt->prior[i] = fix16_sdiv(fix16_one,fix16_from_int(nbins));
-    filt->posterior[i] = 0;
-    filt->x_n[i] = fix16_smul(spatial_step,fix16_from_int(i+1));
+    filt->prior[i] = fix16_sdiv(fix16_from_int(1000),fix16_from_int(nbins));
+    filt->posterior[i] = (fix16_t)0;
+    filt->x_n[i] = fix16_smul(fix16_sdiv(max,fix16_from_int(nbins)),
+                              fix16_from_int(i+1));
+    printf("%i\t%f\t%f\t%f\n",i,
+                          fix16_to_float(filt->x_n[i]),
+                          fix16_to_float(filt->prior[i]),
+                          fix16_to_float(
+                            fix16_sdiv(fix16_one,filt->x_n[i])));
   }
   return filt;
 }
@@ -118,23 +128,34 @@ nlb_filt_t* FiltNlbInit(const uint32_t nbins,
 fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt){
   fix16_t d2p, jump, y_hat, sum;
 
-  // First end point
   // 0xFFFE0000 = -2
+
+  printf("d2p\t\tjump\t\tyhat\t\tpost\t\tsumpost\n");
+
+  // First end point
+  int n = 0;
   d2p =
     fix16_smul(
         fix16_sadd(
           fix16_sadd(
-            fix16_smul(0xFFFE0000,filt->prior[1]),
-          filt->prior[2]),
-        filt->prior[0]),
+            fix16_smul(0xFFFE0000,filt->prior[n+1]),
+          filt->prior[n+2]),
+        filt->prior[n]),
       filt->kappa);
-  jump = fix16_smul(fix16_ssub(fix16_one,filt->prior[0]),filt->eta);
-  y_hat = fix16_sdiv(fix16_exp(fix16_sdiv(-in,filt->x_n[0])),filt->x_n[0]);
-  filt->posterior[0] =
-    fix16_smul(fix16_sadd(fix16_sadd(filt->prior[0],d2p),jump),y_hat);
-  if (filt->posterior[0] < 0)
-    filt->posterior[0] = 0x1;
-  sum = filt->posterior[0];
+  jump = fix16_smul(fix16_ssub(fix16_one,filt->prior[n]),filt->eta);
+  y_hat = fix16_sdiv(fix16_exp(fix16_sdiv(-in,filt->x_n[n])),filt->x_n[n]);
+
+  filt->posterior[n] =
+    fix16_smul(fix16_sadd(fix16_sadd(filt->prior[n],d2p),jump),y_hat);
+  if (filt->posterior[n] < 0)
+    filt->posterior[n] = 0;
+  sum = filt->posterior[n];
+
+  printf("%f\t%f\t%f\t%f\t%f\n",
+      fix16_to_float(d2p), fix16_to_float(jump),
+     fix16_to_float(y_hat), fix16_to_float(filt->posterior[n]),
+     fix16_to_float(sum));
+
 
   // Interior points
   for (int n=1; n<filt->N-1; n++) {
@@ -148,40 +169,58 @@ fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt){
         filt->kappa);
     jump = fix16_smul(fix16_ssub(fix16_one,filt->prior[n]),filt->eta);
     y_hat = fix16_sdiv(fix16_exp(fix16_sdiv(-in,filt->x_n[n])),filt->x_n[n]);
+
     filt->posterior[n] =
       fix16_smul(fix16_sadd(fix16_sadd(filt->prior[n],d2p),jump),y_hat);
     if (filt->posterior[n] < 0)
-      filt->posterior[n] = 0x1;
+      filt->posterior[n] = 0;
     sum = sum + filt->posterior[n];
+
+    printf("%f\t%f\t%f\t%f\t%f\n",
+        fix16_to_float(d2p), fix16_to_float(jump),
+       fix16_to_float(y_hat), fix16_to_float(filt->posterior[n]),
+       fix16_to_float(sum));
   }
 
+
+
   // Last end point
-  // 0xFFFE0000 = -2
+  n = filt->N-1;
   d2p =
     fix16_smul(
         fix16_sadd(
           fix16_sadd(
-            fix16_smul(0xFFFE0000,filt->prior[filt->N-1]),
-          filt->prior[filt->N-2]),
-        filt->prior[filt->N]),
+            fix16_smul(0xFFFE0000,filt->prior[n-1]),
+          filt->prior[n-2]),
+        filt->prior[n]),
       filt->kappa);
-  jump = fix16_smul(fix16_ssub(fix16_one,filt->prior[filt->N]),filt->eta);
-  y_hat = fix16_sdiv(fix16_exp(fix16_sdiv(-in,filt->x_n[filt->N])),
-                               filt->x_n[filt->N]);
-  filt->posterior[filt->N] =
-    fix16_smul(fix16_sadd(fix16_sadd(filt->prior[filt->N],d2p),jump),y_hat);
-  if (filt->posterior[filt->N] < 0)
-    filt->posterior[filt->N] = 0x1;
-  sum = sum + filt->posterior[filt->N];
+  jump = fix16_smul(fix16_ssub(fix16_one,filt->prior[n]),filt->eta);
+  y_hat = fix16_sdiv(fix16_exp(fix16_sdiv(-in,filt->x_n[n])),filt->x_n[n]);
+
+  filt->posterior[n] =
+    fix16_smul(fix16_sadd(fix16_sadd(filt->prior[n],d2p),jump),y_hat);
+  if (filt->posterior[n] < 0)
+    filt->posterior[n] = 0;
+  sum = sum + filt->posterior[n];
+
+  printf("%f\t%f\t%f\t%f\t%f\n",
+      fix16_to_float(d2p), fix16_to_float(jump),
+     fix16_to_float(y_hat), fix16_to_float(filt->posterior[n]),
+     fix16_to_float(sum));
 
   int m = 0;
-  fix16_t maxV = filt->posterior[0];
+  fix16_t mlh = filt->posterior[0];
   for (int n=0; n<filt->N; n++){
-    if (filt->posterior[n] > maxV){
+    if (fix16_ssub(filt->posterior[n],mlh) > 0){
       m = n;
-      maxV = filt->posterior[m];
+      mlh = filt->posterior[m];
     }
-    filt->prior[n] = fix16_sdiv(filt->posterior[n],sum);
+    filt->prior[n] = fix16_sdiv(fix16_smul(filt->posterior[n],
+                                fix16_from_int(1000)),sum);
   }
+
+  printf("\nMAP =\n");
+  printf("%f\n",fix16_to_float(filt->x_n[m]));
+
   return filt->x_n[m];
 }

@@ -4,6 +4,7 @@ function rtn = embedded_process_data(trialName,varargin)
 
   cutOff = 1;
   sync = 0;
+  doPlot = 0;
 
   for i=1:2:nVarArgs
     switch varargin{i}
@@ -13,6 +14,8 @@ function rtn = embedded_process_data(trialName,varargin)
       case 'cutOff'
         % filter cutoff frequency, 4-th order butterworth low-pass
         cutOff = varargin{i+1};
+      case 'doPlot'
+        doPlot = varargin{i+1};
       otherwise
         fprintf('\n%s option not found!\n',varargin{i});
         return
@@ -20,7 +23,6 @@ function rtn = embedded_process_data(trialName,varargin)
   end
 
   lineCnt = 0;
-  doplot = 1;
 
   % Check file exists
   file = ['./',trialName];
@@ -30,7 +32,7 @@ function rtn = embedded_process_data(trialName,varargin)
     return
   end
 
-  fid = fopen(file)
+  fid = fopen(file);
 
   %
   % parse embedded parameters
@@ -107,7 +109,6 @@ function rtn = embedded_process_data(trialName,varargin)
   %
   % read data
   %
-
   D = dlmread(file, '', lineCnt, 0);
 
   [m,n] = size(D);
@@ -131,7 +132,7 @@ function rtn = embedded_process_data(trialName,varargin)
   % This happens, I think, because the kernel interrupts during circular buffer
   % writes.
 
-  if(doplot)
+  if(doPlot)
   figure;
     plot(D(:,1))
     xlabel('Data Point','fontsize',20)
@@ -142,7 +143,7 @@ function rtn = embedded_process_data(trialName,varargin)
   startMissingData_index = find(dt ~= 1);
   endMissingData_index = startMissingData_index + 1;
 
-  if(doplot)
+  if(doPlot)
   figure;
     plot(1:numel(D(1:end-1,1)),dt)
     xlabel('Data Point','fontsize',20)
