@@ -130,7 +130,7 @@ fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt){
 
   // 0xFFFE0000 = -2
 
-  printf("d2p\t\tjump\t\tyhat\t\tpost\t\tsumpost\n");
+  printf("prior\t\td2p\t\tjump\t\tyhat\t\tpost\t\tsumpost\n");
 
   // First end point
   int n = 0;
@@ -151,8 +151,8 @@ fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt){
     filt->posterior[n] = 0;
   sum = filt->posterior[n];
 
-  printf("%f\t%f\t%f\t%f\t%f\n",
-      fix16_to_float(d2p), fix16_to_float(jump),
+  printf("%f\t%f\t%f\t%f\t%f\t%f\n",
+    fix16_to_float(filt->prior[n]),fix16_to_float(d2p), fix16_to_float(jump),
      fix16_to_float(y_hat), fix16_to_float(filt->posterior[n]),
      fix16_to_float(sum));
 
@@ -176,8 +176,8 @@ fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt){
       filt->posterior[n] = 0;
     sum = sum + filt->posterior[n];
 
-    printf("%f\t%f\t%f\t%f\t%f\n",
-        fix16_to_float(d2p), fix16_to_float(jump),
+    printf("%f\t%f\t%f\t%f\t%f\t%f\n",
+      fix16_to_float(filt->prior[n]),fix16_to_float(d2p), fix16_to_float(jump),
        fix16_to_float(y_hat), fix16_to_float(filt->posterior[n]),
        fix16_to_float(sum));
   }
@@ -203,8 +203,9 @@ fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt){
     filt->posterior[n] = 0;
   sum = sum + filt->posterior[n];
 
-  printf("%f\t%f\t%f\t%f\t%f\n",
-      fix16_to_float(d2p), fix16_to_float(jump),
+
+  printf("%f\t%f\t%f\t%f\t%f\t%f\n",
+    fix16_to_float(filt->prior[n]),fix16_to_float(d2p), fix16_to_float(jump),
      fix16_to_float(y_hat), fix16_to_float(filt->posterior[n]),
      fix16_to_float(sum));
 
@@ -215,8 +216,8 @@ fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt){
       m = n;
       mlh = filt->posterior[m];
     }
-    filt->prior[n] = fix16_sdiv(fix16_smul(filt->posterior[n],
-                                fix16_from_int(1000)),sum);
+    filt->prior[n] = fix16_smul(filt->posterior[n],
+                                fix16_sdiv(fix16_from_int(1000),sum));
   }
 
   printf("\nMAP =\n");
