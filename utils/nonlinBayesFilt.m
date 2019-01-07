@@ -36,7 +36,7 @@ function [posterior, MAP] = nonlinBayesFilt(prior,y,varargin)
   posterior = zeros(1,n);
   sumpost = 0;
 
-   fprintf('d2p\t\tjump\t\tyhat\t\tpost\t\tsumpost\n')
+   fprintf('prior\t\td2p\t\tjump\t\tyhat\t\tpost\t\tsumpost\n')
   % First element
   i = 1;
   d2p = kappa*(prior(i+2) - 2*prior(i+1) + prior(i));
@@ -49,7 +49,8 @@ function [posterior, MAP] = nonlinBayesFilt(prior,y,varargin)
   end
   sumpost = posterior(i);
 
-  fprintf('%f\t%f\t%f\t%f\t%f\n', d2p, jump, yhat, posterior(i), sumpost);
+  fprintf('%f\t%f\t%f\t%f\t%f\t%f\n', ...
+      prior(i), d2p, jump, yhat, posterior(i), sumpost);
 
   % Interior elements
   for i=2:(n-1)
@@ -63,7 +64,9 @@ function [posterior, MAP] = nonlinBayesFilt(prior,y,varargin)
     end
     sumpost = sumpost + posterior(i);
 
-  fprintf('%f\t%f\t%f\t%f\t%f\n', d2p, jump, yhat, posterior(i), sumpost);
+  fprintf('%f\t%f\t%f\t%f\t%f\t%f\n', ...
+      prior(i), d2p, jump, yhat, posterior(i), sumpost);
+
   end
 
   % Last element
@@ -78,8 +81,8 @@ function [posterior, MAP] = nonlinBayesFilt(prior,y,varargin)
   end
   sumpost = sumpost + posterior(i);
 
-
-  fprintf('%f\t%f\t%f\t%f\t%f\n', d2p, jump, yhat, posterior(i), sumpost);
+  fprintf('%f\t%f\t%f\t%f\t%f\t%f\n', ...
+      prior(i), d2p, jump, yhat, posterior(i), sumpost);
 
   % Normalize and find MAP
   m = 1;
