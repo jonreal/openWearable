@@ -8,29 +8,33 @@
 #include "filtcoeff.h"
 #include "emg.h"
 
-//
-// Define resources
-//
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 
+// resources
 iir_filt_t* lp_1_5Hz_1;
 iir_filt_t* lp_1_5Hz_2;
 nlb_filt_t* nlb;
 pam_t* pam;
 emg_t* emg_sensor;
 
-
 // Pam constants
 const uint8_t div = 1;
 const fix16_t threshold = FIX16_1;
 const fix16_t p_min = 0xF0000; // 15 psi
-const fix16_t k_emg_bias = 0x3780000;
-const fix16_t k_emg_scaling = 0xFA00000;
+
+// emg constants
+const fix16_t k_emg_bias = 0x37A0000; // 890 bits
+const fix16_t k_emg_scaling = 0x206;  // 4/507  (scaling/normalizing const)
 
 // NLB constants
-const fix16_t k_alpha = 0x28F;
-const fix16_t k_beta = 0x1;
+const fix16_t k_alpha = 0x42;     // 0.001
+const fix16_t k_beta = 0x28F;     // 0.01
+
+
+// Prototypes
+fix16_t conditionEmg(fix16_t in);
+
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -39,9 +43,9 @@ const fix16_t k_beta = 0x1;
 // ---------------------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem) {
   emg_sensor = EmgInitSensor(0);
-  nlb = FiltNlbInit(8,
+  nlb = FiltNlbInit(4,
                     fix16_from_int(1000),
-                    0x3E80000,
+                    fix16_one,
                     k_alpha,
                     k_beta);
 }
@@ -50,12 +54,9 @@ void Pru0UpdateState(const pru_count_t* c,
                      const param_mem_t* p_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
-  s_->emg = EmgSample(emg_sensor);
-  fix16_t emg_rect = fix16_ssub(s_->emg,k_emg_bias);
-  if (emg_rect < 0)
-    emg_rect = -emg_rect;
-  emg_rect = fix16_smul(k_emg_scaling,emg_rect);
-  s_->emg_nlb = FiltNlb(emg_rect, nlb);
+  s_->emg_raw = EmgSample(emg_sensor);
+  s_->emg_rect = conditionEmg(s_->emg_raw);
+  s_->emg_nlb = FiltNlb(s_->emg_rect, nlb);
 }
 
 void Pru0UpdateControl(const pru_count_t* c,
@@ -113,3 +114,10 @@ void Pru1Cleanup(void) {
 // ---------------------------------------------------------------------------
 // Added helper functions as needed
 // ---------------------------------------------------------------------------
+fix16_t conditionEmg(fix16_t in) {
+  fix16_t out = fix16_ssub(in, k_emg_bias);
+  // rectify
+  if (out < 0)
+   out = -out;
+  return fix16_smul(k_emg_scaling, out);
+}

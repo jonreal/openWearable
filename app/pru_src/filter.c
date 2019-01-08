@@ -111,8 +111,8 @@ nlb_filt_t* FiltNlbInit(const uint32_t nbins,
   //
   // Debug
   //
-  printf("kappa = %f\t eta = %f\n",
-        fix16_to_float(filt->kappa),fix16_to_float(filt->eta));
+  //printf("kappa = %f\t eta = %f\n",
+  //     fix16_to_float(filt->kappa),fix16_to_float(filt->eta));
 
   for (int i=0; i<nbins; i++) {
     filt->prior[i] = fix16_sdiv(fix16_from_int(1000),fix16_from_int(nbins));
@@ -124,11 +124,11 @@ nlb_filt_t* FiltNlbInit(const uint32_t nbins,
     //
     // Debug
     //
-    printf("%i\t%f\t%f\t%f\n",i,
-                          fix16_to_float(filt->x_n[i]),
-                          fix16_to_float(filt->prior[i]),
-                          fix16_to_float(
-                            fix16_sdiv(fix16_one,filt->x_n[i])));
+    //printf("%i\t%f\t%f\t%f\n",i,
+    //                      fix16_to_float(filt->x_n[i]),
+    //                      fix16_to_float(filt->prior[i]),
+    //                      fix16_to_float(
+    //                        fix16_sdiv(fix16_one,filt->x_n[i])));
   }
   return filt;
 }
@@ -137,9 +137,8 @@ nlb_filt_t* FiltNlbInit(const uint32_t nbins,
 fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt){
   fix16_t d2p, jump, y_hat, sum;
 
-  // Fix16 constants
-  // 0xFFFE0000 = -2.0
-  // 0x3E80000  = 1000.0
+  static const fix16_t f16_neg2 = 0xFFFE0000;
+  static const fix16_t f16_1000 = 0x3E80000;
 
   //
   // Debug
@@ -152,11 +151,11 @@ fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt){
     fix16_smul(
         fix16_sadd(
           fix16_sadd(
-            fix16_smul(0xFFFE0000,filt->prior[n+1]),
+            fix16_smul(f16_neg2,filt->prior[n+1]),
           filt->prior[n+2]),
         filt->prior[n]),
       filt->kappa);
-  jump = fix16_smul(fix16_ssub(0x3E80000,filt->prior[n]),filt->eta);
+  jump = fix16_smul(fix16_ssub(f16_1000,filt->prior[n]),filt->eta);
   y_hat = fix16_smul(
             fix16_sdiv(fix16_one,fix16_exp(fix16_smul(in,filt->inv_x_n[n]))),
             filt->inv_x_n[n]);
@@ -181,11 +180,11 @@ fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt){
       fix16_smul(
           fix16_sadd(
             fix16_sadd(
-              fix16_smul(0xFFFE0000,filt->prior[n]),
+              fix16_smul(f16_neg2,filt->prior[n]),
             filt->prior[n-1]),
           filt->prior[n+1]),
         filt->kappa);
-    jump = fix16_smul(fix16_ssub(0x3E80000,filt->prior[n]),filt->eta);
+    jump = fix16_smul(fix16_ssub(f16_1000,filt->prior[n]),filt->eta);
     y_hat = fix16_smul(
               fix16_sdiv(fix16_one,fix16_exp(fix16_smul(in,filt->inv_x_n[n]))),
               filt->inv_x_n[n]);
@@ -211,13 +210,11 @@ fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt){
     fix16_smul(
         fix16_sadd(
           fix16_sadd(
-            fix16_smul(0xFFFE0000,filt->prior[n-1]),
+            fix16_smul(f16_neg2,filt->prior[n-1]),
           filt->prior[n-2]),
         filt->prior[n]),
       filt->kappa);
-  jump = fix16_smul(fix16_ssub(0x3E80000,filt->prior[n]),filt->eta);
-  //y_hat = fix16_sdiv(fix16_exp(fix16_sdiv(-in,filt->x_n[n])),filt->x_n[n]);
-
+  jump = fix16_smul(fix16_ssub(f16_1000,filt->prior[n]),filt->eta);
   y_hat = fix16_smul(
             fix16_sdiv(fix16_one,fix16_exp(fix16_smul(in,filt->inv_x_n[n]))),
             filt->inv_x_n[n]);
@@ -244,7 +241,7 @@ fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt){
       m = n;
       mlh = filt->posterior[m];
     }
-    filt->prior[n] = fix16_smul(filt->posterior[n],fix16_sdiv(0x3E80000,sum));
+    filt->prior[n] = fix16_smul(filt->posterior[n],fix16_sdiv(f16_1000,sum));
   }
 
 
