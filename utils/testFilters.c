@@ -25,9 +25,9 @@ volatile uint32_t* debug_buff;
 
 fix16_t absV(fix16_t v);
 
-const int n = 10;
-const float alpha = 0.1;
-const float beta = 1;
+const int n = 100;
+const float alpha = 0.001;
+const float beta = 0.01;
 const float maxEmg = 1;
 const float scale = 4;
 
@@ -65,13 +65,13 @@ int main(int argc, char **argv)
   fix16_t out[dataLength];
   float v;
 
-  dataLength = 3;
+  //dataLength = 1000;
 
   for(int i=0; i<dataLength; i++){
     fscanf(fp, "%f\n", &v);
 
-    printf("\n-----\n");
-    printf("%d\n",i+1);
+   // printf("\n-----\n");
+   // printf("%d\n",i+1);
 
     // FIR
     //out[i] = FiltIir(data[i],lp_1_5Hz_1);
@@ -85,7 +85,7 @@ int main(int argc, char **argv)
     if(data[i] > fix16_from_float(maxEmg))
       data[i] = fix16_from_float(maxEmg);
 
-    printf("\nemg = %f\n",fix16_to_float(data[i]));
+   // printf("\nemg = %f\n",fix16_to_float(data[i]));
 
     out[i] = FiltNlb(data[i],nlb_filt);
 

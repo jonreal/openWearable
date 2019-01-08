@@ -91,6 +91,7 @@ nlb_filt_t* FiltNlbInit(const uint32_t nbins,
 
   nlb_filt_t* filt = malloc(sizeof(nlb_filt_t));
   filt->x_n = malloc(sizeof(fix16_t)*nbins);
+  filt->inv_x_n = malloc(sizeof(fix16_t)*nbins);
   filt->prior = malloc(sizeof(fix16_t)*nbins);
   filt->posterior = malloc(sizeof(fix16_t)*nbins);
   filt->N = nbins;
@@ -107,6 +108,9 @@ nlb_filt_t* FiltNlbInit(const uint32_t nbins,
     filt->kappa = (fix16_t)0x1;
   }
 
+  //
+  // Debug
+  //
   printf("kappa = %f\t eta = %f\n",
         fix16_to_float(filt->kappa),fix16_to_float(filt->eta));
 
@@ -115,6 +119,11 @@ nlb_filt_t* FiltNlbInit(const uint32_t nbins,
     filt->posterior[i] = (fix16_t)0;
     filt->x_n[i] = fix16_smul(fix16_sdiv(max,fix16_from_int(nbins)),
                               fix16_from_int(i+1));
+    filt->inv_x_n[i] = fix16_sdiv(fix16_one,filt->x_n[i]);
+
+    //
+    // Debug
+    //
     printf("%i\t%f\t%f\t%f\n",i,
                           fix16_to_float(filt->x_n[i]),
                           fix16_to_float(filt->prior[i]),
@@ -128,9 +137,14 @@ nlb_filt_t* FiltNlbInit(const uint32_t nbins,
 fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt){
   fix16_t d2p, jump, y_hat, sum;
 
-  // 0xFFFE0000 = -2
+  // Fix16 constants
+  // 0xFFFE0000 = -2.0
+  // 0x3E80000  = 1000.0
 
-  printf("prior\t\td2p\t\tjump\t\tyhat\t\tpost\t\tsumpost\n");
+  //
+  // Debug
+  //
+  //printf("prior\t\td2p\t\tjump\t\tyhat\t\tpost\t\tsumpost\n");
 
   // First end point
   int n = 0;
@@ -142,8 +156,10 @@ fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt){
           filt->prior[n+2]),
         filt->prior[n]),
       filt->kappa);
-  jump = fix16_smul(fix16_ssub(fix16_one,filt->prior[n]),filt->eta);
-  y_hat = fix16_sdiv(fix16_exp(fix16_sdiv(-in,filt->x_n[n])),filt->x_n[n]);
+  jump = fix16_smul(fix16_ssub(0x3E80000,filt->prior[n]),filt->eta);
+  y_hat = fix16_smul(
+            fix16_sdiv(fix16_one,fix16_exp(fix16_smul(in,filt->inv_x_n[n]))),
+            filt->inv_x_n[n]);
 
   filt->posterior[n] =
     fix16_smul(fix16_sadd(fix16_sadd(filt->prior[n],d2p),jump),y_hat);
@@ -151,11 +167,13 @@ fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt){
     filt->posterior[n] = 0;
   sum = filt->posterior[n];
 
-  printf("%f\t%f\t%f\t%f\t%f\t%f\n",
-    fix16_to_float(filt->prior[n]),fix16_to_float(d2p), fix16_to_float(jump),
-     fix16_to_float(y_hat), fix16_to_float(filt->posterior[n]),
-     fix16_to_float(sum));
-
+  //
+  // Debug
+  //
+  //printf("%f\t%f\t%f\t%f\t%f\t%f\n",
+  //  fix16_to_float(filt->prior[n]),fix16_to_float(d2p), fix16_to_float(jump),
+  //   fix16_to_float(y_hat), fix16_to_float(filt->posterior[n]),
+  //   fix16_to_float(sum));
 
   // Interior points
   for (int n=1; n<filt->N-1; n++) {
@@ -167,8 +185,10 @@ fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt){
             filt->prior[n-1]),
           filt->prior[n+1]),
         filt->kappa);
-    jump = fix16_smul(fix16_ssub(fix16_one,filt->prior[n]),filt->eta);
-    y_hat = fix16_sdiv(fix16_exp(fix16_sdiv(-in,filt->x_n[n])),filt->x_n[n]);
+    jump = fix16_smul(fix16_ssub(0x3E80000,filt->prior[n]),filt->eta);
+    y_hat = fix16_smul(
+              fix16_sdiv(fix16_one,fix16_exp(fix16_smul(in,filt->inv_x_n[n]))),
+              filt->inv_x_n[n]);
 
     filt->posterior[n] =
       fix16_smul(fix16_sadd(fix16_sadd(filt->prior[n],d2p),jump),y_hat);
@@ -176,13 +196,14 @@ fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt){
       filt->posterior[n] = 0;
     sum = sum + filt->posterior[n];
 
-    printf("%f\t%f\t%f\t%f\t%f\t%f\n",
-      fix16_to_float(filt->prior[n]),fix16_to_float(d2p), fix16_to_float(jump),
-       fix16_to_float(y_hat), fix16_to_float(filt->posterior[n]),
-       fix16_to_float(sum));
+    //
+    // Debug
+    //
+    //printf("%f\t%f\t%f\t%f\t%f\t%f\n",
+    //  fix16_to_float(filt->prior[n]),fix16_to_float(d2p), fix16_to_float(jump),
+    //   fix16_to_float(y_hat), fix16_to_float(filt->posterior[n]),
+    //   fix16_to_float(sum));
   }
-
-
 
   // Last end point
   n = filt->N-1;
@@ -194,8 +215,12 @@ fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt){
           filt->prior[n-2]),
         filt->prior[n]),
       filt->kappa);
-  jump = fix16_smul(fix16_ssub(fix16_one,filt->prior[n]),filt->eta);
-  y_hat = fix16_sdiv(fix16_exp(fix16_sdiv(-in,filt->x_n[n])),filt->x_n[n]);
+  jump = fix16_smul(fix16_ssub(0x3E80000,filt->prior[n]),filt->eta);
+  //y_hat = fix16_sdiv(fix16_exp(fix16_sdiv(-in,filt->x_n[n])),filt->x_n[n]);
+
+  y_hat = fix16_smul(
+            fix16_sdiv(fix16_one,fix16_exp(fix16_smul(in,filt->inv_x_n[n]))),
+            filt->inv_x_n[n]);
 
   filt->posterior[n] =
     fix16_smul(fix16_sadd(fix16_sadd(filt->prior[n],d2p),jump),y_hat);
@@ -203,12 +228,15 @@ fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt){
     filt->posterior[n] = 0;
   sum = sum + filt->posterior[n];
 
+  //
+  // Debug
+  //
+  //printf("%f\t%f\t%f\t%f\t%f\t%f\n",
+  //  fix16_to_float(filt->prior[n]),fix16_to_float(d2p), fix16_to_float(jump),
+  //   fix16_to_float(y_hat), fix16_to_float(filt->posterior[n]),
+  //   fix16_to_float(sum));
 
-  printf("%f\t%f\t%f\t%f\t%f\t%f\n",
-    fix16_to_float(filt->prior[n]),fix16_to_float(d2p), fix16_to_float(jump),
-     fix16_to_float(y_hat), fix16_to_float(filt->posterior[n]),
-     fix16_to_float(sum));
-
+  // Normalize
   int m = 0;
   fix16_t mlh = filt->posterior[0];
   for (int n=0; n<filt->N; n++){
@@ -216,12 +244,14 @@ fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt){
       m = n;
       mlh = filt->posterior[m];
     }
-    filt->prior[n] = fix16_smul(filt->posterior[n],
-                                fix16_sdiv(fix16_from_int(1000),sum));
+    filt->prior[n] = fix16_smul(filt->posterior[n],fix16_sdiv(0x3E80000,sum));
   }
 
-  printf("\nMAP =\n");
-  printf("%f\n",fix16_to_float(filt->x_n[m]));
+
+  //
+  // Debug
+  //
+  //printf("\nMap = %f\n",fix16_to_float(filt->x_n[m]));
 
   return filt->x_n[m];
 }

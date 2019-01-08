@@ -1,7 +1,7 @@
 function [posterior, MAP] = nonlinBayesFilt(prior,y,varargin)
 
   % Note that
-  % sum(prior) = 10000
+  % sum(prior) = 1000 (for implementation on q16.16)
 
   nVarArgs = length(varargin);
 
@@ -10,6 +10,7 @@ function [posterior, MAP] = nonlinBayesFilt(prior,y,varargin)
   n = 50;
   alpha = 0.0001/fs;
   beta = 1e-24/(n*fs);
+  debug = 0;
 
   for i=1:2:nVarArgs
     switch varargin{i}
@@ -23,6 +24,8 @@ function [posterior, MAP] = nonlinBayesFilt(prior,y,varargin)
         alpha = varargin{i+1};
       case 'beta'
         beta = varargin{i+1};
+      case 'debug'
+        debug = varargin{i+1};
       otherwise
         fprintf('\n%s option not found!\n',varargin{i});
         return
@@ -36,11 +39,14 @@ function [posterior, MAP] = nonlinBayesFilt(prior,y,varargin)
   posterior = zeros(1,n);
   sumpost = 0;
 
-   fprintf('prior\t\td2p\t\tjump\t\tyhat\t\tpost\t\tsumpost\n')
+  if (debug)
+    fprintf('prior\t\td2p\t\tjump\t\tyhat\t\tpost\t\tsumpost\n')
+  end
+
   % First element
   i = 1;
   d2p = kappa*(prior(i+2) - 2*prior(i+1) + prior(i));
-  jump = eta*(1 - prior(i));
+  jump = eta*(1000 - prior(i));
   yhat = exp(-y/x_n(i))/x_n(i);
 
   posterior(i) = (prior(i) + d2p + jump)*yhat;
@@ -49,13 +55,16 @@ function [posterior, MAP] = nonlinBayesFilt(prior,y,varargin)
   end
   sumpost = posterior(i);
 
-  fprintf('%f\t%f\t%f\t%f\t%f\t%f\n', ...
-      prior(i), d2p, jump, yhat, posterior(i), sumpost);
+  if (debug)
+    fprintf('%f\t%f\t%f\t%f\t%f\t%f\n', ...
+        prior(i), d2p, jump, yhat, posterior(i), sumpost);
+  end
+
 
   % Interior elements
   for i=2:(n-1)
     d2p = kappa*(prior(i-1) - 2*prior(i) + prior(i+1));
-    jump = eta*(1 - prior(i));
+    jump = eta*(1000 - prior(i));
     yhat = exp(-y/x_n(i))/x_n(i);
 
     posterior(i) = (prior(i) + d2p + jump)*yhat;
@@ -64,15 +73,16 @@ function [posterior, MAP] = nonlinBayesFilt(prior,y,varargin)
     end
     sumpost = sumpost + posterior(i);
 
-  fprintf('%f\t%f\t%f\t%f\t%f\t%f\n', ...
-      prior(i), d2p, jump, yhat, posterior(i), sumpost);
-
+    if (debug)
+      fprintf('%f\t%f\t%f\t%f\t%f\t%f\n', ...
+          prior(i), d2p, jump, yhat, posterior(i), sumpost);
+    end
   end
 
   % Last element
   i = n;
   d2p = kappa*(prior(i-2) - 2*prior(i-1) + prior(i));
-  jump = eta*(1 - prior(i));
+  jump = eta*(1000 - prior(i));
   yhat = exp(-y/x_n(i))/x_n(i);
 
   posterior(i) = (prior(i) + d2p + jump)*yhat;
@@ -81,8 +91,11 @@ function [posterior, MAP] = nonlinBayesFilt(prior,y,varargin)
   end
   sumpost = sumpost + posterior(i);
 
-  fprintf('%f\t%f\t%f\t%f\t%f\t%f\n', ...
-      prior(i), d2p, jump, yhat, posterior(i), sumpost);
+  if (debug)
+    fprintf('%f\t%f\t%f\t%f\t%f\t%f\n', ...
+        prior(i), d2p, jump, yhat, posterior(i), sumpost);
+  end
+
 
   % Normalize and find MAP
   m = 1;
@@ -96,7 +109,10 @@ function [posterior, MAP] = nonlinBayesFilt(prior,y,varargin)
   end
   MAP = x_n(m);
 
-  fprintf('\nMAP = %f\n',MAP);
+  if (debug)
+    fprintf('\nMAP = %f\n',MAP);
+  end
+
 
 
 %  for i=1:n
