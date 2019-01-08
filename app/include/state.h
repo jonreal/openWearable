@@ -6,7 +6,8 @@
 // State
 typedef struct {
   volatile uint32_t time;
-  volatile fix16_t emg;
+  volatile fix16_t emg_raw;
+  volatile fix16_t emg_rect;
   volatile fix16_t emg_nlb;
   volatile fix16_t p_m;
   volatile fix16_t dp_m;
