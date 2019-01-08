@@ -246,6 +246,7 @@ void PruSprintState(const state_t* st, char* buff) {
           "%u\t"        // timeStamp - uint32_t
           "%f\t"        // emg - fix16_t
           "%f\t"        // emg - fix16_t
+          "%f\t"        // emg - fix16_t
           "%f\t"        // p_m - fix16_t
           "%f\t"        // dp_m - fix16_t
           "%f\t"        // p_d - fix16_t
@@ -255,7 +256,8 @@ void PruSprintState(const state_t* st, char* buff) {
           "%u\t"        // sync_val - uint16_t
           "\n",
           st->time,
-          fix16_to_float(st->emg),
+          fix16_to_float(st->emg_raw),
+          fix16_to_float(st->emg_rect),
           fix16_to_float(st->emg_nlb),
           fix16_to_float(st->p_m),
           fix16_to_float(st->dp_m),
@@ -270,7 +272,8 @@ void PruSprintState(const state_t* st, char* buff) {
 void PruSprintStateHeader(char* buff) {
   sprintf(buff,
           "\n# frame\t"
-          "emg\t"
+          "emg_raw\t"
+          "emg_rect\t"
           "emg_nlb\t"
           "p_m\t"
           "dp_m\t"
