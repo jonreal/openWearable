@@ -37,6 +37,7 @@ typedef struct{
   fix16_t kappa;
   fix16_t eta;
   fix16_t* x_n;
+  fix16_t* inv_x_n;
   volatile fix16_t* prior;
   volatile fix16_t* posterior;
 } nlb_filt_t;

@@ -24,11 +24,12 @@ end
 
 
 % Nonlinear Bayes Filter
-n = 10;
-alpha = 0.1;
-beta = 1;
+n = 100;
+alpha = 0.001;
+beta = 0.01;
 maxEmg = 1;
 scale = 4;
+debug = 0;
 
 kappa = alpha*(1/fs)/(1/n)^2
 eta = beta*(1/fs)
@@ -36,6 +37,12 @@ eta = beta*(1/fs)
 prior = ones(n,1)*1000/n;
 posterior = zeros(n,N);
 MAP = zeros(N,1);
+
+prior_ = ones(n,1)/n;
+posterior_ = zeros(n,N);
+MAP_ = zeros(N,1);
+
+
 samples = zeros(N,1);
 emg = D(:,1);
 %meanEmg = mean(D(:,1));
@@ -44,8 +51,9 @@ emg = D(:,1);
 %emg = scale*emg*maxEmg;
 %emg(emg>maxEmg) = maxEmg;
 
-N = 3;
 prior
+
+%N=1000;
 
 for i=1:N
 
@@ -56,17 +64,29 @@ for i=1:N
     sample = maxEmg;
   end
 
-  disp('----');
-  fprintf('\n');
-  i
-  EMG = sample
+  if (debug)
+    disp('----');
+    fprintf('\n');
+    i
+    EMG = sample
+  end
   [posterior(:,i), MAP(i)] = nonlinBayesFilt(prior, sample, ...
                               'fs',fs, ...
                               'n', n, ...
                               'alpha',alpha, ...
                               'beta',beta, ...
-                              'maxEmg',maxEmg);
+                              'maxEmg',maxEmg, ...
+                              'debug',debug);
   prior = posterior(:,i);
+
+  [posterior_(:,i), MAP_(i)] = nlb_sanger_clone(prior_, sample, ...
+                              'fs',fs, ...
+                              'n', n, ...
+                              'alpha',alpha, ...
+                              'beta',beta, ...
+                              'maxEmg',maxEmg);
+  prior_ = posterior_(:,i);
+
   samples(i) = sample;
 end
 figure; hold all;
@@ -74,8 +94,9 @@ figure; hold all;
     plot(t(1:N),D(1:N,1),'k');
   subplot(312); hold all;
     plot(t(1:N),samples(1:N),'k');
-    plot(t(1:N),M(1:N,2),'--r');
+%    plot(t(1:N),M(1:N,2),'--r');
   subplot(313); hold all;
     plot(t(1:N),MAP(1:N),'k');
+    plot(t(1:N),MAP_(1:N),'--g');
     plot(t(1:N),M(1:N,3),'r');
 
