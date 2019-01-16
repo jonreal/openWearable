@@ -16,6 +16,7 @@
 // Test IIR and nonlinear Bayes Filter (fix16 versions)
 
 #include <stdio.h>
+#include <sys/time.h>
 
 #include "fix16.h"
 #include "filter.h"
@@ -25,9 +26,9 @@ volatile uint32_t* debug_buff;
 
 fix16_t absV(fix16_t v);
 
-const int n = 100;
-const float alpha = 0.001;
-const float beta = 0.01;
+const int n = 1000;
+const float alpha = 0.1;
+const float beta = 0.1;
 const float maxEmg = 1;
 const float scale = 4;
 
@@ -63,10 +64,12 @@ int main(int argc, char **argv)
   // make fix16_t array of data
   fix16_t data[dataLength];
   fix16_t out[dataLength];
+  double mean_ex_t = 0.0;
   float v;
 
-  //dataLength = 1000;
+//  dataLength = 10;
 
+  struct timeval  tv1, tv2;
   for(int i=0; i<dataLength; i++){
     fscanf(fp, "%f\n", &v);
 
@@ -87,12 +90,21 @@ int main(int argc, char **argv)
 
    // printf("\nemg = %f\n",fix16_to_float(data[i]));
 
+    gettimeofday(&tv1, NULL);
     out[i] = FiltNlb(data[i],nlb_filt);
+    gettimeofday(&tv2, NULL);
+    mean_ex_t = mean_ex_t + (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
+         (double) (tv2.tv_sec - tv1.tv_sec);
 
     fprintf(fout,"%f\t%f\t%f\n",
             v, fix16_to_float(data[i]),fix16_to_float(out[i]));
   }
   fclose(fp);
+  mean_ex_t = mean_ex_t / ((double)dataLength);
+  printf("\nmean execution time = %f10\n", mean_ex_t);
+
+
+
   return 0;
 }
 

@@ -41,11 +41,13 @@ function f = initBayes(varargin)
   f.posterior = zeros(f.n,1);
   f.prior = ones(f.n,1)*1000/f.n;
   f.sumpost = 0;
-  f.count = 0;
-  f.elements_per_cycle = floor(f.n/f.div);
+  f.count = 1;
+  f.elements_per_cycle = floor((f.n + f.div/2)/f.div);
   f.m_sample = 0;
   f.m = 0;
   f.prev_map = 0;
-  f.i0 = 1;
+  f.i0 = 2;
 
+
+  1 - 2*f.kappa - f.eta
 end

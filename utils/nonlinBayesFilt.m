@@ -50,6 +50,7 @@ function [posterior, MAP] = nonlinBayesFilt(prior,y,varargin)
   yhat = exp(-y/x_n(i))/x_n(i);
 
   posterior(i) = (prior(i) + d2p + jump)*yhat;
+  %posterior(i) = (prior(i) + d2p)*jump*yhat;
   if posterior(i) < 0;
     posterior(i) = 0;
   end
@@ -68,6 +69,7 @@ function [posterior, MAP] = nonlinBayesFilt(prior,y,varargin)
     yhat = exp(-y/x_n(i))/x_n(i);
 
     posterior(i) = (prior(i) + d2p + jump)*yhat;
+    %posterior(i) = (prior(i) + d2p)*jump*yhat;
     if posterior(i) < 0;
       posterior(i) = 0;
     end
@@ -86,6 +88,7 @@ function [posterior, MAP] = nonlinBayesFilt(prior,y,varargin)
   yhat = exp(-y/x_n(i))/x_n(i);
 
   posterior(i) = (prior(i) + d2p + jump)*yhat;
+  %posterior(i) = (prior(i) + d2p)*jump*yhat;
   if posterior(i) < 0;
     posterior(i) = 0;
   end
@@ -112,40 +115,4 @@ function [posterior, MAP] = nonlinBayesFilt(prior,y,varargin)
   if (debug)
     fprintf('\nMAP = %f\n',MAP);
   end
-
-
-
-%  for i=1:n
-%
-%    % second spatial derivative
-%    if i==1;
-%      d2prior(i) = (prior(i+2) - 2*prior(i+1) + prior(i));
-%    elseif i==n;
-%      d2prior(i) = (prior(i) - 2*(prior(i-1)) + prior(i-2));
-%    else
-%      d2prior(i) = (prior(i+1) - 2*prior(i) + prior(i-1));
-%    end
-%
-%    % measurement model
-%    x_n = (1/n)*i;
-%    measurement_model = exp(-y./x_n) ./ x_n;
-%    %prior_(i) = (alpha*d2prior(i) + (1-beta)*prior(i) + beta)*measurement_model;
-%
-%    prior_(i) = prior(i) + kappa*d2prior(i) + eta*(1 - prior(i));
-%    prior_(i) = prior_(i)*measurement_model;
-%    if prior_(i) < 0
-%      prior_(i) = 0.001;
-%    end
-%  end
-%
-%  d2prior = d2prior(:);
-%  posterior = prior_(:);
-%  posterior = posterior / sum(posterior);
-%
-%  % 5. Output the MAP
-%  %find the maximum of the posterior density
-%  pp = min(find(posterior == max(posterior)));
-%  MAP = maxEmg/n * pp
-%
-
 end
