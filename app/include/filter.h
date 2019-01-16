@@ -34,13 +34,33 @@ typedef struct{
 
 typedef struct{
   uint32_t N;
+  fix16_t a;
+  fix16_t b;
+  fix16_t c;
+  fix16_t* x_n;
+  fix16_t* inv_x_n;
+  volatile fix16_t* prior;
+  volatile fix16_t* posterior;
+} nlb_filt_t;
+
+typedef struct{
+  uint32_t N;
+  uint32_t dec;
   fix16_t kappa;
   fix16_t eta;
   fix16_t* x_n;
   fix16_t* inv_x_n;
   volatile fix16_t* prior;
   volatile fix16_t* posterior;
-} nlb_filt_t;
+  volatile fix16_t m_sample;
+  volatile fix16_t m;
+  volatile uint32_t i0;
+  volatile fix16_t prev_map;
+  volatile uint32_t count;
+  volatile uint32_t elements_per_cycle;
+
+
+} nlbdec_filt_t;
 
 
 
@@ -51,17 +71,26 @@ extern volatile uint32_t* debug_buff;
 iir_filt_t* FiltIirInit(const uint32_t filtorder,
                         const fix16_t* b_coeff,
                         const fix16_t* a_coeff);
-fix16_t FiltIir(fix16_t in, iir_filt_t* filt);
+fix16_t FiltIir(fix16_t in, iir_filt_t* f);
 
 fir_filt_t* FiltFirInit(const uint32_t filtorder, const fix16_t* b_coeff);
-fix16_t FiltFir(fix16_t in, fir_filt_t* filt);
+fix16_t FiltFir(fix16_t in, fir_filt_t* f);
 
 
 nlb_filt_t* FiltNlbInit(const uint32_t nbins,
-                        const fix16_t fs,
-                        const fix16_t max,
-                        const fix16_t alpha,
-                        const fix16_t beta);
+                            const fix16_t fs,
+                            const fix16_t max,
+                            const fix16_t alpha,
+                            const fix16_t beta);
 
-fix16_t FiltNlb(fix16_t in, nlb_filt_t* filt);
+fix16_t FiltNlb(fix16_t in, nlb_filt_t* f);
+
+nlbdec_filt_t* FiltNlbDecInit(const uint32_t nbins,
+                          const uint32_t dec,
+                          const fix16_t fs,
+                          const fix16_t max,
+                          const fix16_t alpha,
+                          const fix16_t beta);
+
+//fix16_t FiltDecNlb(fix16_t in, nlbdec_filt_t* f);
 #endif

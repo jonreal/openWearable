@@ -30,7 +30,9 @@ function [posterior,MAP] = nlb_sanger_clone(prior,y,varargin)
 
   x = linspace(maxEmg/n,maxEmg,n)';
   g = [(kappa/2) (1 - kappa) (kappa/2)];
-  posterior = ((1-eta).*filtfilt(g,1,prior) + eta).*(exp(-y./x)./x);
+  prior = filtfilt(g,1,prior);
+  prior = eta + (1-eta)*prior;
+  posterior = prior.*(exp(-y./x)./x);
   posterior = posterior./sum(posterior);
   [~,i] = max(posterior);
   MAP = x(i);
