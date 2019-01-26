@@ -72,6 +72,10 @@ int main(int argc, char **argv) {
   PruSprintParams(pru_mem.p, buff);
   fprintf(stdout,buff);
 
+  if (PruLoadLut("config/sine_1Hz",pru_mem.l) != 0) {
+    printf("\nLookup table file not found!\n");
+  }
+
   if(PruInit() != 0)
     return -1;
 

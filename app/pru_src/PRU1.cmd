@@ -27,16 +27,19 @@ MEMORY
    * Lookup tables : PRU1_RAM (3kB)
    * DataRam : PRUn_RAM (4 kB) - n is which ever pru */
 
+  PRU_PARAM     : org = 0x00002000 len = 0x00000400 /* 1kB Parameters   */
+  PRU_LUTAB     : org = 0x00000000 len = 0x00000C00 /* 3kB lookup Table */
+  PRU_RAM       : org = 0x00000C00 len = 0x00001000 /* 4kB PRU RAM      */
+  PRU_SHAREDMEM : org = 0x00010000 len = 0x00003000 /* 12kB Shared RAM  */
+
+
+  /* Alternative mem model w more RAM but no lookup table */
 /*
-  PRU_PARAM     : org = 0x00002000 len = 0x00000400 * 1kB Parameters   *
-  PRU_LUTAB     : org = 0x00000000 len = 0x00000C00 * 3kB lookup Table *
-  PRU_RAM       : org = 0x00000C00 len = 0x00001000 * 4kB PRU RAM      *
-  PRU_SHAREDMEM : org = 0x00010000 len = 0x00003000 * 12kB Shared RAM  *
+  PRU_PARAM     : org = 0x00002000 len = 0x00000200 * 0.5kB Parameters *
+  PRU_LUTAB     : org = 0x00000000 len = 0x00000200 * 0.5kB lookup Table *
+  PRU_RAM       : org = 0x00000200 len = 0x00001C00 * 7.5kB PRU RAM *
+  PRU_SHAREDMEM : org = 0x00010000 len = 0x00003000 * 12kB Shared RAM *
 */
-  PRU_PARAM     : org = 0x00002000 len = 0x00000200 /* 0.5kB Parameters */
-  PRU_LUTAB     : org = 0x00000000 len = 0x00000200 /* 0.5kB lookup Table */
-  PRU_RAM       : org = 0x00000200 len = 0x00001C00 /* 7.5kB PRU RAM */
-  PRU_SHAREDMEM : org = 0x00010000 len = 0x00003000 /* 12kB Shared RAM */
 
   /* Peripherals */
 
