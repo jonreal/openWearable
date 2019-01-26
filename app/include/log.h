@@ -18,10 +18,12 @@
 
 #include <stdint.h>
 #include "mem_types.h"
+#include "udp.h"
 
 #define LOGSIZE         (4096 * 4096)
 #define TEMP_BUFF_LEN   1024
 #define WRITE_BUFF_LEN  65536
+#define MIN_STATE_REQ   33
 
 // Circular Buffer Struct
 typedef struct{
@@ -37,14 +39,20 @@ typedef struct{
   char* addr;
   char write_buff[WRITE_BUFF_LEN];
   circbuff_t* cbuff;
+  const pru_mem_t* pru_mem;
 } log_t;
 
 circbuff_t* LogNewCircBuff(void);
 void LogCircBuffUpdate(volatile uint32_t index, circbuff_t* buff);
 void LogDebugWriteState(const shared_mem_t* sm, circbuff_t* cb, char* buff);
-log_t* LogFileOpen(const pru_mem_t* pru_mem, char* file);
-void LogWriteStateToFile(const pru_mem_t* pru_mem, log_t* log);
-int LogFileClose(log_t* log);
+log_t* LogInit(const pru_mem_t* pru_mem);
+int LogNewFile(log_t* log, char* file);
+int LogSaveFile(log_t* log);
+//void LogWriteStateToFile(const pru_mem_t* pru_mem, log_t* log);
+void LogWriteStateToFileAndPublish(int logflag,
+                                   log_t* log,
+                                   udp_t* udp);
+void LogCleanup(log_t* log);
 
 
 

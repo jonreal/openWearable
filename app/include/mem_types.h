@@ -50,14 +50,14 @@ typedef struct {
 
 // Lookuptable
 typedef struct {
-  uint32_t res;
-} lookUp_mem_t;
+  int16_t lut[1000];
+} lut_mem_t;
 
 // Pointers to memory
 typedef struct {
   shared_mem_t* s;
   param_mem_t* p;
-  lookUp_mem_t* l;
+  lut_mem_t* l;
 } pru_mem_t;
 
 // Counters

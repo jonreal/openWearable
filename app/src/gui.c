@@ -29,7 +29,6 @@ int GuiLoop(const pru_mem_t* pru_mem) {
   for (int i=0; i<100; i++) {
     d[i%10] = i;
     gnuplot_plot_x(h, d, 10,"");
-    sleep(1);
   }
 
   gnuplot_close(h);

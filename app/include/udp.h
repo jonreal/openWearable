@@ -1,4 +1,4 @@
-/* Copyright 2018 Jonathan Realmuto
+/* Copyright 2017-2019 Jonathan Realmuto
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -13,23 +13,23 @@
  limitations under the License.
 =============================================================================*/
 
-#include "halleffect.h"
-#include <stdlib.h>
-#include "adcdriver.h"
+#ifndef _UDP_
+#define _UDP_
 
-hall_t* HallInitSensor(uint8_t chan, fix16_t angle_offset) {
-  hall_t* hall = malloc(sizeof(hall_t));
-  hall->adc_chan = chan;
-  hall->angle_offset_deg = angle_offset;
-  return hall;
-}
+#include <sys/socket.h>
+#include <netinet/in.h>
 
-fix16_t HallGetAngleDeg(hall_t* hall) {
-  fix16_t volts = AdcSampleChmV(hall->adc_chan);
-  return (fix16_ssub(fix16_smul(volts,FIX16_mVOLTS2DEG),
-                     hall->angle_offset_deg));
-}
+#define REMOTE_SERVER_PORT 1500
+#define MAX_PACKET_SIZE 1024
 
-fix16_t HallGetAngleRad(hall_t* hall) {
-  return fix16_smul(HallGetAngleDeg(hall),FIX16_DEG2RAD);
-}
+typedef struct {
+  int sd, rc, i;
+  struct sockaddr_in cliAddr, remoteServAddr;
+  struct hostent *h;
+  char buff[MAX_PACKET_SIZE];
+} udp_t;
+
+udp_t* UdpInit(void);
+void UdpTxPacket(udp_t* udp);
+
+#endif

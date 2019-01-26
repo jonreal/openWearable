@@ -44,13 +44,13 @@ int PruMemMap(pru_mem_t* pru_mem) {
   pru_mem->p = (param_mem_t*) ptr;
 
   // Memory Map for lookup table (pru1 DRAM)
-  ptr = mmap(0, sizeof(lookUp_mem_t),
+  ptr = mmap(0, sizeof(lut_mem_t),
              PROT_READ | PROT_WRITE, MAP_SHARED, fd, PRU1_DRAM);
   if (ptr == MAP_FAILED) {
     printf ("ERROR: could not map memory.\n\n");
     return 1;
   }
-  pru_mem->l = (lookUp_mem_t *) ptr;
+  pru_mem->l = (lut_mem_t *) ptr;
 
   // Memory Map for state (shared DRAM)
   ptr = mmap(0, sizeof(shared_mem_t),
@@ -244,27 +244,41 @@ void PruSprintParams(const param_mem_t* param, char* buff) {
 void PruSprintState(const state_t* st, char* buff) {
   sprintf(buff,
           "%u\t"        // timeStamp - uint32_t
-          "%f\t"        // emg - fix16_t
-          "%f\t"        // emg - fix16_t
-          "%f\t"        // emg - fix16_t
-          "%f\t"        // p_m - fix16_t
-          "%f\t"        // dp_m - fix16_t
-          "%f\t"        // p_d - fix16_t
+          "%f\t"        // emg1 - fix16_t
+          "%f\t"        // emg1 - fix16_t
+          "%f\t"        // emg1 - fix16_t
+          "%f\t"        // emg2 - fix16_t
+          "%f\t"        // emg2 - fix16_t
+          "%f\t"        // emg2 - fix16_t
+          "%f\t"        // p1_m - fix16_t
+          "%f\t"        // dp1_m - fix16_t
+          "%f\t"        // p1_d - fix16_t
+          "%f\t"        // p2_m - fix16_t
+          "%f\t"        // dp2_m - fix16_t
+          "%f\t"        // p2_d - fix16_t
+          "%i\t"        // u1 - int16_t
+          "%i\t"        // u2 - int16_t
           "%f\t"        // angle - fix16_t
           "%f\t"        // angle_d - fix16_t
-          "%i\t"        // u - int16_t
           "%u\t"        // sync_val - uint16_t
           "\n",
           st->time,
-          fix16_to_float(st->emg_raw),
-          fix16_to_float(st->emg_rect),
-          fix16_to_float(st->emg_nlb),
-          fix16_to_float(st->p_m),
-          fix16_to_float(st->dp_m),
-          fix16_to_float(st->p_d),
+          fix16_to_float(st->emg1_raw),
+          fix16_to_float(st->emg1_rect),
+          fix16_to_float(st->emg1_nlb),
+          fix16_to_float(st->emg2_raw),
+          fix16_to_float(st->emg2_rect),
+          fix16_to_float(st->emg2_nlb),
+          fix16_to_float(st->p1_m),
+          fix16_to_float(st->dp1_m),
+          fix16_to_float(st->p1_d),
+          fix16_to_float(st->p2_m),
+          fix16_to_float(st->dp2_m),
+          fix16_to_float(st->p2_d),
+          (int32_t)st->u1,
+          (int32_t)st->u2,
           fix16_to_float(st->angle),
           fix16_to_float(st->angle_d),
-          (int32_t)st->u,
           st->sync_val
           );
 }
@@ -272,15 +286,22 @@ void PruSprintState(const state_t* st, char* buff) {
 void PruSprintStateHeader(char* buff) {
   sprintf(buff,
           "\n# frame\t"
-          "emg_raw\t"
-          "emg_rect\t"
-          "emg_nlb\t"
-          "p_m\t"
-          "dp_m\t"
-          "p_d\t"
+          "emg1_raw\t"
+          "emg1_rect\t"
+          "emg1_nlb\t"
+          "emg2_raw\t"
+          "emg2_rect\t"
+          "emg2_nlb\t"
+          "p1_m\t"
+          "dp1_m\t"
+          "p1_d\t"
+          "p2_m\t"
+          "dp2_m\t"
+          "p2_d\t"
+          "u1\t"
+          "u2\t"
           "angle\t"
           "angle_d\t"
-          "u\t"
           "sync_val\t"
           "\n");
 }
@@ -309,4 +330,29 @@ void PruPrintDebugBuffer(const volatile uint32_t* db) {
   for (int i=0; i<10; i++) {
     printf("0x%X \t%i\n", db[i], db[i]);
   }
+}
+
+
+/* ----------------------------------------------------------------------------
+ * Functions: void loadLookUpTable(char* file)
+ *
+ * This function loads lookup table (Feedforward) from file to memory.
+ * ------------------------------------------------------------------------- */
+int PruLoadLut(char* file, lut_mem_t* l)
+{
+  FILE* fp = fopen(file, "r");
+  float value;
+
+  if(fp != NULL){
+    for(int i=0; i<1000; i++){
+      fscanf(fp, "%f\n", &value);
+
+      // Scale signal by 1000 to store as int16_t
+      l->lut[i] = (int16_t) fix16_to_int(fix16_from_float(value * 1000.0));
+    }
+    fclose(fp);
+    return 0;
+  }
+  printf("File not found\n");
+  return -1;
 }
