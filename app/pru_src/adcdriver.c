@@ -20,10 +20,10 @@
 
 void AdcInit(void)
 {
-  uint8_t sampleDelay = 0xFF;
-  uint16_t openDelay = 0xFFF;
+  uint8_t sampleDelay = 0xF;
+  uint16_t openDelay = 0xFF;
   uint8_t avrg = 0x2;
-  uint16_t adc_clk_div = 0x1;
+  uint16_t adc_clk_div = 0x0;
 
   /* CTRL:  StepConfig_WriteProtext_n_active_low = 0x1 - enable step config
    *        Step_ID_tag = 0x1 - store ch id tag in FIFO

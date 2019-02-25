@@ -28,18 +28,25 @@
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 
-// resources
+// external sensor
 hall_t* encoder;
 iir_filt_t* lp_1_5Hz;
 
 //nlb_filt_t* nlb;
-//pam_t* pam;
-//emg_t* emg_sensor;
+
+// PAMs
+pam_t* pam1;
+pam_t* pam2;
+const uint8_t div = 1;
+const fix16_t threshold = FIX16_1;
+const fix16_t p_min = 0xF0000; // 15 psi
+
+
+// EMG
+emg_t* emg_pro;
+emg_t* emg_sup;
 //
-//// Pam constants
-//const uint8_t div = 1;
-//const fix16_t threshold = FIX16_1;
-//const fix16_t p_min = 0xF0000; // 15 psi
+
 //
 // emg constants
 const fix16_t k_emg_bias = 0x37A0000; // 890 bits
@@ -63,17 +70,20 @@ uint32_t P = 5000;
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem) {
-//  emg_sensor = EmgInitSensor(0);
+
+  // Sensors
+  emg_pro = EmgInitSensor(1);
+  emg_sup = EmgInitSensor(2);
+
 //  nlb = FiltNlbInit(4,
 //                    fix16_from_int(1000),
 //                    fix16_one,
 //                    k_alpha,
 //                    k_beta);
 
-
-
+  // External Sensors
+  encoder = HallInitSensor(0,fix16_from_int(180));
   lp_1_5Hz = FiltIirInit(1, k_lp_1_5Hz_b, k_lp_1_5Hz_a);
-  encoder = HallInitSensor(0,fix16_from_int(270));
 }
 
 void Pru0UpdateState(const pru_count_t* c,
@@ -81,35 +91,41 @@ void Pru0UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
-//  s_->emg_raw = EmgSample(emg_sensor);
-//  s_->emg_rect = conditionEmg(s_->emg_raw);
-//  s_->emg_nlb = FiltNlb(s_->emg_rect, nlb);
 
+  // EMG
+  s_->emg1_raw = EmgSample(emg_pro);
+  s_->emg1_rect = conditionEmg(s_->emg1_raw);
+  //s_->emg_nlb = FiltNlb(s_->emg_rect, nlb);
+  s_->emg2_raw = EmgSample(emg_sup);
+  s_->emg2_rect = conditionEmg(s_->emg2_raw);
+//s_->emg_nlb = FiltNlb(s_->emg_rect, nlb);
 
+  // External Sensors
   s_->angle = FiltIir(HallGetAngleDeg(encoder),lp_1_5Hz);
+ // s_->angle = HallGetAngleDeg(encoder);
 
-  if (ctl_->bit.utility == 1) {
-    if (flag == 0) {
-      t0 = c->frame;
-      flag = 1;
-    }
-    t = (c->frame - t0)*1000 / (P - P/1000);
-
-    // 90.0*(sin(2*pi*t) + 1) - 90;
-    s_->angle_d = fix16_ssub(fix16_smul(fix16_from_int(90),
-                    fix16_sadd(
-                      fix16_sdiv(
-                        fix16_from_int( (int32_t) l_->lut[t % 1000]),
-                      fix16_from_int(1000)),
-                    fix16_one)),fix16_from_int(90));
-
-    if (t == 10000) {
-      flag = 0;
-      ctl_->bit.utility = 0;
-    }
-  } else {
-    s_->angle_d = 0;
-  }
+//  if (ctl_->bit.utility == 1) {
+//    if (flag == 0) {
+//      t0 = c->frame;
+//      flag = 1;
+//    }
+//    t = (c->frame - t0)*1000 / (P - P/1000);
+//
+//    // 90.0*(sin(2*pi*t) + 1) - 90;
+//    s_->angle_d = fix16_ssub(fix16_smul(fix16_from_int(90),
+//                    fix16_sadd(
+//                      fix16_sdiv(
+//                        fix16_from_int( (int32_t) l_->lut[t % 1000]),
+//                      fix16_from_int(1000)),
+//                    fix16_one)),fix16_from_int(90));
+//
+//    if (t == 10000) {
+//      flag = 0;
+//      ctl_->bit.utility = 0;
+//    }
+//  } else {
+//    s_->angle_d = 0;
+//  }
 }
 
 void Pru0UpdateControl(const pru_count_t* c,
@@ -119,6 +135,8 @@ void Pru0UpdateControl(const pru_count_t* c,
 }
 
 void Pru0Cleanup(void) {
+  EmgCleanup(emg_pro);
+  EmgCleanup(emg_sup);
 }
 
 // ---------------------------------------------------------------------------
@@ -127,8 +145,12 @@ void Pru0Cleanup(void) {
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
-//  pam = PamInitMuscle(SENSOR_ADD, MUX_SEL, 0, EXT_V_HP, EXT_V_LP, div,
-//                      threshold);
+  pam1 = PamInitMuscle(SENSOR_ADD, MUX_SEL, 0, EXT_V_HP, EXT_V_LP, div,
+                      threshold);
+  pam2 = PamInitMuscle(SENSOR_ADD, MUX_SEL, 1, EXT_V_HP, EXT_V_LP, div,
+                      threshold);
+
+//
 //  lp_1_5Hz_1 = FiltIirInit(1, k_lp_1_5Hz_b, k_lp_1_5Hz_a);
 //  lp_1_5Hz_2 = FiltIirInit(1, k_lp_1_5Hz_b, k_lp_1_5Hz_a);
 //
@@ -140,7 +162,8 @@ void Pru1UpdateState(const pru_count_t* c,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
 
-//  PamSamplePressure(pam, &s_->p_m);
+  PamSamplePressure(pam1, &s_->p1_m);
+  PamSamplePressure(pam2, &s_->p2_m);
 //  s_->angle = s_->p_m;
 //  s_->p_m = FiltIir(s_->p_m,lp_1_5Hz_1);
 //  s_->dp_m = s_->p_m - FiltIir(s_->p_m,lp_1_5Hz_2);
@@ -161,7 +184,8 @@ void Pru1UpdateControl(const pru_count_t* c,
 }
 
 void Pru1Cleanup(void) {
- // PamFreeMuscle(pam);
+  PamFreeMuscle(pam1);
+  PamFreeMuscle(pam2);
 }
 
 // ---------------------------------------------------------------------------
