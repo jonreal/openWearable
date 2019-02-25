@@ -80,7 +80,7 @@ log_t* LogInit(const pru_mem_t* pru_mem) {
 int LogNewFile(log_t* log, char* file) {
 
   // Open file, stretch and write blank
-  log->fd = open(file, O_RDWR | O_CREAT | O_TRUNC);
+  log->fd = open(file, O_RDWR | O_CREAT | O_TRUNC, 0666);
   if (lseek(log->fd, LOGSIZE, SEEK_SET) == -1){
     close(log->fd);
     printf("Error stretching file.\n");

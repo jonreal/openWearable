@@ -13,10 +13,8 @@ typedef struct {
   volatile fix16_t emg2_rect;
   volatile fix16_t emg2_nlb;
   volatile fix16_t p1_m;
-  volatile fix16_t dp1_m;
   volatile fix16_t p1_d;
   volatile fix16_t p2_m;
-  volatile fix16_t dp2_m;
   volatile fix16_t p2_d;
   volatile int32_t u1;
   volatile int32_t u2;
@@ -33,5 +31,6 @@ typedef struct {
   fix16_t p_d_static;
   fix16_t theta_d;
 } param_mem_t;
+
 
 #endif

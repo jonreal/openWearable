@@ -251,10 +251,8 @@ void PruSprintState(const state_t* st, char* buff) {
           "%f\t"        // emg2 - fix16_t
           "%f\t"        // emg2 - fix16_t
           "%f\t"        // p1_m - fix16_t
-          "%f\t"        // dp1_m - fix16_t
           "%f\t"        // p1_d - fix16_t
           "%f\t"        // p2_m - fix16_t
-          "%f\t"        // dp2_m - fix16_t
           "%f\t"        // p2_d - fix16_t
           "%i\t"        // u1 - int16_t
           "%i\t"        // u2 - int16_t
@@ -270,10 +268,8 @@ void PruSprintState(const state_t* st, char* buff) {
           fix16_to_float(st->emg2_rect),
           fix16_to_float(st->emg2_nlb),
           fix16_to_float(st->p1_m),
-          fix16_to_float(st->dp1_m),
           fix16_to_float(st->p1_d),
           fix16_to_float(st->p2_m),
-          fix16_to_float(st->dp2_m),
           fix16_to_float(st->p2_d),
           (int32_t)st->u1,
           (int32_t)st->u2,
@@ -293,10 +289,8 @@ void PruSprintStateHeader(char* buff) {
           "emg2_rect\t"
           "emg2_nlb\t"
           "p1_m\t"
-          "dp1_m\t"
           "p1_d\t"
           "p2_m\t"
-          "dp2_m\t"
           "p2_d\t"
           "u1\t"
           "u2\t"

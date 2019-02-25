@@ -27,10 +27,14 @@
 // currently using voltage divider to bring down output from 5.
 // R1 = 4.7kOhm
 // R2 = 2.2kOhm
-// Vmax = R2/(R1 + R2) 5V
+// V = R2/(R1 + R2) Vs  = K * Vs
 //
+// 360 (deg) / (K * 5V) / 1000 =  deg/mV
 //
-#define FIX16_mVOLTS2DEG 0x39CF
+// R2 = 2.167
+// R1 = 4.66
+//
+#define FIX16_mVOLTS2DEG 0x3A10
 
 // Rad2deg
 #define FIX16_DEG2RAD 0x478
