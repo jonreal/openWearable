@@ -18,46 +18,35 @@
 #include <stdlib.h>
 
 
-pam_t* PamInitMuscle(uint8_t bus_address,
-                     uint8_t bus_channel,
-                     uint8_t sensor_address,
-                     uint32_t in_pin,
-                     uint32_t out_pin,
-                     uint32_t divisor,
+pam_t* PamInitMuscle(uint8_t address, uint8_t mux_pin, uint8_t mux_ch,
+                     uint32_t in_pin, uint32_t out_pin, uint32_t freq,
                      fix16_t threshold) {
-
   pam_t* pam = malloc(sizeof(pam_t));
-  pam->mux = MuxI2cInit(bus_address);
-  pam->sensor = PressureSensorInit(sensor_address);
-  pam->channel = bus_channel;
+  pam->sensor = PressureSensorInit(address, mux_pin, mux_ch);
   pam->hp_pin = in_pin;
   pam->lp_pin = out_pin;
-  pam->fs_div = divisor;
+  pam->fs_div = freq;
   pam->thr = threshold;
   pam->cnt = 0;
   pam->prev_cmd = 0;
-
-  PamSamplePressure(pam);
   return pam;
 }
 
 void PamFreeMuscle(pam_t* pam) {
+
    __R30 |= (1 << pam->lp_pin);
    __R30 &= ~(1 << pam->hp_pin);
+
   __delay_cycles(1000000000);
+
    __R30 &= ~(1 << pam->lp_pin);
+
   PressureSensorFree(pam->sensor);
-  MuxI2cFree(pam->mux);
   free(pam);
 }
 
-fix16_t PamSamplePressure(const pam_t* pam){
-  fix16_t rtn;
-  MuxI2cSetChannel(pam->mux, pam->channel);
-  __delay_cycles(1100);
-  rtn = PressureSensorSample(pam->sensor);
-  __delay_cycles(500);
-  return rtn;
+void PamSamplePressure(const pam_t* pam, volatile fix16_t* p_m){
+  *p_m = PressureSensorSample(pam->sensor);
 }
 
 void PamUpdateControl(pam_t* pam,

@@ -13,6 +13,7 @@
  limitations under the License.
 =============================================================================*/
 
+// I2c and ADC -> pru0
 
 #include "udf.h"
 
@@ -38,9 +39,10 @@ iir_filt_t* lp_1_5Hz;
 pam_t* pam1;
 pam_t* pam2;
 const uint8_t div = 1;
-const fix16_t threshold = FIX16_1;
+const fix16_t threshold = fix16_one;
 const fix16_t p_min = 0xF0000; // 15 psi
-
+const uint8_t sensor_add = 0x28;
+const uint8_t bus_add = 0x77;
 
 // EMG
 emg_t* emg_pro;
@@ -102,30 +104,30 @@ void Pru0UpdateState(const pru_count_t* c,
 
   // External Sensors
   s_->angle = FiltIir(HallGetAngleDeg(encoder),lp_1_5Hz);
- // s_->angle = HallGetAngleDeg(encoder);
+  //s_->angle = HallGetAngleDeg(encoder);
 
-//  if (ctl_->bit.utility == 1) {
-//    if (flag == 0) {
-//      t0 = c->frame;
-//      flag = 1;
-//    }
-//    t = (c->frame - t0)*1000 / (P - P/1000);
-//
-//    // 90.0*(sin(2*pi*t) + 1) - 90;
-//    s_->angle_d = fix16_ssub(fix16_smul(fix16_from_int(90),
-//                    fix16_sadd(
-//                      fix16_sdiv(
-//                        fix16_from_int( (int32_t) l_->lut[t % 1000]),
-//                      fix16_from_int(1000)),
-//                    fix16_one)),fix16_from_int(90));
-//
-//    if (t == 10000) {
-//      flag = 0;
-//      ctl_->bit.utility = 0;
-//    }
-//  } else {
-//    s_->angle_d = 0;
-//  }
+  if (ctl_->bit.utility == 1) {
+    if (flag == 0) {
+      t0 = c->frame;
+      flag = 1;
+    }
+    t = (c->frame - t0)*1000 / (P - P/1000);
+
+    // 90.0*(sin(2*pi*t) + 1) - 90;
+    s_->angle_d = fix16_ssub(fix16_smul(fix16_from_int(90),
+                    fix16_sadd(
+                      fix16_sdiv(
+                        fix16_from_int( (int32_t) l_->lut[t % 1000]),
+                      fix16_from_int(1000)),
+                    fix16_one)),fix16_from_int(90));
+
+    if (t == 10000) {
+      flag = 0;
+      ctl_->bit.utility = 0;
+    }
+  } else {
+    s_->angle_d = 0;
+  }
 }
 
 void Pru0UpdateControl(const pru_count_t* c,
@@ -145,11 +147,15 @@ void Pru0Cleanup(void) {
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
-  pam1 = PamInitMuscle(SENSOR_ADD, MUX_SEL, 0, EXT_V_HP, EXT_V_LP, div,
-                      threshold);
-  pam2 = PamInitMuscle(SENSOR_ADD, MUX_SEL, 1, EXT_V_HP, EXT_V_LP, div,
-                      threshold);
 
+  pam1 = PamInitMuscle(0x77, 0x3, 0x28, 10, 8, div, threshold);
+//  pam2 = PamInitMuscle(0x70, 0x1, 0x28, 10, 8, div, threshold);
+
+//  pam1 = PamInitMuscle(SENSOR_ADD, MUX_SEL, 0, EXT_V_HP, EXT_V_LP, div,
+//                      threshold);
+//  pam2 = PamInitMuscle(SENSOR_ADD, MUX_SEL, 1, EXT_V_HP, EXT_V_LP, div,
+//                      threshold);
+//
 //
 //  lp_1_5Hz_1 = FiltIirInit(1, k_lp_1_5Hz_b, k_lp_1_5Hz_a);
 //  lp_1_5Hz_2 = FiltIirInit(1, k_lp_1_5Hz_b, k_lp_1_5Hz_a);
@@ -162,8 +168,12 @@ void Pru1UpdateState(const pru_count_t* c,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
 
-  PamSamplePressure(pam1, &s_->p1_m);
-  PamSamplePressure(pam2, &s_->p2_m);
+  s_->p1_m = PamSamplePressure(pam1);
+//  s_->p2_m = PamSamplePressure(pam2);
+ //   debug_buff[2] = c->frame;
+
+//  PamSamplePressure(pam1, &s_->p1_m);
+//  PamSamplePressure(pam2, &s_->p2_m);
 //  s_->angle = s_->p_m;
 //  s_->p_m = FiltIir(s_->p_m,lp_1_5Hz_1);
 //  s_->dp_m = s_->p_m - FiltIir(s_->p_m,lp_1_5Hz_2);
@@ -184,8 +194,8 @@ void Pru1UpdateControl(const pru_count_t* c,
 }
 
 void Pru1Cleanup(void) {
-  PamFreeMuscle(pam1);
-  PamFreeMuscle(pam2);
+//  PamFreeMuscle(pam1);
+//  PamFreeMuscle(pam2);
 }
 
 // ---------------------------------------------------------------------------

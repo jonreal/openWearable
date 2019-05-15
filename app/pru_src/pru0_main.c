@@ -129,7 +129,7 @@ void initialize(pru_mem_t* mem) {
 
   // drivers
   AdcInit();
-  i2cInit();
+  I2cInit();
 
   // user defined inits
   Pru0Init(mem);
@@ -143,7 +143,7 @@ void cleanup(void) {
 
   // drivers
   AdcCleanup();
-  i2cCleanUp();
+  I2cCleanUp();
 
   // user defined cleanups
   Pru0Cleanup();

@@ -1,4 +1,4 @@
-/* Copyright 2018 Jonathan Realmuto
+/* Copyright 2018-2019 Jonathan Realmuto
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -13,29 +13,26 @@
  limitations under the License.
 =============================================================================*/
 
-#include "interaction.h"
+#include "pca9548a.h"
 #include <stdlib.h>
-#include "adcdriver.h"
+#include "i2cdriver.h"
 
-#define FORCEBIAS  0x8000000
-#define ADC_RES 0x10000000
-
-interact_t* InteractionInit(uint8_t chan){
-  interact_t* sens = malloc(sizeof(interact_t));
-  sens->adc_ch = chan;
-  return sens;
+i2cmux_t* MuxI2cInit(uint8_t addrs) {
+  i2cmux_t* mux = malloc(sizeof(i2cmux_t));
+  mux->address = addrs;
+  return mux;
 }
 
-fix16_t InteractionSampleForce(const interact_t* sens) {
-  return fix16_sdiv(
-          fix16_from_int((int16_t)AdcSampleChBits(sens->adc_ch) - 2048),FORCEBIAS);
+uint8_t MuxI2cRead(const i2cmux_t* mux) {
+  uint8_t rx = 0;
+
+  return rx;
 }
 
-fix16_t InteractionSampleStretch(const interact_t* sens) {
-  return
-    fix16_sdiv(fix16_from_int((int16_t)AdcSampleChBits(sens->adc_ch)),ADC_RES);
+void MuxI2cSetChannel(const i2cmux_t* mux, uint8_t chan){
+  I2cTxByteNoReg(mux->address, 1 << chan);
 }
 
-void InteractionFree(interact_t* sens) {
-  free(sens);
+void MuxI2cFree(i2cmux_t* mux) {
+  free(mux);
 }

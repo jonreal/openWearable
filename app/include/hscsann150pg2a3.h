@@ -1,4 +1,4 @@
-/* Copyright 2017 Jonathan Realmuto
+/* Copyright 2018-2019 Jonathan Realmuto
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -13,20 +13,19 @@
  limitations under the License.
 =============================================================================*/
 
-#ifndef _I2CDRIVER_H_
-#define _I2CDRIVER_H_
+#ifndef _HSCSANN150PG2A3_H_
+#define _HSCSANN150PG2A3_H_
 
-extern volatile uint32_t* debug_buff;
+#include <stdint.h>
+#include "fix16.h"
 
-/* ---- Prototypes ---- */
-void I2cInit(void);
-void I2cCleanUp(void);
-uint8_t I2cRxByte(uint8_t addr, uint8_t reg);
-void I2cTxByte(uint8_t addr, uint8_t reg, uint8_t tx);
-void I2cRxBurst(uint8_t addr, uint8_t reg, uint16_t len, uint8_t *buf);
-void I2cRxBurstNoReg(uint8_t addr, uint16_t len, uint8_t *buffer);
-void I2cTxByteNoReg(uint8_t addr, uint8_t tx);
-//uint8_t I2cRxByteNoReg(uint8_t addr);
-void I2cClearInterrupts(void);
+typedef struct {
+  uint8_t address;
+} pressure_sensor_t;
 
-#endif
+// Public
+pressure_sensor_t* PressureSensorInit(uint8_t address);
+void PressureSensorFree(pressure_sensor_t* sensor);
+fix16_t PressureSensorSample(const pressure_sensor_t* sensor);
+
+#endif /* _HSCSANN150PG2A3_H_ */
