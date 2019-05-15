@@ -1,4 +1,4 @@
-/* Copyright 2017 Jonathan Realmuto
+/* Copyright 2018-2019 Jonathan Realmuto
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -13,20 +13,22 @@
  limitations under the License.
 =============================================================================*/
 
-#ifndef _I2CDRIVER_H_
-#define _I2CDRIVER_H_
+#ifndef _PCA9548A_H_
+#define _PCA9548A_H_
 
-extern volatile uint32_t* debug_buff;
+#include <stdint.h>
 
-/* ---- Prototypes ---- */
-void I2cInit(void);
-void I2cCleanUp(void);
-uint8_t I2cRxByte(uint8_t addr, uint8_t reg);
-void I2cTxByte(uint8_t addr, uint8_t reg, uint8_t tx);
-void I2cRxBurst(uint8_t addr, uint8_t reg, uint16_t len, uint8_t *buf);
-void I2cRxBurstNoReg(uint8_t addr, uint16_t len, uint8_t *buffer);
-void I2cTxByteNoReg(uint8_t addr, uint8_t tx);
-//uint8_t I2cRxByteNoReg(uint8_t addr);
-void I2cClearInterrupts(void);
+typedef struct {
+  uint8_t address;
+} i2cmux_t;
 
-#endif
+//TODO add interrupt masks
+
+// Public
+i2cmux_t* MuxI2cInit(uint8_t addrs);
+uint8_t MuxI2cRead(const i2cmux_t* mux);
+void MuxI2cSetChannel(const i2cmux_t* mux, uint8_t chan);
+void MuxI2cFree(i2cmux_t* mux);
+
+
+#endif /* _PCA9548_H_ */

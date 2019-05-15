@@ -20,7 +20,7 @@
 
 int8_t imuInit(void)
 {
-  i2cInit();
+  I2cInit();
   __delay_cycles(10000);
 
   // PWR_MGMT_1 (0x6B) :  SLEEP = 0x0 (no sleep)
@@ -28,19 +28,19 @@ int8_t imuInit(void)
   //                     CLKSEL = 0x1 (x-gyro clk)
   //                      ------------
   //                      = 0x09
-  i2cTxByte(IMU_ADDR, PWR_MGMT_1, 0x9);
+  I2cTxByte(IMU_ADDR, PWR_MGMT_1, 0x9);
   __delay_cycles(10000);
 
   // SMPRT_DIV (0x19) : SMPLRT_DIV = 0x7 (1000 Hz)
-  i2cTxByte(IMU_ADDR, SMPRT_DIV, 0x7);
+  I2cTxByte(IMU_ADDR, SMPRT_DIV, 0x7);
   __delay_cycles(10000);
 
   // GYRO_CONFIG : FS_SEL = 0x0
-  i2cTxByte(IMU_ADDR, GYRO_CONFIG, 0x0);
+  I2cTxByte(IMU_ADDR, GYRO_CONFIG, 0x0);
   __delay_cycles(10000);
 
   // ACCEL_CONFIG : AFS_SEL = 0x0
-  i2cTxByte(IMU_ADDR, ACCEL_CONFIG, 0x0);
+  I2cTxByte(IMU_ADDR, ACCEL_CONFIG, 0x0);
   __delay_cycles(10000);
 
   return 0;
@@ -48,14 +48,14 @@ int8_t imuInit(void)
 
 void imuCleanUp(void)
 {
-  i2cCleanUp();
+  I2cCleanUp();
 }
 
 void imuSample(volatile int16_t imu[6])
 {
   uint8_t buffer[14] = {0};
 
-  i2cRxBurst(IMU_ADDR, MEASURE_BASE_ADDR, 14, buffer);
+  I2cRxBurst(IMU_ADDR, MEASURE_BASE_ADDR, 14, buffer);
 
   // Accelerometers
   imu[0] = (buffer[0] << 8) | buffer[1];
