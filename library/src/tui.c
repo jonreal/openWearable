@@ -21,7 +21,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "log.h"
-#include "udp.h"
+#include "pruloop.h"
 
 typedef struct {
   int logflag;
@@ -34,7 +34,29 @@ pthread_mutex_t lock;
 tui_thread_data_t thread_data;
 
 
-void* TuiLogAndPublishThread(void* args) {
+// Static Functions
+static void* TuiLogAndPublishThread(void* args);
+static void TuiInputCallback(int sig);
+static void TuiPrintMenu(void);
+
+
+// ---------------------------------------------------------------------------
+static void TuiInputCallback(int sig) {
+  input_ready = 1;
+}
+
+static void TuiPrintMenu(void) {
+  printf(
+  "\n\n---------------------------------------------------------------------\n"
+  "Menu: f - Collect trial\n"
+  "      s - Start Pronation/Supination Exp\n"
+  "      d - Start Tracking Exp\n"
+  "      e - exit\n"
+  "-----------------------------------------------------------------------\n");
+  fflush(stdout);
+}
+
+static void* TuiLogAndPublishThread(void* args) {
   while (1) {
     pthread_mutex_lock(&lock);
 
@@ -49,6 +71,7 @@ void* TuiLogAndPublishThread(void* args) {
     pthread_mutex_unlock(&lock);
   }
 }
+// ----------------------------------------------------------------------------
 
 
 // ----------------------------------------------------------------------------
@@ -78,20 +101,7 @@ int TuiInit(void) {
   return 0;
 }
 
-void TuiInputCallback(int sig) {
-  input_ready = 1;
-}
 
-void TuiPrintMenu(void) {
-  printf(
-  "\n\n---------------------------------------------------------------------\n"
-  "Menu: f - Collect trial\n"
-  "      s - Start Pronation/Supination Exp\n"
-  "      d - Start Tracking Exp\n"
-  "      e - exit\n"
-  "-----------------------------------------------------------------------\n");
-  fflush(stdout);
-}
 
 int TuiLoop(const pru_mem_t* pru_mem) {
   char input_char = 0;
@@ -247,14 +257,14 @@ int TuiLoop(const pru_mem_t* pru_mem) {
           scanf(" %c", &input_char);
           printf("\t\t\trunning experiment...\n");
           fflush(stdout);
-          pru_mem->s->pru_ctl.bit.utility = 1;
+          pru_mem->s->pru_ctl.bit.utility |= (1 << 0);
 
           // Data collection loop
           pthread_mutex_lock(&lock);
           thread_data.logflag = 1;
           pthread_mutex_unlock(&lock);
           while (1) {
-            if(pru_mem->s->pru_ctl.bit.utility == 0)
+            if (~(pru_mem->s->pru_ctl.bit.utility & (1 << 0)))
               break;
           }
           pthread_mutex_lock(&lock);
@@ -301,14 +311,14 @@ int TuiLoop(const pru_mem_t* pru_mem) {
           scanf(" %c", &input_char);
           printf("\t\t\trunning experiment...\n");
           fflush(stdout);
-          pru_mem->s->pru_ctl.bit.utility = 1;
+          pru_mem->s->pru_ctl.bit.utility |= (1 << 0);
 
           // Data collection loop
           pthread_mutex_lock(&lock);
           thread_data.logflag = 1;
           pthread_mutex_unlock(&lock);
           while (1) {
-            if(pru_mem->s->pru_ctl.bit.utility == 0)
+            if (~(pru_mem->s->pru_ctl.bit.utility & (1 << 0)))
               break;
           }
           pthread_mutex_lock(&lock);
@@ -331,8 +341,7 @@ int TuiLoop(const pru_mem_t* pru_mem) {
   }
 }
 
-int TuiCleanup(void)
-{
+int TuiCleanup(void) {
   if(fcntl(0, F_SETOWN, NULL) == -1){
     printf("F_SETOWN error.\n");
     return -1;
@@ -345,3 +354,5 @@ int TuiCleanup(void)
   printf("TUI cleaned up.\n");
   return 0;
 }
+
+

@@ -13,9 +13,7 @@
  limitations under the License.
 =============================================================================*/
 
-// I2c and ADC -> pru0
-
-#include "udf.h"
+#include "pruloop.h"
 
 //
 // Include sensor/actuator/algorithmic modules here
@@ -106,7 +104,7 @@ void Pru0UpdateState(const pru_count_t* c,
   s_->angle = FiltIir(HallGetAngleDeg(encoder),lp_1_5Hz);
   //s_->angle = HallGetAngleDeg(encoder);
 
-  if (ctl_->bit.utility == 1) {
+  if (ctl_->bit.utility & (1 << 0)) {
     if (flag == 0) {
       t0 = c->frame;
       flag = 1;
@@ -148,7 +146,7 @@ void Pru0Cleanup(void) {
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
 
-  pam1 = PamInitMuscle(0x77, 0x3, 0x28, 10, 8, div, threshold);
+//  pam1 = PamInitMuscle(0x77, 0x3, 0x28, 10, 8, div, threshold);
 //  pam2 = PamInitMuscle(0x70, 0x1, 0x28, 10, 8, div, threshold);
 
 //  pam1 = PamInitMuscle(SENSOR_ADD, MUX_SEL, 0, EXT_V_HP, EXT_V_LP, div,
@@ -168,7 +166,7 @@ void Pru1UpdateState(const pru_count_t* c,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
 
-  s_->p1_m = PamSamplePressure(pam1);
+//  s_->p1_m = PamSamplePressure(pam1);
 //  s_->p2_m = PamSamplePressure(pam2);
  //   debug_buff[2] = c->frame;
 

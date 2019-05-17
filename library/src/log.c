@@ -22,6 +22,21 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include "pru.h"
+#include "format.h"
+
+
+// ---------------------------------------------------------------------------
+//
+// Static Protos
+//
+// ---------------------------------------------------------------------------
+static void LogCircBuffUpdate(volatile uint32_t index, circbuff_t* buff);
+
+// ---------------------------------------------------------------------------
+//
+// Function Definitions
+//
+// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Function: void circBuffInit(void)
@@ -43,14 +58,15 @@ circbuff_t* LogNewCircBuff(void) {
 //
 //  This function initializes the circular buffer.
 // ---------------------------------------------------------------------------
-void LogCircBuffUpdate(const volatile uint32_t new_cb_index, circbuff_t* cb) {
+static void LogCircBuffUpdate(const volatile uint32_t new_cb_index,
+                              circbuff_t* cb) {
   if (cb->end != new_cb_index)
     cb->end = new_cb_index;
 }
 
 void LogDebugWriteState(const shared_mem_t* sm, circbuff_t* cb, char* buff) {
     if (cb->start != sm->state[0].time){
-      PruSprintState(&sm->state[0], buff);
+      FormatSprintState(&sm->state[0], buff);
       fprintf(stdout, buff);
       buff[0] = '\0';
       cb->start = sm->state[0].time;
@@ -127,14 +143,14 @@ int LogNewFile(log_t* log, char* file) {
   log->write_buff[0] = '\0';
 
   // Log parameters
-  PruSprintParams(log->pru_mem->p, log->write_buff);
+  FormatSprintParams(log->pru_mem->p, log->write_buff);
   len = strlen(log->write_buff);
   memcpy(log->addr + log->location, log->write_buff, len);
   log->location += len;
   log->write_buff[0] = '\0';
 
   // Log header
-  PruSprintStateHeader(log->write_buff);
+  FormatSprintStateHeader(log->write_buff);
   len = strlen(log->write_buff);
   memcpy(log->addr + log->location, log->write_buff, len);
   log->location += len;
@@ -151,7 +167,7 @@ void LogWriteStateToFile(log_t* log) {
   if (size >= MIN_STATE_REQ) {
     for(int i=log->cbuff->start; i<log->cbuff->start+size; i++){
       memset(log->cbuff->temp_buff, 0, TEMP_BUFF_LEN);
-      PruSprintState(&log->pru_mem->s->state[i % STATE_BUFF_LEN],
+      FormatSprintState(&log->pru_mem->s->state[i % STATE_BUFF_LEN],
                      log->cbuff->temp_buff);
       strcat(log->write_buff, log->cbuff->temp_buff);
     }
@@ -178,27 +194,15 @@ void LogWriteStateToFileAndPublish(int logflag,
   if (size >= MIN_STATE_REQ) {
     udp->buff[0] = '\0';
     int i = log->cbuff->start + (size -1);
-    sprintf(udp->buff,
-            "%u\t"        // timeStamp - uint32_t
-            "%f\t"        // angle - fix16_t
-            "%f\t"        // angle_d - fix16_t
-            "\n",
-            log->pru_mem->s->state[i % STATE_BUFF_LEN].time,
-            fix16_to_float(log->pru_mem->s->state[i % STATE_BUFF_LEN].angle),
-            fix16_to_float(log->pru_mem->s->state[i % STATE_BUFF_LEN].angle_d)
-            );
+    FormatSprintPublishState(&log->pru_mem->s->state[i % STATE_BUFF_LEN],
+                            udp->buff);
     UdpTxPacket(udp);
-
-//    printf("%i\t%u\t%f\t%f\n", size, 
-//          log->pru_mem->s->state[i % STATE_BUFF_LEN].time,
-//          fix16_to_float(log->pru_mem->s->state[i % STATE_BUFF_LEN].angle),
-//          fix16_to_float(log->pru_mem->s->state[i % STATE_BUFF_LEN].angle_d));
 
     // Log
     if (logflag) {
       for(int i=log->cbuff->start; i<log->cbuff->start+size; i++){
         memset(log->cbuff->temp_buff, 0, TEMP_BUFF_LEN);
-        PruSprintState(&log->pru_mem->s->state[i % STATE_BUFF_LEN],
+        FormatSprintState(&log->pru_mem->s->state[i % STATE_BUFF_LEN],
                        log->cbuff->temp_buff);
         strcat(log->write_buff, log->cbuff->temp_buff);
       }

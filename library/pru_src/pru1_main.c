@@ -22,7 +22,7 @@
 #include "rsc_table_pru1.h"
 #include "mem_types.h"
 #include "hw_types.h"
-#include "udf.h"
+#include "pruloop.h"
 
 // Globals (pru_io) -----------------------------------------------------------
 volatile register uint32_t __R30;

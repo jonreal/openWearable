@@ -13,8 +13,8 @@
  limitations under the License.
 =============================================================================*/
 
-#ifndef _UDF_H_
-#define _UDF_H_
+#ifndef _PRULOOP_H_
+#define _PRULOOP_H_
 
 #include "mem_types.h"
 

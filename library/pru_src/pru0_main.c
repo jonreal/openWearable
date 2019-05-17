@@ -24,7 +24,7 @@
 #include "hw_types.h"
 #include "adcdriver.h"
 #include "i2cdriver.h"
-#include "udf.h"
+#include "pruloop.h"
 
 // Globals (pru_io) -----------------------------------------------------------
 volatile register uint32_t __R30;

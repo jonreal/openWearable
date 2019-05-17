@@ -36,8 +36,7 @@ typedef union {
     unsigned pru0_done : 1;         // bit 1 (set by pru0, read/reset by pru1)
     unsigned pru1_done : 1;         // bit 2 (set by pru1, read/reset by pru0)
     unsigned shdw_enable : 1;       // bit 3 (shawdow reg. for enable)
-    unsigned utility : 1;           // bit 4 (user defined)
-    unsigned rsvd : 11;             // bits 11-15 reserved
+    unsigned utility : 12;          // 12 bits for user defined things
  } bit;
 } pru_ctl_t;
 

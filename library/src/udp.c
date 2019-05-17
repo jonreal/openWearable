@@ -14,18 +14,11 @@
 =============================================================================*/
 
 #include "udp.h"
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
 
-//typedef struct {
-//  int sd, rc, i;
-//  struct sockaddr_in cliAddr, remoteServAddr;
-//  struct hostent *h;
-//  circbuff_t* cb;
-//} udp_t;
 
 udp_t* UdpInit(void) {
   udp_t* udp = malloc(sizeof(udp_t));
