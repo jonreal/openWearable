@@ -27,11 +27,8 @@ int PruCleanup(void);
 void PruCtlReset(pru_ctl_t* ctl);
 void PruSprintMalloc(const pru_mem_t* pru_mem, char* buff);
 int PruLoadParams(const char* file, param_mem_t* param);
-void PruSprintParams(const param_mem_t* param, char* buff);
 void PruEnable(int en, pru_ctl_t* ctl);
 void PruPrintDebugBuffer(const volatile uint32_t* db);
-void PruSprintState(const state_t* st, char* buff);
-void PruSprintStateHeader(char* buff);
 int PruLoadLut(char* file, lut_mem_t* l);
 
 #endif /* _PRU_H_ */

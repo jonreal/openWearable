@@ -19,15 +19,9 @@
 #include "pru.h"
 #include <pthread.h>
 #include "log.h"
-#include "udp.h"
 
-
-void* TuiLogAndPublishThread(void* args);
 int TuiInit(void);
-void TuiInputCallback(int sig);
-void TuiPrintMenu(void);
 int TuiLoop(const pru_mem_t* pru_mem);
 int TuiCleanup(void);
-
 
 #endif /* _TUI_H_ */

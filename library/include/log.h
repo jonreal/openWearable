@@ -43,12 +43,10 @@ typedef struct{
 } log_t;
 
 circbuff_t* LogNewCircBuff(void);
-void LogCircBuffUpdate(volatile uint32_t index, circbuff_t* buff);
 void LogDebugWriteState(const shared_mem_t* sm, circbuff_t* cb, char* buff);
 log_t* LogInit(const pru_mem_t* pru_mem);
 int LogNewFile(log_t* log, char* file);
 int LogSaveFile(log_t* log);
-//void LogWriteStateToFile(const pru_mem_t* pru_mem, log_t* log);
 void LogWriteStateToFileAndPublish(int logflag,
                                    log_t* log,
                                    udp_t* udp);
