@@ -13,6 +13,8 @@ Currently in develoment for upper arm exoskeletons.
 ### powered ankle-foot ###
 https://github.com/jonreal/openWearable/tree/poweredAnkle
 
+Realmuto, J. Towards Personalized Powered Ankle-Foot Prostheses. Diss. 2018.
+
 ### haptic feedback for lower limb prostheses ###
 https://github.com/jonreal/openWearable/tree/hapticFeedback
 
