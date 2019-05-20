@@ -15,7 +15,8 @@ CINC_DIR = ../library/include -I/usr/lib/ti/pru-software-support-package/include
 CLIB = -lpthread
 SRC_IGNORE =
 
-# PRU_C Source Directories
+# PRU_C Source Directorie
+#
 PRU_CSRC_DIR = ../library/pru_src
 PRU_CINC_DIR = -I../library/include/ -I/usr/lib/ti/pru-software-support-package/include/am335x -I/usr/lib/ti/pru-software-support-package/include
 PRU_CLIB =
@@ -59,6 +60,8 @@ APP_SPEC_PRU_OBJ = $(patsubst $(MAKECMDGOALS)/%,$(BUILD_DIR)/%,$(APP_SPEC_PRU_SR
 # App specific include
 APP_SPEC_INC = $(MAKECMDGOALS)/
 
+GOALS =  
+APP =
 # -----------------------------------------------------------------------------
 # Application
 # -----------------------------------------------------------------------------
@@ -66,15 +69,29 @@ APP_SPEC_INC = $(MAKECMDGOALS)/
 # -----------------------------------------------------------------------------
 # Clean
 # -----------------------------------------------------------------------------
+
+check4clean :
 ifeq ($(MAKECMDGOALS),clean)
+#	@echo " Cleaning...";
+#	@echo " $(RM) -r $(BUILD_DIR)"; $(RM) -r $(BUILD_DIR)
+#	@echo " $(RM) -r $(TARGET_DIR)"; $(RM) -r $(TARGET_DIR)
+GOALS = cleanow
+else
+GOALS = $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf  $(BUILD_DIR)/$(TARGET).o $(APP_SPEC_CPU_OBJ) $(CPU_OBJ) linker install
+APP = $(MAKECMDGOALS)
+endif
+
+cleanow:
 	@echo " Cleaning...";
 	@echo " $(RM) -r $(BUILD_DIR)"; $(RM) -r $(BUILD_DIR)
 	@echo " $(RM) -r $(TARGET_DIR)"; $(RM) -r $(TARGET_DIR)
-endif
+
+# Check if clean
+$(MAKECMDGOALS): check4clean $(GOALS)
+	@echo "";
 
 # Link CPU
-$(MAKECMDGOALS): $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf  $(BUILD_DIR)/$(TARGET).o $(APP_SPEC_CPU_OBJ) $(CPU_OBJ) install
-	@echo "\n Linking application... \n";
+linker:
 	@mkdir -p $(TARGET_DIR)
 	$(CC) $(CFLAGS) $(CPU_OBJ) $(APP_SPEC_CPU_OBJ) $(CSRC_DIR)/$(TARGET).c -I$(CINC_DIR) -I$(APP_SPEC_INC) -o $(TARGET_DIR)/$(MAKECMDGOALS) $(CLIB) -lm
 
