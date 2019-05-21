@@ -46,7 +46,7 @@ CPU_SRC = $(filter-out $(CSRC_DIR)/$(SRC_IGNORE).c, $(CPU_SRC_PRE))
 CPU_OBJ = $(patsubst $(CSRC_DIR)/%,$(BUILD_DIR)/%,$(CPU_SRC:.c=.o))
 
 # App specific CPU sources
-APP_SPEC_CPU_SRC = $(MAKECMDGOALS)/format.c
+APP_SPEC_CPU_SRC = $(MAKECMDGOALS)/format.c $(MAKECMDGOALS)/tuiloop.c
 APP_SPEC_CPU_OBJ = $(patsubst $(MAKECMDGOALS)/%,$(BUILD_DIR)/%,$(APP_SPEC_CPU_SRC:.c=.o))
 
 # PRU library source (mostly drivers, ect)
@@ -60,7 +60,7 @@ APP_SPEC_PRU_OBJ = $(patsubst $(MAKECMDGOALS)/%,$(BUILD_DIR)/%,$(APP_SPEC_PRU_SR
 # App specific include
 APP_SPEC_INC = $(MAKECMDGOALS)/
 
-GOALS =  
+GOALS =
 APP =
 # -----------------------------------------------------------------------------
 # Application
@@ -83,7 +83,7 @@ endif
 
 cleanow:
 	@echo " Cleaning...";
-	@echo " $(RM) -r $(BUILD_DIR)"; $(RM) -r $(BUILD_DIR)
+	@echo " $(RM) -r ./build"; $(RM) -r ./build
 	@echo " $(RM) -r $(TARGET_DIR)"; $(RM) -r $(TARGET_DIR)
 
 # Check if clean
@@ -127,6 +127,12 @@ $(BUILD_DIR)/pruloop.o: $(MAKECMDGOALS)/pruloop.c
 
 # Build app specific C dependencies
 $(BUILD_DIR)/format.o: $(MAKECMDGOALS)/format.c
+	@echo "\n Building app specific dependencies... \n";
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -I$(CINC_DIR) -I./$(APP_SPEC_INC) -c -o $@ $< $(CLIB) -lm
+
+# Build app specific C dependencies
+$(BUILD_DIR)/tuiloop.o: $(MAKECMDGOALS)/tuiloop.c
 	@echo "\n Building app specific dependencies... \n";
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -I$(CINC_DIR) -I./$(APP_SPEC_INC) -c -o $@ $< $(CLIB) -lm

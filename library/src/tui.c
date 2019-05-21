@@ -21,7 +21,6 @@
 #include <unistd.h>
 #include <string.h>
 #include "log.h"
-#include "pruloop.h"
 
 typedef struct {
   int logflag;
@@ -29,32 +28,23 @@ typedef struct {
   udp_t* udp;
 } tui_thread_data_t;
 
+// Global
 volatile sig_atomic_t input_ready;
 pthread_mutex_t lock;
 tui_thread_data_t thread_data;
+pthread_t thread;
 
 
-// Static Functions
+// Static Functions Protos
 static void* TuiLogAndPublishThread(void* args);
 static void TuiInputCallback(int sig);
-static void TuiPrintMenu(void);
-
 
 // ---------------------------------------------------------------------------
 static void TuiInputCallback(int sig) {
   input_ready = 1;
 }
 
-static void TuiPrintMenu(void) {
-  printf(
-  "\n\n---------------------------------------------------------------------\n"
-  "Menu: f - Collect trial\n"
-  "      s - Start Pronation/Supination Exp\n"
-  "      d - Start Tracking Exp\n"
-  "      e - exit\n"
-  "-----------------------------------------------------------------------\n");
-  fflush(stdout);
-}
+
 
 static void* TuiLogAndPublishThread(void* args) {
   while (1) {
@@ -101,20 +91,11 @@ int TuiInit(void) {
   return 0;
 }
 
-
-
-int TuiLoop(const pru_mem_t* pru_mem) {
-  char input_char = 0;
-  float input_float = 0.0;
-  char input_string[256] = {0};
-  char log_file[256] = "datalog/";
-
-  // initialize thread data
+int TuiInitLogAndPublishThread(const pru_mem_t* pru_mem) {
   thread_data.logflag = 0;
   thread_data.udp = UdpInit();
   thread_data.log = LogInit(pru_mem);
 
-  pthread_t thread;
   if (pthread_mutex_init(&lock, NULL) != 0) {
     printf("\n mutex init failed\n");
     return 1;
@@ -123,223 +104,151 @@ int TuiLoop(const pru_mem_t* pru_mem) {
     printf("\n thread create failed\n");
     return 1;
   }
-
-  TuiPrintMenu();
-  while (1) {
-    // Clear inputs
-    input_char = ' ';
-    input_string[0] = '\0';
-
-    // Wait for user input.
-    if (input_ready) {
-      scanf(" %c", &input_char);
-
-      switch(input_char){
-
-        // ---- Exit ----------------------------------------------------------
-        case 'e' : {
-          pthread_mutex_lock(&lock);
-          thread_data.logflag = -1;
-          pthread_mutex_unlock(&lock);
-          pthread_join(thread, NULL);
-          printf("done.\n");
-          return 1;
-        }
-
-        // ---- Collect trial -------------------------------------------------
-        case 'f' : {
-          printf("\t\tEnter trial name: ");
-          fflush(stdout);
-          input_ready = 0;
-
-          // Wait for input.
-          while (1)
-            if (input_ready)
-              break;
-
-          scanf(" %s", input_string);
-          strcat(log_file, input_string);
-          printf("\t\tSaving data to %s\n",log_file);
-
-          pthread_mutex_lock(&lock);
-          LogNewFile(thread_data.log, log_file);
-          pthread_mutex_unlock(&lock);
-
-          // Wait for enter to start saving data
-          printf("\t\tPress enter to start collection...\n");
-          fflush(stdout);
-          input_ready = 0;
-          while (1)
-            if (input_ready)
-              break;
-          scanf(" %c", &input_char);
-
-          // Wait for enter to stop collection
-          printf("\t\tPress enter to stop collection...\n");
-          fflush(stdout);
-          input_ready = 0;
-
-          // Data collection loop
-          pthread_mutex_lock(&lock);
-          thread_data.logflag = 1;
-          pthread_mutex_unlock(&lock);
-          while (1) {
-            if(input_ready)
-              break;
-          }
-          pthread_mutex_lock(&lock);
-          thread_data.logflag = 0;
-          LogSaveFile(thread_data.log);
-          pthread_mutex_unlock(&lock);
-          scanf(" %c", &input_char);
-
-          log_file[0] = '\0';
-          strcat(log_file, "datalog/");
-          TuiPrintMenu();
-          fflush(stdout);
-          input_ready = 0;
-          break;
-        }
-
-        // ---- Start exp -------------------------------------------------
-        case 's' : {
-          printf("\t\tEnter trial name: ");
-          fflush(stdout);
-          input_ready = 0;
-
-          // Wait for input.
-          while (1)
-            if (input_ready)
-              break;
-
-          scanf(" %s", input_string);
-          strcat(log_file, input_string);
-          printf("\t\tSaving data to %s\n",log_file);
-
-          pthread_mutex_lock(&lock);
-          LogNewFile(thread_data.log, log_file);
-          pthread_mutex_unlock(&lock);
-
-
-          // Wait for enter to start saving data
-          printf("\t\tEnter desired pressure (psi): ");
-          fflush(stdout);
-          input_ready = 0;
-          while (1)
-            if (input_ready)
-              break;
-          scanf(" %f", &input_float);
-          pru_mem->p->p_d_static = fix16_from_float(input_float);
-
-          // Wait for enter to start saving data
-          printf("\t\tEnter desired angle (deg): ");
-          fflush(stdout);
-          input_ready = 0;
-          while (1)
-            if (input_ready)
-              break;
-          scanf(" %f", &input_float);
-          pru_mem->p->theta_d = fix16_from_float(input_float);
-
-
-          printf("\t\tp_d = %f, theta_d=%f\n",
-                fix16_to_float(pru_mem->p->p_d_static),
-                fix16_to_float(pru_mem->p->theta_d));
-
-
-          // Wait for enter to start saving data
-          printf("\t\tPress enter to start experiment...");
-          fflush(stdout);
-          input_ready = 0;
-          while (1)
-            if (input_ready)
-              break;
-          scanf(" %c", &input_char);
-          printf("\t\t\trunning experiment...\n");
-          fflush(stdout);
-          pru_mem->s->pru_ctl.bit.utility |= (1 << 0);
-
-          // Data collection loop
-          pthread_mutex_lock(&lock);
-          thread_data.logflag = 1;
-          pthread_mutex_unlock(&lock);
-          while (1) {
-            if (~(pru_mem->s->pru_ctl.bit.utility & (1 << 0)))
-              break;
-          }
-          pthread_mutex_lock(&lock);
-          thread_data.logflag = 0;
-          LogSaveFile(thread_data.log);
-          pthread_mutex_unlock(&lock);
-
-          log_file[0] = '\0';
-          strcat(log_file, "datalog/");
-          TuiPrintMenu();
-          fflush(stdout);
-          input_ready = 0;
-          pru_mem->p->theta_d = 0;
-          pru_mem->p->p_d_static = 0;
-          break;
-        }
-
-        // ---- Start exp -------------------------------------------------
-        case 'd' : {
-          printf("\t\tEnter trial name: ");
-          fflush(stdout);
-          input_ready = 0;
-
-          // Wait for input.
-          while (1)
-            if (input_ready)
-              break;
-
-          scanf(" %s", input_string);
-          strcat(log_file, input_string);
-          printf("\t\tSaving data to %s\n",log_file);
-
-          pthread_mutex_lock(&lock);
-          LogNewFile(thread_data.log, log_file);
-          pthread_mutex_unlock(&lock);
-
-          // Wait for enter to start saving data
-          printf("\t\tPress enter to start experiment...");
-          fflush(stdout);
-          input_ready = 0;
-          while (1)
-            if (input_ready)
-              break;
-          scanf(" %c", &input_char);
-          printf("\t\t\trunning experiment...\n");
-          fflush(stdout);
-          pru_mem->s->pru_ctl.bit.utility |= (1 << 0);
-
-          // Data collection loop
-          pthread_mutex_lock(&lock);
-          thread_data.logflag = 1;
-          pthread_mutex_unlock(&lock);
-          while (1) {
-            if (~(pru_mem->s->pru_ctl.bit.utility & (1 << 0)))
-              break;
-          }
-          pthread_mutex_lock(&lock);
-          thread_data.logflag = 0;
-          LogSaveFile(thread_data.log);
-          pthread_mutex_unlock(&lock);
-
-
-          log_file[0] = '\0';
-          strcat(log_file, "datalog/");
-          TuiPrintMenu();
-          fflush(stdout);
-          input_ready = 0;
-          pru_mem->p->theta_d = 0;
-          pru_mem->p->p_d_static = 0;
-          break;
-        }
-      }
-    }
-  }
+  return 0;
 }
+
+void TuiCloseLogAndPublishThread(void) {
+  pthread_mutex_lock(&lock);
+  thread_data.logflag = -1;
+  pthread_mutex_unlock(&lock);
+  pthread_join(thread, NULL);
+}
+
+void TuiStartLog(void) {
+  pthread_mutex_lock(&lock);
+  thread_data.logflag = 1;
+  pthread_mutex_unlock(&lock);
+}
+
+void TuiStopAndSaveLog(void) {
+  pthread_mutex_lock(&lock);
+  thread_data.logflag = 0;
+  LogSaveFile(thread_data.log);
+  pthread_mutex_unlock(&lock);
+}
+
+void TuiNewLogFile(char* log_file) {
+  pthread_mutex_lock(&lock);
+  LogNewFile(thread_data.log, log_file);
+  pthread_mutex_unlock(&lock);
+}
+
+
+void TuiPollForUserInput(void) {
+  input_ready = 0;
+  while (1)
+    if (input_ready)
+      break;
+}
+
+void TuiSetPruCtlBit(const pru_mem_t* pru_mem, unsigned char n) {
+  pru_mem->s->pru_ctl.bit.utility |= (1 << n);
+}
+
+void TuiPollPruCtlBit(const pru_mem_t* pru_mem, unsigned char n) {
+  while (1)
+    if ((pru_mem->s->pru_ctl.bit.utility & (1 << n)) == 0)
+      break;
+}
+
+//int TuiLoop(const pru_mem_t* pru_mem) {
+//  char input_char = 0;
+//  char input_string[256] = {0};
+//  char log_file[256] = "datalog/";
+//
+//  TuiInitLogAndPublishThread(pru_mem);
+//  TuiPrintMenu();
+//
+//  while (1) {
+//    // Clear inputs
+//    input_char = ' ';
+//    input_string[0] = '\0';
+//
+//    // Wait for user input.
+//    if (input_ready) {
+//      scanf(" %c", &input_char);
+//
+//      switch(input_char){
+//
+//        // ---- Exit ----------------------------------------------------------
+//        case 'e' : {
+//          TuiCloseLogAndPublishThread();
+//          printf("done.\n");
+//          return 1;
+//        }
+//
+//        // ---- Collect trial -------------------------------------------------
+//        case 'f' : {
+//          printf("\t\tEnter trial name: ");
+//          fflush(stdout);
+//
+//          // Wait for input.
+//          TuiPollForUserInput();
+//          scanf(" %s", input_string);
+//          strcat(log_file, input_string);
+//          printf("\t\tSaving data to %s\n",log_file);
+//          TuiNewLogFile(log_file);
+//
+//          // Wait for user input to start saving data
+//          printf("\t\tPress enter to start collection...\n");
+//          fflush(stdout);
+//          TuiPollForUserInput();
+//          scanf(" %c", &input_char);
+//
+//          // Wait for enter to stop collection
+//          printf("\t\tPress enter to stop collection...\n");
+//          fflush(stdout);
+//
+//          // Data collection loop
+//          TuiStartLog();
+//          TuiPollForUserInput();
+//          TuiStopAndSaveLog();
+//          scanf(" %c", &input_char);
+//
+//          log_file[0] = '\0';
+//          strcat(log_file, "datalog/");
+//          TuiPrintMenu();
+//          break;
+//        }
+//
+//        // ---- Start exp -------------------------------------------------
+//        case 'd' : {
+//          printf("\t\tEnter trial name: ");
+//          fflush(stdout);
+//          input_ready = 0;
+//
+//          // Wait for input.
+//          TuiPollForUserInput();
+//          scanf(" %s", input_string);
+//          strcat(log_file, input_string);
+//          printf("\t\tSaving data to %s\n",log_file);
+//          TuiNewLogFile(log_file);
+//
+//          // Wait for enter to start saving data
+//          printf("\t\tPress enter to start experiment...");
+//          fflush(stdout);
+//          TuiPollForUserInput();
+//          scanf(" %c", &input_char);
+//          printf("\t\t\trunning experiment...\n");
+//          fflush(stdout);
+//          TuiSetPruCtlBit(pru_mem, 0);
+//
+//          // Data collection loop
+//          TuiStartLog();
+//          TuiPollPruCtlBit(pru_mem, 0);
+//          TuiStopAndSaveLog();
+//
+//          log_file[0] = '\0';
+//          strcat(log_file, "datalog/");
+//          TuiPrintMenu();
+//          pru_mem->p->theta_d = 0;
+//          pru_mem->p->p_d_static = 0;
+//          break;
+//        }
+//      }
+//    }
+//  }
+//}
 
 int TuiCleanup(void) {
   if(fcntl(0, F_SETOWN, NULL) == -1){

@@ -20,8 +20,20 @@
 #include <pthread.h>
 #include "log.h"
 
+
+extern int TuiLoop(const pru_mem_t* pru_mem);
+extern void TuiPrintMenu(void);
+
 int TuiInit(void);
-int TuiLoop(const pru_mem_t* pru_mem);
 int TuiCleanup(void);
+int TuiInitLogAndPublishThread(const pru_mem_t* pru_mem);
+void TuiCloseLogAndPublishThread(void);
+void TuiNewLogFile(char* log_file);
+void TuiStartLog(void);
+void TuiStopAndSaveLog(void);
+
+void TuiPollForUserInput(void);
+void TuiSetPruCtlBit(const pru_mem_t* pru_mem, unsigned char n);
+void TuiPollPruCtlBit(const pru_mem_t* pru_mem, unsigned char n);
 
 #endif /* _TUI_H_ */
