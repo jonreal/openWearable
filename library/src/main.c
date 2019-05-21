@@ -47,8 +47,6 @@ int main(int argc, char **argv) {
   if (argc != 1) {
     if (strcmp(argv[1], "-v") == 0) {
       mode = DEBUG;
-    } else if (strcmp(argv[1], "-tui") == 0) {
-      mode = TUI;
     } else {
       mode = TUI;
     }
