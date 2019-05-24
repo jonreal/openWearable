@@ -8,12 +8,7 @@ call vundle#begin()
 
 " let Vundle manage Vundle, required
 Plugin 'gmarik/Vundle.vim'
-Plugin 'bling/vim-airline'
-" Plugin 'vim-multiple-cursors'
 Plugin 'supertab'
-" Plugin 'MatlabFilesEdition'
-" Plugin 'micheljansen/vim-latex'
-Plugin 'scrooloose/syntastic'
 Plugin 'ProportionalResize'
 Plugin 'junegunn/goyo.vim' 
 Plugin 'ntpeters/vim-better-whitespace' 
@@ -112,26 +107,5 @@ nnoremap <leader>a :ProportionalResize :setlocal columns=90
 let g:ycm_global_ycm_extra_conf = "~/.vim/.ycm_extra_conf.py"
 set laststatus=2
 
-" Air-line
-let g:airline#extensions#tabline#enabled = 1
-let g:airline#extensions#tabline#left_sep = ' '
-let g:airline#extensions#tabline#left_alt_sep = '|'
+set tags=tags;/
 
-" Matlab
-" au BufRead *.m setlocal nospell
-" source $VIMRUNTIME/macros/matchit.vim
-" autocmd BufEnter *.m    compiler mlint
-
-"Syntastic
-set statusline+=%#warningmsg#
-set statusline+=%{SyntasticStatuslineFlag()}
-set statusline+=%*
-let g:syntastic_always_populate_loc_list = 1
-let g:syntastic_auto_loc_list = 1
-let g:syntastic_check_on_open = 1
-let g:syntastic_check_on_wq = 0
-let g:syntastic_mode_map = {'passive_filetypes' : ['c','cpp']}
-let g:syntastic_cpp_include_dirs = [ './include', '~/embedded/libpruio-0.2/src/c_wrapper/', '/opt/source/pru-software-support-package/include']
-let g:syntastic_c_include_dirs = [ './include', '/opt/source/pru-software-support-package/include'] 
-
-let filetype_p = "pic"

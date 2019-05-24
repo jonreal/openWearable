@@ -84,31 +84,43 @@ int PruMemMap(pru_mem_t* pru_mem) {
 // Outputs:   0 for success
 // ---------------------------------------------------------------------------
 int PruInit(void){
+  int rtn;
+  char buf[64];
+
   if (PruRestart() == -1) {
     printf("restart pru failed.\n");
     return -1;
   }
-  // open file descriptors for pru rproc driver
-  int bind_fd = open(PRU_BIND, O_WRONLY);
-  if (bind_fd == -1) {
-    printf("ERROR: pru-rproc driver missing\n");
+
+  // PRU0
+  int fd = open(PRU0_STATE, O_RDWR);
+  if (fd == -1) {
+    printf("pru0 - failed to open remoteproc driver");
     return -1;
   }
-  // if pru0 is not loaded, load it
-  if (access(PRU0_UEVENT, F_OK)!=0) {
-    if (write(bind_fd, PRU0_NAME, PRU_NAME_LEN)<0) {
-      printf("ERROR: pru0 bind failed\n");
-      return -1;
-    }
+  memset(buf, 0, sizeof(buf));
+  rtn = write(fd, "start", 5);
+  close(fd);
+  if (rtn == -1) {
+    printf("pru0 - failed to start");
+    printf(buf);
+    return -1;
   }
-  // if pru1 is not loaded, load it
-  if (access(PRU1_UEVENT, F_OK)!=0) {
-    if (write(bind_fd, PRU1_NAME, PRU_NAME_LEN)<0) {
-      printf("ERROR: pru1 bind failed\n");
-      return -1;
-    }
+
+  // PRU1
+  fd = open(PRU1_STATE, O_RDWR);
+  if (fd == -1) {
+    printf("pru1 - failed to open remoteproc driver");
+    return -1;
   }
-  close(bind_fd);
+  memset(buf, 0, sizeof(buf));
+  rtn = write(fd, "start", 5);
+  close(fd);
+  if (rtn == -1) {
+    printf("pru1 - failed to start");
+    printf(buf);
+    return -1;
+  }
   return 0;
 }
 
@@ -120,42 +132,58 @@ int PruInit(void){
 // Outputs:   0 for success
 // ---------------------------------------------------------------------------
 int PruRestart(void) {
-  // open file descriptors for pru rproc driver
-  int unbind_fd = open(PRU_UNBIND, O_WRONLY);
-  if (unbind_fd == -1) {
-    printf("open unbind fail\n");
+  int rtn;
+  char buf[64];
+
+  // PRU0
+  int fd = open(PRU0_STATE, O_RDWR);
+  if (fd == -1) {
+    printf("pru0 - failed to open remoteproc driver");
     return -1;
   }
-  int bind_fd = open(PRU_BIND, O_WRONLY);
-  if (bind_fd == -1) {
-    printf("open bind fail\n");
+  memset(buf, 0, sizeof(buf));
+  rtn = read(fd, buf, sizeof(buf));
+  if (rtn == -1) {
+    printf("pru0 - failed to read state");
+    printf(buf);
     return -1;
   }
-  // if pru0 is loaded, unload it
-  if (access(PRU0_UEVENT, F_OK)==0) {
-    if (write(unbind_fd, PRU0_NAME, PRU_NAME_LEN)<0) {
-      printf("ERROR: pru0 unbind failed\n");
+  if (strcmp(buf,"offline\n") == 0) {
+    close(fd);
+  } else {
+    rtn = write(fd, "stop", 4);
+    close(fd);
+    if (rtn == -1) {
+      printf("pru0 - failed to stop");
+      printf(buf);
       return -1;
     }
   }
-  // if pru1 is loaded, unload it
-  if (access(PRU1_UEVENT, F_OK)==0) {
-    if (write(unbind_fd, PRU1_NAME, PRU_NAME_LEN)<0) {
-      printf("ERROR: pru1 unbind failed\n");
+
+  // PRU1
+  fd = open(PRU1_STATE, O_RDWR);
+  if (fd == -1) {
+    printf("pru1 - failed to open remoteproc driver");
+    return -1;
+  }
+  memset(buf, 0, sizeof(buf));
+  rtn = read(fd, buf, sizeof(buf));
+  if (rtn == -1) {
+    printf("pru1 - failed to read state");
+    printf(buf);
+    return -1;
+  }
+  if (strcmp(buf,"offline\n") == 0) {
+    close(fd);
+  } else {
+    rtn = write(fd, "stop", 4);
+    close(fd);
+    if (rtn == -1) {
+      printf("pru1 - failed to stop");
+      printf(buf);
       return -1;
     }
   }
-  // now bind both
-  if (write(bind_fd, PRU0_NAME, PRU_NAME_LEN)<0) {
-    printf("ERROR: pru0 bind failed\n");
-    return -1;
-  }
-  if (write(bind_fd, PRU1_NAME, PRU_NAME_LEN)<0) {
-    printf("ERROR: pru1 bind failed\n");
-    return -1;
-  }
-  close(unbind_fd);
-  close(bind_fd);
   return 0;
 }
 
