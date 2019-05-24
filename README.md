@@ -7,9 +7,18 @@ Beaglebone Black and utilizes the programmable realtime units (PRUs).
 
 Currently in develoment for upper arm exoskeletons.
 
-Testing/developing with Beaglebone Blue
-Linux version 4.4.54-ti-r93 (root@a4-imx6q-wandboard-2gb) (gcc version 4.9.2 (Debian 4.9.2-10) ) #1 SMP Fri Mar 17 13:08:22 UTC 2017
+> cat /etc/os-release 
+PRETTY_NAME="Debian GNU/Linux 9 (stretch)"
+NAME="Debian GNU/Linux"
+VERSION_ID="9"
+VERSION="9 (stretch)"
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
 
+> cat /proc/version 
+Linux version 4.14.71-ti-r80 (root@b2-am57xx-beagle-x15-2gb) (gcc version 6.3.0 20170516 (Debian 6.3.0-18+deb9u1)) #1 SMP PREEMPT Fri Oct 5 23:50:11 UTC 2018
 
 
 ### powered ankle-foot ###
