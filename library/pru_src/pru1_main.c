@@ -53,8 +53,7 @@ int main(void) {
 
   // wait till enabled
   while (mem.s->pru_ctl.bit.shdw_enable == 0);
-
- // debugPinLow();
+  debugPinLow();
 
   // Control Loop
   while (mem.s->pru_ctl.bit.shdw_enable) {
@@ -64,7 +63,7 @@ int main(void) {
     while ((CT_INTC.SECR0 & (1 << 7)) == 0);
 
     // Pre bookkeeping
-//    debugPinHigh();
+    debugPinHigh();
 
     // Estimate
     Pru1UpdateState(&counter,
@@ -73,9 +72,9 @@ int main(void) {
                     &mem.s->pru_ctl);
 
     // Wait for pru0 to be done
- //   debugPinLow();
+    debugPinLow();
     while (!(mem.s->pru_ctl.bit.pru0_done));
- //   debugPinHigh();
+    debugPinHigh();
     mem.s->pru_ctl.bit.pru0_done = 0;
 
     // Control
@@ -88,9 +87,9 @@ int main(void) {
     mem.s->pru_ctl.bit.pru1_done = 1;
     updateCounters(&counter);
     while (CT_INTC.SECR0 & (1 << 7));
-  //  debugPinLow();
+    debugPinLow();
   }
- // debugPinLow();
+  debugPinLow();
   cleanup();
   __halt();
   return 0;

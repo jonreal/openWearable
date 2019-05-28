@@ -1,0 +1,85 @@
+/*
+* Modified by Jonathan Realmuto <jonreal731@gmail.com>
+*/
+
+
+/dts-v1/;
+/plugin/;
+
+/ {
+  compatible = "ti,beaglebone", "ti,beaglebone-black","ti,am335x-bone-black-wireless";
+
+  /* identification */
+  part-number = "OPENWEARABLE";
+  version = "00A0";
+
+  /* state the resources this cape uses */
+  exclusive-use =
+
+    /**** pru1 GPIO pins ****/
+    "P8.27",  /* pr1_pru1_pru_[r30_8 | r31_8] ---- DEBUG OUT */
+    "P8.28",  /* pr1_pru1_pru_[r30_10 | r31_10] */
+    "P8.29",  /* pr1_pru1_pru_[r30_9 | r31_9] */
+    "P8.30",  /* pr1_pru1_pru_[r30_11 | r31_11] */
+    "P8.39",  /* pr1_pru1_pru_[r30_6 | r31_6] */
+    "P8.40",  /* pr1_pru1_pru_[r30_7 | r31_7] */
+    "P8.41",  /* pr1_pru1_pru_[r30_4 | r31_4] */
+    "P8.42",  /* pr1_pru1_pru_[r30_5 | r31_5] */
+    "P8.43",  /* pr1_pru1_pru_[r30_2 | r31_2] */
+    "P8.44",  /* pr1_pru1_pru_[r30_3 | r31_3] */
+    "P8.45",  /* pr1_pru1_pru_[r30_0 | r31_0] */
+    "P8.46",  /* pr1_pru1_pru_[r30_1 | r31_1] */
+
+    /**** pru0 GPIO pins ****/
+    "P9.27",  /* pr1_pru0_pru_[r30_5 | r31_5] ---- DEBUG OUT */
+
+    /**** CPU GPIO pins ****/
+
+    /* the hardware IP uses */
+    "pruss";
+
+    /*----- pin mux cheat sheet -----*/
+    /* Bit 6 - SLEWCTRL - 0 (fast) | 1 (slow)
+     * Bit 5 - RXACTIVE - 0 (reciever disable) | 1 (reciever enable)
+     * Bit 4 - PULLTYPESEL - 0 (pulldown) | 1 (pullup)
+     * Bit 3 - PULLUDEN - 0 (enable) | 1 (disable)
+     * Bit 2-0 - MUXMODE
+     */
+
+  /*----- pin mux -----*/
+  fragment@0 {
+    target = <&am33xx_pinmux>;
+    __overlay__ {
+
+      pruss_pins: pinmux_pruss_pins {
+        pinctrl-single,pins = <
+          0x0E0 0x15  /* P8.27 - pr1_pru1_pru_r30_8, MODE5 | OUTPUT | PU */
+          0x0E8 0x15  /* P8.28 - pr1_pru1_pru_r30_10, MODE5 | OUTPUT | PU */
+          0x0E4 0x15  /* P8.29 - pr1_pru1_pru_r30_9, MODE5 | OUTPUT | PU */
+          0x0EC 0x15  /* P8.30 - pr1_pru1_pru_r30_11, MODE5 | OUTPUT | PU */
+          0x0B8 0x15  /* P8.39 - pr1_pru1_pru_r30_6, MODE5 | OUTPUT | PU */
+          0x0BC 0x15  /* P8.40 - pr1_pru1_pru_r30_7, MODE5 | OUTPUT | PU */
+          0x0B0 0x15  /* P8.41 - pr1_pru1_pru_r30_4, MODE5 | OUTPUT | PU */
+          0x0B4 0x15  /* P8.42 - pr1_pru1_pru_r30_5, MODE5 | OUTPUT | PU */
+          0x0A8 0x15  /* P8.43 - pr1_pru1_pru_r30_2, MODE5 | OUTPUT | PU */
+          0x0AC 0x15  /* P8.44 - pr1_pru1_pru_r30_3, MODE5 | OUTPUT | PU */
+          0x0A0 0x15  /* P8.45 - pr1_pru1_pru_r30_0, MODE5 | OUTPUT | PU */
+          0x0A4 0x15  /* P8.46 - pr1_pru1_pru_r30_1, MODE5 | OUTPUT | PU */
+          0x1A4 0x15  /* P9.27 - pr1_pru0_pru_r30_5, MODE5 | OUTPUT | PU */
+        >;
+      };
+    };
+  };
+
+  /*----- pru enable -----*/
+  fragment@1 {
+    target = <&pruss>;
+    __overlay__ {
+      status = "okay";
+      pinctrl-names = "default";
+      pinctrl-0 = <&pruss_pins>;
+    };
+  };
+};
+
+

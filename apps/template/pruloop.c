@@ -57,6 +57,8 @@ void Pru1UpdateState(const pru_count_t* c,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
 
+
+__R30 ^= (1 << 0);
 }
 
 void Pru1UpdateControl(const pru_count_t* c,
