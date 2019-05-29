@@ -1,69 +1,163 @@
-/*
- Modified by J. Realmuto
+/**
+ * <rc/gpio.h>
+ *
+ * @brief      C interface for the Linux GPIO driver
+ *
+ * Developed and tested on the BeagleBone Black but should work fine on any
+ * Linux system with the new character-device gpio driver in kernel 4.8 and
+ * newer
+ *
+ * @author     James Strawson
+ * @date       1/19/2018
+ *
+ * @addtogroup GPIO
+ * @ingroup    IO
+ * @{
  */
-/*
-Copyright (c) 2013 Adafruit
 
-Original RPi.GPIO Author Ben Croston
-Modified for BBIO Author Justin Cooper
+#ifndef RC_GPIO_H
+#define RC_GPIO_H
 
-This file incorporates work covered by the following copyright and
-permission notice, all modified code adopts the original license:
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
-Copyright (c) 2013 Ben Croston
+#include <stdint.h>
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-of the Software, and to permit persons to whom the Software is furnished to do
-so, subject to the following conditions:
+#ifndef _GPIO_H_
+#define GPIOHANDLE_REQUEST_INPUT	(1UL << 0)
+#define GPIOHANDLE_REQUEST_OUTPUT	(1UL << 1)
+#define GPIOHANDLE_REQUEST_ACTIVE_LOW	(1UL << 2)
+#define GPIOHANDLE_REQUEST_OPEN_DRAIN	(1UL << 3)
+#define GPIOHANDLE_REQUEST_OPEN_SOURCE	(1UL << 4)
+#endif
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
+/**
+ * @brief      Configures a gpio pin as input or output
+ *
+ * This configures the pin by making a gpio handle request to the character
+ * device driver. It accepts the same gpio handle request flags as defined in
+ * <linux/gpio.h>
+ *
+ * - GPIOHANDLE_REQUEST_INPUT
+ * - GPIOHANDLE_REQUEST_OUTPUT
+ * - GPIOHANDLE_REQUEST_ACTIVE_LOW
+ * - GPIOHANDLE_REQUEST_OPEN_DRAIN
+ * - GPIOHANDLE_REQUEST_OPEN_SOURCE
+ *
+ * Obviously the INPUT and OUTPUT flags cannot be used at the same time. If you
+ * don't know what the other flags mean just stick with INPUT and OUTPUT modes,
+ * that covers 99% of use cases.
+ *
+ * @param[in]  chip          The chip number, /dev/gpiochipX
+ * @param[in]  pin           The pin ID
+ * @param[in]  handle_flags  The handle flags
+ *
+ * @return     0 on success or -1 on failure.
+ */
+int rc_gpio_init(int chip, int pin, int handle_flags);
 
-#define NO_EDGE      0
-#define RISING_EDGE  1
-#define FALLING_EDGE 2
-#define BOTH_EDGE    3
 
-#define INPUT  0
-#define OUTPUT 1
-#define ALT0   4
+/**
+ * @brief      Sets the value of a GPIO pin when in output mode
+ *
+ * must call rc_gpio_init with the OUTPUT flag first.
+ *
+ * @param[in]  chip   The chip number, /dev/gpiochipX
+ * @param[in]  pin    The pin ID
+ * @param[in]  value  0 for off (inactive), nonzero for on (active)
+ *
+ * @return     0 on success or -1 on failure
+ */
+int rc_gpio_set_value(int chip, int pin, int value);
 
-#define HIGH 1
-#define LOW  0
 
-#define PUD_OFF  0
-#define PUD_DOWN 1
-#define PUD_UP   2
+/**
+ * @brief      Reads the value of a GPIO pin when in input mode or output mode.
+ *
+ * Must call rc_gpio_init first.
+ *
+ * @param[in]  chip  The chip number, /dev/gpiochipX
+ * @param[in]  pin   The pin ID
+ *
+ * @return     1 if pin is high, 0 if pin is low, -1 on error
+ */
+int rc_gpio_get_value(int chip, int pin);
 
-int gpio_export(unsigned int gpio);
-int gpio_unexport(unsigned int gpio);
-void exports_cleanup(void);
-int gpio_set_direction(unsigned int gpio, unsigned int in_flag);
-int gpio_get_direction(unsigned int gpio, unsigned int *value);
-int gpio_set_value(unsigned int gpio, unsigned int value);
-int gpio_get_value(unsigned int gpio, unsigned int *value);
 
-/*
-int add_edge_detect(unsigned int gpio, unsigned int edge);
-void remove_edge_detect(unsigned int gpio);
-int add_edge_callback(unsigned int gpio, void (*func)(unsigned int gpio));
-int event_detected(unsigned int gpio);
-int gpio_event_add(unsigned int gpio);
-int gpio_event_remove(unsigned int gpio);
-int gpio_is_evented(unsigned int gpio);
-int event_initialise(void);
-void event_cleanup(void);
-int blocking_wait_for_edge(unsigned int gpio, unsigned int edge);
-*/
+/** possible edge request **/
+#ifndef _GPIO_H_
+#define GPIOEVENT_REQUEST_RISING_EDGE	(1UL << 0)
+#define GPIOEVENT_REQUEST_FALLING_EDGE	(1UL << 1)
+#define GPIOEVENT_REQUEST_BOTH_EDGES	((1UL << 0) | (1UL << 1))
+#endif
+
+/**
+ * @brief      Initializes a pin for interrupt event polling and normal reading.
+ *
+ * Handle flags exists if the user wishes to configure the pic as active-low,
+ * open-source, or open-drain. This is usually not necessary and can be left at
+ * 0. This function returns the file descriptor used for polling in case the
+ * user wants to use a polling method other than rc_gpio_poll.
+ *
+ * @param[in]  chip          The chip number, /dev/gpiochipX
+ * @param[in]  pin           The pin ID
+ * @param[in]  handle_flags  Additional pin configuration flags, this can
+ * usually be left as 0
+ * @param[in]  event_flags   The event flags, GPIOEVENT_REQUEST_RISING_EDGE,
+ * GPIOEVENT_REQUEST_FALLING_EDGE, or GPIOEVENT_REQUEST_BOTH_EDGES
+ *
+ * @return     File descriptor for the GPIO event or -1 on failure
+ */
+int rc_gpio_init_event(int chip, int pin, int handle_flags, int event_flags);
+
+/** possible return values for rc_gpio_poll **/
+#define RC_GPIOEVENT_ERROR		-1
+#define RC_GPIOEVENT_TIMEOUT		0
+#define RC_GPIOEVENT_RISING_EDGE	1
+#define RC_GPIOEVENT_FALLING_EDGE	2
+
+/**
+ * @brief      polls a pin when configured for interrupt event polling
+ *
+ * This polls for an event and then reads one event from the queue.
+ *
+ * @param[in]  chip           The chip number, /dev/gpiochipX
+ * @param[in]  pin            The pin ID
+ * @param[in]  timeout_ms     The timeout in milliseconds. Negative value causes
+ * infinite timeout, a value of 0 makes the function return immediately after
+ * reading an event in the queue.
+ * @param[out] event_time_ns  pointer where the time of the gpio event occured.
+ * Units are nanoseconds since epoch. Set this as NULL if you don't want to keep
+ * the time.
+ *
+ * @return     returns RC_GPIO_EVENT_ERROR, RC_GPIO_EVENT_TIMEOUT,
+ * RC_GPIO_EVENT_RISING_EDGE, or RC_GPIO_EVENT_FALLING_EDGE to indicate what
+ * happened.
+ */
+int rc_gpio_poll(int chip, int pin, int timeout_ms, uint64_t* event_time_ns);
+
+
+/**
+ * @brief      closes the file descriptor for a pin
+ *
+ * Not strictly necessary to run at the end of your program since linux will
+ * clean this up for you. However this is sometimes useful in the middle of a
+ * program when a pin is no longer needed.
+ *
+ * @param[in]  chip  The chip number, /dev/gpiochipX
+ * @param[in]  pin   The pin ID
+ */
+void rc_gpio_cleanup(int chip, int pin);
+
+
+
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // RC_GPIO_H
+
+///@} end group GPIO

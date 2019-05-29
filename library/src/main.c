@@ -23,10 +23,12 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include "mem_types.h"
+#include "debug.h"
 #include "pru.h"
 #include "log.h"
 #include "tui.h"
 #include "format.h"
+
 
 typedef enum {
   DEBUG = 0,
@@ -54,6 +56,12 @@ int main(int argc, char **argv) {
   } else {
     mode = TUI;
   }
+
+  if (DebugInit() != 0) {
+    printf("DebugInit() failed.");
+    return -1;
+  }
+
 
   pru_mem_t pru_mem;
   if (PruMemMap(&pru_mem) != 0) {
@@ -116,6 +124,7 @@ int main(int argc, char **argv) {
         PruEnable(0, &pru_mem.s->pru_ctl);
         PruPrintDebugBuffer(pru_mem.p->debug_buff);
         TuiCleanup();
+        DebugCleanup();
         raise(SIGINT);
       }
       break;

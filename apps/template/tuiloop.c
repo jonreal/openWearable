@@ -10,8 +10,6 @@ void TuiPrintMenu(void) {
   printf(
   "\n\n---------------------------------------------------------------------\n"
   "Menu: f - Collect trial\n"
-  "      s - Start Pronation/Supination Exp\n"
-  "      d - Start Tracking Exp\n"
   "      e - exit\n"
   "-----------------------------------------------------------------------\n");
   fflush(stdout);
