@@ -34,8 +34,14 @@
     "P9.27",  /* pr1_pru0_pru_[r30_5 | r31_5] ---- DEBUG OUT */
 
     /**** CPU GPIO pins ****/
+    "P9.13", /* gpio0[31] ---- DEBUG OUT */
+
+    /**** I2C1 pins ****/
+    "P9.17",  /* I2C1_SCL */
+    "P9.18",  /* I2C1_SDA */
 
     /* the hardware IP uses */
+    "i2c1",
     "pruss";
 
     /*----- pin mux cheat sheet -----*/
@@ -53,19 +59,27 @@
 
       pruss_pins: pinmux_pruss_pins {
         pinctrl-single,pins = <
-          0x0E0 0x15  /* P8.27 - pr1_pru1_pru_r30_8, MODE5 | OUTPUT | PU */
-          0x0E8 0x15  /* P8.28 - pr1_pru1_pru_r30_10, MODE5 | OUTPUT | PU */
-          0x0E4 0x15  /* P8.29 - pr1_pru1_pru_r30_9, MODE5 | OUTPUT | PU */
-          0x0EC 0x15  /* P8.30 - pr1_pru1_pru_r30_11, MODE5 | OUTPUT | PU */
-          0x0B8 0x15  /* P8.39 - pr1_pru1_pru_r30_6, MODE5 | OUTPUT | PU */
-          0x0BC 0x15  /* P8.40 - pr1_pru1_pru_r30_7, MODE5 | OUTPUT | PU */
-          0x0B0 0x15  /* P8.41 - pr1_pru1_pru_r30_4, MODE5 | OUTPUT | PU */
-          0x0B4 0x15  /* P8.42 - pr1_pru1_pru_r30_5, MODE5 | OUTPUT | PU */
-          0x0A8 0x15  /* P8.43 - pr1_pru1_pru_r30_2, MODE5 | OUTPUT | PU */
-          0x0AC 0x15  /* P8.44 - pr1_pru1_pru_r30_3, MODE5 | OUTPUT | PU */
-          0x0A0 0x15  /* P8.45 - pr1_pru1_pru_r30_0, MODE5 | OUTPUT | PU */
-          0x0A4 0x15  /* P8.46 - pr1_pru1_pru_r30_1, MODE5 | OUTPUT | PU */
-          0x1A4 0x15  /* P9.27 - pr1_pru0_pru_r30_5, MODE5 | OUTPUT | PU */
+          0x0E0 0x05  /* P8.27 - pr1_pru1_pru_r30_8,  MODE5 | OUTPUT | PD */
+          0x0E8 0x05  /* P8.28 - pr1_pru1_pru_r30_10, MODE5 | OUTPUT | PD */
+          0x0E4 0x05  /* P8.29 - pr1_pru1_pru_r30_9,  MODE5 | OUTPUT | PD */
+          0x0EC 0x05  /* P8.30 - pr1_pru1_pru_r30_11, MODE5 | OUTPUT | PD */
+          0x0B8 0x05  /* P8.39 - pr1_pru1_pru_r30_6,  MODE5 | OUTPUT | PD */
+          0x0BC 0x05  /* P8.40 - pr1_pru1_pru_r30_7,  MODE5 | OUTPUT | PD */
+          0x0B0 0x05  /* P8.41 - pr1_pru1_pru_r30_4,  MODE5 | OUTPUT | PD */
+          0x0B4 0x05  /* P8.42 - pr1_pru1_pru_r30_5,  MODE5 | OUTPUT | PD */
+          0x0A8 0x05  /* P8.43 - pr1_pru1_pru_r30_2,  MODE5 | OUTPUT | PD */
+          0x0AC 0x05  /* P8.44 - pr1_pru1_pru_r30_3,  MODE5 | OUTPUT | PD */
+          0x0A0 0x05  /* P8.45 - pr1_pru1_pru_r30_0,  MODE5 | OUTPUT | PD */
+          0x0A4 0x05  /* P8.46 - pr1_pru1_pru_r30_1,  MODE5 | OUTPUT | PD */
+          0x1A4 0x05  /* P9.27 - pr1_pru0_pru_r30_5,  MODE5 | OUTPUT | PD */
+          0x074 0x07  /* P9.13 - gpio0[31],           MODE7 | OUTPUT | PD */
+        >;
+      };
+
+      i2c1_pins: pinmux_i2c1_pins{
+        pinctrl-single,pins = <
+          0x15C 0x72  /* P9.17 - i2c1_scl, MODE2 | INPUT_PULLUP (bi-dir)*/
+          0x158 0x72  /* P9.18 - i2c1_sda, MODE2 | INPUT_PULLUP (bi-dir)*/
         >;
       };
     };
@@ -80,6 +94,18 @@
       pinctrl-0 = <&pruss_pins>;
     };
   };
+
+  /*----- I2C1 ------*/
+  fragment@2 {
+    target = <&i2c1>;
+    __overlay__ {
+      #address-cells = <1>;
+      #size-cells = <1>;
+      status = "okay";
+      pinctrl-names = "default";
+      pinctrl-0 = <&i2c1_pins>;
+    };
+ };
 };
 
 

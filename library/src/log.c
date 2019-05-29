@@ -23,14 +23,18 @@
 #include <sys/mman.h>
 #include "pru.h"
 #include "format.h"
-
+#include "debug.h"
 
 // ---------------------------------------------------------------------------
+// Function: void circBuffUpdate(void)
 //
-// Static Protos
-//
+//  This function initializes the circular buffer.
 // ---------------------------------------------------------------------------
-static void LogCircBuffUpdate(volatile uint32_t index, circbuff_t* buff);
+static void LogCircBuffUpdate(const volatile uint32_t new_cb_index,
+                              circbuff_t* cb) {
+  if (cb->end != new_cb_index)
+    cb->end = new_cb_index;
+}
 
 // ---------------------------------------------------------------------------
 //
@@ -53,23 +57,16 @@ circbuff_t* LogNewCircBuff(void) {
   return cb;
 }
 
-// ---------------------------------------------------------------------------
-// Function: void circBuffUpdate(void)
-//
-//  This function initializes the circular buffer.
-// ---------------------------------------------------------------------------
-static void LogCircBuffUpdate(const volatile uint32_t new_cb_index,
-                              circbuff_t* cb) {
-  if (cb->end != new_cb_index)
-    cb->end = new_cb_index;
-}
+
 
 void LogDebugWriteState(const shared_mem_t* sm, circbuff_t* cb, char* buff) {
     if (cb->start != sm->state[0].time){
+      DebugPinHigh();
       FormatSprintState(&sm->state[0], buff);
       fprintf(stdout, buff);
       buff[0] = '\0';
       cb->start = sm->state[0].time;
+      DebugPinLow();
     }
 }
 
@@ -192,6 +189,7 @@ void LogWriteStateToFileAndPublish(int logflag,
 
   // send samples at approx 30 Hz (if MIN_STATE_REQ = 33 and fs = 1000)
   if (size >= MIN_STATE_REQ) {
+    DebugPinHigh();
     udp->buff[0] = '\0';
     int i = log->cbuff->start + (size -1);
     FormatSprintPublishState(&log->pru_mem->s->state[i % STATE_BUFF_LEN],
@@ -206,14 +204,13 @@ void LogWriteStateToFileAndPublish(int logflag,
                        log->cbuff->temp_buff);
         strcat(log->write_buff, log->cbuff->temp_buff);
       }
-
-
       // Write to file
       int len = strlen(log->write_buff);
       memcpy(log->addr + log->location, log->write_buff, len);
       log->location += len;
     }
     log->cbuff->start = (log->cbuff->start + size) % STATE_BUFF_LEN;
+    DebugPinLow();
   }
 }
 
@@ -242,4 +239,5 @@ int LogSaveFile(log_t* log) {
 void LogCleanup(log_t* log) {
   free(log);
 }
+
 

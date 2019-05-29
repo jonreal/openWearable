@@ -1,4 +1,4 @@
-/* Copyright 2017 Jonathan Realmuto
+/* Copyright 2019 Jonathan Realmuto
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -13,26 +13,16 @@
  limitations under the License.
 =============================================================================*/
 
-#ifndef _TUI_H__
-#define _TUI_H_
+#ifndef _DEBUG_H__
+#define _DEBUG_H_
 
-#include "pru.h"
-#include <pthread.h>
-#include "log.h"
+// "P9.13", gpio0[31]
+#define CPU_DEBUG_CHIP 0
+#define CPU_DEBUG_PIN 31
 
-extern int TuiLoop(const pru_mem_t* pru_mem);
-extern void TuiPrintMenu(void);
+int DebugInit(void);
+void DebugPinHigh(void);
+void DebugPinLow(void);
+void DebugCleanup(void);
 
-int TuiInit(void);
-int TuiCleanup(void);
-int TuiInitLogAndPublishThread(const pru_mem_t* pru_mem);
-void TuiCloseLogAndPublishThread(void);
-void TuiNewLogFile(char* log_file);
-void TuiStartLog(void);
-void TuiStopAndSaveLog(void);
-
-void TuiPollForUserInput(void);
-void TuiSetPruCtlBit(const pru_mem_t* pru_mem, unsigned char n);
-void TuiPollPruCtlBit(const pru_mem_t* pru_mem, unsigned char n);
-
-#endif /* _TUI_H_ */
+#endif
