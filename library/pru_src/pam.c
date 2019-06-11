@@ -18,87 +18,9 @@
 #include <stdlib.h>
 
 
-pam_t* PamInitMuscle(uint8_t bus_address,
-                     uint8_t bus_channel,
-                     uint8_t sensor_address,
-                     uint32_t in_pin,
-                     uint32_t out_pin,
-                     uint32_t divisor,
-                     fix16_t threshold) {
-
-  pam_t* pam = malloc(sizeof(pam_t));
-  pam->mux = MuxI2cInit(bus_address);
-  pam->sensor = PressureSensorInit(sensor_address);
-  pam->channel = bus_channel;
-  pam->hp_pin = in_pin;
-  pam->lp_pin = out_pin;
-  pam->fs_div = divisor;
-  pam->thr = threshold;
-  pam->cnt = 0;
-  pam->prev_cmd = 0;
-
-  PamSamplePressure(pam);
-  return pam;
-}
-
-void PamFreeMuscle(pam_t* pam) {
-   __R30 |= (1 << pam->lp_pin);
-   __R30 &= ~(1 << pam->hp_pin);
-  __delay_cycles(1000000000);
-   __R30 &= ~(1 << pam->lp_pin);
-  PressureSensorFree(pam->sensor);
-  MuxI2cFree(pam->mux);
-  free(pam);
-}
-
-fix16_t PamSamplePressure(const pam_t* pam){
-  fix16_t rtn;
-  MuxI2cSetChannel(pam->mux, pam->channel);
-  __delay_cycles(1100);
-  rtn = PressureSensorSample(pam->sensor);
-  __delay_cycles(500);
-  return rtn;
-}
-
-void PamUpdateControl(pam_t* pam,
-                      const volatile fix16_t* p_m,
-                      const volatile fix16_t* p_d,
-                      volatile int16_t* valve_cmd) {
-
-  fix16_t error = (*p_d + pam->thr) - *p_m;
-  //fix16_t error = *p_d - *p_m;
-
-  if (pam->cnt == (pam->fs_div - 1)){
-    pam->cnt = 0;
-    if ((fix16_sadd(error, pam->thr) >= 0)
-        && (fix16_ssub(error, pam->thr) <= 0)) {
-      *valve_cmd = 0;
-    } else if (fix16_ssub(error, pam->thr) > 0) {
-      *valve_cmd = 1;
-    } else if (fix16_sadd(error, pam->thr) < 0) {
-      *valve_cmd = -1;
-    }
-  } else {
-    // Enforce pusle width min/max
-    if (pam->cnt <= 1) {
-      *valve_cmd = pam->prev_cmd;
-    } else {
-      *valve_cmd = 0;
-    }
-    (pam->cnt)++;
-  }
-
-  // ignore threshold if p_d = 0
-  if (*p_d == 0)
-    *valve_cmd = -1;
-
-  PamSetValveCommand(pam, valve_cmd);
-  pam->prev_cmd = *valve_cmd;
-}
-
-static void PamSetValveCommand(const pam_t* pam,
-                               const volatile int16_t* valve_cmd) {
-  switch (*valve_cmd) {
+// ---- static functions -----------------------------------------------------
+void PamUpdateControl(pam_t* pam) {
+  switch (pam->u) {
     case 0:
       __R30 &= ~(1 << pam->hp_pin) & ~(1 << pam->lp_pin);
       break;
@@ -111,4 +33,330 @@ static void PamSetValveCommand(const pam_t* pam,
       __R30 &= ~(1 << pam->hp_pin);
       break;
   }
+}
+
+
+// ---------------------------------------------------------------------------
+pam_t* PamInitMuscle(pressure_sensor_t* sensor,
+                     uint32_t in_pin,
+                     uint32_t out_pin) {
+
+  pam_t* pam = malloc(sizeof(pam_t));
+  pam->sensor = sensor;
+  pam->hp_pin = in_pin;
+  pam->lp_pin = out_pin;
+  pam->u = 0;
+  pam->p_m = 0;
+  pam->p_d = 0;
+  pam->p_max = 0;
+  pam->reflex = 0;
+
+  // Will hang here if i2c mux/channel is off
+  PamUpdateSensors(pam,NULL);
+  return pam;
+}
+
+reservoir_t* PamInitReservoir(pressure_sensor_t* sensor) {
+
+  reservoir_t* reservoir = malloc(sizeof(reservoir_t));
+  reservoir->sensor = sensor;
+
+  // Will hang here if i2c mux/channel is off
+  PamSampleReservoirPressure(reservoir);
+  return reservoir;
+}
+
+void PamMuscleFree(pam_t* pam) {
+   __R30 |= (1 << pam->lp_pin);
+   __R30 &= ~(1 << pam->hp_pin);
+  PressureSensorFree(pam->sensor);
+  free(pam);
+}
+
+void PamReservoirFree(reservoir_t* reservoir) {
+  PressureSensorFree(reservoir->sensor);
+  free(reservoir);
+}
+
+void PamUpdateSensors(pam_t* pam, iir_filt_t* f){
+  if(f)
+    pam->p_m = FiltIir(PressureSensorSample(pam->sensor),f);
+  else
+    pam->p_m = PressureSensorSample(pam->sensor);
+  debug_buff[1] = pam->p_m;
+}
+
+void PamSetU(pam_t* pam, int8_t u) {
+  pam->u = u;
+}
+
+fix16_t PamGetPm(pam_t* pam) {
+  return pam->p_m;
+}
+
+fix16_t PamGetPd(pam_t* pam) {
+  return pam->p_d;
+}
+
+fix16_t PamGetPmax(pam_t* pam) {
+  return pam->p_max;
+}
+
+
+void PamSetPd(pam_t* pam, fix16_t Pd) {
+  pam->p_d = Pd;
+}
+
+fix16_t PamSampleReservoirPressure(const reservoir_t* reservoir){
+  return PressureSensorSample(reservoir->sensor);
+}
+
+
+
+void PamAntagonistReflex(pam_t* p1, pam_t* p2,
+                        iir_filt_t* f1, iir_filt_t* f2,
+                        uint8_t period,  uint8_t pulsewidth,
+                        uint8_t pulseonset) {
+
+  static volatile uint8_t cnt1 = 0;
+  static volatile uint8_t type1 = 0;
+  static volatile uint8_t cnt2 = 0;
+  static volatile uint8_t type2 = 0;
+  static volatile uint8_t flag2 = 0;
+  static volatile uint8_t flag1 = 0;
+  fix16_t dp = 0x20000 ; // 0.5
+
+  const fix16_t dp_max = fix16_from_int(0.5);
+  const fix16_t dp_min = fix16_from_int(1);
+
+  PamUpdateSensors(p1,NULL);
+  PamUpdateSensors(p2,NULL);
+
+  // Determine which reflex
+  if ((type1 == 0) && (fix16_ssub(p1->p_d,p1->p_m) > fix16_from_int(20))) {
+    type1 = 1;
+  } else if ((type1 == 0) && (p1->p_m < fix16_ssub(p1->p_d,dp_min))) {
+    type1 = 2;
+  } else if ((type1 == 0) && (type2 == 0) &&
+      (p1->p_m > fix16_sadd(p1->p_d,dp_max))) {
+    type1 = 3;
+  }
+
+  // Determine which reflex
+  if ((type2 == 0) && (fix16_ssub(p2->p_d,p2->p_m) > fix16_from_int(20))) {
+    type2 = 1;
+  } else if ((type2 == 0) && (p2->p_m < fix16_ssub(p2->p_d,dp_min))) {
+    type2 = 2;
+  } else if ((type1 == 0) && (type2 == 0) &&
+      (p2->p_m > fix16_sadd(p2->p_d,dp_max))) {
+    type2 = 3;
+  }
+
+
+  if (type1 == 1) {
+    if (p1->p_m > p1->p_d){
+      cnt1 = 0;
+      flag1 = 1;
+      PamSetU(p1,0);
+    } else if ((flag1) && (cnt1 == period)) {
+      type1 = 0;
+      flag1 = 0;
+      p1->p_max = p1->p_m;
+      cnt1 = 0;
+    } else if (!flag1) {
+      PamSetU(p1,1);
+      cnt1 = 0;
+    }
+    cnt1++;
+  }
+
+  if (type1 == 2) {
+    if (cnt1 == period) {
+      type1 = 0;
+      cnt1 = 0;
+      PamSetU(p1,0);
+    } else if ((cnt1 >= pulseonset) && (cnt1 <= (pulseonset + pulsewidth))) {
+      PamSetU(p1,1);
+    } else {
+      PamSetU(p1,0);
+    }
+    cnt1++;
+  }
+
+  if (type1 == 3) {
+    if (cnt1 == period) {
+      type1 = 0;
+      cnt1 = 0;
+      PamSetU(p1,0);
+      PamSetU(p2,0);
+      p1->p_max = p1->p_m;
+      p2->p_max = p2->p_m;
+      p2->p_d = p2->p_d + dp;
+      p1->p_d = p1->p_d - dp;
+    } else if ((cnt1 >= pulseonset) && (cnt1 <= (pulseonset + pulsewidth))) {
+      PamSetU(p1,-1);
+      PamSetU(p2,1);
+    } else {
+      PamSetU(p1,0);
+      PamSetU(p2,0);
+    }
+    cnt1++;
+  }
+
+
+  if (type2 == 1) {
+    if (p2->p_m > p2->p_d){
+      cnt2 = 0;
+      flag2 = 1;
+      PamSetU(p2,0);
+    } else if ((flag2) && (cnt2 == period)) {
+      type2 = 0;
+      flag2 = 0;
+      p2->p_max = p2->p_m;
+      cnt2 = 0;
+    } else if (!flag2) {
+      PamSetU(p2,1);
+      cnt2 = 0;
+    }
+    cnt2++;
+  }
+
+
+  if (type2 == 2) {
+    if (cnt2 == period) {
+      type2 = 0;
+      cnt2 = 0;
+      PamSetU(p2,0);
+    } else if ((cnt2 >= pulseonset) && (cnt2 <= (pulseonset + pulsewidth))) {
+      PamSetU(p2,1);
+    } else {
+      PamSetU(p2,0);
+    }
+    cnt2++;
+  }
+
+  if (type2 == 3) {
+    if (cnt2 == period) {
+      type2 = 0;
+      cnt2 = 0;
+      PamSetU(p2,0);
+      PamSetU(p1,0);
+      p1->p_max = p1->p_m;
+      p2->p_max = p2->p_m;
+      p2->p_d = p2->p_d - dp;
+      p1->p_d = p1->p_d + dp;
+    } else if ((cnt2 >= pulseonset) && (cnt2 <= (pulseonset + pulsewidth))) {
+      PamSetU(p2,-1);
+      PamSetU(p1,1);
+    } else {
+      PamSetU(p2,0);
+      PamSetU(p1,0);
+    }
+    cnt2++;
+  }
+
+  PamUpdateControl(p2);
+  PamUpdateControl(p1);
+  p1->reflex = type1;
+  p2->reflex = type2;
+}
+
+
+
+
+
+
+void PamMyReflex(pam_t* pam, uint8_t period,  uint8_t pulsewidth,
+                  uint8_t pulseonset) {
+
+  static volatile uint8_t cnt = 0;
+  static volatile uint8_t type = 0;
+
+  fix16_t e = fix16_ssub(pam->p_d, pam->p_m);
+  fix16_t dp = 0x4000; // 0.25
+
+
+  // Determine which reflex
+  if ((type == 0) && (e > 0)) {
+    type = 1;
+  } else if ((type == 0) && (e < fix16_from_int(-4))) {
+    type = 2;
+  }
+
+  if (type == 1) {
+    if (cnt == period) {
+      type = 0;
+      cnt = 0;
+      PamSetU(pam,0);
+    } else if ((cnt >= pulseonset) && (cnt <= (pulseonset + pulsewidth))) {
+      PamSetU(pam,1);
+    } else if ((cnt < pulseonset) && (cnt > (pulseonset + pulsewidth))) {
+      PamSetU(pam,0);
+    }
+    cnt++;
+  }
+
+  if (type == 2) {
+    if (cnt == period) {
+      type = 0;
+      cnt = 0;
+      PamSetU(pam,0);
+      PamSetPd(pam,fix16_ssub(PamGetPd(pam),dp));
+    } else if ((cnt >= pulseonset) && (cnt <= (pulseonset + pulsewidth))) {
+      PamSetU(pam,-1);
+    } else if ((cnt < pulseonset) && (cnt > (pulseonset + pulsewidth))) {
+      PamSetU(pam,0);
+    }
+    cnt++;
+  }
+
+  PamUpdateControl(pam);
+}
+
+
+
+int8_t PamReflex(pam_t* pam, reflex_t* reflex) {
+
+  fix16_t e = fix16_ssub(pam->p_d, pam->p_m);
+  int8_t u;
+
+  if ((!reflex->on) && (fix16_ssub(e, reflex->threshold) > 0)) {
+    reflex->on = 1;
+  }
+  if (reflex->on) {
+    if (reflex->cnt == reflex->period) {
+      reflex->on = 0;
+      reflex->cnt = 0;
+      u = 0;
+    } else if ((reflex->cnt >= reflex->pulseonset)
+        && (reflex->cnt <= (reflex->pulseonset + reflex->pulsewidth))) {
+      u = reflex->sign*1;
+    } else if ((reflex->cnt < reflex->pulseonset)
+        && (reflex->cnt > (reflex->pulseonset + reflex->pulsewidth))) {
+      u = 0;
+    }
+    reflex->cnt++;
+  }
+  return u;
+}
+
+int16_t PamGetU(pam_t* pam) {
+  return pam->u;
+}
+
+
+reflex_t* PamInitReflex(uint8_t pw, uint8_t T, uint8_t po, int8_t sign,
+                        fix16_t thresh) {
+
+  reflex_t* reflex = malloc(sizeof(reflex_t));
+
+  reflex->pulsewidth = pw;
+  reflex->period = T;
+  reflex->pulseonset = po;
+  reflex->sign = sign;
+  reflex->threshold = thresh;
+  reflex->cnt = 0;
+  reflex->on = 0;
+
+  return reflex;
 }

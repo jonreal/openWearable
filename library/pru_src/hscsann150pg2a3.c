@@ -17,9 +17,18 @@
 #include <stdlib.h>
 #include "i2cdriver.h"
 
-pressure_sensor_t* PressureSensorInit(uint8_t address) {
+pressure_sensor_t* PressureSensorInit(i2cmux_t* mux,
+                                      uint8_t mux_channel,
+                                      uint8_t i2c_address) {
   pressure_sensor_t* sensor = malloc(sizeof(pressure_sensor_t));
-  sensor->address = address;
+  if(mux) {
+    sensor->mux = mux;
+    sensor->mux_channel = mux_channel;
+  } else {
+    sensor->mux = NULL;
+    sensor->mux_channel = NULL;
+  }
+  sensor->i2c_address = i2c_address;
   return sensor;
 }
 
@@ -37,7 +46,15 @@ fix16_t PressureSensorSample(const pressure_sensor_t* sensor) {
   const static fix16_t Mp = 0x2EE;
   uint8_t buffer[4];
 
-  I2cRxBurstNoReg(sensor->address, 4, buffer);
+  if(sensor->mux) {
+    MuxI2cSetChannel(sensor->mux, sensor->mux_channel);
+    __delay_cycles(1100);
+    I2cRxBurstNoReg(sensor->i2c_address, 4, buffer);
+    __delay_cycles(500);
+  } else {
+    I2cRxBurstNoReg(sensor->i2c_address, 4, buffer);
+  }
+
   uint32_t bits = (((uint32_t) (buffer[0] & ~0xC0)) << 8)
                     | ((uint32_t) buffer[1]);
 

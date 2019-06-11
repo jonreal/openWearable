@@ -18,43 +18,84 @@
 
 #include <stdint.h>
 #include "fix16.h"
-#include "hscsann150pg2a3.h"
-#include "pca9548a.h"
+#include "filter.h"
+#include "hscsann150pg2a3.h"    // pressure sensor
+#include "pca9548a.h"           // i2c multiplexer
 
 // Digital Ouput Register
 volatile register uint32_t __R30;
 extern volatile uint32_t *debug_buff;
 
 typedef struct {
-  i2cmux_t* mux;
   pressure_sensor_t* sensor;
-  uint8_t channel;
-  uint8_t hp_pin;                 // high pressure pin
-  uint8_t lp_pin;                 // low pressure pin
-  uint8_t fs_div;                 // sample freq divider
-  uint8_t cnt;                    // loop cnt (for downsampling)
-  int8_t prev_cmd;                // prev command
-  fix16_t thr;                    // threshold for valve control
+  uint8_t hp_pin;                   // high pressure pin
+  uint8_t lp_pin;                   // low pressure pin
+  volatile int8_t u;                         // current command
+  volatile fix16_t p_m;             // muscle pressure
+  volatile fix16_t p_d;             // desired pressure
+  volatile fix16_t p_max;
+  volatile fix16_t reflex;
 } pam_t;
 
+typedef struct {
+  uint8_t pulsewidth;
+  uint8_t period;
+  uint8_t pulseonset;
+  int8_t sign;
+  fix16_t threshold;
+  volatile uint8_t cnt;
+  volatile uint8_t on;
+} reflex_t;
+
+
+typedef struct {
+  pressure_sensor_t* sensor;
+  volatile fix16_t p_res;
+} reservoir_t;
 
 // Public
-pam_t* PamInitMuscle(uint8_t bus_address,
-                     uint8_t bus_channel,
-                     uint8_t sensor_address,
+pam_t* PamInitMuscle(pressure_sensor_t* sens,
                      uint32_t in_pin,
-                     uint32_t out_pin,
-                     uint32_t divisor,
-                     fix16_t threshold);
-void PamFreeMuscle(pam_t* pam);
-fix16_t PamSamplePressure(const pam_t* pam);
-void PamUpdateControl(pam_t* pam,
-                      const volatile fix16_t* p_m,
-                      const volatile fix16_t* p_d,
-                      volatile int16_t* valve_cmd);
+                     uint32_t out_pin);
+reservoir_t* PamInitReservoir(pressure_sensor_t* sens);
+void PamMuscleFree(pam_t* pam);
+void PamReservoirFree(reservoir_t* reservoir);
 
-// Private
-static void PamSetValveCommand(const pam_t* pam,
-                               const volatile int16_t* valve_cmd);
 
+void PamUpdateSensors(pam_t* pam, iir_filt_t* f);
+int8_t PamReflex(pam_t* pam, reflex_t* reflex);
+
+reflex_t* PamInitReflex(uint8_t pw, uint8_t T, uint8_t po, int8_t sign,
+                        fix16_t thresh);
+void PamMyReflex(pam_t* pam, uint8_t period,  uint8_t pulsewidth,
+                  uint8_t pulseonset);
+void PamAntagonistReflex(pam_t* p1, pam_t* p2,
+                        iir_filt_t* f1, iir_filt_t* f2,
+                        uint8_t period,  uint8_t pulsewidth,
+                        uint8_t pulseonset);
+
+fix16_t PamGetPm(pam_t* pam);
+fix16_t PamGetPd(pam_t* pam);
+void PamSetPd(pam_t* pam, fix16_t Pd);
+
+void PamSetU(pam_t* pam, int8_t u);
+void PamUpdateControl(pam_t* pam);
+
+int16_t PamGetU(pam_t* pam);
+fix16_t PamGetPmax(pam_t* pam);
+
+
+fix16_t PamSampleReservoirPressure(const reservoir_t* reservoir);
+
+
+//void PamThresholdControl(pam_t* pam,
+//                          const volatile fix16_t* p_m,
+//                          const volatile fix16_t* p_d,
+//                          const fix16_t thr,
+//                          const uint8_t fs_div,
+//                          volatile int16_t* valve_cmd);
+
+//void PamReflexControl(pam_t* pam,
+//                      fix16_t* pm,
+//                      fix16_t* p0, fix16_t dp);
 #endif /* _PAM_H_ */

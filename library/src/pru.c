@@ -76,6 +76,43 @@ int PruMemMap(pru_mem_t* pru_mem) {
   return 0;
 }
 
+
+int PruWriteFirmware(char* suffix) {
+  int rtn;
+  char buf[64];
+
+  // PRU0
+  memset(buf, 0, sizeof(buf));
+  snprintf(buf, sizeof(buf), "am335x-pru0-%s-fw", suffix);
+  int fd = open(PRU0_FW, O_WRONLY);
+  if (fd == -1) {
+    printf("pru0 - failed to open firmware location");
+    return -1;
+  }
+  rtn = write(fd, buf, strlen(buf));
+  close(fd);
+  if (rtn == -1) {
+    printf("pru0 - failed writing firmware location");
+    return -1;
+  }
+
+  // PRU1
+  memset(buf, 0, sizeof(buf));
+  snprintf(buf, sizeof(buf), "am335x-pru1-%s-fw", suffix);
+  fd = open(PRU1_FW, O_WRONLY);
+  if (fd == -1) {
+    printf("pru1 - failed to open firmware location");
+    return -1;
+  }
+  rtn = write(fd, buf, strlen(buf));
+  close(fd);
+  if (rtn == -1) {
+    printf("pru1 - failed writing firmware location");
+    return -1;
+  }
+  return 0;
+}
+
 // ---------------------------------------------------------------------------
 // Function: int PruInit(void)
 //
@@ -83,12 +120,17 @@ int PruMemMap(pru_mem_t* pru_mem) {
 //
 // Outputs:   0 for success
 // ---------------------------------------------------------------------------
-int PruInit(void){
+int PruInit(char* suffix){
   int rtn;
   char buf[64];
 
   if (PruRestart() == -1) {
     printf("restart pru failed.\n");
+    return -1;
+  }
+
+  if (PruWriteFirmware(suffix) == -1) {
+    printf("firmware write failed\n");
     return -1;
   }
 
@@ -274,7 +316,7 @@ void PruEnable(int en, pru_ctl_t* ctl) {
 void PruPrintDebugBuffer(const volatile uint32_t* db) {
   printf("\n\n---- Debug Buffer ----\n");
   for (int i=0; i<10; i++) {
-    printf("0x%X \t%i\n", db[i], db[i]);
+    printf("0x%X\t %i\t %i\n", db[i], db[i], fix16_to_int(db[i]));
   }
 }
 

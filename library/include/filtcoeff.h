@@ -7,6 +7,10 @@
 
 
 // Butterworth IIR filters
+//
+// 1st order lowpass 2Hz
+static const fix16_t k_lp_1_2Hz_b[2] = {0x196, 0x196};
+static const fix16_t k_lp_1_2Hz_a[2] = {fix16_one, 0xFFFF0333};
 
 // 1st order lowpass 5Hz
 static const fix16_t k_lp_1_5Hz_b[2] = {0x3F8, 0x3F8};
