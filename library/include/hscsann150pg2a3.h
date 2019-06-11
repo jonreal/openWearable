@@ -18,13 +18,18 @@
 
 #include <stdint.h>
 #include "fix16.h"
+#include "pca9548a.h"
 
 typedef struct {
-  uint8_t address;
+  i2cmux_t* mux;
+  uint8_t mux_channel;
+  uint8_t i2c_address;
 } pressure_sensor_t;
 
 // Public
-pressure_sensor_t* PressureSensorInit(uint8_t address);
+pressure_sensor_t* PressureSensorInit(i2cmux_t* mux,
+                                      uint8_t mux_channel,
+                                      uint8_t i2c_address);
 void PressureSensorFree(pressure_sensor_t* sensor);
 fix16_t PressureSensorSample(const pressure_sensor_t* sensor);
 

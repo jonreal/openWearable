@@ -88,7 +88,9 @@ int main(void) {
 
     // Wait for pru1 to be done
     mem.s->pru_ctl.bit.pru0_done = 1;
+    debugPinLow();
     while(!(mem.s->pru_ctl.bit.pru1_done));
+    debugPinHigh();
     mem.s->pru_ctl.bit.pru1_done = 0;
 
     // Control

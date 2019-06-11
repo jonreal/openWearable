@@ -18,7 +18,8 @@
 #define PRU1_STATE "/sys/class/remoteproc/remoteproc2/state"
 
 int PruMemMap(pru_mem_t* pru_mem);
-int PruInit(void);
+int PruInit(char* suffix);
+int PruWriteFirmware(char* suffix);
 int PruRestart(void);
 int PruCleanup(void);
 void PruCtlReset(pru_ctl_t* ctl);

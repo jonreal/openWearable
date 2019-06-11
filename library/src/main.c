@@ -29,7 +29,6 @@
 #include "tui.h"
 #include "format.h"
 
-
 typedef enum {
   DEBUG = 0,
   TUI,
@@ -62,7 +61,6 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-
   pru_mem_t pru_mem;
   if (PruMemMap(&pru_mem) != 0) {
     printf("pru_mem_init() failed.");
@@ -80,7 +78,7 @@ int main(int argc, char **argv) {
     printf("\nLookup table file not found!\n");
   }
 
-  if(PruInit() != 0)
+  if(PruInit(FWSUFFIX) != 0)
     return -1;
 
   switch (mode) {
@@ -122,6 +120,7 @@ int main(int argc, char **argv) {
       }
       if (TuiLoop(&pru_mem) == 1) {
         PruEnable(0, &pru_mem.s->pru_ctl);
+        PruRestart();
         PruPrintDebugBuffer(pru_mem.p->debug_buff);
         TuiCleanup();
         DebugCleanup();

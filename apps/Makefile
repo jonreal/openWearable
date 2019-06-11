@@ -1,29 +1,29 @@
-# -----------------------------------------------------------------------------
-# Makefile for ankleOS
-#
-# J. Realmuto realmuto@uw.edu
-# -----------------------------------------------------------------------------
+# ----
 
-
+# Each app has following targets
 TARGET = main
 PRU0_TARGET = pru0_main
 PRU1_TARGET = pru1_main
 
 # C Source Directories
 CSRC_DIR = ../library/src
-CINC_DIR = ../library/include -I/usr/lib/ti/pru-software-support-package/include/am335x -I/usr/lib/ti/pru-software-support-package/include
+CINC_DIR = ../library/include \
+					 -I/usr/lib/ti/pru-software-support-package/include/am335x \
+					 -I/usr/lib/ti/pru-software-support-package/include
 CLIB = -lpthread
 SRC_IGNORE =
 
-# PRU_C Source Directorie
-#
+# PRU_C Source Directories
 PRU_CSRC_DIR = ../library/pru_src
-PRU_CINC_DIR = -I../library/include/ -I/usr/lib/ti/pru-software-support-package/include/am335x -I/usr/lib/ti/pru-software-support-package/include
+PRU_CINC_DIR = -I../library/include/ \
+							 -I/usr/lib/ti/pru-software-support-package/include/am335x \
+							 -I/usr/lib/ti/pru-software-support-package/include
 PRU_CLIB =
 
 # Build Directories
 TARGET_DIR = ./bin
-BUILD_DIR = ./build
+BUILD_DIR = $(MAKECMDGOALS)/build
+# ----
 
 # Compiler
 CC = gcc
@@ -40,6 +40,8 @@ INSTALL = install -m 755
 INSTALLDIR = install -d -m 755
 INSTALLNONEXEC = install -m 644
 
+# ----
+
 # CPU library sources (openWearable core)
 CPU_SRC_PRE = $(filter-out $(CSRC_DIR)/$(TARGET).c, $(wildcard $(CSRC_DIR)/*.c))
 CPU_SRC = $(filter-out $(CSRC_DIR)/$(SRC_IGNORE).c, $(CPU_SRC_PRE))
@@ -51,97 +53,117 @@ APP_SPEC_CPU_OBJ = $(patsubst $(MAKECMDGOALS)/%,$(BUILD_DIR)/%,$(APP_SPEC_CPU_SR
 
 # PRU library source (mostly drivers, ect)
 PRU_SRC = $(filter-out $(PRU_CSRC_DIR)/$(PRU0_TARGET).c $(PRU_CSRC_DIR)/$(PRU1_TARGET).c, $(wildcard $(PRU_CSRC_DIR)/*.c))
+
 PRU_OBJ = $(patsubst $(PRU_CSRC_DIR)/%,$(BUILD_DIR)/%,$(PRU_SRC:.c=.o))
 
 # App specific pru source files
 APP_SPEC_PRU_SRC = $(MAKECMDGOALS)/pruloop.c
 APP_SPEC_PRU_OBJ = $(patsubst $(MAKECMDGOALS)/%,$(BUILD_DIR)/%,$(APP_SPEC_PRU_SRC:.c=.o))
 
-# App specific include
 APP_SPEC_INC = $(MAKECMDGOALS)/
 
-GOALS =
-APP =
-# -----------------------------------------------------------------------------
-# Application
-# -----------------------------------------------------------------------------
+# ----
 
-# -----------------------------------------------------------------------------
-# Clean
-# -----------------------------------------------------------------------------
+# ---- Apps
+#  For each app add the following recipes, but replacing template with dir name
+#  of app
 
-check4clean :
-ifeq ($(MAKECMDGOALS),clean)
-#	@echo " Cleaning...";
-#	@echo " $(RM) -r $(BUILD_DIR)"; $(RM) -r $(BUILD_DIR)
-#	@echo " $(RM) -r $(TARGET_DIR)"; $(RM) -r $(TARGET_DIR)
-GOALS = cleanow
-else
-GOALS = $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf  $(BUILD_DIR)/$(TARGET).o $(APP_SPEC_CPU_OBJ) $(CPU_OBJ) linker install
-APP = $(MAKECMDGOALS)
-endif
+.PHONY : linker install template clean-template reflex clean-reflex
 
-cleanow:
-	@echo " Cleaning...";
-	@echo " $(RM) -r ./build"; $(RM) -r ./build
-	@echo " $(RM) -r $(TARGET_DIR)"; $(RM) -r $(TARGET_DIR)
 
-# Check if clean
-$(MAKECMDGOALS): check4clean $(GOALS)
-	@echo "";
+# ---
+template : linker install
+clean-template :
+	@echo " Cleaning template...";
+	@echo " $(RM) -r ./template/build"; $(RM) -r ./template/build
+	@echo " $(RM) -r $(TARGET_DIR)/template"; $(RM) -r $(TARGET_DIR)/template
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-template-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-template-fw
 
-# Link CPU
-linker:
+# ---
+reflex : linker install
+clean-reflex :
+	@echo " Cleaning reflex...";
+	@echo " $(RM) -r ./reflex/build"; $(RM) -r ./reflex/build
+	@echo " $(RM) -r $(TARGET_DIR)/reflex"; $(RM) -r $(TARGET_DIR)/reflex
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-reflex-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-reflex-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-reflex-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-reflex-fw
+
+
+
+
+# ---- CPU
+
+# Linker -- Must define pru firmware suffix
+linker : $(CPU_OBJ) $(APP_SPEC_CPU_OBJ)
+	@echo "\n Linking cpu ... \n";
 	@mkdir -p $(TARGET_DIR)
-	$(CC) $(CFLAGS) $(CPU_OBJ) $(APP_SPEC_CPU_OBJ) $(CSRC_DIR)/$(TARGET).c -I$(CINC_DIR) -I$(APP_SPEC_INC) -o $(TARGET_DIR)/$(MAKECMDGOALS) $(CLIB) -lm
-
-# Link PRU0
-$(BUILD_DIR)/$(PRU0_TARGET).elf: $(PRU_OBJ) $(APP_SPEC_PRU_OBJ) $(BUILD_DIR)/$(PRU0_TARGET).o
-	@echo "\n Linking pru0... \n"
-	@mkdir -p $(TARGET_DIR)
-	$(PRU_CC) $(PRU_CFLAGS) -z $^ -llibc.a -m $(BUILD_DIR)/$(PRU0_TARGET).map -o $(BUILD_DIR)/$(PRU0_TARGET).elf $(PRU_CSRC_DIR)/PRU0.cmd
-
-# Link PRU1
-$(BUILD_DIR)/$(PRU1_TARGET).elf: $(PRU_OBJ) $(APP_SPEC_PRU_OBJ) $(BUILD_DIR)/$(PRU1_TARGET).o
-	@echo "\n Linking pru0... \n"
-	@mkdir -p $(TARGET_DIR)
-	$(PRU_CC) $(PRU_CFLAGS) -z $^ -llibc.a -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $(BUILD_DIR)/$(PRU1_TARGET).elf $(PRU_CSRC_DIR)/PRU1.cmd
+	$(CC) $(CFLAGS) $(CPU_OBJ) $(APP_SPEC_CPU_OBJ) $(CSRC_DIR)/$(TARGET).c -I$(CINC_DIR) -I$(APP_SPEC_INC) -o $(TARGET_DIR)/$(MAKECMDGOALS) $(CLIB) -lm -DFWSUFFIX=\"$(MAKECMDGOALS)\"
 
 # Build C dependencies
-$(BUILD_DIR)/%.o: $(CSRC_DIR)/%.c
+$(BUILD_DIR)%.o: $(CSRC_DIR)%.c
 	@echo "\n Building core dependencies... \n";
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -I$(CINC_DIR) -I./$(APP_SPEC_INC) -c -o $@ $< $(CLIB) -lm
 
-# Build PRU dependencies
-$(BUILD_DIR)/%.o: $(PRU_CSRC_DIR)/%.c
+# Build app specific C dependencies
+$(BUILD_DIR)/format.o : $(MAKECMDGOALS)/format.c
+	@echo "\n Building app specific dependencies... \n";
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -I$(CINC_DIR) -I./$(APP_SPEC_INC) -c -o $@ $< $(CLIB) -lm
+
+# Build app specific C dependencies
+$(BUILD_DIR)/tuiloop.o : $(MAKECMDGOALS)/tuiloop.c
+	@echo "\n Building app specific dependencies... \n";
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -I$(CINC_DIR) -I./$(APP_SPEC_INC) -c -o $@ $< $(CLIB) -lm
+
+# ---- PRU
+
+# Install PRU
+install : $(BUILD_DIR)/$(PRU0_TARGET).elf \
+					$(BUILD_DIR)/$(PRU1_TARGET).elf
+	@echo "\n Installing pru firmware... \n";
+	$(INSTALLDIR) /etc/modprobe.d
+	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU0_TARGET).elf /lib/firmware/am335x-pru0-$(MAKECMDGOALS)-fw
+	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU1_TARGET).elf /lib/firmware/am335x-pru1-$(MAKECMDGOALS)-fw
+
+# Linker PRU0
+$(BUILD_DIR)/$(PRU0_TARGET).elf : $(BUILD_DIR)/$(PRU0_TARGET).o \
+																	$(PRU_OBJ) \
+																	$(APP_SPEC_PRU_OBJ)
+	@echo "\n Linking pru0... \n"
+	$(PRU_CC) $(PRU_CFLAGS) -z $^ -llibc.a -m $(MAKECMDGOALS)/build/$(PRU0_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU0_TARGET).elf $(PRU_CSRC_DIR)/PRU0.cmd
+
+
+# Linker PRU1
+$(BUILD_DIR)/$(PRU1_TARGET).elf : $(BUILD_DIR)/$(PRU1_TARGET).o \
+																	$(PRU_OBJ) \
+																	$(APP_SPEC_PRU_OBJ)
+	@echo "\n Linking pru0... \n"
+	$(PRU_CC) $(PRU_CFLAGS) -z $^ -llibc.a -m $(MAKECMDGOALS)/build/$(PRU0_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU1_TARGET).elf $(PRU_CSRC_DIR)/PRU0.cmd
+
+# Build PRU-core
+$(BUILD_DIR)%.o : $(PRU_CSRC_DIR)%.c
 	@echo "\n Building pru dependencies... \n";
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -I$(APP_SPEC_INC) -c -fe $@ $<
 
 # Build App specific PRU dependencies
-$(BUILD_DIR)/pruloop.o: $(MAKECMDGOALS)/pruloop.c
+$(BUILD_DIR)/pruloop.o : $(MAKECMDGOALS)/pruloop.c
 	@echo "\n Building app specific pru dependencies... \n";
+	@echo "\n $@ $< \n"
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -I$(APP_SPEC_INC) -c -fe $@ $<
 
-# Build app specific C dependencies
-$(BUILD_DIR)/format.o: $(MAKECMDGOALS)/format.c
-	@echo "\n Building app specific dependencies... \n";
-	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -I$(CINC_DIR) -I./$(APP_SPEC_INC) -c -o $@ $< $(CLIB) -lm
-
-# Build app specific C dependencies
-$(BUILD_DIR)/tuiloop.o: $(MAKECMDGOALS)/tuiloop.c
-	@echo "\n Building app specific dependencies... \n";
-	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -I$(CINC_DIR) -I./$(APP_SPEC_INC) -c -o $@ $< $(CLIB) -lm
-
-# Copy firmware
-install:
-	@echo "\n Installing pru firmware... \n";
-	$(INSTALLDIR) /etc/modprobe.d
-	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU0_TARGET).elf /lib/firmware/am335x-pru0-fw
-	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU1_TARGET).elf /lib/firmware/am335x-pru1-fw
-#	$(INSTALLNONEXEC) pruss-blacklist.conf $(DESTDIR)/etc/modprobe.d/
-	@echo "\n Install complete. \n"
+# --- DEBUG
+#all template :
+#	@echo "\n APP  = $(APP_NAME) ... \n";
+#	@echo "\n PRU-OBJ $(PRU_OBJ) ... \n";
+#	@echo "\n PRU-SRC $(PRU_SRC) ... \n";
+#	@echo "\n APP-PRU-OBJ $(APP_SPEC_PRU_OBJ) ... \n";
+#	@echo "\n APP-PRU-SRC $(APP_SPEC_PRU_SRC) ... \n";
+#	@echo "\n CPU-OBJ $(CPU_OBJ) ... \n";
+#	@echo "\n CPU-SRC $(CPU_SRC) ... \n";
+#	@echo "\n APP-CPU-OBJ $(APP_SPEC_CPU_OBJ) ... \n";
+#	@echo "\n APP-CPU-SRC $(APP_SPEC_CPU_SRC) ... \n";
