@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include "mem_types.h"
 #include "udp.h"
+#include "../../ros/roshelper.h"
 
 #define LOGSIZE         (4096 * 4096)
 #define TEMP_BUFF_LEN   1024
@@ -49,7 +50,8 @@ int LogNewFile(log_t* log, char* file);
 int LogSaveFile(log_t* log);
 void LogWriteStateToFileAndPublish(int logflag,
                                    log_t* log,
-                                   udp_t* udp);
+                                   udp_t* udp,
+                                   rospub_t* rp);
 void LogCleanup(log_t* log);
 
 

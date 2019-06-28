@@ -24,6 +24,7 @@
 #include "pru.h"
 #include "format.h"
 #include "debug.h"
+#include "../../ros/roshelper.h"
 
 // ---------------------------------------------------------------------------
 // Function: void circBuffUpdate(void)
@@ -181,7 +182,8 @@ void LogWriteStateToFile(log_t* log) {
 
 void LogWriteStateToFileAndPublish(int logflag,
                                    log_t* log,
-                                   udp_t* udp) {
+                                   udp_t* udp,
+                                   rospub_t* rp) {
   LogCircBuffUpdate(log->pru_mem->s->cbuff_index, log->cbuff);
   log->write_buff[0] = '\0';
   int size =
@@ -190,11 +192,6 @@ void LogWriteStateToFileAndPublish(int logflag,
   // send samples at approx 30 Hz (if MIN_STATE_REQ = 33 and fs = 1000)
   if (size >= MIN_STATE_REQ) {
     DebugPinHigh();
-    udp->buff[0] = '\0';
-    int i = log->cbuff->start + (size -1);
-    FormatSprintPublishState(&log->pru_mem->s->state[i % STATE_BUFF_LEN],
-                            udp->buff);
-    UdpTxPacket(udp);
 
     // Log
     if (logflag) {
@@ -210,6 +207,17 @@ void LogWriteStateToFileAndPublish(int logflag,
       log->location += len;
     }
     log->cbuff->start = (log->cbuff->start + size) % STATE_BUFF_LEN;
+
+    // publish
+    udp->buff[0] = '\0';
+    int i = log->cbuff->start + (size -1);
+    FormatSprintPublishState(&log->pru_mem->s->state[i % STATE_BUFF_LEN],
+                            udp->buff);
+    UdpTxPacket(udp);
+
+    //send same udp buffer for rospub
+    RosPubPublish(rp,udp->buff);
+
     DebugPinLow();
   }
 }

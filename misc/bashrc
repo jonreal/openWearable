@@ -1,33 +1,22 @@
-# Jonathan Realmuto                                                                                                      
-                                                                                
-# Promt                                                                         
+# Jonathan Realmuto
+# Promt
 PS1='\[\e]0;\w\a\]\n\[\e[32m\]\u\[\e[30m\]|\[\e[34m\]\h: \[\e[33m\]\w\[\e[31m\]\n\$ \[\e[30m\]'
-                                                                                
-# Latex Path                                                                    
-# PATH=$PATH:/Library/TeX/Distributions/.FactoryDefaults/TeXLive-2012/Contents/Root/bin/x86_64-darwin/
-                                                                                
-# Path                                                                          
-PATH=/usr/local/bin:$PATH                                                       
-                                                                                
-# For mlint access                                                              
-# PATH=$PATH:/Applications/MATLAB_R2013a.app/bin/maci64/                          
-                                                                                
-# ls colors 
+
+# Path
+PATH=/usr/local/bin:$PATH
+
+# ls colors
 export LS_OPTIONS='--color=auto'
 eval "`dircolors`"
 alias ls='ls $LS_OPTIONS'
 alias ll='ls $LS_OPTIONS -l'
 alias l='ls $LS_OPTIONS -lA'
 
-# Alias                                                                         
-alias rm='rm -i'                                                                
-alias cp='cp -i'                                                                
-alias mv='mv -i'                                                                
-alias mkdir="mkdir -pv"                                                         
-                                                                                
-# Brew Tab Complete                                                             
-# source `brew --repository`/Library/Contributions/brew_bash_completion.sh        
+# Alias
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+alias mkdir="mkdir -pv"
 
-# Env Vars
-export PRU_SDK_DIR=~/pru_sdk
-export PRU_CGT_DIR=$PRU_SDK_DIR/pru_2.0.0B2
+# ROS
+source /opt/ros/kinetic/setup.bash

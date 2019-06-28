@@ -63,7 +63,6 @@ void PamReservoirFree(reservoir_t* reservoir);
 
 
 void PamUpdateSensors(pam_t* pam, iir_filt_t* f);
-int8_t PamReflex(pam_t* pam, reflex_t* reflex);
 
 reflex_t* PamInitReflex(uint8_t pw, uint8_t T, uint8_t po, int8_t sign,
                         fix16_t thresh);
@@ -73,7 +72,9 @@ void PamAntagonistReflex(pam_t* p1, pam_t* p2,
                         iir_filt_t* f1, iir_filt_t* f2,
                         uint8_t period,  uint8_t pulsewidth,
                         uint8_t pulseonset);
-
+void PamReflex(pam_t* pam, iir_filt_t* filt,
+                        uint8_t period,  uint8_t pulsewidth,
+                        uint8_t pulseonset);
 fix16_t PamGetPm(pam_t* pam);
 fix16_t PamGetPd(pam_t* pam);
 void PamSetPd(pam_t* pam, fix16_t Pd);
