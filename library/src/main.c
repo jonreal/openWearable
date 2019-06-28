@@ -29,6 +29,7 @@
 #include "tui.h"
 #include "format.h"
 
+
 typedef enum {
   DEBUG = 0,
   TUI,

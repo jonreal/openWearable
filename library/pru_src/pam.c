@@ -83,7 +83,6 @@ void PamUpdateSensors(pam_t* pam, iir_filt_t* f){
     pam->p_m = FiltIir(PressureSensorSample(pam->sensor),f);
   else
     pam->p_m = PressureSensorSample(pam->sensor);
-  debug_buff[1] = pam->p_m;
 }
 
 void PamSetU(pam_t* pam, int8_t u) {
@@ -124,13 +123,13 @@ void PamAntagonistReflex(pam_t* p1, pam_t* p2,
   static volatile uint8_t type2 = 0;
   static volatile uint8_t flag2 = 0;
   static volatile uint8_t flag1 = 0;
-  fix16_t dp = 0x20000 ; // 0.5
+  fix16_t dp = 0x20000; // 0.5
 
-  const fix16_t dp_max = fix16_from_int(0.5);
-  const fix16_t dp_min = fix16_from_int(1);
+  const fix16_t dp_max = fix16_from_int(10);
+  const fix16_t dp_min = fix16_from_int(10);
 
-  PamUpdateSensors(p1,NULL);
-  PamUpdateSensors(p2,NULL);
+  PamUpdateSensors(p1,f1);
+  PamUpdateSensors(p2,f2);
 
   // Determine which reflex
   if ((type1 == 0) && (fix16_ssub(p1->p_d,p1->p_m) > fix16_from_int(20))) {
@@ -161,8 +160,8 @@ void PamAntagonistReflex(pam_t* p1, pam_t* p2,
     } else if ((flag1) && (cnt1 == period)) {
       type1 = 0;
       flag1 = 0;
-      p1->p_max = p1->p_m;
       cnt1 = 0;
+      p1->p_max = p1->p_m;
     } else if (!flag1) {
       PamSetU(p1,1);
       cnt1 = 0;
@@ -175,6 +174,7 @@ void PamAntagonistReflex(pam_t* p1, pam_t* p2,
       type1 = 0;
       cnt1 = 0;
       PamSetU(p1,0);
+      p1->p_max = p1->p_m;
     } else if ((cnt1 >= pulseonset) && (cnt1 <= (pulseonset + pulsewidth))) {
       PamSetU(p1,1);
     } else {
@@ -188,20 +188,42 @@ void PamAntagonistReflex(pam_t* p1, pam_t* p2,
       type1 = 0;
       cnt1 = 0;
       PamSetU(p1,0);
-      PamSetU(p2,0);
-      p1->p_max = p1->p_m;
-      p2->p_max = p2->p_m;
+      //PamSetU(p2,0);
       p2->p_d = p2->p_d + dp;
       p1->p_d = p1->p_d - dp;
-    } else if ((cnt1 >= pulseonset) && (cnt1 <= (pulseonset + pulsewidth))) {
+      p1->p_max = p1->p_m;
+      p2->p_max = p2->p_m;
+    } else if ((cnt1 >= pulseonset) && (cnt1 <= (pulseonset + 8*pulsewidth))) {
       PamSetU(p1,-1);
-      PamSetU(p2,1);
+      //if ((cnt1 >= pulseonset) && (cnt1 <= (pulseonset + pulsewidth))) {
+      //  PamSetU(p2,1);
+      //} else {
+      //  PamSetU(p2,0);
+      //}
     } else {
       PamSetU(p1,0);
       PamSetU(p2,0);
     }
     cnt1++;
   }
+
+//  if (type1 == 3) {
+//    if (cnt1 == period) {
+//      type1 = 0;
+//      cnt1 = 0;
+//      PamSetU(p1,0);
+//    //  PamSetU(p2,0);
+//      p2->p_d = p2->p_d + dp;
+//      p1->p_d = p1->p_d - dp;
+//    } else if ((cnt1 >= pulseonset) && (cnt1 <= (pulseonset + 4*pulsewidth))) {
+//      PamSetU(p1,-1);
+//   //   PamSetU(p2,1);
+//    } else {
+//      PamSetU(p1,0);
+//      PamSetU(p2,0);
+//    }
+//    cnt1++;
+//  }
 
 
   if (type2 == 1) {
@@ -226,6 +248,7 @@ void PamAntagonistReflex(pam_t* p1, pam_t* p2,
     if (cnt2 == period) {
       type2 = 0;
       cnt2 = 0;
+      p2->p_max = p2->p_m;
       PamSetU(p2,0);
     } else if ((cnt2 >= pulseonset) && (cnt2 <= (pulseonset + pulsewidth))) {
       PamSetU(p2,1);
@@ -240,14 +263,16 @@ void PamAntagonistReflex(pam_t* p1, pam_t* p2,
       type2 = 0;
       cnt2 = 0;
       PamSetU(p2,0);
-      PamSetU(p1,0);
-      p1->p_max = p1->p_m;
-      p2->p_max = p2->p_m;
+      //PamSetU(p1,0);
       p2->p_d = p2->p_d - dp;
       p1->p_d = p1->p_d + dp;
-    } else if ((cnt2 >= pulseonset) && (cnt2 <= (pulseonset + pulsewidth))) {
+    } else if ((cnt2 >= pulseonset) && (cnt2 <= (pulseonset + 8*pulsewidth))) {
       PamSetU(p2,-1);
-      PamSetU(p1,1);
+      //if ((cnt1 >= pulseonset) && (cnt1 <= (pulseonset + pulsewidth))) {
+      //  PamSetU(p1,1);
+      //} else {
+      //  PamSetU(p1,0);
+      //}
     } else {
       PamSetU(p2,0);
       PamSetU(p1,0);
@@ -259,6 +284,78 @@ void PamAntagonistReflex(pam_t* p1, pam_t* p2,
   PamUpdateControl(p1);
   p1->reflex = type1;
   p2->reflex = type2;
+}
+
+
+void PamReflex(pam_t* pam, iir_filt_t* filt,
+                        uint8_t period,  uint8_t pulsewidth,
+                        uint8_t pulseonset) {
+
+  static volatile uint8_t cnt1 = 0;
+  static volatile uint8_t type = 0;
+  static volatile uint8_t flag1 = 0;
+  const fix16_t dp = 0x4000;
+  const fix16_t dp_max = fix16_from_int(0.5);
+  const fix16_t dp_min = fix16_from_int(1);
+
+  PamUpdateSensors(pam,NULL);
+
+  // Determine which reflex
+  if ((type == 0) && (fix16_ssub(pam->p_d,pam->p_m) > fix16_from_int(20))) {
+    type = 1;
+  } else if ((type == 0) && (pam->p_m < fix16_ssub(pam->p_d,dp_min))) {
+    type = 2;
+  } else if ((type == 0) && (pam->p_m > fix16_sadd(pam->p_d,dp_max))) {
+    type = 3;
+  }
+
+  // Execute reflex
+  if (type == 1) {
+    if (pam->p_m > pam->p_d){
+      cnt1 = 0;
+      flag1 = 1;
+      PamSetU(pam,0);
+    } else if ((flag1) && (cnt1 == period)) {
+      type = 0;
+      flag1 = 0;
+      cnt1 = 0;
+    } else if (!flag1) {
+      PamSetU(pam,1);
+      cnt1 = 0;
+    }
+    cnt1++;
+  }
+
+  if (type == 2) {
+    if (cnt1 == period) {
+      type = 0;
+      cnt1 = 0;
+      PamSetU(pam,0);
+    } else if ((cnt1 >= pulseonset) && (cnt1 <= (pulseonset + pulsewidth))) {
+      PamSetU(pam,1);
+    } else {
+      PamSetU(pam,0);
+    }
+    cnt1++;
+  }
+
+  if (type == 3) {
+    if (cnt1 == period) {
+      type = 0;
+      cnt1 = 0;
+      PamSetU(pam,0);
+      pam->p_d = pam->p_d - dp;
+      if ((pam->p_d) < fix16_from_int(10))
+        pam->p_d = fix16_from_int(10);
+    } else if ((cnt1 >= pulseonset) && (cnt1 <= (pulseonset + 2*pulsewidth))) {
+      PamSetU(pam,-1);
+    } else {
+      PamSetU(pam,0);
+    }
+    cnt1++;
+  }
+  PamUpdateControl(pam);
+  pam->reflex = type;
 }
 
 
@@ -315,30 +412,6 @@ void PamMyReflex(pam_t* pam, uint8_t period,  uint8_t pulsewidth,
 
 
 
-int8_t PamReflex(pam_t* pam, reflex_t* reflex) {
-
-  fix16_t e = fix16_ssub(pam->p_d, pam->p_m);
-  int8_t u;
-
-  if ((!reflex->on) && (fix16_ssub(e, reflex->threshold) > 0)) {
-    reflex->on = 1;
-  }
-  if (reflex->on) {
-    if (reflex->cnt == reflex->period) {
-      reflex->on = 0;
-      reflex->cnt = 0;
-      u = 0;
-    } else if ((reflex->cnt >= reflex->pulseonset)
-        && (reflex->cnt <= (reflex->pulseonset + reflex->pulsewidth))) {
-      u = reflex->sign*1;
-    } else if ((reflex->cnt < reflex->pulseonset)
-        && (reflex->cnt > (reflex->pulseonset + reflex->pulsewidth))) {
-      u = 0;
-    }
-    reflex->cnt++;
-  }
-  return u;
-}
 
 int16_t PamGetU(pam_t* pam) {
   return pam->u;

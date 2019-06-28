@@ -22,10 +22,13 @@
 #include <string.h>
 #include "log.h"
 
+#include "../../ros/roshelper.h"
+
 typedef struct {
   int logflag;
   log_t* log;
   udp_t* udp;
+  rospub_t* rp;
 } tui_thread_data_t;
 
 // Global
@@ -50,7 +53,8 @@ static void* TuiLogAndPublishThread(void* args) {
 
     LogWriteStateToFileAndPublish(thread_data.logflag,
                                   thread_data.log,
-                                  thread_data.udp);
+                                  thread_data.udp,
+                                  thread_data.rp);
     pthread_mutex_unlock(&lock);
   }
 }
@@ -88,6 +92,7 @@ int TuiInitLogAndPublishThread(const pru_mem_t* pru_mem) {
   thread_data.logflag = 0;
   thread_data.udp = UdpInit();
   thread_data.log = LogInit(pru_mem);
+  thread_data.rp = RosPubInit();
 
   if (pthread_mutex_init(&lock, NULL) != 0) {
     printf("\n mutex init failed\n");
@@ -155,6 +160,7 @@ int TuiCleanup(void) {
     return -1;
   }
   LogCleanup(thread_data.log);
+  RosPubCleanup(thread_data.rp);
   printf("TUI cleaned up.\n");
   return 0;
 }

@@ -23,7 +23,15 @@ PRU_CLIB =
 # Build Directories
 TARGET_DIR = ./bin
 BUILD_DIR = $(MAKECMDGOALS)/build
-# ----
+
+# ROS
+ROS_DIR = ../ros
+ROS_CPP_SRC = $(ROS_DIR)/rospub.cpp
+ROS_OBJ = $(BUILD_DIR)/rospub.o
+ROS_TARGET = $(BUILD_DIR)/libRosPub.so
+ROS_LIB = -lrostime -lroscpp -lrosconsole -lroscpp_serialization
+ROS_LIB_DIR = -L/opt/ros/kinetic/lib
+ROS_INC_DIR = -I/opt/ros/kinetic/include
 
 # Compiler
 CC = gcc
@@ -68,11 +76,14 @@ APP_SPEC_INC = $(MAKECMDGOALS)/
 #  For each app add the following recipes, but replacing template with dir name
 #  of app
 
-.PHONY : linker install template clean-template reflex clean-reflex
+.PHONY : linker install \
+					template clean-template \
+					reflex clean-reflex \
+					reflex-single clean-reflex-single
 
 
 # ---
-template : linker install
+template : $(ROS_TARGET) linker install
 clean-template :
 	@echo " Cleaning template...";
 	@echo " $(RM) -r ./template/build"; $(RM) -r ./template/build
@@ -81,7 +92,7 @@ clean-template :
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-template-fw
 
 # ---
-reflex : linker install
+reflex : $(ROS_TARGET) linker install
 clean-reflex :
 	@echo " Cleaning reflex...";
 	@echo " $(RM) -r ./reflex/build"; $(RM) -r ./reflex/build
@@ -89,22 +100,41 @@ clean-reflex :
 	@echo " $(RM) -r /lib/firmware/am335x-pru0-reflex-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-reflex-fw
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-reflex-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-reflex-fw
 
-
+# ---
+reflex-single : $(ROS_TARGET) linker install
+clean-reflex-single :
+	@echo " Cleaning reflex-single...";
+	@echo " $(RM) -r ./reflex-single/build"; $(RM) -r ./reflex-single/build
+	@echo " $(RM) -r $(TARGET_DIR)/reflex-single"; $(RM) -r $(TARGET_DIR)/reflex-single
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-reflex-single-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-reflex-single-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-reflex-single-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-reflex-single-fw
 
 
 # ---- CPU
+
+# ros -- build shared lib
+$(ROS_TARGET) : $(ROS_OBJ)
+	@echo "\n Building shared ros lib ... \n";
+	@mkdir -p $(BUILD_DIR)
+	g++ -shared -o $@ $^ $(ROS_INC_DIR) $(ROS_LIB_DIR) $(ROS_LIB)
+
+# ros -- build ros object
+$(ROS_OBJ) : $(ROS_CPP_SRC)
+	@echo "\n Building ros objects ... \n";
+	@mkdir -p $(BUILD_DIR)
+	g++ -c -Wall -fPIC -o $@ $^ $(ROS_INC_DIR) $(ROS_LIB_DIR) $(ROS_LIB)
 
 # Linker -- Must define pru firmware suffix
 linker : $(CPU_OBJ) $(APP_SPEC_CPU_OBJ)
 	@echo "\n Linking cpu ... \n";
 	@mkdir -p $(TARGET_DIR)
-	$(CC) $(CFLAGS) $(CPU_OBJ) $(APP_SPEC_CPU_OBJ) $(CSRC_DIR)/$(TARGET).c -I$(CINC_DIR) -I$(APP_SPEC_INC) -o $(TARGET_DIR)/$(MAKECMDGOALS) $(CLIB) -lm -DFWSUFFIX=\"$(MAKECMDGOALS)\"
+	$(CC) -Wl,-rpath,$(BUILD_DIR) -L$(BUILD_DIR) $(CFLAGS) $(CPU_OBJ) $(APP_SPEC_CPU_OBJ) $(CSRC_DIR)/$(TARGET).c -I$(CINC_DIR) -I$(APP_SPEC_INC) -o $(TARGET_DIR)/$(MAKECMDGOALS) $(CLIB) -lm -DFWSUFFIX=\"$(MAKECMDGOALS)\" -lRosPub
 
 # Build C dependencies
 $(BUILD_DIR)%.o: $(CSRC_DIR)%.c
 	@echo "\n Building core dependencies... \n";
 	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -I$(CINC_DIR) -I./$(APP_SPEC_INC) -c -o $@ $< $(CLIB) -lm
+	$(CC) -Wl,-rpath,$(BUILD_DIR) -L$(BUILD_DIR) $(CFLAGS) $(ROS_INC_DIR) -I$(ROS_DIR) -I$(CINC_DIR) -I./$(APP_SPEC_INC) -c -o $@ $< $(CLIB) -lm -lRosPub
 
 # Build app specific C dependencies
 $(BUILD_DIR)/format.o : $(MAKECMDGOALS)/format.c
@@ -157,7 +187,7 @@ $(BUILD_DIR)/pruloop.o : $(MAKECMDGOALS)/pruloop.c
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -I$(APP_SPEC_INC) -c -fe $@ $<
 
 # --- DEBUG
-#all template :
+#all :
 #	@echo "\n APP  = $(APP_NAME) ... \n";
 #	@echo "\n PRU-OBJ $(PRU_OBJ) ... \n";
 #	@echo "\n PRU-SRC $(PRU_SRC) ... \n";
@@ -167,3 +197,6 @@ $(BUILD_DIR)/pruloop.o : $(MAKECMDGOALS)/pruloop.c
 #	@echo "\n CPU-SRC $(CPU_SRC) ... \n";
 #	@echo "\n APP-CPU-OBJ $(APP_SPEC_CPU_OBJ) ... \n";
 #	@echo "\n APP-CPU-SRC $(APP_SPEC_CPU_SRC) ... \n";
+#	@echo "\n ROS_CPP_SRC $(ROS_CPP_SRC) ... \n";
+#	@echo "\n ROS_OBJ $(ROS_OBJ) ... \n";
+#	@echo "\n ROS_TARGET $(ROS_TARGET) ... \n";
