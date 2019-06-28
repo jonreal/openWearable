@@ -21,7 +21,7 @@ BUG_REPORT_URL="https://bugs.debian.org/"
 
 ```
 # cat /proc/version 
-Linux version 4.14.71-ti-r80 (root@b2-am57xx-beagle-x15-2gb) (gcc version 6.3.0 20170516 (Debian 6.3.0-18+deb9u1)) #1 SMP PREEMPT Fri Oct 5 23:50:11 UTC 2018
+Linux version 4.14.108-ti-r104 (root@x2-am57xx-beagle-x15-2gb) (gcc version 6.3.0 20170516 (Debian 6.3.0-18+deb9u1)) #1 SMP PREEMPT Tue Apr 9 18:16:29 UTC 2019
 ```
 
 ### powered ankle-foot ###
