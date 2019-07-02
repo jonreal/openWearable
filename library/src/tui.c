@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "log.h"
+#include "pru.h"
 
 #include "../../ros/roshelper.h"
 
@@ -92,7 +93,9 @@ int TuiInitLogAndPublishThread(const pru_mem_t* pru_mem) {
   thread_data.logflag = 0;
   thread_data.udp = UdpInit();
   thread_data.log = LogInit(pru_mem);
-  thread_data.rp = RosPubInit();
+
+  if (PruOwModeRos(pru_mem))
+    thread_data.rp = RosPubInit();
 
   if (pthread_mutex_init(&lock, NULL) != 0) {
     printf("\n mutex init failed\n");

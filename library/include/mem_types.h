@@ -28,6 +28,16 @@
 
 // Structures ----------------------------------------------------------------
 
+// Mode
+typedef union{
+  uint16_t reg;
+  struct {
+    unsigned debug : 1;
+    unsigned ros : 1;
+    unsigned rsvd : 14;
+  } bit;
+} ow_mode_t;
+
 // Flow control
 typedef union {
   volatile uint16_t reg;
@@ -40,12 +50,12 @@ typedef union {
  } bit;
 } pru_ctl_t;
 
-
 // Shared Memory -> mapped to SRAM
 typedef struct {
   volatile uint32_t cbuff_index;
   state_t state[STATE_BUFF_LEN];
   pru_ctl_t pru_ctl;
+  ow_mode_t mode;
 } shared_mem_t;
 
 // Lookuptable

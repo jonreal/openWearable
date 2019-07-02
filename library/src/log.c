@@ -216,7 +216,8 @@ void LogWriteStateToFileAndPublish(int logflag,
     UdpTxPacket(udp);
 
     //send same udp buffer for rospub
-    RosPubPublish(rp,udp->buff);
+    if (PruOwModeRos(log->pru_mem))
+      RosPubPublish(rp,udp->buff);
 
     DebugPinLow();
   }

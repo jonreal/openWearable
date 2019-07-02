@@ -69,6 +69,7 @@ int PruMemMap(pru_mem_t* pru_mem) {
   }
 
   PruCtlReset(&pru_mem->s->pru_ctl);
+  PruOwModeReset(pru_mem);
 
   char buff[1024] = {0,};
   PruSprintMalloc(pru_mem, buff);
@@ -343,4 +344,31 @@ int PruLoadLut(char* file, lut_mem_t* l)
   }
   printf("File not found\n");
   return -1;
+}
+
+
+void PruOwModeReset(pru_mem_t* pru_mem) {
+  pru_mem->s->mode.reg = 0x00;
+}
+
+int PruOwModeDebug(const pru_mem_t* pru_mem) {
+  if (pru_mem->s->mode.bit.debug)
+    return 1;
+  else
+    return 0;
+}
+
+int PruOwModeRos(const pru_mem_t* pru_mem) {
+  if (pru_mem->s->mode.bit.ros)
+    return 1;
+  else
+    return 0;
+}
+
+void PruOwModeSetDebug(pru_mem_t* pru_mem) {
+  pru_mem->s->mode.bit.debug = 1;
+}
+
+void PruOwModeSetRos(pru_mem_t* pru_mem) {
+  pru_mem->s->mode.bit.ros = 1;
 }
