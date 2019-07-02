@@ -18,7 +18,7 @@ class RosPub {
 };
 
 RosPub::RosPub(void) {
-  _pub = _n.advertise<std_msgs::String>("chatter", 1000);
+  _pub = _n.advertise<std_msgs::String>("openwearable", 1000);
 }
 
 void RosPub::_RosPubPublish(char* buffer) {
