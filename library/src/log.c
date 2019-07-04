@@ -85,6 +85,8 @@ log_t* LogInit(const pru_mem_t* pru_mem) {
   log->fd = 0;
   log->location = 0;
   log->addr = NULL;
+  log->publish_frq = (pru_mem->p->fs_hz + (30-1))/30;
+  printf("Publishing every %d frames\n",log->publish_frq);
   log->cbuff = LogNewCircBuff();
   memset(&log->write_buff[0], 0, sizeof(log->write_buff));
   return log;
@@ -190,7 +192,7 @@ void LogWriteStateToFileAndPublish(int logflag,
     ((STATE_BUFF_LEN + log->cbuff->end - log->cbuff->start) % STATE_BUFF_LEN);
 
   // send samples at approx 30 Hz (if MIN_STATE_REQ = 33 and fs = 1000)
-  if (size >= MIN_STATE_REQ) {
+  if (size >= log->publish_frq) {
     DebugPinHigh();
 
     // Log

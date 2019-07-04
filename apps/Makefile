@@ -92,6 +92,15 @@ clean-template :
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-template-fw
 
 # ---
+imutest : $(ROS_TARGET) linker install
+clean-imutest :
+	@echo " Cleaning imutest...";
+	@echo " $(RM) -r ./imutest/build"; $(RM) -r ./imutest/build
+	@echo " $(RM) -r $(TARGET_DIR)/imutest"; $(RM) -r $(TARGET_DIR)/imutest
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-imutest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-imutest-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-imutest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-imutest-fw
+
+# ---
 reflex : $(ROS_TARGET) linker install
 clean-reflex :
 	@echo " Cleaning reflex...";
