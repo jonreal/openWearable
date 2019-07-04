@@ -191,7 +191,6 @@ $(BUILD_DIR)%.o : $(PRU_CSRC_DIR)%.c
 # Build App specific PRU dependencies
 $(BUILD_DIR)/pruloop.o : $(MAKECMDGOALS)/pruloop.c
 	@echo "\n Building app specific pru dependencies... \n";
-	@echo "\n $@ $< \n"
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -I$(APP_SPEC_INC) -c -fe $@ $<
 
