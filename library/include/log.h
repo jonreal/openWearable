@@ -41,6 +41,7 @@ typedef struct{
   char write_buff[WRITE_BUFF_LEN];
   circbuff_t* cbuff;
   const pru_mem_t* pru_mem;
+  int publish_frq;
 } log_t;
 
 circbuff_t* LogNewCircBuff(void);
