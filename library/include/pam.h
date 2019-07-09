@@ -30,6 +30,7 @@ typedef struct {
   pressure_sensor_t* sensor;
   uint8_t hp_pin;                   // high pressure pin
   uint8_t lp_pin;                   // low pressure pin
+  volatile uint8_t flag;
   volatile int8_t u;                         // current command
   volatile fix16_t p_m;             // muscle pressure
   volatile fix16_t p_d;             // desired pressure
@@ -63,6 +64,7 @@ void PamReservoirFree(reservoir_t* reservoir);
 
 
 void PamUpdateSensors(pam_t* pam, iir_filt_t* f);
+void PamSimple(pam_t* p);
 
 reflex_t* PamInitReflex(uint8_t pw, uint8_t T, uint8_t po, int8_t sign,
                         fix16_t thresh);

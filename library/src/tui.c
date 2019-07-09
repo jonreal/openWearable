@@ -147,9 +147,13 @@ void TuiSetPruCtlBit(const pru_mem_t* pru_mem, unsigned char n) {
   pru_mem->s->pru_ctl.bit.utility |= (1 << n);
 }
 
+void TuiClearPruCtlBit(const pru_mem_t* pru_mem, unsigned char n) {
+  pru_mem->s->pru_ctl.bit.utility &= ~(1 << n);
+}
+
 void TuiPollPruCtlBit(const pru_mem_t* pru_mem, unsigned char n) {
   while (1)
-    if ((pru_mem->s->pru_ctl.bit.utility & (1 << n)) == 0)
+    if ((pru_mem->s->pru_ctl.bit.utility & (1 << n)) == (1 << n))
       break;
 }
 

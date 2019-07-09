@@ -29,8 +29,6 @@
 #include "tui.h"
 #include "format.h"
 
-
-
 volatile int doneFlag = 0;
 
 void sigintHandler(int sig) {

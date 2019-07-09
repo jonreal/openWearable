@@ -50,6 +50,7 @@ pam_t* PamInitMuscle(pressure_sensor_t* sensor,
   pam->p_d = 0;
   pam->p_max = 0;
   pam->reflex = 0;
+  pam->flag = 0;
 
   // Will hang here if i2c mux/channel is off
   PamUpdateSensors(pam,NULL);
@@ -103,11 +104,32 @@ fix16_t PamGetPmax(pam_t* pam) {
 
 
 void PamSetPd(pam_t* pam, fix16_t Pd) {
+  pam->flag = 0;
   pam->p_d = Pd;
 }
 
 fix16_t PamSampleReservoirPressure(const reservoir_t* reservoir){
   return PressureSensorSample(reservoir->sensor);
+}
+
+void PamSimple(pam_t* p) {
+
+  // update sensors
+  PamUpdateSensors(p,NULL);
+
+  // reached goal flag
+  if (fix16_ssub(p->p_d,fix16_ssub(p->p_m,0x20000)) < 0)
+    p->flag = 1;
+
+  // if pd = 0 open exhaust
+  if (p->p_d == 0)
+    PamSetU(p,-1);
+  else if ((fix16_ssub(p->p_d,fix16_ssub(p->p_m,0x20000)) > 0) && (p->flag==0))
+    PamSetU(p,1);
+  else
+    PamSetU(p,0);
+
+  PamUpdateControl(p);
 }
 
 

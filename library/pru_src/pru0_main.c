@@ -90,7 +90,7 @@ int main(void) {
     mem.s->pru_ctl.bit.pru0_done = 1;
     debugPinLow();
     while(!(mem.s->pru_ctl.bit.pru1_done));
-    debugPinHigh();
+     debugPinHigh();
     mem.s->pru_ctl.bit.pru1_done = 0;
 
     // Control

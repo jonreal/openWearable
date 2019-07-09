@@ -46,8 +46,8 @@ void SyncOutLow(sync_t* sync_ch) {
   __R30 &= ~(1 << sync_ch->pin);
 }
 
-uint16_t SyncOutState(const sync_t* sync_ch) {
-  return (uint16_t) sync_ch->state;
+uint8_t SyncOutState(const sync_t* sync_ch) {
+  return sync_ch->state;
 }
 
 
