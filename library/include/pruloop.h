@@ -44,4 +44,9 @@ void Pru1UpdateControl(const pru_count_t* c,
                        pru_ctl_t* ctl_);
 void Pru1Cleanup(void);
 
+uint8_t PruGetCtlBit(const pru_ctl_t* ctl_, uint8_t nbit);
+void PruSetCtlBit(pru_ctl_t* ctl_, uint8_t nbit);
+void PruClearCtlBit(pru_ctl_t* ctl_, uint8_t nbit);
+
+
 #endif

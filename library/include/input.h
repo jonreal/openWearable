@@ -1,4 +1,4 @@
-/* Copyright 2017 Jonathan Realmuto
+/* Copyright 2019 Jonathan Realmuto
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -13,31 +13,27 @@
  limitations under the License.
 =============================================================================*/
 
-#ifndef _SYNC_H_
-#define _SYNC_H_
+#ifndef _INPUT_H_
+#define _INPUT_H_
 
 #include <stdint.h>
 
-typedef struct {
-  uint8_t pin;
-  uint8_t state;
-} sync_t;
-
-// Digital input reg. ---------------------------------------------------------
 volatile register uint32_t __R31;
-volatile register uint32_t __R30;
-
-// Global ---------------------------------------------------------------------
 extern volatile uint32_t *debug_buff;
 
-// Prototypes -----------------------------------------------------------------
-//uint16_t viconSync(void);
-sync_t* SyncInitChan(uint8_t pin_);
-void SyncFreeChan(sync_t* syncChan);
-void SyncOutHigh(sync_t* syncChan);
-void SyncOutLow(sync_t* syncChan);
-uint8_t SyncOutState(const sync_t* sync_ch);
+typedef struct {
+  uint8_t pin;
+  uint8_t debounce_cnt;
+  volatile uint8_t cnt;
+  volatile uint32_t state;
+  volatile uint8_t prev_state;
+} button_t;
+
+
+button_t* InputButtonInit(uint8_t pin, uint8_t debounce_cnt);
+void InputButtonUpdate(button_t* button);
+uint8_t InputButtonGetState(button_t* button);
+void InputButtonCleanup(button_t* button);
+
 
 #endif
-
-

@@ -58,7 +58,6 @@ int main(void) {
   // Control Loop
   while (mem.s->pru_ctl.bit.shdw_enable) {
 
-
     // Poll of IEP timer interrupt
     while ((CT_INTC.SECR0 & (1 << 7)) == 0);
 

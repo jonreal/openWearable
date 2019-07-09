@@ -101,6 +101,15 @@ clean-imutest :
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-imutest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-imutest-fw
 
 # ---
+buttontest : $(ROS_TARGET) linker install
+clean-buttontest :
+	@echo " Cleaning buttontest...";
+	@echo " $(RM) -r ./buttontest/build"; $(RM) -r ./buttontest/build
+	@echo " $(RM) -r $(TARGET_DIR)/buttontest"; $(RM) -r $(TARGET_DIR)/buttontest
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-buttontest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-buttontest-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-buttontest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-buttontest-fw
+
+# ---
 reflex : $(ROS_TARGET) linker install
 clean-reflex :
 	@echo " Cleaning reflex...";

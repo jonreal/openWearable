@@ -21,14 +21,14 @@
     "P8.28",  /* pr1_pru1_pru_[r30_10 | r31_10] */
     "P8.29",  /* pr1_pru1_pru_[r30_9 | r31_9] */
     "P8.30",  /* pr1_pru1_pru_[r30_11 | r31_11] */
-    "P8.39",  /* pr1_pru1_pru_[r30_6 | r31_6] */
-    "P8.40",  /* pr1_pru1_pru_[r30_7 | r31_7] */
+    "P8.39",  /* pr1_pru1_pru_[r30_6 | r31_6] ---- b1 */
+    "P8.40",  /* pr1_pru1_pru_[r30_7 | r31_7] ---- b2 */
     "P8.41",  /* pr1_pru1_pru_[r30_4 | r31_4] */
     "P8.42",  /* pr1_pru1_pru_[r30_5 | r31_5] */
-    "P8.43",  /* pr1_pru1_pru_[r30_2 | r31_2] */
-    "P8.44",  /* pr1_pru1_pru_[r30_3 | r31_3] */
-    "P8.45",  /* pr1_pru1_pru_[r30_0 | r31_0] */
-    "P8.46",  /* pr1_pru1_pru_[r30_1 | r31_1] */
+    "P8.43",  /* pr1_pru1_pru_[r30_2 | r31_2] ---- pam */
+    "P8.44",  /* pr1_pru1_pru_[r30_3 | r31_3] ---- pam */
+    "P8.45",  /* pr1_pru1_pru_[r30_0 | r31_0] ---- pam */
+    "P8.46",  /* pr1_pru1_pru_[r30_1 | r31_1] ---- pam */
 
     /**** pru0 GPIO pins ****/
     "P9.27",  /* pr1_pru0_pru_[r30_5 | r31_5] ---- DEBUG OUT */
@@ -39,6 +39,15 @@
     /**** I2C1 pins ****/
     "P9.17",  /* I2C1_SCL */
     "P9.18",  /* I2C1_SDA */
+
+    /**** SPI1 pins ****/
+    "P9.28",  /* SPI1_CS0 */
+    "P9.42",  /* SPI1_CS1 */
+    //"P9.19", /* SPI1_CS1 */
+    //"P9.20", /* SPI1_CS0 */
+    "P9.29",  /* SPI1_D0 */
+    "P9.30",  /* SPI1_D1 */
+    "P9.31",  /* SPI1_SCLK */
 
     /* the hardware IP uses */
     "i2c1",
@@ -63,8 +72,10 @@
           0x0E8 0x05  /* P8.28 - pr1_pru1_pru_r30_10, MODE5 | OUTPUT | PD */
           0x0E4 0x05  /* P8.29 - pr1_pru1_pru_r30_9,  MODE5 | OUTPUT | PD */
           0x0EC 0x05  /* P8.30 - pr1_pru1_pru_r30_11, MODE5 | OUTPUT | PD */
-          0x0B8 0x05  /* P8.39 - pr1_pru1_pru_r30_6,  MODE5 | OUTPUT | PD */
-          0x0BC 0x05  /* P8.40 - pr1_pru1_pru_r30_7,  MODE5 | OUTPUT | PD */
+          /* 0x0B8 0x05  P8.39 - pr1_pru1_pru_r30_6,  MODE5 | OUTPUT | PD */
+          0x0B8 0x26  /* P8.39 - pr1_pru1_pru_r31_6,  MODE6 | INPUT | PD */
+          /* 0x0BC 0x05  P8.40 - pr1_pru1_pru_r30_7,  MODE5 | OUTPUT | PD */
+          0x0BC 0x26  /* P8.40 - pr1_pru1_pru_r31_7,  MODE6 | INPUT | PD */
           0x0B0 0x05  /* P8.41 - pr1_pru1_pru_r30_4,  MODE5 | OUTPUT | PD */
           0x0B4 0x05  /* P8.42 - pr1_pru1_pru_r30_5,  MODE5 | OUTPUT | PD */
           0x0A8 0x05  /* P8.43 - pr1_pru1_pru_r30_2,  MODE5 | OUTPUT | PD */
