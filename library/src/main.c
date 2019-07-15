@@ -26,7 +26,7 @@
 #include "debug.h"
 #include "pru.h"
 #include "log.h"
-#include "tui.h"
+#include "ui.h"
 #include "format.h"
 
 volatile int doneFlag = 0;
@@ -67,30 +67,31 @@ int main(int argc, char **argv) {
     return -1;
 
   int c;
-  while((c=getopt(argc, argv, "vr")) != -1) {
+  ui_flags_t uiflags = UiInitFlags();
+  while((c = getopt(argc, argv, "vur")) != -1) {
     switch (c) {
       case 'v':
        // printf("\n\t-v verbose option\n");
-        PruOwModeSetDebug(&pru_mem);
+        uiflags.debug = 1;
         break;
       case 'r':
        // printf("\n\t-r ros publisher option\n");
-        PruOwModeSetRos(&pru_mem);
+        uiflags.rospublish = 1;
+        break;
+      case 'u':
+       // printf("\n\t-r ros publisher option\n");
+        uiflags.udppublish = 1;
         break;
     }
   }
+  UiWelcome();
+  if (UiInit(&pru_mem,uiflags) != 0) {
+    printf("Tui init failed.\n");
+    return -1;
+  }
 
-  if (PruOwModeDebug(&pru_mem)) {
-    printf("\n"
-           "-----------------------------\n"
-           " Welcome to openWearable v0.1\n"
-           "--------- DEBUG MODE --------\n"
-           "-----------------------------\n");
-
-    printf("\n\nPress enter to start\n\n");
-    getchar();
+  if (uiflags.debug) {
     PruEnable(1, &pru_mem.s->pru_ctl);
-
     signal(SIGINT, sigintHandler);
     circbuff_t* cb = LogNewCircBuff();
     while (!doneFlag) {
@@ -100,27 +101,60 @@ int main(int argc, char **argv) {
     free(cb);
     PruPrintDebugBuffer(pru_mem.p->debug_buff);
   } else {
-    printf("\n"
-           "-----------------------------\n"
-           " Welcome to openWearable v0.1\n"
-           "-----------------------------\n");
-
-    printf("\n\nPress enter to start\n\n");
-    getchar();
     PruEnable(1, &pru_mem.s->pru_ctl);
-
-    if (TuiInit() != 0) {
-      printf("Tui init failed.\n");
-      return -1;
-    }
-    if (TuiLoop(&pru_mem) == 1) {
+    if (UiLoop(&pru_mem) == 1) {
       PruEnable(0, &pru_mem.s->pru_ctl);
       PruRestart();
-      //PruPrintDebugBuffer(pru_mem.p->debug_buff);
-      TuiCleanup();
+      UiCleanup();
       DebugCleanup();
       raise(SIGINT);
     }
   }
+
+
+
+
+//  if (PruOwModeDebug(&pru_mem)) {
+//    printf("\n"
+//           "-----------------------------\n"
+//           " Welcome to openWearable v0.1\n"
+//           "--------- DEBUG MODE --------\n"
+//           "-----------------------------\n");
+//
+//    printf("\n\nPress enter to start\n\n");
+//    getchar();
+//    PruEnable(1, &pru_mem.s->pru_ctl);
+//
+//    signal(SIGINT, sigintHandler);
+//    circbuff_t* cb = LogNewCircBuff();
+//    while (!doneFlag) {
+//      LogDebugWriteState(pru_mem.s, cb, buff);
+//    }
+//    PruEnable(0, &pru_mem.s->pru_ctl);
+//    free(cb);
+//    PruPrintDebugBuffer(pru_mem.p->debug_buff);
+//  } else {
+//    printf("\n"
+//           "-----------------------------\n"
+//           " Welcome to openWearable v0.1\n"
+//           "-----------------------------\n");
+//
+//    printf("\n\nPress enter to start\n\n");
+//    getchar();
+//    PruEnable(1, &pru_mem.s->pru_ctl);
+//
+//    if (UiInit(&pru_mem,uiflags) != 0) {
+//      printf("Tui init failed.\n");
+//      return -1;
+//    }
+//    if (UiLoop(&pru_mem) == 1) {
+//      PruEnable(0, &pru_mem.s->pru_ctl);
+//      PruRestart();
+//      //PruPrintDebugBuffer(pru_mem.p->debug_buff);
+//      UiCleanup();
+//      DebugCleanup();
+//      raise(SIGINT);
+//    }
+//  }
   return 0;
 }

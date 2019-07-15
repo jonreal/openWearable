@@ -56,7 +56,7 @@ CPU_SRC = $(filter-out $(CSRC_DIR)/$(SRC_IGNORE).c, $(CPU_SRC_PRE))
 CPU_OBJ = $(patsubst $(CSRC_DIR)/%,$(BUILD_DIR)/%,$(CPU_SRC:.c=.o))
 
 # App specific CPU sources
-APP_SPEC_CPU_SRC = $(MAKECMDGOALS)/format.c $(MAKECMDGOALS)/tuiloop.c
+APP_SPEC_CPU_SRC = $(MAKECMDGOALS)/format.c $(MAKECMDGOALS)/uiloop.c
 APP_SPEC_CPU_OBJ = $(patsubst $(MAKECMDGOALS)/%,$(BUILD_DIR)/%,$(APP_SPEC_CPU_SRC:.c=.o))
 
 # PRU library source (mostly drivers, ect)
@@ -90,6 +90,15 @@ clean-template :
 	@echo " $(RM) -r $(TARGET_DIR)/template"; $(RM) -r $(TARGET_DIR)/template
 	@echo " $(RM) -r /lib/firmware/am335x-pru0-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-template-fw
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-template-fw
+
+# ---
+haptictest : $(ROS_TARGET) linker install
+clean-haptictest :
+	@echo " Cleaning haptictest...";
+	@echo " $(RM) -r ./haptictest/build"; $(RM) -r ./haptictest/build
+	@echo " $(RM) -r $(TARGET_DIR)/haptictest"; $(RM) -r $(TARGET_DIR)/haptictest
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-haptictest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-haptictest-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-haptictest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-haptictest-fw
 
 # ---
 imutest : $(ROS_TARGET) linker install
@@ -146,7 +155,7 @@ $(ROS_OBJ) : $(ROS_CPP_SRC)
 linker : $(CPU_OBJ) $(APP_SPEC_CPU_OBJ)
 	@echo "\n Linking cpu ... \n";
 	@mkdir -p $(TARGET_DIR)
-	$(CC) -Wl,-rpath,$(BUILD_DIR) -L$(BUILD_DIR) $(CFLAGS) $(CPU_OBJ) $(APP_SPEC_CPU_OBJ) $(CSRC_DIR)/$(TARGET).c -I$(CINC_DIR) -I$(APP_SPEC_INC) -o $(TARGET_DIR)/$(MAKECMDGOALS) $(CLIB) -lm -DFWSUFFIX=\"$(MAKECMDGOALS)\" -lRosPub
+	$(CC) -Wl,-rpath,$(BUILD_DIR) -L$(BUILD_DIR) $(CFLAGS) $(CPU_OBJ) $(APP_SPEC_CPU_OBJ) $(CSRC_DIR)/$(TARGET).c -I$(CINC_DIR) -I$(APP_SPEC_INC) -I$(ROS_DIR) -o $(TARGET_DIR)/$(MAKECMDGOALS) $(CLIB) -lm -DFWSUFFIX=\"$(MAKECMDGOALS)\" -lRosPub
 
 # Build C dependencies
 $(BUILD_DIR)%.o: $(CSRC_DIR)%.c
@@ -161,10 +170,10 @@ $(BUILD_DIR)/format.o : $(MAKECMDGOALS)/format.c
 	$(CC) $(CFLAGS) -I$(CINC_DIR) -I./$(APP_SPEC_INC) -c -o $@ $< $(CLIB) -lm
 
 # Build app specific C dependencies
-$(BUILD_DIR)/tuiloop.o : $(MAKECMDGOALS)/tuiloop.c
+$(BUILD_DIR)/uiloop.o : $(MAKECMDGOALS)/uiloop.c
 	@echo "\n Building app specific dependencies... \n";
 	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -I$(CINC_DIR) -I./$(APP_SPEC_INC) -c -o $@ $< $(CLIB) -lm
+	$(CC) $(CFLAGS) -I$(CINC_DIR) -I$(ROS_DIR) -I./$(APP_SPEC_INC) -c -o $@ $< $(CLIB) -lm
 
 # ---- PRU
 

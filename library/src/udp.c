@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
+#include "format.h"
 
 
 udp_t* UdpInit(void) {
@@ -64,7 +65,14 @@ udp_t* UdpInit(void) {
   return udp;
 }
 
-void UdpTxPacket(udp_t* udp){
+void UdpPublish(const log_t* log, udp_t* udp) {
+
+  udp->buff[0] = '\0';
+  int size =
+    ((STATE_BUFF_LEN + log->cbuff->end - log->cbuff->start) % STATE_BUFF_LEN);
+  int i = log->cbuff->start + (size -1);
+  FormatSprintPublishState(&log->pru_mem->s->state[i % STATE_BUFF_LEN],
+                          udp->buff);
   udp->rc = sendto(udp->sd, udp->buff, MAX_PACKET_SIZE, 0,
       (struct sockaddr *) &(udp->remoteServAddr),sizeof(udp->remoteServAddr));
 }

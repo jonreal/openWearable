@@ -1,4 +1,4 @@
-#include "tui.h"
+#include "ui.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
@@ -6,7 +6,7 @@
 
 extern volatile sig_atomic_t input_ready;
 
-void TuiPrintMenu(pru_mem_t* pru_mem) {
+void UiPrintMenu(pru_mem_t* pru_mem) {
   printf(
   "\n\n---------------------------------------------------------------------\n"
   " pd_sup = %.2f\t pd_pro = %.2f\t t_hold = %.2f\n\n"
@@ -22,22 +22,22 @@ void TuiPrintMenu(pru_mem_t* pru_mem) {
   fflush(stdout);
 }
 
-int TuiLoop(pru_mem_t* pru_mem) {
+int UiLoop(pru_mem_t* pru_mem) {
   char input_char = 0;
   int input_int = 0;
   float input_float = 0;
   char input_string[256] = {0};
   char log_file[256] = "datalog/";
 
-  TuiInitLogAndPublishThread(pru_mem);
-  TuiPrintMenu(pru_mem);
-
+ // UiInitLogAndPublishThread(pru_mem);
+  UiPrintMenu(pru_mem);
   while (1) {
     // Clear inputs
     input_float = 0;
     input_int = 0;
     input_char = ' ';
     input_string[0] = '\0';
+
 
     // Wait for user input.
     if (input_ready) {
@@ -47,7 +47,7 @@ int TuiLoop(pru_mem_t* pru_mem) {
 
         // ---- Exit ----------------------------------------------------------
         case 'e' : {
-          TuiCloseLogAndPublishThread();
+          UiStopAndSaveLog();
           printf("done.\n");
           return 1;
         }
@@ -58,17 +58,17 @@ int TuiLoop(pru_mem_t* pru_mem) {
           fflush(stdout);
 
           // Wait for input.
-          TuiPollForUserInput();
+          UiPollForUserInput();
           scanf(" %s", input_string);
           strcat(log_file, input_string);
           printf("\t\tSaving data to %s\n",log_file);
-          TuiNewLogFile(log_file);
+          UiNewLogFile(log_file);
 
           // Wait for user input to start saving data
           printf("\t\tPress enter to start collection...\n");
           fflush(stdout);
-          TuiPollForUserInput();
-          TuiSetPruCtlBit(pru_mem, 1); // sync w bit 1 in pru_ctl utility
+          UiPollForUserInput();
+          UiSetPruCtlBit(pru_mem, 1); // sync w bit 1 in pru_ctl utility
           scanf(" %c", &input_char);
 
           // Wait for enter to stop collection
@@ -76,15 +76,15 @@ int TuiLoop(pru_mem_t* pru_mem) {
           fflush(stdout);
 
           // Data collection loop
-          TuiStartLog();
-          TuiPollForUserInput();
-          TuiStopAndSaveLog();
+          UiStartLog();
+          UiPollForUserInput();
+          UiStopAndSaveLog();
           scanf(" %c", &input_char);
-          TuiClearPruCtlBit(pru_mem, 1); // sync w bit 1 in pru_ctl utility
+          UiClearPruCtlBit(pru_mem, 1); // sync w bit 1 in pru_ctl utility
 
           log_file[0] = '\0';
           strcat(log_file, "datalog/");
-          TuiPrintMenu(pru_mem);
+          UiPrintMenu(pru_mem);
           break;
         }
 
@@ -94,10 +94,10 @@ int TuiLoop(pru_mem_t* pru_mem) {
           fflush(stdout);
 
           // Wait for input.
-          TuiPollForUserInput();
+          UiPollForUserInput();
           scanf(" %f", &input_float);
           pru_mem->p->hold_cnt = input_float*1000;
-          TuiPrintMenu(pru_mem);
+          UiPrintMenu(pru_mem);
           break;
         }
 
@@ -107,10 +107,10 @@ int TuiLoop(pru_mem_t* pru_mem) {
           fflush(stdout);
 
           // Wait for input.
-          TuiPollForUserInput();
+          UiPollForUserInput();
           scanf(" %f", &input_float);
           pru_mem->p->pd_sup = fix16_from_float(input_float);
-          TuiPrintMenu(pru_mem);
+          UiPrintMenu(pru_mem);
           break;
         }
 
@@ -120,10 +120,10 @@ int TuiLoop(pru_mem_t* pru_mem) {
           fflush(stdout);
 
           // Wait for input.
-          TuiPollForUserInput();
+          UiPollForUserInput();
           scanf(" %f", &input_float);
           pru_mem->p->pd_pro = fix16_from_float(input_float);
-          TuiPrintMenu(pru_mem);
+          UiPrintMenu(pru_mem);
           break;
         }
       }

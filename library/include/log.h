@@ -18,13 +18,12 @@
 
 #include <stdint.h>
 #include "mem_types.h"
-#include "udp.h"
-#include "../../ros/roshelper.h"
+#include "roshelper.h"
 
-#define LOGSIZE         (4096 * 4096)
+#define LOGSIZE         (4096 * 4096) * 10
 #define TEMP_BUFF_LEN   1024
 #define WRITE_BUFF_LEN  65536
-#define MIN_STATE_REQ   33
+#define MIN_STATE_REQ   15
 
 // Circular Buffer Struct
 typedef struct{
@@ -41,20 +40,20 @@ typedef struct{
   char write_buff[WRITE_BUFF_LEN];
   circbuff_t* cbuff;
   const pru_mem_t* pru_mem;
-  int publish_frq;
 } log_t;
 
 circbuff_t* LogNewCircBuff(void);
+void LogCircBuffUpdate(log_t* log);
 void LogDebugWriteState(const shared_mem_t* sm, circbuff_t* cb, char* buff);
 log_t* LogInit(const pru_mem_t* pru_mem);
 int LogNewFile(log_t* log, char* file);
+void LogWriteStateToFile(log_t* log);
 int LogSaveFile(log_t* log);
-void LogWriteStateToFileAndPublish(int logflag,
-                                   log_t* log,
-                                   udp_t* udp,
-                                   rospub_t* rp);
 void LogCleanup(log_t* log);
 
+
+
+//void LogWriteStateToFileAndPublish(log_t* log);
 
 
 #endif /* _LOG_ */

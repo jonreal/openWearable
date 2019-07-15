@@ -18,6 +18,7 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include "log.h"
 
 #define REMOTE_SERVER_PORT 1500
 #define MAX_PACKET_SIZE 1024
@@ -30,6 +31,6 @@ typedef struct {
 } udp_t;
 
 udp_t* UdpInit(void);
-void UdpTxPacket(udp_t* udp);
+void UdpPublish(const log_t* log, udp_t* udp);
 
 #endif

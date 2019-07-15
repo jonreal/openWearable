@@ -1,4 +1,4 @@
-#include "tui.h"
+#include "ui.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
@@ -6,7 +6,7 @@
 
 extern volatile sig_atomic_t input_ready;
 
-void TuiPrintMenu(void) {
+void UiPrintMenu(const pru_mem_t* pru_mem) {
   printf(
   "\n\n---------------------------------------------------------------------\n"
   "Menu: f - Collect trial\n"
@@ -15,14 +15,12 @@ void TuiPrintMenu(void) {
   fflush(stdout);
 }
 
-int TuiLoop(const pru_mem_t* pru_mem) {
+int UiLoop(const pru_mem_t* pru_mem) {
   char input_char = 0;
   char input_string[256] = {0};
   char log_file[256] = "datalog/";
 
-  TuiInitLogAndPublishThread(pru_mem);
-  TuiPrintMenu();
-
+  UiPrintMenu(pru_mem);
   while (1) {
     // Clear inputs
     input_char = ' ';
@@ -36,7 +34,7 @@ int TuiLoop(const pru_mem_t* pru_mem) {
 
         // ---- Exit ----------------------------------------------------------
         case 'e' : {
-          TuiCloseLogAndPublishThread();
+          UiStopAndSaveLog();
           printf("done.\n");
           return 1;
         }
@@ -47,16 +45,16 @@ int TuiLoop(const pru_mem_t* pru_mem) {
           fflush(stdout);
 
           // Wait for input.
-          TuiPollForUserInput();
+          UiPollForUserInput();
           scanf(" %s", input_string);
           strcat(log_file, input_string);
           printf("\t\tSaving data to %s\n",log_file);
-          TuiNewLogFile(log_file);
+          UiNewLogFile(log_file);
 
           // Wait for user input to start saving data
           printf("\t\tPress enter to start collection...\n");
           fflush(stdout);
-          TuiPollForUserInput();
+          UiPollForUserInput();
           scanf(" %c", &input_char);
 
           // Wait for enter to stop collection
@@ -64,14 +62,14 @@ int TuiLoop(const pru_mem_t* pru_mem) {
           fflush(stdout);
 
           // Data collection loop
-          TuiStartLog();
-          TuiPollForUserInput();
-          TuiStopAndSaveLog();
+          UiStartLog();
+          UiPollForUserInput();
+          UiStopAndSaveLog();
           scanf(" %c", &input_char);
 
           log_file[0] = '\0';
           strcat(log_file, "datalog/");
-          TuiPrintMenu();
+          UiPrintMenu(pru_mem);
           break;
         }
       }
