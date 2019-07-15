@@ -63,6 +63,13 @@ int main(int argc, char **argv) {
     printf("\nLookup table file not found!\n");
   }
 
+  printf("%d\n",pru_mem.l->lut[384]);
+  printf("%d\n",pru_mem.l->lut[513]);
+
+  printf("%p\n", (void *) &pru_mem.l->lut[0]);
+  printf("%p\n", (void *) &pru_mem.l->lut[999]);
+
+
   if(PruInit(FWSUFFIX) != 0)
     return -1;
 
