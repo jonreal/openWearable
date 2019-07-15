@@ -23,18 +23,16 @@
 #include <sys/mman.h>
 #include "pru.h"
 #include "format.h"
-#include "debug.h"
-#include "../../ros/roshelper.h"
+#include "roshelper.h"
 
 // ---------------------------------------------------------------------------
 // Function: void circBuffUpdate(void)
 //
 //  This function initializes the circular buffer.
 // ---------------------------------------------------------------------------
-static void LogCircBuffUpdate(const volatile uint32_t new_cb_index,
-                              circbuff_t* cb) {
-  if (cb->end != new_cb_index)
-    cb->end = new_cb_index;
+void LogCircBuffUpdate(log_t* log) {
+  if (log->cbuff->end != log->pru_mem->s->cbuff_index)
+    log->cbuff->end = log->pru_mem->s->cbuff_index;
 }
 
 // ---------------------------------------------------------------------------
@@ -62,12 +60,10 @@ circbuff_t* LogNewCircBuff(void) {
 
 void LogDebugWriteState(const shared_mem_t* sm, circbuff_t* cb, char* buff) {
     if (cb->start != sm->state[0].time){
-      DebugPinHigh();
       FormatSprintState(&sm->state[0], buff);
       fprintf(stdout, buff);
       buff[0] = '\0';
       cb->start = sm->state[0].time;
-      DebugPinLow();
     }
 }
 
@@ -85,8 +81,6 @@ log_t* LogInit(const pru_mem_t* pru_mem) {
   log->fd = 0;
   log->location = 0;
   log->addr = NULL;
-  log->publish_frq = (pru_mem->p->fs_hz + (30-1))/30;
-  printf("Publishing every %d frames\n",log->publish_frq);
   log->cbuff = LogNewCircBuff();
   memset(&log->write_buff[0], 0, sizeof(log->write_buff));
   return log;
@@ -159,71 +153,68 @@ int LogNewFile(log_t* log, char* file) {
 }
 
 void LogWriteStateToFile(log_t* log) {
-  LogCircBuffUpdate(log->pru_mem->s->cbuff_index, log->cbuff);
   log->write_buff[0] = '\0';
   int size =
     ((STATE_BUFF_LEN + log->cbuff->end - log->cbuff->start) % STATE_BUFF_LEN);
 
-  if (size >= MIN_STATE_REQ) {
-    for(int i=log->cbuff->start; i<log->cbuff->start+size; i++){
-      memset(log->cbuff->temp_buff, 0, TEMP_BUFF_LEN);
-      FormatSprintState(&log->pru_mem->s->state[i % STATE_BUFF_LEN],
-                     log->cbuff->temp_buff);
-      strcat(log->write_buff, log->cbuff->temp_buff);
-    }
-
-    log->cbuff->start = (log->cbuff->start + size) % STATE_BUFF_LEN;
-
-    // Write to file
-    int len = strlen(log->write_buff);
-    memcpy(log->addr + log->location, log->write_buff, len);
-    log->location += len;
+  for(int i=log->cbuff->start; i<log->cbuff->start+size; i++){
+    memset(log->cbuff->temp_buff, 0, TEMP_BUFF_LEN);
+    FormatSprintState(&log->pru_mem->s->state[i % STATE_BUFF_LEN],
+                   log->cbuff->temp_buff);
+    strcat(log->write_buff, log->cbuff->temp_buff);
   }
+
+  log->cbuff->start = (log->cbuff->start + size) % STATE_BUFF_LEN;
+
+  // Write to file
+  int len = strlen(log->write_buff);
+  memcpy(log->addr + log->location, log->write_buff, len);
+  log->location += len;
 }
 
 
-void LogWriteStateToFileAndPublish(int logflag,
-                                   log_t* log,
-                                   udp_t* udp,
-                                   rospub_t* rp) {
-  LogCircBuffUpdate(log->pru_mem->s->cbuff_index, log->cbuff);
-  log->write_buff[0] = '\0';
-  int size =
-    ((STATE_BUFF_LEN + log->cbuff->end - log->cbuff->start) % STATE_BUFF_LEN);
-
-  // send samples at approx 30 Hz (if MIN_STATE_REQ = 33 and fs = 1000)
-  if (size >= log->publish_frq) {
-    DebugPinHigh();
-
-    // Log
-    if (logflag) {
-      for(int i=log->cbuff->start; i<log->cbuff->start+size; i++){
-        memset(log->cbuff->temp_buff, 0, TEMP_BUFF_LEN);
-        FormatSprintState(&log->pru_mem->s->state[i % STATE_BUFF_LEN],
-                       log->cbuff->temp_buff);
-        strcat(log->write_buff, log->cbuff->temp_buff);
-      }
-      // Write to file
-      int len = strlen(log->write_buff);
-      memcpy(log->addr + log->location, log->write_buff, len);
-      log->location += len;
-    }
-    log->cbuff->start = (log->cbuff->start + size) % STATE_BUFF_LEN;
-
-    // publish
-    udp->buff[0] = '\0';
-    int i = log->cbuff->start + (size -1);
-    FormatSprintPublishState(&log->pru_mem->s->state[i % STATE_BUFF_LEN],
-                            udp->buff);
-    UdpTxPacket(udp);
-
-    //send same udp buffer for rospub
-    if (PruOwModeRos(log->pru_mem))
-      RosPubPublish(rp,udp->buff);
-
-    DebugPinLow();
-  }
-}
+//void LogWriteStateToFileAndPublish(int logflag,
+//                                   log_t* log,
+//                                   udp_t* udp,
+//                                   rospub_t* rp) {
+//  LogCircBuffUpdate(log->pru_mem->s->cbuff_index, log->cbuff);
+//  log->write_buff[0] = '\0';
+//  int size =
+//    ((STATE_BUFF_LEN + log->cbuff->end - log->cbuff->start) % STATE_BUFF_LEN);
+//
+//  // send samples at approx 30 Hz (if MIN_STATE_REQ = 33 and fs = 1000)
+//  if (size >= log->publish_frq) {
+//    DebugPinHigh();
+//
+//    // Log
+//    if (logflag) {
+//      for(int i=log->cbuff->start; i<log->cbuff->start+size; i++){
+//        memset(log->cbuff->temp_buff, 0, TEMP_BUFF_LEN);
+//        FormatSprintState(&log->pru_mem->s->state[i % STATE_BUFF_LEN],
+//                       log->cbuff->temp_buff);
+//        strcat(log->write_buff, log->cbuff->temp_buff);
+//      }
+//      // Write to file
+//      int len = strlen(log->write_buff);
+//      memcpy(log->addr + log->location, log->write_buff, len);
+//      log->location += len;
+//    }
+//    log->cbuff->start = (log->cbuff->start + size) % STATE_BUFF_LEN;
+//
+//    // publish
+//    udp->buff[0] = '\0';
+//    int i = log->cbuff->start + (size -1);
+//    FormatSprintPublishState(&log->pru_mem->s->state[i % STATE_BUFF_LEN],
+//                            udp->buff);
+//    UdpTxPacket(udp);
+//
+//    //send same udp buffer for rospub
+//    if (PruOwModeRos(log->pru_mem))
+//      RosPubPublish(rp,udp->buff);
+//
+//    DebugPinLow();
+//  }
+//}
 
 
 int LogSaveFile(log_t* log) {
