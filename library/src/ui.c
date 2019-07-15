@@ -100,9 +100,9 @@ int UiInit(pru_mem_t* pru_mem, ui_flags_t flags) {
   // Configure timer
 	struct itimerval timer;
  	timer.it_value.tv_sec = 0;
- 	timer.it_value.tv_usec = 33000;
+ 	timer.it_value.tv_usec = 66000;
  	timer.it_interval.tv_sec = 0;
- 	timer.it_interval.tv_usec = 33000;
+ 	timer.it_interval.tv_usec = 66000;
 	setitimer(ITIMER_VIRTUAL, &timer, NULL);
 
   printf("TUI initialized.\n");

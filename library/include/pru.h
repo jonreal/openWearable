@@ -29,10 +29,4 @@ void PruEnable(int en, pru_ctl_t* ctl);
 void PruPrintDebugBuffer(const volatile uint32_t* db);
 int PruLoadLut(char* file, lut_mem_t* l);
 
-void PruOwModeReset(pru_mem_t* pru_mem);
-int PruOwModeDebug(const pru_mem_t* pru_mem);
-int PruOwModeRos(const pru_mem_t* pru_mem);
-void PruOwModeSetDebug(pru_mem_t* pru_mem);
-void PruOwModeSetRos(pru_mem_t* pru_mem);
-
 #endif /* _PRU_H_ */
