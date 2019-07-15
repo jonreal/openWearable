@@ -24,6 +24,7 @@
 #include "hw_types.h"
 #include "adcdriver.h"
 #include "i2cdriver.h"
+#include "spidriver.h"
 #include "pruloop.h"
 
 // Globals (pru_io) -----------------------------------------------------------
@@ -132,6 +133,7 @@ void initialize(pru_mem_t* mem) {
   // drivers
   AdcInit();
   I2cInit();
+  spiInit();
 
   // user defined inits
   Pru0Init(mem);

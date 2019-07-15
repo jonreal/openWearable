@@ -51,25 +51,15 @@ int main(int argc, char **argv) {
     printf("pru_mem_init() failed.");
     return -1;
   }
-
   if (PruLoadParams("config/default", pru_mem.p) != 0) {
     printf("\nParameter file not found!\n");
   }
   buff[0] = '\0';
   FormatSprintParams(pru_mem.p, buff);
   fprintf(stdout,buff);
-
   if (PruLoadLut("config/sine_1Hz",pru_mem.l) != 0) {
     printf("\nLookup table file not found!\n");
   }
-
-  printf("%d\n",pru_mem.l->lut[384]);
-  printf("%d\n",pru_mem.l->lut[513]);
-
-  printf("%p\n", (void *) &pru_mem.l->lut[0]);
-  printf("%p\n", (void *) &pru_mem.l->lut[999]);
-
-
   if(PruInit(FWSUFFIX) != 0)
     return -1;
 
@@ -78,15 +68,12 @@ int main(int argc, char **argv) {
   while((c = getopt(argc, argv, "vur")) != -1) {
     switch (c) {
       case 'v':
-       // printf("\n\t-v verbose option\n");
         uiflags.debug = 1;
         break;
       case 'r':
-       // printf("\n\t-r ros publisher option\n");
         uiflags.rospublish = 1;
         break;
       case 'u':
-       // printf("\n\t-r ros publisher option\n");
         uiflags.udppublish = 1;
         break;
     }
