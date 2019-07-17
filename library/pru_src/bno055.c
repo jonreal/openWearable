@@ -67,13 +67,13 @@ imu_t* ImuInit(uint8_t i2c_address) {
   uint8_t error = I2cRxByte(imu->addrs, BNO055_SYS_ERR_ADDR);
   __delay_cycles(50000);
 
-//  // set NDOF mode
-//  I2cTxByte(imu->addrs, BNO055_OPR_MODE_ADDR, BNO055_MODE_NDOF);
-//  __delay_cycles(50000);
-//
-  // set IMU mode
-  I2cTxByte(imu->addrs, BNO055_OPR_MODE_ADDR, BNO055_MODE_IMUPLUS);
+  // set NDOF mode
+  I2cTxByte(imu->addrs, BNO055_OPR_MODE_ADDR, BNO055_MODE_NDOF);
   __delay_cycles(50000);
+
+//  // set IMU mode
+//  I2cTxByte(imu->addrs, BNO055_OPR_MODE_ADDR, BNO055_MODE_IMUPLUS);
+//  __delay_cycles(50000);
 
   // get system status
   status = I2cRxByte(imu->addrs, BNO055_SYS_STAT_ADDR);
