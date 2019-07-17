@@ -53,6 +53,7 @@ void UiWelcome(void);
 void UiPollForUserInput(void);
 void UiSetPruCtlBit(const pru_mem_t* pru_mem, unsigned char n);
 void UiClearPruCtlBit(const pru_mem_t* pru_mem, unsigned char n);
-void UiPollPruCtlBit(const pru_mem_t* pru_mem, unsigned char n);
+void UiPollPruCtlBit(const pru_mem_t* pru_mem, unsigned char n,
+                     unsigned char value);
 
 #endif /* _TUI_H_ */

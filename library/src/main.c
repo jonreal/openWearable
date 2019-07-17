@@ -23,7 +23,6 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include "mem_types.h"
-#include "debug.h"
 #include "pru.h"
 #include "log.h"
 #include "ui.h"
@@ -40,13 +39,8 @@ void sigintHandler(int sig) {
 int main(int argc, char **argv) {
 
   char buff[65536] = {0,};
-
-  if (DebugInit() != 0) {
-    printf("DebugInit() failed.");
-    return -1;
-  }
-
   pru_mem_t pru_mem;
+
   if (PruMemMap(&pru_mem) != 0) {
     printf("pru_mem_init() failed.");
     return -1;
@@ -100,55 +94,8 @@ int main(int argc, char **argv) {
       PruEnable(0, &pru_mem.s->pru_ctl);
       PruRestart();
       UiCleanup();
-      DebugCleanup();
       raise(SIGINT);
     }
   }
-
-
-
-
-//  if (PruOwModeDebug(&pru_mem)) {
-//    printf("\n"
-//           "-----------------------------\n"
-//           " Welcome to openWearable v0.1\n"
-//           "--------- DEBUG MODE --------\n"
-//           "-----------------------------\n");
-//
-//    printf("\n\nPress enter to start\n\n");
-//    getchar();
-//    PruEnable(1, &pru_mem.s->pru_ctl);
-//
-//    signal(SIGINT, sigintHandler);
-//    circbuff_t* cb = LogNewCircBuff();
-//    while (!doneFlag) {
-//      LogDebugWriteState(pru_mem.s, cb, buff);
-//    }
-//    PruEnable(0, &pru_mem.s->pru_ctl);
-//    free(cb);
-//    PruPrintDebugBuffer(pru_mem.p->debug_buff);
-//  } else {
-//    printf("\n"
-//           "-----------------------------\n"
-//           " Welcome to openWearable v0.1\n"
-//           "-----------------------------\n");
-//
-//    printf("\n\nPress enter to start\n\n");
-//    getchar();
-//    PruEnable(1, &pru_mem.s->pru_ctl);
-//
-//    if (UiInit(&pru_mem,uiflags) != 0) {
-//      printf("Tui init failed.\n");
-//      return -1;
-//    }
-//    if (UiLoop(&pru_mem) == 1) {
-//      PruEnable(0, &pru_mem.s->pru_ctl);
-//      PruRestart();
-//      //PruPrintDebugBuffer(pru_mem.p->debug_buff);
-//      UiCleanup();
-//      DebugCleanup();
-//      raise(SIGINT);
-//    }
-//  }
   return 0;
 }

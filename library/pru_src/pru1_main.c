@@ -67,6 +67,7 @@ int main(void) {
     // Estimate
     Pru1UpdateState(&counter,
                     mem.p,
+                    mem.l,
                     &mem.s->state[counter.index],
                     &mem.s->pru_ctl);
 
@@ -79,6 +80,7 @@ int main(void) {
     // Control
     Pru1UpdateControl(&counter,
                       mem.p,
+                      mem.l,
                       &mem.s->state[counter.index],
                       &mem.s->pru_ctl);
 

@@ -55,10 +55,12 @@ void encoderSample(volatile fix16_t *pos)
 
 fix16_t encoderCnts2Degs(uint16_t cnts)
 {
-  fix16_t angleDeg = fix16_smul(fix16_from_int(cnts), FIX16_360_DIV_4096);
+  fix16_t angleDeg = fix16_smul(
+      fix16_smul(fix16_from_int(cnts), FIX16_360_DIV_4096),0xFFFF0000);
 
-  if (angleDeg > FIX16_180)
-    angleDeg = fix16_ssub(angleDeg, FIX16_360);
+//    angleDeg = fix16_ssub(angleDeg, FIX16_360);
+  if (angleDeg < fix16_smul(FIX16_180,0xFFFF0000))
+    angleDeg = fix16_sadd(angleDeg, FIX16_360);
 
   return angleDeg;
 }
