@@ -83,7 +83,7 @@ int main(void) {
     // Estimate
     Pru0UpdateState(&counter,
                     mem.p,
-                    mem.l->lut,
+                    mem.l,
                     &mem.s->state[counter.index],
                     &mem.s->pru_ctl);
 
@@ -97,6 +97,7 @@ int main(void) {
     // Control
     Pru0UpdateControl(&counter,
                       mem.p,
+                      mem.l,
                       &mem.s->state[counter.index],
                       &mem.s->pru_ctl);
 

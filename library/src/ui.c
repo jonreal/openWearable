@@ -23,6 +23,7 @@
 #include <string.h>
 #include "log.h"
 #include "pru.h"
+#include "debug.h"
 #include "roshelper.h"
 
 // Global
@@ -36,6 +37,8 @@ static void UiInputCallback(int sig) {
 
 static void UiTimerCallback(int sig) {
 
+  DebugPinHigh();
+
   // always update circular buffer
   LogCircBuffUpdate(uidata.log);
 
@@ -43,6 +46,8 @@ static void UiTimerCallback(int sig) {
     LogWriteStateToFile(uidata.log);
   if (uidata.flag.udppublish)
     UdpPublish(uidata.log, uidata.udp);
+
+  DebugPinLow();
 }
 // ----------------------------------------------------------------------------
 
@@ -71,6 +76,12 @@ int UiInit(pru_mem_t* pru_mem, ui_flags_t flags) {
   if (uidata.flag.rospublish)
     uidata.ros = RosPubInit();
 
+  // init debug pin
+  if (DebugInit() != 0) {
+    printf("DebugInit() failed.");
+    return -1;
+  }
+
   // Setup stdin flags
   if (fcntl(0, F_SETOWN, getpid()) == -1) {
     printf("F_SETOWN error.\n");
@@ -97,40 +108,18 @@ int UiInit(pru_mem_t* pru_mem, ui_flags_t flags) {
   if (sigaction(SIGVTALRM, &action_timer, NULL) == -1)
     printf("Error sigvtalrm\n");
 
-  // Configure timer
+  // Configure timer (60 Hz)
 	struct itimerval timer;
  	timer.it_value.tv_sec = 0;
- 	timer.it_value.tv_usec = 66000;
+ 	timer.it_value.tv_usec = 16000;
  	timer.it_interval.tv_sec = 0;
- 	timer.it_interval.tv_usec = 66000;
+ 	timer.it_interval.tv_usec = 16000;
 	setitimer(ITIMER_VIRTUAL, &timer, NULL);
 
   printf("TUI initialized.\n");
   fflush(stdout);
   return 0;
 }
-
-//int UiInitLogAndPublishThread(const pru_mem_t* pru_mem) {
-//
-//  thread_data.logflag = 0;
-//  thread_data.udp = UdpInit();
-//  thread_data.log = LogInit(pru_mem);
-//
-//  if (PruOwModeRos(pru_mem))
-//    thread_data.rp = RosPubInit();
-//
-//  if (pthread_mutex_init(&lock, NULL) != 0) {
-//    printf("\n mutex init failed\n");
-//    return 1;
-//  }
-//  if (pthread_create(&thread, NULL, &UiLogAndPublishThread, NULL)) {
-//    printf("\n thread create failed\n");
-//    return 1;
-//  }
-
-//  return 0;
-//}
-
 
 void UiStartLog(void) {
   uidata.flag.logging = 1;
@@ -145,8 +134,8 @@ void UiStopAndSaveLog(void) {
 }
 
 void UiNewLogFile(char* log_file) {
-  uidata.flag.logfile = 1;
   LogNewFile(uidata.log, log_file);
+  uidata.flag.logfile = 1;
 }
 
 
@@ -174,10 +163,16 @@ void UiClearPruCtlBit(const pru_mem_t* pru_mem, unsigned char n) {
   pru_mem->s->pru_ctl.bit.utility &= ~(1 << n);
 }
 
-void UiPollPruCtlBit(const pru_mem_t* pru_mem, unsigned char n) {
+void UiPollPruCtlBit(const pru_mem_t* pru_mem, unsigned char n,
+                    unsigned char value) {
   while (1)
-    if ((pru_mem->s->pru_ctl.bit.utility & (1 << n)) == (1 << n))
-      break;
+    if (value == 1) {
+      if ((pru_mem->s->pru_ctl.bit.utility & (1 << n)) == (1 << n))
+        break;
+    } else {
+      if (!((pru_mem->s->pru_ctl.bit.utility & (1 << n)) == (1 << n)))
+        break;
+    }
 }
 
 int UiCleanup(void) {
@@ -190,6 +185,7 @@ int UiCleanup(void) {
     return -1;
   }
   LogCleanup(uidata.log);
+  DebugCleanup();
   if (uidata.flag.rospublish)
     RosPubCleanup(uidata.ros);
   printf("TUI cleaned up.\n");

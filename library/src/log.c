@@ -50,9 +50,7 @@ circbuff_t* LogNewCircBuff(void) {
   circbuff_t* cb = malloc(sizeof(circbuff_t));
   cb->start = 0;
   cb->end = 0;
-  for (int i=0; i<TEMP_BUFF_LEN; i++)
-    cb->temp_buff[0] = 0;
-
+  memset(cb->temp_buff,0, TEMP_BUFF_LEN);
   return cb;
 }
 
@@ -82,7 +80,7 @@ log_t* LogInit(const pru_mem_t* pru_mem) {
   log->location = 0;
   log->addr = NULL;
   log->cbuff = LogNewCircBuff();
-  memset(&log->write_buff[0], 0, sizeof(log->write_buff));
+  memset(log->write_buff, 0, WRITE_BUFF_LEN);
   return log;
 }
 
@@ -235,6 +233,8 @@ int LogSaveFile(log_t* log) {
   log->fd = 0;
   log->location = 0;
   log->addr = NULL;
+  memset(log->cbuff->temp_buff,0, TEMP_BUFF_LEN);
+  memset(log->write_buff, 0, WRITE_BUFF_LEN);
   return 0;
 }
 
