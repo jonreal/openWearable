@@ -1,6 +1,6 @@
 *.DS_Store
 */bin
-*/build
+build/
 *.swp
 */datalog
 tags
