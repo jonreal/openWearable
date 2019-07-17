@@ -36,8 +36,10 @@ void Pru0UpdateState(const pru_count_t* c,
 
 void Pru0UpdateControl(const pru_count_t* c,
                        const param_mem_t* p_,
+                       const lut_mem_t* l_,
                        state_t* s_,
                        pru_ctl_t* ctl_){
+
 }
 
 void Pru0Cleanup(void) {
@@ -54,14 +56,15 @@ void Pru1Init(pru_mem_t* mem) {
 
 void Pru1UpdateState(const pru_count_t* c,
                      const param_mem_t* p_,
+                     const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
 
-  __R30 ^= (1 << 0);
 }
 
 void Pru1UpdateControl(const pru_count_t* c,
                        const param_mem_t* p_,
+                       const lut_mem_t* l_,
                        state_t* s_,
                        pru_ctl_t* ctl_) {
 
