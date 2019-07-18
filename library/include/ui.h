@@ -43,8 +43,6 @@ extern void UiPrintMenu(const pru_mem_t* pru_mem);
 ui_flags_t UiInitFlags(void);
 int UiInit(pru_mem_t* pru_mem, ui_flags_t flags);
 int UiCleanup(void);
-//int UiInitLogAndPublishThread(const pru_mem_t* pru_mem);
-//void UiCloseLogAndPublishThread(void);
 void UiNewLogFile(char* log_file);
 void UiStartLog(void);
 void UiStopAndSaveLog(void);

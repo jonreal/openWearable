@@ -110,13 +110,13 @@ void PamActionSimple(pam_t* p) {
   PamUpdate(p);
 
   // reached goal flag
-  if (fix16_ssub(p->s.p_d,fix16_ssub(p->s.p_m,0x20000)) < 0)
+  if (fix16_ssub(p->s.p_d,fix16_ssub(p->s.p_m,0x50000)) < 0)
     p->flag = 1;
 
   // if pd = 0 open exhaust
   if (p->s.p_d == 0)
     PamSetU(p,-1);
-  else if ((fix16_ssub(p->s.p_d,fix16_ssub(p->s.p_m,0x20000)) > 0) && (p->flag==0))
+  else if ((fix16_ssub(p->s.p_d,fix16_ssub(p->s.p_m,0x50000)) > 0) && (p->flag==0))
     PamSetU(p,1);
   else
     PamSetU(p,0);
