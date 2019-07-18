@@ -18,14 +18,20 @@
 
 #include <stdint.h>
 
+typedef enum {
+  PCA9548 = 0,
+  PCA9544 = 1
+} i2cmux_version_t;
+
 typedef struct {
+  i2cmux_version_t version;
   uint8_t address;
 } i2cmux_t;
 
 //TODO add interrupt masks
 
 // Public
-i2cmux_t* MuxI2cInit(uint8_t addrs);
+i2cmux_t* MuxI2cInit(uint8_t addrs, i2cmux_version_t ver);
 uint8_t MuxI2cRead(const i2cmux_t* mux);
 void MuxI2cSetChannel(const i2cmux_t* mux, uint8_t chan);
 void MuxI2cFree(i2cmux_t* mux);
