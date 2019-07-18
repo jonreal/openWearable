@@ -22,9 +22,9 @@
 #include "pca9548a.h"           // i2c multiplexer
 
 typedef struct {
-  volatile int8_t u;                // current command
-  volatile fix16_t p_d;             // desired pressure
-  volatile fix16_t p_m;             // muscle pressure
+  fix16_t p_d;             // desired pressure
+  fix16_t p_m;             // muscle pressure
+  int32_t u;                // current command
 } pam_state_t;
 
 
@@ -33,7 +33,7 @@ typedef struct {
   uint8_t hp_pin;                   // high pressure pin
   uint8_t lp_pin;                   // low pressure pin
   volatile uint8_t flag;
-  pam_state_t s;
+  volatile pam_state_t s;
 } pam_t;
 
 typedef struct {

@@ -167,25 +167,20 @@ $(BUILD_DIR)/uiloop.o : $(MAKECMDGOALS)/uiloop.c
 # ---- PRU
 
 # Install PRU
-install : $(BUILD_DIR)/$(PRU0_TARGET).elf \
-					$(BUILD_DIR)/$(PRU1_TARGET).elf
+install : $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
 	@echo "\n Installing pru firmware... \n";
 	$(INSTALLDIR) /etc/modprobe.d
 	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU0_TARGET).elf /lib/firmware/am335x-pru0-$(MAKECMDGOALS)-fw
 	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU1_TARGET).elf /lib/firmware/am335x-pru1-$(MAKECMDGOALS)-fw
 
 # Linker PRU0
-$(BUILD_DIR)/$(PRU0_TARGET).elf : $(BUILD_DIR)/$(PRU0_TARGET).o \
-																	$(PRU_OBJ) \
-																	$(APP_SPEC_PRU_OBJ)
+$(BUILD_DIR)/$(PRU0_TARGET).elf : $(BUILD_DIR)/$(PRU0_TARGET).o $(PRU_OBJ) $(APP_SPEC_PRU_OBJ)
 	@echo "\n Linking pru0... \n"
 	$(PRU_CC) $(PRU_CFLAGS) -z $^ -llibc.a -m $(MAKECMDGOALS)/build/$(PRU0_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU0_TARGET).elf $(PRU_CSRC_DIR)/PRU0.cmd
 
 
 # Linker PRU1
-$(BUILD_DIR)/$(PRU1_TARGET).elf : $(BUILD_DIR)/$(PRU1_TARGET).o \
-																	$(PRU_OBJ) \
-																	$(APP_SPEC_PRU_OBJ)
+$(BUILD_DIR)/$(PRU1_TARGET).elf : $(BUILD_DIR)/$(PRU1_TARGET).o $(PRU_OBJ) $(APP_SPEC_PRU_OBJ)
 	@echo "\n Linking pru1... \n"
 	$(PRU_CC) $(PRU_CFLAGS) -z $^ -llibc.a -m $(MAKECMDGOALS)/build/$(PRU1_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU1_TARGET).elf $(PRU_CSRC_DIR)/PRU1.cmd
 
