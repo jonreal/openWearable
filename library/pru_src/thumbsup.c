@@ -30,8 +30,8 @@ thumbs_up_t* ThumbsUpInit(button_t* b_pro, button_t* b_sup,
 
   PamSetPd(th->pam_pro,fix16_from_int(0));
   PamSetPd(th->pam_sup,fix16_from_int(0));
-  PamSimple(th->pam_sup);
-  PamSimple(th->pam_sup);
+  PamActionSimple(th->pam_sup);
+  PamActionSimple(th->pam_sup);
 
   return th;
 }
@@ -74,8 +74,8 @@ void ThumbsUpUpdate(thumbs_up_t* th, uint32_t hold_cnt,
       break;
   }
 
-  PamSimple(th->pam_sup);
-  PamSimple(th->pam_pro);
+  PamActionSimple(th->pam_sup);
+  PamActionSimple(th->pam_pro);
 }
 
 fsm_state_t ThumbsUpGetState(thumbs_up_t* th) {
@@ -87,14 +87,14 @@ void ThumbsUpFree(thumbs_up_t* th) {
 }
 
 fix16_t ThumbsUpGetSupPm(thumbs_up_t* th) {
-  return th->pam_sup->p_m;
+  return th->pam_sup->s.p_m;
 }
 fix16_t ThumbsUpGetSupPd(thumbs_up_t* th) {
-  return th->pam_sup->p_d;
+  return th->pam_sup->s.p_d;
 }
 fix16_t ThumbsUpGetProPm(thumbs_up_t* th) {
-  return th->pam_pro->p_m;
+  return th->pam_pro->s.p_m;
 }
 fix16_t ThumbsUpGetProPd(thumbs_up_t* th) {
-  return th->pam_pro->p_d;
+  return th->pam_pro->s.p_d;
 }

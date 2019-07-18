@@ -91,6 +91,14 @@ clean-template :
 	@echo " $(RM) -r /lib/firmware/am335x-pru0-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-template-fw
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-template-fw
 
+pamtest : $(ROS_TARGET) linker install
+clean-pamtest :
+	@echo " Cleaning pamtest...";
+	@echo " $(RM) -r ./pamtest/build"; $(RM) -r ./pamtest/build
+	@echo " $(RM) -r $(TARGET_DIR)/pamtest"; $(RM) -r $(TARGET_DIR)/pamtest
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-pamtest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-pamtest-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-pamtest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-pamtest-fw
+
 # ---
 haptictest : $(ROS_TARGET) linker install
 clean-haptictest :
@@ -117,25 +125,6 @@ clean-buttontest :
 	@echo " $(RM) -r $(TARGET_DIR)/buttontest"; $(RM) -r $(TARGET_DIR)/buttontest
 	@echo " $(RM) -r /lib/firmware/am335x-pru0-buttontest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-buttontest-fw
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-buttontest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-buttontest-fw
-
-# ---
-reflex : $(ROS_TARGET) linker install
-clean-reflex :
-	@echo " Cleaning reflex...";
-	@echo " $(RM) -r ./reflex/build"; $(RM) -r ./reflex/build
-	@echo " $(RM) -r $(TARGET_DIR)/reflex"; $(RM) -r $(TARGET_DIR)/reflex
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-reflex-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-reflex-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-reflex-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-reflex-fw
-
-# ---
-reflex-single : $(ROS_TARGET) linker install
-clean-reflex-single :
-	@echo " Cleaning reflex-single...";
-	@echo " $(RM) -r ./reflex-single/build"; $(RM) -r ./reflex-single/build
-	@echo " $(RM) -r $(TARGET_DIR)/reflex-single"; $(RM) -r $(TARGET_DIR)/reflex-single
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-reflex-single-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-reflex-single-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-reflex-single-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-reflex-single-fw
-
 
 # ---- CPU
 
