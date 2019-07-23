@@ -1,0 +1,54 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+  compatible = "ti,beaglebone", "ti,beaglebone-black","ti,am335x-bone-black-wireless", "ti,am335x-bone-blue", "ti,am33xx";
+
+  /* identification */
+  part-number = "OPENWEARABLE";
+  version = "00A0";
+
+  /* state the resources this cape uses */
+  exclusive-use =
+
+    /**** pru1 GPIO pins for input ****/
+    "P8.28",  /* pr1_pru1_pru_[r30_10 | r31_10] */
+    "P8.29",  /* pr1_pru1_pru_[r30_9 | r31_9] */
+
+    /* the hardware IP uses */
+    "pruss";
+
+    /*----- pin mux cheat sheet -----*/
+    /* Bit 6 - SLEWCTRL - 0 (fast) | 1 (slow)
+     * Bit 5 - RXACTIVE - 0 (reciever disable) | 1 (reciever enable)
+     * Bit 4 - PULLTYPESEL - 0 (pulldown) | 1 (pullup)
+     * Bit 3 - PULLUDEN - 0 (enable) | 1 (disable)
+     * Bit 2-0 - MUXMODE
+     */
+
+  /*----- pin mux -----*/
+  fragment@0 {
+    target = <&am33xx_pinmux>;
+    __overlay__ {
+
+      pruss_pins: pinmux_pruss_pins {
+        pinctrl-single,pins = <
+          0x0E8 0x26  /* P8.28 - pr1_pru1_pru_r30_10, MODE6 | INPUT | PD */
+          0x0E4 0x26  /* P8.29 - pr1_pru1_pru_r30_9,  MODE6 | INPUT | PD */
+        >;
+      };
+    };
+  };
+
+  /*----- pru enable -----*/
+  fragment@1 {
+    target = <&pruss>;
+    __overlay__ {
+      status = "okay";
+      pinctrl-names = "default";
+      pinctrl-0 = <&pruss_pins>;
+    };
+  };
+};
+
+
