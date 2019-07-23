@@ -16,6 +16,7 @@
 #ifndef _MEM_TYPES_
 #define _MEM_TYPES_
 
+#include <stddef.h>
 #include "state.h"
 
 #define PRU_CTRL_BASE     0x00022000

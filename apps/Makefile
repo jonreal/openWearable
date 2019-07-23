@@ -40,7 +40,7 @@ LDFLAGS =
 
 # PRU compiler
 PRU_CC = clpru
-PRU_CFLAGS = -q --c99 -v3 --define=am3359d -O4 -D=am335x -D=FIXMATH_NO_CACHE
+PRU_CFLAGS = -q --c99 -v3 --define=am3359d -O4 -D=am335x -D=FIXMATH_NO_CACHE 
 PRU_LDFLAGS =
 
 # Install stuff
@@ -49,7 +49,6 @@ INSTALLDIR = install -d -m 755
 INSTALLNONEXEC = install -m 644
 
 # ----
-
 # CPU library sources (openWearable core)
 CPU_SRC_PRE = $(filter-out $(CSRC_DIR)/$(TARGET).c, $(wildcard $(CSRC_DIR)/*.c))
 CPU_SRC = $(filter-out $(CSRC_DIR)/$(SRC_IGNORE).c, $(CPU_SRC_PRE))
@@ -82,6 +81,7 @@ APP_SPEC_INC = $(MAKECMDGOALS)/
 					reflex-single clean-reflex-single
 
 
+# --- Template
 # ---
 template : $(ROS_TARGET) linker install
 clean-template :
@@ -91,6 +91,25 @@ clean-template :
 	@echo " $(RM) -r /lib/firmware/am335x-pru0-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-template-fw
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-template-fw
 
+# ---
+pam-thumbs-test : $(ROS_TARGET) linker install
+clean-pam-thumbs-test :
+	@echo " Cleaning pam-thumbs-test...";
+	@echo " $(RM) -r ./pam-thumbs-test/build"; $(RM) -r ./pam-thumbs-test/build
+	@echo " $(RM) -r $(TARGET_DIR)/pam-thumbs-test"; $(RM) -r $(TARGET_DIR)/pam-thumbs-test
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-pam-thumbs-test-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-pam-thumbs-test-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-pam-thumbs-test-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-pam-thumbs-test-fw
+
+# ---
+pam-haptic : $(ROS_TARGET) linker install
+clean-pam-haptic :
+	@echo " Cleaning pam-haptic...";
+	@echo " $(RM) -r ./pam-haptic/build"; $(RM) -r ./pam-haptic/build
+	@echo " $(RM) -r $(TARGET_DIR)/pam-haptic"; $(RM) -r $(TARGET_DIR)/pam-haptic
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-pam-haptic-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-pam-haptic-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-pam-haptic-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-pam-haptic-fw
+
+# ---
 pamtest : $(ROS_TARGET) linker install
 clean-pamtest :
 	@echo " Cleaning pamtest...";
@@ -176,13 +195,13 @@ install : $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
 # Linker PRU0
 $(BUILD_DIR)/$(PRU0_TARGET).elf : $(BUILD_DIR)/$(PRU0_TARGET).o $(PRU_OBJ) $(APP_SPEC_PRU_OBJ)
 	@echo "\n Linking pru0... \n"
-	$(PRU_CC) $(PRU_CFLAGS) -z $^ -llibc.a -m $(MAKECMDGOALS)/build/$(PRU0_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU0_TARGET).elf $(PRU_CSRC_DIR)/PRU0.cmd
+	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=512 $^ -llibc.a -m $(MAKECMDGOALS)/build/$(PRU0_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU0_TARGET).elf $(PRU_CSRC_DIR)/PRU0.cmd
 
 
 # Linker PRU1
 $(BUILD_DIR)/$(PRU1_TARGET).elf : $(BUILD_DIR)/$(PRU1_TARGET).o $(PRU_OBJ) $(APP_SPEC_PRU_OBJ)
 	@echo "\n Linking pru1... \n"
-	$(PRU_CC) $(PRU_CFLAGS) -z $^ -llibc.a -m $(MAKECMDGOALS)/build/$(PRU1_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU1_TARGET).elf $(PRU_CSRC_DIR)/PRU1.cmd
+	$(PRU_CC)  $(PRU_CFLAGS) -z --heap_size=512 $^ -llibc.a -m $(MAKECMDGOALS)/build/$(PRU1_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU1_TARGET).elf $(PRU_CSRC_DIR)/PRU1.cmd
 
 # Build PRU-core
 $(BUILD_DIR)%.o : $(PRU_CSRC_DIR)%.c

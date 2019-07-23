@@ -63,22 +63,25 @@ fix16_t PamReservoirGetPressure(const reservoir_t* reservoir) {
 // ---------------------------------------------------------------------------
 pam_t* PamInitMuscle(pressure_sensor_t* sensor,
                      uint32_t in_pin,
-                     uint32_t out_pin) {
+                     uint32_t out_pin,
+                     uint32_t refract,
+                     iir_filt_t* filter) {
   pam_t* pam = malloc(sizeof(pam_t));
   pam->sensor = sensor;
   pam->hp_pin = in_pin;
   pam->lp_pin = out_pin;
-  pam->flag = 0;
+  pam->T_refract = refract;
+  pam->fsm = HOLD;
   pam->s.u = 0;
-  pam->s.p_m = 0;
-  pam->s.p_d = 0;
+  pam->s.pm = 0;
+  pam->s.pd = 0;
+  pam->filt = filter;
+
 
   // Will hang here if i2c mux/channel is off
   PamUpdate(pam);
   return pam;
 }
-
-
 
 void PamMuscleFree(pam_t* pam) {
    __R30 |= (1 << pam->lp_pin);
@@ -92,7 +95,11 @@ pam_state_t PamGetState(const pam_t* pam) {
 }
 
 void PamUpdate(pam_t* pam) {
-  pam->s.p_m = PressureSensorSample(pam->sensor);
+  pam->s.pm_raw = PressureSensorSample(pam->sensor);
+  if (pam->filt)
+    pam->s.pm = FiltIir(pam->s.pm_raw,pam->filt);
+  else
+    pam->s.pm = pam->s.pm_raw;
 }
 
 void PamSetU(pam_t* pam, int8_t u) {
@@ -100,30 +107,48 @@ void PamSetU(pam_t* pam, int8_t u) {
 }
 
 void PamSetPd(pam_t* pam, fix16_t Pd) {
-  pam->flag = 0;
-  pam->s.p_d = Pd;
+  if (pam->fsm == HOLD) {
+    if (Pd < pam->s.pm) {
+      pam->fsm = DEFLATE;
+      pam->s.pd = Pd;
+    } else if (Pd > pam->s.pm) {
+      pam->fsm = INFLATE;
+      pam->s.pd = Pd;
+    }
+  }
 }
 
 void PamActionSimple(pam_t* p) {
-
-  // update sensors
-  PamUpdate(p);
-
-  // reached goal flag
-  if (fix16_ssub(p->s.p_d,fix16_ssub(p->s.p_m,0x50000)) < 0)
-    p->flag = 1;
-
-  // if pd = 0 open exhaust
-  if (p->s.p_d == 0)
-    PamSetU(p,-1);
-  else if ((fix16_ssub(p->s.p_d,fix16_ssub(p->s.p_m,0x50000)) > 0) && (p->flag==0))
-    PamSetU(p,1);
-  else
-    PamSetU(p,0);
-
+  //const fix16_t pad =  0x10000;
+  const fix16_t pad = 0;
+  switch (p->fsm) {
+    case INFLATE : {
+      if (fix16_ssub(fix16_sadd(p->s.pd,pad),p->s.pm) < 0) {
+        p->fsm = REFRACT;
+        PamSetU(p,0);
+      } else {
+        PamSetU(p,1);
+      }
+      break;
+    }
+    case DEFLATE : {
+      if (fix16_ssub(fix16_ssub(p->s.pd,pad),p->s.pm) > 0) {
+        p->fsm = REFRACT;
+        PamSetU(p,0);
+      } else {
+        PamSetU(p,-1);
+      }
+      break;
+    }
+    case REFRACT : {
+      if (p->cnt == p->T_refract) {
+        p->fsm = HOLD;
+        p->cnt = 0;
+      } else {
+        p->cnt++;
+      }
+      break;
+    }
+  }
   PamUpdateControl(p);
 }
-
-
-
-

@@ -102,8 +102,11 @@ int UiInit(pru_mem_t* pru_mem, ui_flags_t flags) {
 
   // Setup action for SIGVTALRM
   struct sigaction action_timer;
+  sigset_t block_mask;
+  sigfillset(&block_mask);
+  //sigaddset(&block_mask, SIGIO);
   action_timer.sa_handler = UiTimerCallback;
-  sigemptyset(&action_timer.sa_mask);
+  action_timer.sa_mask = block_mask;
   action_timer.sa_flags = 0;
   if (sigaction(SIGVTALRM, &action_timer, NULL) == -1)
     printf("Error sigvtalrm\n");
@@ -111,9 +114,9 @@ int UiInit(pru_mem_t* pru_mem, ui_flags_t flags) {
   // Configure timer (60 Hz)
 	struct itimerval timer;
  	timer.it_value.tv_sec = 0;
- 	timer.it_value.tv_usec = 16000;
+ 	timer.it_value.tv_usec = 5000;
  	timer.it_interval.tv_sec = 0;
- 	timer.it_interval.tv_usec = 16000;
+ 	timer.it_interval.tv_usec = 5000;
 	setitimer(ITIMER_VIRTUAL, &timer, NULL);
 
   printf("TUI initialized.\n");
@@ -174,6 +177,11 @@ void UiPollPruCtlBit(const pru_mem_t* pru_mem, unsigned char n,
         break;
     }
 }
+
+int UiLogging(void) {
+  return uidata.flag.logging;
+}
+
 
 int UiCleanup(void) {
   if(fcntl(0, F_SETOWN, NULL) == -1){

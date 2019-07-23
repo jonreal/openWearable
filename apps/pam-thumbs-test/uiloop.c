@@ -9,15 +9,19 @@ extern volatile sig_atomic_t input_ready;
 void UiPrintMenu(const pru_mem_t* pru_mem) {
   printf(
   "\n\n---------------------------------------------------------------------\n"
-  "Menu: s - start log\n"
-  "      d - stop log\n"
+  " \tPd = %3.2f\n\n"
+  "Menu: f - start log\n"
+  "      g - stop log\n"
+  "      d - change pam resting pressure\n"
   "      e - exit\n"
-  "-----------------------------------------------------------------------\n");
+  "-----------------------------------------------------------------------\n",
+  fix16_to_float(pru_mem->p->pd));
   fflush(stdout);
 }
 
 int UiLoop(const pru_mem_t* pru_mem) {
   char input_char = 0;
+  float input_float = 0;
   char input_string[256] = {0};
   char log_file[256] = "datalog/";
 
@@ -41,7 +45,7 @@ int UiLoop(const pru_mem_t* pru_mem) {
         }
 
         // ---- Start data collection -----------------------------------------
-        case 's' : {
+        case 'f' : {
           printf("\t\tEnter trial name: ");
           fflush(stdout);
 
@@ -66,7 +70,7 @@ int UiLoop(const pru_mem_t* pru_mem) {
         }
 
         // ---- Stop data collection -----------------------------------------
-        case 'd' : {
+        case 'g' : {
           if (!UiLogging())
             printf("\t\t Not currently logging data!\n");
           else
@@ -74,6 +78,20 @@ int UiLoop(const pru_mem_t* pru_mem) {
 
           log_file[0] = '\0';
           strcat(log_file, "datalog/");
+          UiPrintMenu(pru_mem);
+          break;
+        }
+
+        // ---- change resting pressure ---------------------------------------
+        case 'd' : {
+          printf("\t\tEnter new resting pressure: ");
+          fflush(stdout);
+
+          // Wait for input.
+          UiPollForUserInput();
+          scanf(" %f", &input_float);
+          pru_mem->p->pd = fix16_from_float(input_float);
+          UiSetPruCtlBit(pru_mem,1);
           UiPrintMenu(pru_mem);
           break;
         }
