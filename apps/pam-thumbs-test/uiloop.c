@@ -6,16 +6,35 @@
 
 extern volatile sig_atomic_t input_ready;
 
+static void UiParamMenu(void) {
+  printf(
+    "\n"
+    "\t\t a - Psense\n"
+    "\t\t s - Psup\n"
+    "\t\t d - Ppro\n"
+    "\t\t f - Sup_th\n"
+    "\t\t g - Pro_th\n"
+    "\t\t h - hold\n"
+    );
+}
+
 void UiPrintMenu(const pru_mem_t* pru_mem) {
   printf(
   "\n\n---------------------------------------------------------------------\n"
-  " \tPd = %3.2f\n\n"
-  "Menu: f - start log\n"
-  "      g - stop log\n"
-  "      d - change pam resting pressure\n"
+  " \tPsense = %3.2f,\tPsup = %3.2f,\tPpro = %3.2f\n"
+  " \tSup_th = %3.2f,\tPro_th = %3.2f,\thold = %3.2f\n\n"
+  "Menu: f - start trial\n"
+  "      s - stop trial\n"
+  "      p - change parameter\n"
   "      e - exit\n"
   "-----------------------------------------------------------------------\n",
-  fix16_to_float(pru_mem->p->pd));
+  fix16_to_float(pru_mem->p->p_sense),
+  fix16_to_float(pru_mem->p->p_sup),
+  fix16_to_float(pru_mem->p->p_pro),
+  fix16_to_float(pru_mem->p->thr_sup),
+  fix16_to_float(pru_mem->p->thr_pro),
+  (float)pru_mem->p->hold_cnt/(float)pru_mem->p->fs_hz
+  );
   fflush(stdout);
 }
 
@@ -57,24 +76,30 @@ int UiLoop(const pru_mem_t* pru_mem) {
           UiNewLogFile(log_file);
 
           // Wait for user input to start saving data
-          printf("\t\tPress enter to start collection...\n");
+          printf("\t\tPress enter to start trial...\n");
           fflush(stdout);
           UiPollForUserInput();
           scanf(" %c", &input_char);
 
+          // Wait for enter to stop collection
+          printf("\t\tTrial ongoing...\n");
+          fflush(stdout);
+
           // Data collection loop
           UiStartLog();
-
+          UiSetPruCtlBit(pru_mem, 0);
           UiPrintMenu(pru_mem);
           break;
         }
 
         // ---- Stop data collection -----------------------------------------
-        case 'g' : {
-          if (!UiLogging())
+        case 's' : {
+          if (!UiLogging()) {
             printf("\t\t Not currently logging data!\n");
-          else
+          } else {
+            UiClearPruCtlBit(pru_mem, 0);
             UiStopAndSaveLog();
+          }
 
           log_file[0] = '\0';
           strcat(log_file, "datalog/");
@@ -82,16 +107,67 @@ int UiLoop(const pru_mem_t* pru_mem) {
           break;
         }
 
-        // ---- change resting pressure ---------------------------------------
-        case 'd' : {
-          printf("\t\tEnter new resting pressure: ");
+        // ---- change parameter ----------------------------------------------
+        case 'p' : {
+          printf("\t\tChoose a parameter to change\n");
+          UiParamMenu();
           fflush(stdout);
 
           // Wait for input.
           UiPollForUserInput();
-          scanf(" %f", &input_float);
-          pru_mem->p->pd = fix16_from_float(input_float);
-          UiSetPruCtlBit(pru_mem,1);
+          scanf(" %c", &input_char);
+
+          switch (input_char) {
+            case 'a' : {
+              printf("\t\tEnter new value: ");
+              fflush(stdout);
+              UiPollForUserInput();
+              scanf(" %f", &input_float);
+              pru_mem->p->p_sense = fix16_from_float(input_float);
+              break;
+            }
+            case 's' : {
+              printf("\t\tEnter new value: ");
+              fflush(stdout);
+              UiPollForUserInput();
+              scanf(" %f", &input_float);
+              pru_mem->p->p_sup = fix16_from_float(input_float);
+              break;
+            }
+            case 'd' : {
+              printf("\t\tEnter new value: ");
+              fflush(stdout);
+              UiPollForUserInput();
+              scanf(" %f", &input_float);
+              pru_mem->p->p_pro = fix16_from_float(input_float);
+              break;
+            }
+            case 'f' : {
+              printf("\t\tEnter new value: ");
+              fflush(stdout);
+              UiPollForUserInput();
+              scanf(" %f", &input_float);
+              pru_mem->p->thr_sup = fix16_from_float(input_float);
+              break;
+            }
+            case 'g' : {
+              printf("\t\tEnter new value: ");
+              fflush(stdout);
+              UiPollForUserInput();
+              scanf(" %f", &input_float);
+              pru_mem->p->thr_pro = fix16_from_float(input_float);
+              break;
+            }
+            case 'h' : {
+              printf("\t\tEnter new value: ");
+              fflush(stdout);
+              UiPollForUserInput();
+              scanf(" %f", &input_float);
+              pru_mem->p->hold_cnt =
+                (uint32_t)(input_float * (float)pru_mem->p->fs_hz);
+              break;
+            }
+          }
           UiPrintMenu(pru_mem);
           break;
         }
