@@ -16,6 +16,8 @@ typedef struct {
   volatile pam_state_t pam2_state;
   volatile fix16_t triggersignal;
   volatile uint32_t thumbsfsm;
+  volatile uint32_t buttons;
+  volatile uint32_t sync;
  } state_t;
 
 // Parameters

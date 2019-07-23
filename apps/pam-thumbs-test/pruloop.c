@@ -16,6 +16,7 @@
 #include "pruloop.h"
 #include "thumbsup.h"
 #include "sync.h"
+#include "input.h"
 #include "filtcoeff.h"
 
 volatile register uint32_t __R30;
@@ -37,6 +38,14 @@ const fix16_t a_mvavg[2] = {fix16_one, 0xFFFF0021};      // [1 -(1-0.0005)]
 // Sync stuff
 sync_t* sync;
 const uint8_t sync_pin = 11;
+
+// Button Stuff
+button_t* bred;
+button_t* bgreen;
+const uint8_t bred_pin = 9;
+const uint8_t bgreen_pin = 10;
+const uint8_t debounce = 100;
+
 // ---------------------------------------------------------------------------
 // PRU0
 //
@@ -92,6 +101,8 @@ void Pru1Init(pru_mem_t* mem) {
                                   FiltIirInit(1, b_mvavg, a_mvavg));
 
   sync = SyncInitChan(sync_pin);
+  bred = InputButtonInit(bred_pin, debounce);
+  bgreen = InputButtonInit(bgreen_pin, debounce);
   SyncOutLow(sync);
 }
 
@@ -101,6 +112,9 @@ void Pru1UpdateState(const pru_count_t* c,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
 
+  InputButtonUpdate(bred);
+  InputButtonUpdate(bgreen);
+  PamReservoirUpdate(reservoir);
   PamUpdate(pam1);
   PamUpdate(pam2);
   ThumbsUpInteractionUpdate(thumbsup, p_->hold_cnt,
@@ -118,21 +132,22 @@ void Pru1UpdateControl(const pru_count_t* c,
                        pru_ctl_t* ctl_) {
 
 
-  PamReservoirUpdate(reservoir);
-  s_->p_res = PamReservoirGetPressure(reservoir);
-
   PamActionSimple(pam1);
   PamActionSimple(pam2);
-
-  s_->pam1_state = PamGetState(pam1);
-  s_->pam2_state = PamGetState(pam2);
-  s_->triggersignal = ThumbsUpInteractionGetTriggerSig(thumbsup);
-  s_->thumbsfsm = ThumbsUpInteractionGetState(thumbsup);
 
   if (PruGetCtlBit(ctl_,0))
     SyncOutHigh(sync);
   else
     SyncOutLow(sync);
+  
+  s_->p_res = PamReservoirGetPressure(reservoir);
+  s_->pam1_state = PamGetState(pam1);
+  s_->pam2_state = PamGetState(pam2);
+  s_->triggersignal = ThumbsUpInteractionGetTriggerSig(thumbsup);
+  s_->thumbsfsm = ThumbsUpInteractionGetState(thumbsup);
+  s_->sync = SyncOutState(sync);
+  s_->buttons = __R31;
+
 }
 
 void Pru1Cleanup(void) {

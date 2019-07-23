@@ -25,7 +25,7 @@ typedef struct {
   uint8_t pin;
   uint8_t debounce_cnt;
   volatile uint8_t cnt;
-  volatile uint32_t state;
+  volatile uint8_t state;
   volatile uint8_t prev_state;
 } button_t;
 
