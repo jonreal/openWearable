@@ -20,20 +20,32 @@
 #include "fix16.h"
 #include "hscsann150pg2a3.h"    // pressure sensor
 #include "pca9548a.h"           // i2c multiplexer
+#include "filter.h"
 
 typedef struct {
-  fix16_t p_d;             // desired pressure
-  fix16_t p_m;             // muscle pressure
-  int32_t u;                // current command
+  fix16_t pd;               // desired pressure
+  fix16_t pm;               // muscle pressure
+  fix16_t pm_raw;           // unfiltered
+  int32_t u;                // valve command
 } pam_state_t;
+
+typedef enum {
+  HOLD = 0x0,
+  REFRACT,
+  INFLATE,
+  DEFLATE
+} pam_fsm_t;
 
 
 typedef struct {
   pressure_sensor_t* sensor;
   uint8_t hp_pin;                   // high pressure pin
   uint8_t lp_pin;                   // low pressure pin
-  volatile uint8_t flag;
+  volatile uint32_t cnt;
+  uint32_t T_refract;
+  volatile pam_fsm_t fsm;
   volatile pam_state_t s;
+  iir_filt_t* filt;
 } pam_t;
 
 typedef struct {
@@ -49,7 +61,9 @@ fix16_t PamReservoirGetPressure(const reservoir_t* reservoir);
 
 pam_t* PamInitMuscle(pressure_sensor_t* sens,
                      uint32_t in_pin,
-                     uint32_t out_pin);
+                     uint32_t out_pin,
+                     uint32_t refract,
+                     iir_filt_t* filter);
 void PamMuscleFree(pam_t* pam);
 void PamUpdate(pam_t* pam);
 void PamActionSimple(pam_t* p);

@@ -54,4 +54,6 @@ void UiClearPruCtlBit(const pru_mem_t* pru_mem, unsigned char n);
 void UiPollPruCtlBit(const pru_mem_t* pru_mem, unsigned char n,
                      unsigned char value);
 
+int UiLogging(void);
+
 #endif /* _TUI_H_ */

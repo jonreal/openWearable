@@ -155,19 +155,21 @@ void LogWriteStateToFile(log_t* log) {
   int size =
     ((STATE_BUFF_LEN + log->cbuff->end - log->cbuff->start) % STATE_BUFF_LEN);
 
-  for(int i=log->cbuff->start; i<log->cbuff->start+size; i++){
-    memset(log->cbuff->temp_buff, 0, TEMP_BUFF_LEN);
-    FormatSprintState(&log->pru_mem->s->state[i % STATE_BUFF_LEN],
-                   log->cbuff->temp_buff);
-    strcat(log->write_buff, log->cbuff->temp_buff);
+  if (size > MIN_STATE_REQ) {
+    for(int i=log->cbuff->start; i<log->cbuff->start+size; i++){
+      memset(log->cbuff->temp_buff, 0, TEMP_BUFF_LEN);
+      FormatSprintState(&log->pru_mem->s->state[i % STATE_BUFF_LEN],
+                     log->cbuff->temp_buff);
+      strcat(log->write_buff, log->cbuff->temp_buff);
+    }
+
+    log->cbuff->start = (log->cbuff->start + size) % STATE_BUFF_LEN;
+
+    // Write to file
+    int len = strlen(log->write_buff);
+    memcpy(log->addr + log->location, log->write_buff, len);
+    log->location += len;
   }
-
-  log->cbuff->start = (log->cbuff->start + size) % STATE_BUFF_LEN;
-
-  // Write to file
-  int len = strlen(log->write_buff);
-  memcpy(log->addr + log->location, log->write_buff, len);
-  log->location += len;
 }
 
 
