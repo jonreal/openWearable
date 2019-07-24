@@ -84,13 +84,13 @@ void FormatSprintStateHeader(char* buff) {
 }
 
 void FormatSprintPublishState(const state_t* st, char* buff) {
-//  sprintf(buff,
-//          "%u\t"        // timeStamp - uint32_t
-//          "%f\t"        // x - fix16_t
-//          "%f\t"        // xd - fix16_t
-//          "\n",
-//          st->time,
-//          fix16_to_float(st->x),
-//          fix16_to_float(st->xd)
-//          );
+  sprintf(buff,
+          "%u\t"        // timeStamp - uint32_t
+          "%i\t"        // thumbsfsm - int32_t
+          "%i\t"        // buttons - int32_t
+          "\n",
+          st->time,
+          st->thumbsfsm,
+          st->buttons
+          );
 }

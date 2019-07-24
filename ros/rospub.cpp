@@ -9,6 +9,7 @@
 class RosPub {
   public:
     RosPub(void);
+    ~RosPub();
     void _RosPubPublish(char* buffer);
 
   private:
@@ -19,6 +20,10 @@ class RosPub {
 
 RosPub::RosPub(void) {
   _pub = _n.advertise<std_msgs::String>("openwearable", 1000);
+}
+
+RosPub::~RosPub(void) {
+  ros::shutdown();
 }
 
 void RosPub::_RosPubPublish(char* buffer) {
@@ -47,7 +52,7 @@ extern "C" {
   }
 
   void RosPubCleanup(rospub_t* _s) {
-    delete _s;
+    free(_s);
   }
 
 }

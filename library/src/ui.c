@@ -24,6 +24,7 @@
 #include "log.h"
 #include "pru.h"
 #include "debug.h"
+#include "format.h"
 #include "roshelper.h"
 
 // Global
@@ -42,10 +43,18 @@ static void UiTimerCallback(int sig) {
   // always update circular buffer
   LogCircBuffUpdate(uidata.log);
 
+  if (uidata.flag.rospublish) {
+    FormatSprintPublishState(
+      &uidata.log->pru_mem->s->state[uidata.log->cbuff->end % STATE_BUFF_LEN],
+      uidata.rosbuffer);
+    RosPubPublish(uidata.ros, uidata.rosbuffer);
+  }
+
   if (uidata.flag.logging)
     LogWriteStateToFile(uidata.log);
   if (uidata.flag.udppublish)
     UdpPublish(uidata.log, uidata.udp);
+
 
   DebugPinLow();
 }
@@ -69,6 +78,7 @@ int UiInit(pru_mem_t* pru_mem, ui_flags_t flags) {
 
   uidata.flag = flags;
   uidata.log = LogInit(pru_mem);
+  uidata.rosbuffer[0] = '\0';
 
   if (uidata.flag.udppublish)
     uidata.udp = UdpInit();
@@ -192,11 +202,10 @@ int UiCleanup(void) {
     printf("Error setting stdin fd flags.\n");
     return -1;
   }
-  LogCleanup(uidata.log);
   DebugCleanup();
   if (uidata.flag.rospublish)
     RosPubCleanup(uidata.ros);
-  printf("TUI cleaned up.\n");
+  LogCleanup(uidata.log);
   return 0;
 }
 
