@@ -35,6 +35,7 @@ typedef struct {
   log_t* log;
   udp_t* udp;
   rospub_t* ros;
+  char rosbuffer[1024];
 } ui_data_t;
 
 extern int UiLoop(const pru_mem_t* pru_mem);

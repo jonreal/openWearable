@@ -42,8 +42,8 @@ const uint8_t sync_pin = 11;
 // Button Stuff
 button_t* bred;
 button_t* bgreen;
-const uint8_t bred_pin = 9;
-const uint8_t bgreen_pin = 10;
+const uint8_t bred_pin = 14;
+const uint8_t bgreen_pin = 15;
 const uint8_t debounce = 100;
 
 // ---------------------------------------------------------------------------
@@ -58,6 +58,9 @@ void Pru0Init(pru_mem_t* mem) {
   mem->p->thr_sup = -fix16_one;
   mem->p->thr_pro = fix16_one;
   mem->p->hold_cnt = 3000;
+
+  bred = InputButtonInit(bred_pin, debounce);
+  bgreen = InputButtonInit(bgreen_pin, debounce);
 }
 
 void Pru0UpdateState(const pru_count_t* c,
@@ -65,6 +68,8 @@ void Pru0UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
+  InputButtonUpdate(bred);
+  InputButtonUpdate(bgreen);
 }
 
 void Pru0UpdateControl(const pru_count_t* c,
@@ -73,6 +78,7 @@ void Pru0UpdateControl(const pru_count_t* c,
                        state_t* s_,
                        pru_ctl_t* ctl_){
 
+  s_->buttons = InputButtonGetState(bgreen) - InputButtonGetState(bred);
 
 }
 
@@ -101,8 +107,7 @@ void Pru1Init(pru_mem_t* mem) {
                                   FiltIirInit(1, b_mvavg, a_mvavg));
 
   sync = SyncInitChan(sync_pin);
-  bred = InputButtonInit(bred_pin, debounce);
-  bgreen = InputButtonInit(bgreen_pin, debounce);
+
   SyncOutLow(sync);
 }
 
@@ -112,8 +117,7 @@ void Pru1UpdateState(const pru_count_t* c,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
 
-  InputButtonUpdate(bred);
-  InputButtonUpdate(bgreen);
+
   PamReservoirUpdate(reservoir);
   PamUpdate(pam1);
   PamUpdate(pam2);
@@ -146,7 +150,7 @@ void Pru1UpdateControl(const pru_count_t* c,
   s_->triggersignal = ThumbsUpInteractionGetTriggerSig(thumbsup);
   s_->thumbsfsm = ThumbsUpInteractionGetState(thumbsup);
   s_->sync = SyncOutState(sync);
-  s_->buttons = __R31;
+
 
 }
 
