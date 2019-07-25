@@ -27,7 +27,7 @@ i2cmux_t* mux;
 reservoir_t* reservoir;
 pam_t* pam1;
 pam_t* pam2;
-const uint32_t refract_cnts = 250;
+const uint32_t refract_cnts = 100;
 
 // Thumbs up stuff
 thumbs_up_interaction_t* thumbsup;
@@ -57,7 +57,7 @@ void Pru0Init(pru_mem_t* mem) {
   mem->p->p_sup = 0x280000;     // 40 psi
   mem->p->thr_sup = -fix16_one;
   mem->p->thr_pro = fix16_one;
-  mem->p->hold_cnt = 3000;
+  mem->p->hold_cnt = 1000;
 
   bred = InputButtonInit(bred_pin, debounce);
   bgreen = InputButtonInit(bgreen_pin, debounce);
