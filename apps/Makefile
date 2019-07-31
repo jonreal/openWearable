@@ -40,7 +40,7 @@ LDFLAGS =
 
 # PRU compiler
 PRU_CC = clpru
-PRU_CFLAGS = -q --c99 -v3 --define=am3359d -O4 -D=am335x -D=FIXMATH_NO_CACHE 
+PRU_CFLAGS = -q --c99 -v3 --define=am3359d -O4 -D=am335x -D=FIXMATH_NO_CACHE -D=PRU
 PRU_LDFLAGS =
 
 # Install stuff
@@ -55,17 +55,17 @@ CPU_SRC = $(filter-out $(CSRC_DIR)/$(SRC_IGNORE).c, $(CPU_SRC_PRE))
 CPU_OBJ = $(patsubst $(CSRC_DIR)/%,$(BUILD_DIR)/%,$(CPU_SRC:.c=.o))
 
 # App specific CPU sources
-APP_SPEC_CPU_SRC = $(MAKECMDGOALS)/format.c $(MAKECMDGOALS)/uiloop.c
+APP_SPEC_CPU_SRC = $(MAKECMDGOALS)/format.c $(MAKECMDGOALS)/uiloop.c $(MAKECMDGOALS)/cpuloop.c
 APP_SPEC_CPU_OBJ = $(patsubst $(MAKECMDGOALS)/%,$(BUILD_DIR)/%,$(APP_SPEC_CPU_SRC:.c=.o))
 
 # PRU library source (mostly drivers, ect)
 PRU_SRC = $(filter-out $(PRU_CSRC_DIR)/$(PRU0_TARGET).c $(PRU_CSRC_DIR)/$(PRU1_TARGET).c, $(wildcard $(PRU_CSRC_DIR)/*.c))
 
-PRU_OBJ = $(patsubst $(PRU_CSRC_DIR)/%,$(BUILD_DIR)/%,$(PRU_SRC:.c=.o))
+PRU_OBJ = $(patsubst $(PRU_CSRC_DIR)/%,$(BUILD_DIR)/%,$(PRU_SRC:.c=.po))
 
 # App specific pru source files
 APP_SPEC_PRU_SRC = $(MAKECMDGOALS)/pruloop.c
-APP_SPEC_PRU_OBJ = $(patsubst $(MAKECMDGOALS)/%,$(BUILD_DIR)/%,$(APP_SPEC_PRU_SRC:.c=.o))
+APP_SPEC_PRU_OBJ = $(patsubst $(MAKECMDGOALS)/%,$(BUILD_DIR)/%,$(APP_SPEC_PRU_SRC:.c=.po))
 
 APP_SPEC_INC = $(MAKECMDGOALS)/
 
@@ -178,6 +178,12 @@ $(BUILD_DIR)/format.o : $(MAKECMDGOALS)/format.c
 	$(CC) $(CFLAGS) -I$(CINC_DIR) -I./$(APP_SPEC_INC) -c -o $@ $< $(CLIB) -lm
 
 # Build app specific C dependencies
+$(BUILD_DIR)/cpuloop.o : $(MAKECMDGOALS)/cpuloop.c
+	@echo "\n Building app specific dependencies... \n";
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -I$(CINC_DIR) -I./$(APP_SPEC_INC) -c -o $@ $< $(CLIB) -lm
+
+# Build app specific C dependencies
 $(BUILD_DIR)/uiloop.o : $(MAKECMDGOALS)/uiloop.c
 	@echo "\n Building app specific dependencies... \n";
 	@mkdir -p $(BUILD_DIR)
@@ -193,39 +199,40 @@ install : $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
 	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU1_TARGET).elf /lib/firmware/am335x-pru1-$(MAKECMDGOALS)-fw
 
 # Linker PRU0
-$(BUILD_DIR)/$(PRU0_TARGET).elf : $(BUILD_DIR)/$(PRU0_TARGET).o $(PRU_OBJ) $(APP_SPEC_PRU_OBJ)
+$(BUILD_DIR)/$(PRU0_TARGET).elf : $(BUILD_DIR)/$(PRU0_TARGET).po $(PRU_OBJ) $(APP_SPEC_PRU_OBJ)
 	@echo "\n Linking pru0... \n"
 	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=512 $^ -llibc.a -m $(MAKECMDGOALS)/build/$(PRU0_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU0_TARGET).elf $(PRU_CSRC_DIR)/PRU0.cmd
 
 
 # Linker PRU1
-$(BUILD_DIR)/$(PRU1_TARGET).elf : $(BUILD_DIR)/$(PRU1_TARGET).o $(PRU_OBJ) $(APP_SPEC_PRU_OBJ)
+$(BUILD_DIR)/$(PRU1_TARGET).elf : $(BUILD_DIR)/$(PRU1_TARGET).po $(PRU_OBJ) $(APP_SPEC_PRU_OBJ)
 	@echo "\n Linking pru1... \n"
 	$(PRU_CC)  $(PRU_CFLAGS) -z --heap_size=512 $^ -llibc.a -m $(MAKECMDGOALS)/build/$(PRU1_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU1_TARGET).elf $(PRU_CSRC_DIR)/PRU1.cmd
 
 # Build PRU-core
-$(BUILD_DIR)%.o : $(PRU_CSRC_DIR)%.c
+$(BUILD_DIR)%.po : $(PRU_CSRC_DIR)%.c
 	@echo "\n Building pru dependencies... \n";
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -I$(APP_SPEC_INC) -c -fe $@ $<
 
 # Build App specific PRU dependencies
-$(BUILD_DIR)/pruloop.o : $(MAKECMDGOALS)/pruloop.c
+$(BUILD_DIR)/pruloop.po : $(MAKECMDGOALS)/pruloop.c
 	@echo "\n Building app specific pru dependencies... \n";
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -I$(APP_SPEC_INC) -c -fe $@ $<
 
 # --- DEBUG
-#all :
-#	@echo "\n APP  = $(APP_NAME) ... \n";
-#	@echo "\n PRU-OBJ $(PRU_OBJ) ... \n";
-#	@echo "\n PRU-SRC $(PRU_SRC) ... \n";
-#	@echo "\n APP-PRU-OBJ $(APP_SPEC_PRU_OBJ) ... \n";
-#	@echo "\n APP-PRU-SRC $(APP_SPEC_PRU_SRC) ... \n";
-#	@echo "\n CPU-OBJ $(CPU_OBJ) ... \n";
-#	@echo "\n CPU-SRC $(CPU_SRC) ... \n";
-#	@echo "\n APP-CPU-OBJ $(APP_SPEC_CPU_OBJ) ... \n";
-#	@echo "\n APP-CPU-SRC $(APP_SPEC_CPU_SRC) ... \n";
-#	@echo "\n ROS_CPP_SRC $(ROS_CPP_SRC) ... \n";
-#	@echo "\n ROS_OBJ $(ROS_OBJ) ... \n";
-#	@echo "\n ROS_TARGET $(ROS_TARGET) ... \n";
+debug :
+	@echo "\n APP  = $(APP_NAME) ... \n";
+	@echo "\n PRU-OBJ $(PRU_OBJ) ... \n";
+	@echo "\n PRU-SRC $(PRU_SRC) ... \n";
+	@echo "\n APP-PRU-OBJ $(APP_SPEC_PRU_OBJ) ... \n";
+	@echo "\n APP-PRU-SRC $(APP_SPEC_PRU_SRC) ... \n";
+	@echo "\n CPU-OBJ $(CPU_OBJ) ... \n";
+	@echo "\n CPU-SRC $(CPU_SRC) ... \n";
+	@echo "\n CPU-SRC-PRE $(CPU_SRC_PRE) ... \n";
+	@echo "\n APP-CPU-OBJ $(APP_SPEC_CPU_OBJ) ... \n";
+	@echo "\n APP-CPU-SRC $(APP_SPEC_CPU_SRC) ... \n";
+	@echo "\n ROS_CPP_SRC $(ROS_CPP_SRC) ... \n";
+	@echo "\n ROS_OBJ $(ROS_OBJ) ... \n";
+	@echo "\n ROS_TARGET $(ROS_TARGET) ... \n";
