@@ -28,16 +28,16 @@
 #include "ui.h"
 #include "format.h"
 
-volatile int doneFlag = 0;
+volatile sig_atomic_t doneFlag;
 
 void sigintHandler(int sig) {
-  signal(sig, SIG_IGN);
   doneFlag = 1;
+  signal(sig, SIG_IGN);
 }
 
 // ---------------------------------------------------------------------------
 int main(int argc, char **argv) {
-
+  doneFlag = 0;
   char buff[65536] = {0,};
   pru_mem_t pru_mem;
 
@@ -85,17 +85,16 @@ int main(int argc, char **argv) {
     while (!doneFlag) {
       LogDebugWriteState(pru_mem.s, cb, buff);
     }
-    PruEnable(0, &pru_mem.s->pru_ctl);
-    free(cb);
     PruPrintDebugBuffer(pru_mem.p->debug_buff);
+    PruEnable(0, &pru_mem.s->pru_ctl);
+    PruRestart();
   } else {
     PruEnable(1, &pru_mem.s->pru_ctl);
     if (UiLoop(&pru_mem) == 1) {
       PruEnable(0, &pru_mem.s->pru_ctl);
       PruRestart();
-      UiCleanup();
-      raise(SIGINT);
     }
   }
+  UiCleanup();
   return 0;
 }

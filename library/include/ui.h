@@ -30,8 +30,10 @@ typedef struct {
 } ui_flags_t;
 
 typedef struct {
+  unsigned int counter;
   ui_flags_t flag;
   pru_mem_t* pru_mem;
+  cpudata_t* cpudata;
   log_t* log;
   udp_t* udp;
   rospub_t* ros;

@@ -45,6 +45,7 @@ typedef union {
 typedef struct {
   volatile uint32_t cbuff_index;
   state_t state[STATE_BUFF_LEN];
+  cpudata_t cpudata;
   pru_ctl_t pru_ctl;
 } shared_mem_t;
 

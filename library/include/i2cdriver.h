@@ -16,17 +16,20 @@
 #ifndef _I2CDRIVER_H_
 #define _I2CDRIVER_H_
 
-extern volatile uint32_t* debug_buff;
+
+typedef struct {
+  uint32_t regmap;
+} i2c_t;
 
 /* ---- Prototypes ---- */
-void I2cInit(void);
-void I2cCleanUp(void);
-uint8_t I2cRxByte(uint8_t addr, uint8_t reg);
-void I2cTxByte(uint8_t addr, uint8_t reg, uint8_t tx);
-void I2cRxBurst(uint8_t addr, uint8_t reg, uint16_t len, uint8_t *buf);
-void I2cRxBurstNoReg(uint8_t addr, uint16_t len, uint8_t *buffer);
-void I2cTxByteNoReg(uint8_t addr, uint8_t tx);
-//uint8_t I2cRxByteNoReg(uint8_t addr);
-void I2cClearInterrupts(void);
+i2c_t* I2cInit(uint8_t channel);
+void I2cCleanUp(i2c_t* i2c);
+uint8_t I2cRxByte(const i2c_t* i2c, uint8_t addr, uint8_t reg);
+void I2cTxByte(const i2c_t* i2c,uint8_t addr, uint8_t reg, uint8_t tx);
+void I2cRxBurst(const i2c_t* i2c,
+              uint8_t addr, uint8_t reg, uint16_t len, uint8_t *buf);
+void I2cRxBurstNoReg(const i2c_t* i2c,
+              uint8_t addr, uint16_t len, uint8_t *buffer);
+void I2cTxByteNoReg(const i2c_t* i2c, uint8_t addr, uint8_t tx);
 
 #endif

@@ -1,29 +1,8 @@
-/* Copyright 2019 Jonathan Realmuto
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
-     http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
-=============================================================================*/
-
-#ifndef _BNO055_H_
-#define _BNO055_H_
+#ifndef _BNO055_ARM_H_
+#define _BNO055_ARM_H_
 
 #include <stdint.h>
 #include "fix16.h"
-#include "i2cdriver.h"
-
-// register maps from:
-// https://github.com/adafruit/Adafruit_BNO055/
-
-extern volatile uint32_t *debug_buff;
 
 typedef enum {
   /* Page id register definition */
@@ -205,35 +184,13 @@ typedef struct {
 } euler_t;
 
 typedef struct {
-  i2c_t* i2c;
-	int32_t sensorID;
-  uint8_t addrs;
+  uint8_t addr;
+  volatile uint8_t status;
   volatile euler_t euler;
 } imu_t;
 
-
-//typedef struct {
-//  fix16_t x;
-//  fix16_t y;
-//  fix16_t z;
-//} imu_angvel_t;
-//
-//typedef struct {
-//  fix16_t x;
-//  fix16_t y;
-//  fix16_t z;
-//} imu_linacc_t;
-
-
-
-
-imu_t* ImuInit(i2c_t* i2c, uint8_t i2c_address);
+imu_t* ImuInit(uint8_t address);
 void ImuUpdate(imu_t* imu);
 euler_t ImuGetEuler(imu_t* imu);
 
-//void ImuGetAngVel(imu_t* imu, volatile imu_angvel_t* angvel);
-//void ImuGetLinAcc(imu_t* imu, volatile imu_linacc_t* linacc);
-
-
 #endif
-

@@ -5,9 +5,16 @@
 
 // packing can be issue -- use 32bit types
 
+
+// --- cpudata struct
+typedef struct {
+  volatile uint32_t varcpu;
+} cpudata_t;
+
 // --- State
 typedef struct {
   volatile uint32_t time;
+  cpudata_t cpudata;
  } state_t;
 
 // --- Parameters

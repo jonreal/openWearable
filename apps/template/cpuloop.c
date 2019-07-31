@@ -1,4 +1,4 @@
-/* Copyright 2018-2019 Jonathan Realmuto
+/* Copyright 2017-2019 Jonathan Realmuto
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -13,30 +13,14 @@
  limitations under the License.
 =============================================================================*/
 
-#ifndef _PCA9548A_H_
-#define _PCA9548A_H_
 
-#include <stdint.h>
-#include "i2cdriver.h"
+#include "cpuloop.h"
+#include <stdio.h>
 
-typedef enum {
-  PCA9548 = 0,
-  PCA9544 = 1
-} i2cmux_version_t;
+void CpuInit(cpudata_t* cpudata) {
+  cpudata->varcpu = 0;
+}
 
-typedef struct {
-  i2c_t* i2c;
-  i2cmux_version_t version;
-  uint8_t address;
-} i2cmux_t;
-
-//TODO add interrupt masks
-
-// Public
-i2cmux_t* MuxI2cInit(i2c_t* i2c, uint8_t addrs, i2cmux_version_t ver);
-uint8_t MuxI2cRead(const i2cmux_t* mux);
-void MuxI2cSetChannel(const i2cmux_t* mux, uint8_t chan);
-void MuxI2cFree(i2cmux_t* mux);
-
-
-#endif /* _PCA9548_H_ */
+void CpuLoop(cpudata_t* cpudata)  {
+  (cpudata->varcpu)++;
+}
