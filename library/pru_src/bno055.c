@@ -15,38 +15,36 @@
 
 #include "bno055.h"
 #include <stdlib.h>
-#include "i2cdriver.h"
 
-
-imu_t* ImuInit(uint8_t i2c_address) {
+imu_t* ImuInit(i2c_t* i2c, uint8_t i2c_address) {
   imu_t* imu = malloc(sizeof(imu_t));
 
   imu->addrs = i2c_address;
-
+  imu->i2c = i2c;
   imu->euler.x = 0;
   imu->euler.y = 0;
   imu->euler.z = 0;
 
   // read chip id (0xA0)
-  imu->sensorID = I2cRxByte(imu->addrs, BNO055_CHIP_ID_ADDR);
+  imu->sensorID = I2cRxByte(imu->i2c, imu->addrs, BNO055_CHIP_ID_ADDR);
   __delay_cycles(50000);
 
   // set operation mode
-  I2cTxByte(imu->addrs, BNO055_OPR_MODE_ADDR, BNO055_MODE_CONFIG);
+  I2cTxByte(imu->i2c, imu->addrs, BNO055_OPR_MODE_ADDR, BNO055_MODE_CONFIG);
   __delay_cycles(50000);
 
   // set normal power mode
-  I2cTxByte(imu->addrs, BNO055_PWR_MODE_ADDR, POWER_MODE_NORMAL);
+  I2cTxByte(imu->i2c, imu->addrs, BNO055_PWR_MODE_ADDR, POWER_MODE_NORMAL);
   __delay_cycles(50000);
 
   // use external crystal
-  I2cTxByte(imu->addrs, BNO055_SYS_TRIGGER_ADDR, (1 << 7));
+  I2cTxByte(imu->i2c, imu->addrs, BNO055_SYS_TRIGGER_ADDR, (1 << 7));
   __delay_cycles(50000);
   __delay_cycles(50000);
 
 
   // set units
-  I2cTxByte(imu->addrs, BNO055_UNIT_SEL_ADDR,
+  I2cTxByte(imu->i2c, imu->addrs, BNO055_UNIT_SEL_ADDR,
               (1 << 7) | // android orientation
               (0 << 5) | // celsius
               (0 << 3) | // degs
@@ -56,19 +54,19 @@ imu_t* ImuInit(uint8_t i2c_address) {
   __delay_cycles(50000);
 
   // get seft test result
-  uint8_t st = I2cRxByte(imu->addrs, BNO055_SELFTEST_RESULT_ADDR);
+  uint8_t st = I2cRxByte(imu->i2c, imu->addrs, BNO055_SELFTEST_RESULT_ADDR);
   __delay_cycles(50000);
 
   // get system status
-  uint8_t status = I2cRxByte(imu->addrs, BNO055_SYS_STAT_ADDR);
+  uint8_t status = I2cRxByte(imu->i2c, imu->addrs, BNO055_SYS_STAT_ADDR);
   __delay_cycles(50000);
 
   // get system status
-  uint8_t error = I2cRxByte(imu->addrs, BNO055_SYS_ERR_ADDR);
+  uint8_t error = I2cRxByte(imu->i2c, imu->addrs, BNO055_SYS_ERR_ADDR);
   __delay_cycles(50000);
 
   // set NDOF mode
-  I2cTxByte(imu->addrs, BNO055_OPR_MODE_ADDR, BNO055_MODE_NDOF);
+  I2cTxByte(imu->i2c, imu->addrs, BNO055_OPR_MODE_ADDR, BNO055_MODE_NDOF);
   __delay_cycles(50000);
 
 //  // set IMU mode
@@ -76,11 +74,11 @@ imu_t* ImuInit(uint8_t i2c_address) {
 //  __delay_cycles(50000);
 
   // get system status
-  status = I2cRxByte(imu->addrs, BNO055_SYS_STAT_ADDR);
+  status = I2cRxByte(imu->i2c, imu->addrs, BNO055_SYS_STAT_ADDR);
   __delay_cycles(50000);
 
   // get system status
-  error = I2cRxByte(imu->addrs, BNO055_SYS_ERR_ADDR);
+  error = I2cRxByte(imu->i2c, imu->addrs, BNO055_SYS_ERR_ADDR);
   __delay_cycles(100000);
   __delay_cycles(100000);
 
@@ -90,9 +88,7 @@ imu_t* ImuInit(uint8_t i2c_address) {
 void ImuUpdate(imu_t* imu) {
   uint8_t buffer[6];
 
-
-
-  I2cRxBurst(imu->addrs, BNO055_EULER_H_LSB_ADDR, 6, buffer);
+  I2cRxBurst(imu->i2c, imu->addrs, BNO055_EULER_H_LSB_ADDR, 6, buffer);
 
   // 1 deg = 16 LSB (0x100000 in fix16)
   imu->euler.x = fix16_sdiv(

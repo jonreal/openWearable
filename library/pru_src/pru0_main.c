@@ -101,6 +101,9 @@ int main(void) {
                       &mem.s->state[counter.index],
                       &mem.s->pru_ctl);
 
+    // Copy cpudata to state
+    mem.s->state[counter.index].cpudata = mem.s->cpudata;
+
     // Post bookkeeping
     mem.s->cbuff_index = counter.index;
     updateCounters(&counter);
@@ -133,7 +136,6 @@ void initialize(pru_mem_t* mem) {
 
   // drivers
   AdcInit();
-  I2cInit();
   spiInit();
 
   // user defined inits
@@ -148,7 +150,6 @@ void cleanup(void) {
 
   // drivers
   AdcCleanup();
-  I2cCleanUp();
 
   // user defined cleanups
   Pru0Cleanup();

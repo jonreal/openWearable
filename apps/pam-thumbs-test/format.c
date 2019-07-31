@@ -43,9 +43,15 @@ void FormatSprintState(const state_t* st, char* buff) {
           "%f\t"        // pam2 pd - fix16_t
           "%i\t"        // pam2 u - uint8_t
           "%f\t"        // triggersignal - fix16_t
-          "%i\t"        // thumb fsm - uint32_t
-          "%i\t"        // sync - uint32_t
-          "%i\t"        // buttons - uint32_t
+          "%i\t"        // thumb fsm - int32_t
+          "%u\t"        // sync - uint32_t
+          "%i\t"        // buttons - int32_t
+          "%f\t"        // cpudata - imu1.x - fix16_t
+          "%f\t"        // cpudata - imu1.y - fix16_t
+          "%f\t"        // cpudata - imu1.z - fix16_t
+          "%f\t"        // cpudata - imu2.x - fix16_t
+          "%f\t"        // cpudata - imu2.y - fix16_t
+          "%f\t"        // cpudata - imu2.z - fix16_t
           "\n",
           st->time,
           fix16_to_float(st->p_res),
@@ -60,7 +66,13 @@ void FormatSprintState(const state_t* st, char* buff) {
           fix16_to_float(st->triggersignal),
           st->thumbsfsm,
           st->buttons,
-          st->sync
+          st->sync,
+          fix16_to_float(st->cpudata.imu1.x),
+          fix16_to_float(st->cpudata.imu1.y),
+          fix16_to_float(st->cpudata.imu1.z),
+          fix16_to_float(st->cpudata.imu2.x),
+          fix16_to_float(st->cpudata.imu2.y),
+          fix16_to_float(st->cpudata.imu2.z)
           );
 }
 
@@ -80,6 +92,12 @@ void FormatSprintStateHeader(char* buff) {
           "thumbsfsm\t"
           "buttons\t"
           "sync\t"
+          "imu1_x\t"
+          "imu1_y\t"
+          "imu1_z\t"
+          "imu2_x\t"
+          "imu2_y\t"
+          "imu2_z\t"
           "\n");
 }
 

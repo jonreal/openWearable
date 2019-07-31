@@ -49,10 +49,10 @@ fix16_t PressureSensorSample(const pressure_sensor_t* sensor) {
   if(sensor->mux) {
     MuxI2cSetChannel(sensor->mux, sensor->mux_channel);
     __delay_cycles(1100);
-    I2cRxBurstNoReg(sensor->i2c_address, 4, buffer);
+    I2cRxBurstNoReg(sensor->mux->i2c, sensor->i2c_address, 4, buffer);
     __delay_cycles(500);
   } else {
-    I2cRxBurstNoReg(sensor->i2c_address, 4, buffer);
+    I2cRxBurstNoReg(sensor->mux->i2c, sensor->i2c_address, 4, buffer);
   }
 
   uint32_t bits = (((uint32_t) (buffer[0] & ~0xC0)) << 8)

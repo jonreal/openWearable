@@ -1,0 +1,9 @@
+#!/bin/bash
+# pin muxes blue for openWearable
+# -----------------------------------------------------------------------------
+config-pin P9_21 i2c
+config-pin P9_22 i2c
+
+echo Pins configured
+config-pin -q P9_21
+config-pin -q P9_22

@@ -23,6 +23,7 @@ volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 
 // Pam stuff
+i2c_t* i2c2;
 i2cmux_t* mux;
 reservoir_t* reservoir;
 pam_t* pam1;
@@ -70,6 +71,7 @@ void Pru0UpdateState(const pru_count_t* c,
                      pru_ctl_t* ctl_) {
   InputButtonUpdate(bred);
   InputButtonUpdate(bgreen);
+  s_->buttons = InputButtonGetState(bgreen) - InputButtonGetState(bred);
 }
 
 void Pru0UpdateControl(const pru_count_t* c,
@@ -77,9 +79,6 @@ void Pru0UpdateControl(const pru_count_t* c,
                        const lut_mem_t* l_,
                        state_t* s_,
                        pru_ctl_t* ctl_){
-
-  s_->buttons = InputButtonGetState(bgreen) - InputButtonGetState(bred);
-
 }
 
 void Pru0Cleanup(void) {
@@ -92,7 +91,8 @@ void Pru0Cleanup(void) {
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
 
-  mux = MuxI2cInit(0x70,PCA9548);
+  i2c2 = I2cInit(2);
+  mux = MuxI2cInit(i2c2,0x70,PCA9548);
   reservoir = PamReservoirInit(PressureSensorInit(mux,4,0x28));
 
   pam1 = PamInitMuscle(PressureSensorInit(mux,6,0x28), 5, 4, refract_cnts,

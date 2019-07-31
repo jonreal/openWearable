@@ -27,14 +27,15 @@ const uint8_t pinb1 = 6;
 const uint8_t pinb2 = 7;
 
 // Pam stuff
-const uint8_t mux_i2c_add = 0x70;
+//const uint8_t mux_i2c_add = 0x70;  // bbbw
+const uint8_t mux_i2c_add = 0x77;  // bbblue
 const uint8_t sensor_i2c_add = 0x28;
 i2cmux_t* mux;
 
-const uint8_t pam_pro_ch = 6;
+const uint8_t pam_pro_ch = 0;
 const uint8_t pam_pro_hp_pin = 1;
 const uint8_t pam_pro_lp_pin = 0;
-const uint8_t pam_sup_ch = 3;
+const uint8_t pam_sup_ch = 1;
 const uint8_t pam_sup_hp_pin = 3;
 const uint8_t pam_sup_lp_pin = 2;
 
@@ -89,17 +90,27 @@ void Pru1Init(pru_mem_t* mem) {
   // i2c mux is needed for pams
   mux = MuxI2cInit(mux_i2c_add);
 
-  // setup thumbsup
-  th = ThumbsUpInit(
-        InputButtonInit(pinb1, 100),
-        InputButtonInit(pinb2, 100),
-        PamInitMuscle(PressureSensorInit(mux, pam_pro_ch, sensor_i2c_add),
-                                          pam_pro_hp_pin, pam_pro_lp_pin),
-        PamInitMuscle(PressureSensorInit(mux, pam_sup_ch, sensor_i2c_add),
-                                          pam_sup_hp_pin, pam_sup_lp_pin));
+  pressure_sensor_t* ps = PressureSensorInit(mux, 1, sensor_i2c_add);
+  PressureSensorSample(ps);
+  __delay_cycles(100000);
 
-  sync = SyncInitChan(4);
-  SyncOutLow(sync);
+//  pressure_sensor_t* ps2 = PressureSensorInit(mux, 3, sensor_i2c_add);
+//  PressureSensorSample(ps2);
+//  __delay_cycles(100000);
+//
+
+
+//  // setup thumbsup
+//  th = ThumbsUpInit(
+//        InputButtonInit(pinb1, 100),
+//        InputButtonInit(pinb2, 100),
+//        PamInitMuscle(PressureSensorInit(mux, pam_pro_ch, sensor_i2c_add),
+//                                          pam_pro_hp_pin, pam_pro_lp_pin),
+//        PamInitMuscle(PressureSensorInit(mux, pam_sup_ch, sensor_i2c_add),
+//                                          pam_sup_hp_pin, pam_sup_lp_pin));
+//
+//  sync = SyncInitChan(4);
+//  SyncOutLow(sync);
 }
 
 void Pru1UpdateState(const pru_count_t* c,
@@ -108,21 +119,21 @@ void Pru1UpdateState(const pru_count_t* c,
                      pru_ctl_t* ctl_) {
 
   // Check for sync
-  if (PruGetCtlBit(ctl_,1))
-    SyncOutHigh(sync);
-  else
-    SyncOutLow(sync);
-
-
-  ThumbsUpUpdate(th, p_->hold_cnt, p_->pd_pro, p_->pd_sup);
-
-  // Store results
-  s_->fsm_state = (int32_t) ThumbsUpGetState(th);
-  s_->pm_sup = ThumbsUpGetSupPm(th);
-  s_->pd_sup = ThumbsUpGetSupPd(th);
-  s_->pm_pro = ThumbsUpGetProPm(th);
-  s_->pd_pro = ThumbsUpGetProPd(th);
-  s_->sync = (uint32_t) SyncOutState(sync);
+//  if (PruGetCtlBit(ctl_,1))
+//    SyncOutHigh(sync);
+//  else
+//    SyncOutLow(sync);
+//
+//
+//  ThumbsUpUpdate(th, p_->hold_cnt, p_->pd_pro, p_->pd_sup);
+//
+//  // Store results
+//  s_->fsm_state = (int32_t) ThumbsUpGetState(th);
+//  s_->pm_sup = ThumbsUpGetSupPm(th);
+//  s_->pd_sup = ThumbsUpGetSupPd(th);
+//  s_->pm_pro = ThumbsUpGetProPm(th);
+//  s_->pd_pro = ThumbsUpGetProPd(th);
+//  s_->sync = (uint32_t) SyncOutState(sync);
 }
 
 void Pru1UpdateControl(const pru_count_t* c,

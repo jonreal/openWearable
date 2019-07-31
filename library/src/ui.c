@@ -21,6 +21,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include "cpuloop.h"
 #include "log.h"
 #include "pru.h"
 #include "debug.h"
@@ -40,8 +41,13 @@ static void UiTimerCallback(int sig) {
 
   DebugPinHigh();
 
+  CpuLoop(uidata.cpudata);
+
   // always update circular buffer
   LogCircBuffUpdate(uidata.log);
+
+  if (uidata.flag.logging)
+    LogWriteStateToFile(uidata.log);
 
   if (uidata.flag.rospublish) {
     FormatSprintPublishState(
@@ -50,8 +56,6 @@ static void UiTimerCallback(int sig) {
     RosPubPublish(uidata.ros, uidata.rosbuffer);
   }
 
-  if (uidata.flag.logging)
-    LogWriteStateToFile(uidata.log);
   if (uidata.flag.udppublish)
     UdpPublish(uidata.log, uidata.udp);
 
@@ -79,6 +83,10 @@ int UiInit(pru_mem_t* pru_mem, ui_flags_t flags) {
   uidata.flag = flags;
   uidata.log = LogInit(pru_mem);
   uidata.rosbuffer[0] = '\0';
+  uidata.counter = 0;
+  uidata.cpudata = &pru_mem->s->cpudata;
+
+  CpuInit(uidata.cpudata);
 
   if (uidata.flag.udppublish)
     uidata.udp = UdpInit();
@@ -194,7 +202,7 @@ int UiLogging(void) {
 
 
 int UiCleanup(void) {
-  if(fcntl(0, F_SETOWN, NULL) == -1){
+  if(fcntl(0, F_SETOWN, getpid()) == -1){
     printf("F_SETOWN error.\n");
     return -1;
   }
@@ -202,10 +210,11 @@ int UiCleanup(void) {
     printf("Error setting stdin fd flags.\n");
     return -1;
   }
-  DebugCleanup();
+//  DebugCleanup();
   if (uidata.flag.rospublish)
     RosPubCleanup(uidata.ros);
   LogCleanup(uidata.log);
+  CpuCleanup();
   return 0;
 }
 

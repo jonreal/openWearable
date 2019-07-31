@@ -15,15 +15,15 @@
 
 #include "pca9548a.h"
 #include <stdlib.h>
-#include "i2cdriver.h"
 
 // Driver works with pca9548a and pca9544a
 //
 // pca9548 - 8 channels
 // pca9544 - 4 channels
 
-i2cmux_t* MuxI2cInit(uint8_t addrs, i2cmux_version_t ver) {
+i2cmux_t* MuxI2cInit(i2c_t* i2c, uint8_t addrs, i2cmux_version_t ver) {
   i2cmux_t* mux = malloc(sizeof(i2cmux_t));
+  mux->i2c = i2c;
   mux->address = addrs;
   mux->version = ver;
   return mux;
@@ -38,9 +38,9 @@ uint8_t MuxI2cRead(const i2cmux_t* mux) {
 void MuxI2cSetChannel(const i2cmux_t* mux, uint8_t chan){
 
   if (mux->version == PCA9548)
-    I2cTxByteNoReg(mux->address, 1 << chan);
+    I2cTxByteNoReg(mux->i2c, mux->address, 1 << chan);
   else
-    I2cTxByteNoReg(mux->address, (chan + 4));
+    I2cTxByteNoReg(mux->i2c, mux->address, (chan + 4));
 }
 
 void MuxI2cFree(i2cmux_t* mux) {
