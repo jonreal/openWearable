@@ -122,11 +122,10 @@ int UiInit(pru_mem_t* pru_mem, ui_flags_t flags) {
   struct sigaction action_timer;
   sigset_t block_mask;
   sigfillset(&block_mask);
-  //sigaddset(&block_mask, SIGIO);
   action_timer.sa_handler = UiTimerCallback;
   action_timer.sa_mask = block_mask;
   action_timer.sa_flags = 0;
-  if (sigaction(SIGVTALRM, &action_timer, NULL) == -1)
+  if (sigaction(SIGALRM, &action_timer, NULL) == -1)
     printf("Error sigvtalrm\n");
 
   // Configure timer (60 Hz)
@@ -135,7 +134,7 @@ int UiInit(pru_mem_t* pru_mem, ui_flags_t flags) {
  	timer.it_value.tv_usec = 5000;
  	timer.it_interval.tv_sec = 0;
  	timer.it_interval.tv_usec = 5000;
-	setitimer(ITIMER_VIRTUAL, &timer, NULL);
+	setitimer(ITIMER_REAL, &timer, NULL);
 
   printf("TUI initialized.\n");
   fflush(stdout);
@@ -202,6 +201,9 @@ int UiLogging(void) {
 
 
 int UiCleanup(void) {
+
+  alarm(0);
+
   if(fcntl(0, F_SETOWN, getpid()) == -1){
     printf("F_SETOWN error.\n");
     return -1;

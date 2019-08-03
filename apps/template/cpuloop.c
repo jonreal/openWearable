@@ -24,3 +24,7 @@ void CpuInit(cpudata_t* cpudata) {
 void CpuLoop(cpudata_t* cpudata)  {
   (cpudata->varcpu)++;
 }
+
+void CpuCleanup(void) {
+  
+}

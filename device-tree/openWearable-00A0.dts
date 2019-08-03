@@ -35,6 +35,10 @@
     "P9.17",  /* I2C1_SCL */
     "P9.18",  /* I2C1_SDA */
 
+    /**** I2C2 pins ****/
+    "P9.21",  /* I2C2_SCL */
+    "P9.22",  /* I2C2_SDA */
+
     /**** SPI1 pins ****/
     "P9.28",  /* SPI1_CS0 */
     "P9.42",  /* SPI1_CS1 */
@@ -46,6 +50,7 @@
 
     /* the hardware IP uses */
     "i2c1",
+    "i2c2",
     "spi1",
     "pruss";
 
@@ -100,6 +105,13 @@
           0x158 0x72  /* P9.18 - i2c1_sda, MODE2 | INPUT_PULLUP (bi-dir)*/
         >;
       };
+
+      i2c2_pins: pinmux_i2c2_pins{
+        pinctrl-single,pins = <
+          0x154 0x72  /* P9.21 - i2c1_scl, MODE2 | INPUT_PULLUP (bi-dir)*/
+          0x150 0x72  /* P9.22 - i2c1_sda, MODE2 | INPUT_PULLUP (bi-dir)*/
+        >;
+      };
     };
   };
 
@@ -122,11 +134,25 @@
       status = "okay";
       pinctrl-names = "default";
       pinctrl-0 = <&i2c1_pins>;
+      clock-frequency = <400000>;
+    };
+ };
+
+  /*----- I2C2 ------*/
+  fragment@3 {
+    target = <&i2c2>;
+    __overlay__ {
+      #address-cells = <1>;
+      #size-cells = <1>;
+      status = "okay";
+      pinctrl-names = "default";
+      pinctrl-0 = <&i2c2_pins>;
+      clock-frequency = <400000>;
     };
  };
 
   /*------ SPI settings -----*/
-  fragment@3 {
+  fragment@4 {
     target = <&spi1>;
     __overlay__ {
       #address-cells = <1>;
