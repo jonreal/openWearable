@@ -49,9 +49,6 @@ typedef struct {
 } thumbs_up_interaction_t;
 
 
-
-
-
 // --- Button based
 thumbs_up_t* ThumbsUpInit(button_t* b_pro, button_t* b_sup,
                           pam_t* pam_pro, pam_t* pam_sup);
