@@ -92,6 +92,15 @@ clean-template :
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-template-fw
 
 # ---
+reflex : $(ROS_TARGET) linker install
+clean-reflex :
+	@echo " Cleaning reflex...";
+	@echo " $(RM) -r ./reflex/build"; $(RM) -r ./reflex/build
+	@echo " $(RM) -r $(TARGET_DIR)/reflex"; $(RM) -r $(TARGET_DIR)/reflex
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-reflex-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-reflex-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-reflex-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-reflex-fw
+
+# ---
 pam-thumbs-test : $(ROS_TARGET) linker install
 clean-pam-thumbs-test :
 	@echo " Cleaning pam-thumbs-test...";

@@ -146,9 +146,10 @@ void UiStartLog(void) {
 }
 
 void UiStopAndSaveLog(void) {
-  if (uidata.flag.logging)
+  if (uidata.flag.logging) {
+    uidata.flag.logging = 0;
     LogSaveFile(uidata.log);
-
+  }
   uidata.flag.logging = 0;
   uidata.flag.logfile = 0;
 }
