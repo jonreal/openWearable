@@ -34,7 +34,6 @@ void CpuLoop(cpudata_t* cpudata)  {
 //  printf("%u\t%u\t%u\n",frame, (frame % 10), ((frame+5) % 10));
   if ((frame % 10) == 0)
     ImuUpdate(imu1);
-
   cpudata->imu1 = ImuGetEuler(imu1);
   frame++;
 }
