@@ -73,12 +73,12 @@ void Pru1Init(pru_mem_t* mem) {
   mux = MuxI2cInit(i2c1,0x70,PCA9548);
   reservoir = PamReservoirInit(PressureSensorInit(mux,0,0x28));
 
-  pam1 = PamInitMuscle(PressureSensorInit(mux,1,0x28), 0, 1, 200,
-                        FiltIirInit(1, k_lp_1_2Hz_b, k_lp_1_2Hz_a));
+  pam1 = PamInitMuscle(PressureSensorInit(mux,1,0x28), 0, 1, 500,
+                        FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
   PamSetPd(pam1,fix16_from_int(35));
 
-  pam2 = PamInitMuscle(PressureSensorInit(mux,2,0x28), 2, 3, 200,
-                        FiltIirInit(1, k_lp_1_2Hz_b, k_lp_1_2Hz_a));
+  pam2 = PamInitMuscle(PressureSensorInit(mux,2,0x28), 2, 3, 500,
+                        FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
   PamSetPd(pam2,fix16_from_int(35));
 
   reflex = ReflexInit(pam1,pam2,FiltIirInit(1, b_mvavg, a_mvavg));
@@ -94,7 +94,7 @@ void Pru1UpdateState(const pru_count_t* c,
   PamReservoirUpdate(reservoir);
   PamUpdate(pam1);
   PamUpdate(pam2);
-  ReflexUpdate(reflex, 0x8000, fix16_from_int(5));
+  ReflexUpdate(reflex, 0xC000, fix16_from_int(5));
 
 
 }

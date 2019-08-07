@@ -31,22 +31,30 @@ void ReflexUpdate(reflex_t* reflex, fix16_t threshold, fix16_t delta) {
   fix16_t activation;
 
   if ((reflex->pam_2->fsm == HOLD) && (reflex->pam_1->fsm == HOLD)) {
-
-    activation = fix16_ssub(fix16_ssub(reflex->pam_1->s.pd,
-                                        reflex->pam_1->s.pm),
-                            fix16_ssub(reflex->pam_2->s.pd,
-                                        reflex->pam_2->s.pm));
-
     if (reflex->flag == 0) {
+      reflex->pm1_0 = reflex->pam_1->s.pm;
+      reflex->pm2_0 = reflex->pam_2->s.pm;
+      activation = fix16_ssub(fix16_ssub(reflex->pm1_0,
+                                        reflex->pam_1->s.pm),
+                            fix16_ssub(reflex->pm2_0,
+                                        reflex->pam_2->s.pm));
       reflex->filt->x[0] = activation;
       reflex->filt->x[1] = activation;
       reflex->filt->y[0] = activation;
       reflex->filt->y[1] = activation;
+      reflex->triggersignal = fix16_ssub(activation,
+                                FiltIir(activation,reflex->filt));
       reflex->flag = 1;
     } else {
+      activation = fix16_ssub(fix16_ssub(reflex->pm1_0,
+                                        reflex->pam_1->s.pm),
+                            fix16_ssub(reflex->pm2_0,
+                                        reflex->pam_2->s.pm));
       reflex->triggersignal = fix16_ssub(activation,
-                              FiltIir(activation,reflex->filt));
+                                FiltIir(activation,reflex->filt));
     }
+
+
 
     if (fix16_ssub(reflex->triggersignal,threshold) > 0) {
       PamSetPd(reflex->pam_1, fix16_sadd(reflex->pam_1->s.pd,delta));

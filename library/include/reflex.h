@@ -22,6 +22,8 @@
 typedef struct {
   uint32_t flag;
   volatile fix16_t triggersignal;
+  volatile fix16_t pm1_0;
+  volatile fix16_t pm2_0;
   iir_filt_t* filt;
   pam_t* pam_1;
   pam_t* pam_2;
