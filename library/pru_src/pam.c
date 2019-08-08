@@ -123,7 +123,7 @@ void PamActionSimple(pam_t* p) {
   const fix16_t pad = 0;
   switch (p->fsm) {
     case INFLATE : {
-      if (fix16_ssub(fix16_sadd(p->s.pd,pad),p->s.pm) < 0) {
+      if (fix16_ssub(fix16_sadd(p->s.pd,pad),p->s.pm_raw) < 0) {
         p->fsm = REFRACT;
         PamSetU(p,0);
       } else {
@@ -132,7 +132,7 @@ void PamActionSimple(pam_t* p) {
       break;
     }
     case DEFLATE : {
-      if (fix16_ssub(fix16_ssub(p->s.pd,pad),p->s.pm) > 0) {
+      if (fix16_ssub(fix16_ssub(p->s.pd,pad),p->s.pm_raw) > 0) {
         p->fsm = REFRACT;
         PamSetU(p,0);
       } else {

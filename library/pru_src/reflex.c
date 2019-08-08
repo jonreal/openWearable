@@ -42,16 +42,19 @@ void ReflexUpdate(reflex_t* reflex, fix16_t threshold, fix16_t delta) {
       reflex->filt->x[1] = activation;
       reflex->filt->y[0] = activation;
       reflex->filt->y[1] = activation;
-      reflex->triggersignal = fix16_ssub(activation,
-                                FiltIir(activation,reflex->filt));
+      //reflex->triggersignal = fix16_ssub(activation,
+      //                          FiltIir(activation,reflex->filt));
+      reflex->triggersignal = FiltIir(activation,reflex->filt);
       reflex->flag = 1;
     } else {
       activation = fix16_ssub(fix16_ssub(reflex->pm1_0,
                                         reflex->pam_1->s.pm),
                             fix16_ssub(reflex->pm2_0,
                                         reflex->pam_2->s.pm));
-      reflex->triggersignal = fix16_ssub(activation,
-                                FiltIir(activation,reflex->filt));
+//      reflex->triggersignal = fix16_ssub(activation,
+//                                FiltIir(activation,reflex->filt));
+//
+      reflex->triggersignal = FiltIir(activation,reflex->filt);
     }
 
 
