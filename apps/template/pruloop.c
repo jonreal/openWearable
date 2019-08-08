@@ -32,6 +32,8 @@ void Pru0UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
+
+
 }
 
 void Pru0UpdateControl(const pru_count_t* c,
@@ -59,6 +61,13 @@ void Pru1UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
+
+  if ((c->frame % 50) == 0) {
+    __R30 ^= (1 << 0);
+    __R30 ^= (1 << 1);
+  }
+
+
 
 }
 

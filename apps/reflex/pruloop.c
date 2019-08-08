@@ -33,9 +33,24 @@ reservoir_t* reservoir;
 pam_t* pam1;
 pam_t* pam2;
 reflex_t* reflex;
-const fix16_t b_mvavg[2] = {0x21, 0};                    // [0.0005, 0]
-const fix16_t a_mvavg[2] = {fix16_one, 0xFFFF0021};      // [1 -(1-0.0005)]
+//const fix16_t b_mvavg[2] = {0x21, 0};                    // [0.0005, 0]
+//const fix16_t a_mvavg[2] = {fix16_one, 0xFFFF0021};      // [1 -(1-0.0005)]
 
+//const fix16_t b_mvavg[2] = {0x1, 0};                    // [0.00001, 0]
+//const fix16_t a_mvavg[2] = {fix16_one, 0xFFFF0001};      // [1 -(1-0.00001)]
+
+// DC blocking filter
+//const fix16_t b_mvavg[2] = {fix16_one, -fix16_one};
+//const fix16_t a_mvavg[2] = {fix16_one, 0xFFFF0CCD};  // -0.95
+
+const fix16_t b_mvavg[2] = {fix16_one, -fix16_one};
+const fix16_t a_mvavg[2] = {fix16_one, 0xFFFF028F};  // -0.99
+
+
+
+const uint32_t refractory = 350;
+const fix16_t reflexthreshold = 0x4000; // 0.25
+const fix16_t reflexdelta = 0x50000;
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -73,11 +88,11 @@ void Pru1Init(pru_mem_t* mem) {
   mux = MuxI2cInit(i2c1,0x70,PCA9548);
   reservoir = PamReservoirInit(PressureSensorInit(mux,0,0x28));
 
-  pam1 = PamInitMuscle(PressureSensorInit(mux,1,0x28), 0, 1, 500,
+  pam1 = PamInitMuscle(PressureSensorInit(mux,1,0x28), 0, 1, refractory,
                         FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
   PamSetPd(pam1,fix16_from_int(35));
 
-  pam2 = PamInitMuscle(PressureSensorInit(mux,2,0x28), 2, 3, 500,
+  pam2 = PamInitMuscle(PressureSensorInit(mux,2,0x28), 2, 3, refractory,
                         FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
   PamSetPd(pam2,fix16_from_int(35));
 
@@ -94,7 +109,7 @@ void Pru1UpdateState(const pru_count_t* c,
   PamReservoirUpdate(reservoir);
   PamUpdate(pam1);
   PamUpdate(pam2);
-  ReflexUpdate(reflex, 0xC000, fix16_from_int(5));
+  ReflexUpdate(reflex, reflexthreshold, reflexdelta);
 
 
 }
