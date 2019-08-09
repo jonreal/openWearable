@@ -20,7 +20,7 @@
 #include "pam.h"
 
 typedef struct {
-  uint32_t flag;
+  volatile uint32_t flag;
   volatile fix16_t triggersignal;
   volatile fix16_t pm1_0;
   volatile fix16_t pm2_0;
