@@ -113,11 +113,14 @@ thumbs_up_interaction_t* ThumbsUpInteractionInit(pam_t* pam_pro,
                                                   iir_filt_t* filt) {
   thumbs_up_interaction_t* th = malloc(sizeof(thumbs_up_interaction_t));
   th->cnt = 0;
+  th->flag = 0;
   th->state = NEUTRAL;
   th->pam_pro = pam_pro;
   th->pam_sup = pam_sup;
   th->triggersignal = 0;
   th->filt = filt;
+  th->pm1_0 = 0;
+  th->pm2_0 = 0;
 
 //  PamSetPd(th->pam_pro,fix16_from_int(0));
 //  PamSetPd(th->pam_sup,fix16_from_int(0));
@@ -136,9 +139,33 @@ void ThumbsUpInteractionUpdate(thumbs_up_interaction_t* th,
 
 
   if ((th->pam_pro->fsm == HOLD) && (th->pam_sup->fsm == HOLD)) {
-    activation = fix16_ssub(fix16_ssub(th->pam_pro->s.pd,th->pam_pro->s.pm),
-                            fix16_ssub(th->pam_sup->s.pd,th->pam_sup->s.pm));
-    th->triggersignal = fix16_ssub(activation,FiltIir(activation,th->filt));
+
+    if (th->flag == 0) {
+      th->pm1_0 = th->pam_pro->s.pm;
+      th->pm2_0 = th->pam_sup->s.pm;
+      activation = fix16_ssub(fix16_ssub(th->pm1_0,
+                                        th->pam_pro->s.pm),
+                            fix16_ssub(th->pm2_0,
+                                        th->pam_sup->s.pm));
+      th->filt->x[0] = activation;
+      th->filt->x[1] = activation;
+      th->filt->y[0] = activation;
+      th->filt->y[1] = activation;
+      //th->triggersignal = fix16_ssub(activation,
+      //                          FiltIir(activation,th->filt));
+      th->triggersignal = FiltIir(activation,th->filt);
+      th->flag = 1;
+    } else {
+      activation = fix16_ssub(fix16_ssub(th->pm1_0,
+                                        th->pam_pro->s.pm),
+                            fix16_ssub(th->pm2_0,
+                                        th->pam_sup->s.pm));
+//      th->triggersignal = fix16_ssub(activation,
+//                                FiltIir(activation,th->filt));
+//
+      th->triggersignal = FiltIir(activation,th->filt);
+    }
+
     switch (th->state) {
       case NEUTRAL :
         if (fix16_ssub(th->triggersignal,pro_thrs) > 0) {
@@ -185,7 +212,8 @@ void ThumbsUpInteractionUpdate(thumbs_up_interaction_t* th,
         break;
     }
   } else {
-    th->triggersignal = fix16_ssub(0,FiltIir(0,th->filt));
+    th->triggersignal = 0;
+    th->flag = 0;
   }
 }
 
