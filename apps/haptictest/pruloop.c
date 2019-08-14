@@ -16,6 +16,7 @@
 #include "pruloop.h"
 #include "encoder.h"
 #include "sync.h"
+#include "pwmdriver.h"
 
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
@@ -34,11 +35,10 @@ sync_t* sync;
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem) {
-
   mem->p->Td = Td_default;
   mem->p->Np = Np_default;
   flag = 0;
-  encoderInit();
+  debug_buff[0] = encoderInit();
   sync = SyncInitChan(sync_pin);
   SyncOutLow(sync);
 }
@@ -89,7 +89,6 @@ void Pru0Cleanup(void) {
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
-
 }
 
 void Pru1UpdateState(const pru_count_t* c,
@@ -98,6 +97,7 @@ void Pru1UpdateState(const pru_count_t* c,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
 
+  pwmSetCmpValue((uint16_t)3020);
 }
 
 void Pru1UpdateControl(const pru_count_t* c,
