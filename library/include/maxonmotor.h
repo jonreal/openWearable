@@ -16,24 +16,28 @@
 #ifndef _MAXONMOTOR_H_
 #define _MAXONMOTOR_H_
 
-//typedef struct{
-//  fix16_t velocity;
-//  fix16_t current;
-//  fix16_t u;
-//} motor_state_t;
-//
-//
-//typedef struct {
-//  uint8_t enable_pin;
-//  uint8_t adc_vel_ch;
-//  uint8_t adc_cur_ch;
-//  fix16_t Kt;
-//  fix16_t Kv;
-//} motor_t;
-//
-//
-//// ---- Prototypes ----
-//void MaxonMotorInit(void);
+typedef struct{
+  fix16_t velocity;
+  fix16_t current;
+  fix16_t u;
+} motor_state_t;
+
+typedef struct {
+  uint8_t enable_pin;
+  uint8_t adc_vel_ch;
+  uint8_t adc_cur_ch;
+  fix16_t Kt;
+  fix16_t Kv;
+  fix16_t max_current;
+  fix16_t cur2cmp_slope;
+  fix16_t cur2cmp_bias;
+  volatile motor_state_t state;
+} motor_t;
+
+// ---- Prototypes ----
+void MaxonMotorInit(void);
+
+
 //void motorCleanUp(void);
 //uint16_t motorCurrent2CmpValue(fix16_t u);
 //void motorSetCurrent(fix16_t u, volatile uint32_t *motorPwmCmpValue);

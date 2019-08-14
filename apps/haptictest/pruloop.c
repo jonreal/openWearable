@@ -89,6 +89,8 @@ void Pru0Cleanup(void) {
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
+  pwmInit();
+  pwmSetCmpValue((uint16_t)5000);
 }
 
 void Pru1UpdateState(const pru_count_t* c,
@@ -97,7 +99,6 @@ void Pru1UpdateState(const pru_count_t* c,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
 
-  pwmSetCmpValue((uint16_t)3020);
 }
 
 void Pru1UpdateControl(const pru_count_t* c,
@@ -109,5 +110,6 @@ void Pru1UpdateControl(const pru_count_t* c,
 }
 
 void Pru1Cleanup(void) {
+  pwmCleanUp();
 }
 
