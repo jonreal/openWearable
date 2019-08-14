@@ -52,7 +52,7 @@ void pwmInit(void)
   HWREGH(SOC_EPWM_2_REGS + 0xE) = (0x1 << 4);
 
   /* CMPA: compare reg */
-  HWREGH(SOC_EPWM_2_REGS + 0x12) = pwm_prd;
+//  HWREGH(SOC_EPWM_2_REGS + 0x12) = pwm_prd;
 
   /* CMPAHR: high res compare reg */
   HWREGH(SOC_EPWM_2_REGS + 0x10) = 0x1;
