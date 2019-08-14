@@ -31,6 +31,8 @@ void pwmInit(void)
    *    Res (%) = F_pwm/F_sysclkout X 100
    *    Res (bits) = log2(F_pwm/F_sysclkout) */
 
+  //HWREGH(SOC_CM_PER_REGS + 0xD8) = 0x2;
+
   /* TODO: make this a param */
   uint16_t pwm_prd = 10000; // 5 kHz
 

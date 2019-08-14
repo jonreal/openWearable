@@ -3,15 +3,21 @@
 
 #include "fix16.h"
 
-// State
+// --- cpudata struct
+typedef struct {
+  volatile uint32_t varcpu;
+} cpudata_t;
+
+// --- state
 typedef struct {
   volatile uint32_t time;
+  cpudata_t cpudata;
   volatile fix16_t x;
   volatile fix16_t xd;
   volatile uint32_t vsync;
  } state_t;
 
-// Parameters
+// --- parameters
 typedef struct {
   volatile uint32_t debug_buff[10];
   uint32_t fs_hz;
