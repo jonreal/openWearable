@@ -23,7 +23,8 @@ reflex_t* ReflexInit(pam_t* pam_1, pam_t* pam_2, iir_filt_t* filt) {
   reflex->pam_2 = pam_2;
   reflex->triggersignal = 0;
   reflex->filt = filt;
-
+  reflex->pm1_0 = 0;
+  reflex->pm2_0 = 0;
   return reflex;
 }
 void ReflexUpdate(reflex_t* reflex, fix16_t threshold, fix16_t delta) {
