@@ -45,6 +45,9 @@ typedef struct {
   iir_filt_t* filt;
   pam_t* pam_pro;
   pam_t* pam_sup;
+  volatile uint32_t flag;
+  volatile fix16_t pm1_0;
+  volatile fix16_t pm2_0;
   volatile fsm_state_t state;
 } thumbs_up_interaction_t;
 
