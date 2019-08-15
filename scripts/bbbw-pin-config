@@ -1,0 +1,11 @@
+#!/bin/bash
+# pin muxes bbbw for openWearable
+
+# --- enable pwm2
+
+# 5 kHz period
+echo 0 > /sys/class/pwm/pwm-0\:0/enable
+echo 0 > /sys/class/pwm/pwm-0\:0/duty_cycle
+echo 200000 > /sys/class/pwm/pwm-0\:0/period
+echo 1 > /sys/class/pwm/pwm-0\:0/enable
+

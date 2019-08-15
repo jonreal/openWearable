@@ -31,6 +31,8 @@ void pwmInit(void)
    *    Res (%) = F_pwm/F_sysclkout X 100
    *    Res (bits) = log2(F_pwm/F_sysclkout) */
 
+  //HWREGH(SOC_CM_PER_REGS + 0xD8) = 0x2;
+
   /* TODO: make this a param */
   uint16_t pwm_prd = 10000; // 5 kHz
 
@@ -50,7 +52,7 @@ void pwmInit(void)
   HWREGH(SOC_EPWM_2_REGS + 0xE) = (0x1 << 4);
 
   /* CMPA: compare reg */
-  HWREGH(SOC_EPWM_2_REGS + 0x12) = pwm_prd;
+//  HWREGH(SOC_EPWM_2_REGS + 0x12) = pwm_prd;
 
   /* CMPAHR: high res compare reg */
   HWREGH(SOC_EPWM_2_REGS + 0x10) = 0x1;
