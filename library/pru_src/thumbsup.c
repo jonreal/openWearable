@@ -18,9 +18,9 @@
 
 // --- Button Based
 
-thumbs_up_t* ThumbsUpInit(button_t* b_pro, button_t* b_sup,
+thumbsup_t* ThumbsUpInit(button_t* b_pro, button_t* b_sup,
                           pam_t* pam_pro, pam_t* pam_sup) {
-  thumbs_up_t* th = malloc(sizeof(thumbs_up_t));
+  thumbsup_t* th = malloc(sizeof(thumbsup_t));
   th->cnt = 0;
   th->state = NEUTRAL;
 
@@ -37,7 +37,7 @@ thumbs_up_t* ThumbsUpInit(button_t* b_pro, button_t* b_sup,
   return th;
 }
 
-void ThumbsUpUpdate(thumbs_up_t* th, uint32_t hold_cnt,
+void ThumbsUpUpdate(thumbsup_t* th, uint32_t hold_cnt,
                     fix16_t pd_sup, fix16_t pd_pro) {
 
   // update button states
@@ -79,10 +79,10 @@ void ThumbsUpUpdate(thumbs_up_t* th, uint32_t hold_cnt,
   PamActionSimple(th->pam_pro);
 }
 
-fsm_state_t ThumbsUpGetState(thumbs_up_t* th) {
+fsm_state_t ThumbsUpGetState(thumbsup_t* th) {
   return th->state;
 }
-void ThumbsUpFree(thumbs_up_t* th) {
+void ThumbsUpFree(thumbsup_t* th) {
   PamMuscleFree(th->pam_sup);
   PamMuscleFree(th->pam_pro);
 }
@@ -107,11 +107,11 @@ void ThumbsUpFree(thumbs_up_t* th) {
 //
 
 
-// --- Interaction base
-thumbs_up_interaction_t* ThumbsUpInteractionInit(pam_t* pam_pro,
+// --- Trigger base
+thumbsup_trigger_t* ThumbsUpTriggerInit(pam_t* pam_pro,
                                                   pam_t* pam_sup,
                                                   iir_filt_t* filt) {
-  thumbs_up_interaction_t* th = malloc(sizeof(thumbs_up_interaction_t));
+  thumbsup_trigger_t* th = malloc(sizeof(thumbsup_trigger_t));
   th->cnt = 0;
   th->flag = 0;
   th->state = NEUTRAL;
@@ -122,15 +122,10 @@ thumbs_up_interaction_t* ThumbsUpInteractionInit(pam_t* pam_pro,
   th->pm1_0 = 0;
   th->pm2_0 = 0;
 
-//  PamSetPd(th->pam_pro,fix16_from_int(0));
-//  PamSetPd(th->pam_sup,fix16_from_int(0));
-//  PamActionSimple(th->pam_sup);
-//  PamActionSimple(th->pam_sup);
-
   return th;
 }
 
-void ThumbsUpInteractionUpdate(thumbs_up_interaction_t* th,
+void ThumbsUpTriggerUpdate(thumbsup_trigger_t* th,
                                 uint32_t hold_cnt,
                                 fix16_t pd_sup, fix16_t pd_pro,
                                 fix16_t sup_thrs, fix16_t pro_thrs,
@@ -218,11 +213,11 @@ void ThumbsUpInteractionUpdate(thumbs_up_interaction_t* th,
 }
 
 
-fix16_t ThumbsUpInteractionGetTriggerSig(thumbs_up_interaction_t* th) {
+fix16_t ThumbsUpTriggerGetTriggerSig(thumbsup_trigger_t* th) {
   return th->triggersignal;
 }
 
-fsm_state_t ThumbsUpInteractionGetState(thumbs_up_interaction_t* th) {
+fsm_state_t ThumbsUpTriggerGetState(thumbsup_trigger_t* th) {
   return th->state;
 }
 

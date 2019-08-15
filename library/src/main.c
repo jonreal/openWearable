@@ -45,13 +45,13 @@ int main(int argc, char **argv) {
     printf("pru_mem_init() failed.");
     return -1;
   }
-  if (PruLoadParams("config/default", pru_mem.p) != 0) {
+  if (PruLoadParams("/root/openWearable/apps/config/default", pru_mem.p) != 0) {
     printf("\nParameter file not found!\n");
   }
   buff[0] = '\0';
   FormatSprintParams(pru_mem.p, buff);
   fprintf(stdout,buff);
-  if (PruLoadLut("config/sine_1Hz",pru_mem.l) != 0) {
+  if (PruLoadLut("/root/openWearable/apps/config/sine_1Hz",pru_mem.l) != 0) {
     printf("\nLookup table file not found!\n");
   }
   if(PruInit(FWSUFFIX) != 0)

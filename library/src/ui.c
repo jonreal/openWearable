@@ -176,6 +176,10 @@ void UiWelcome(void) {
   getchar();
 }
 
+int UiGetPruCtlBit(const pru_mem_t* pru_mem, unsigned char n) {
+  return ((pru_mem->s->pru_ctl.bit.utility & (1 << n)) == (1 << n));
+}
+
 void UiSetPruCtlBit(const pru_mem_t* pru_mem, unsigned char n) {
   pru_mem->s->pru_ctl.bit.utility |= (1 << n);
 }

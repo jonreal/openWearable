@@ -52,6 +52,7 @@ void UiStopAndSaveLog(void);
 
 void UiWelcome(void);
 void UiPollForUserInput(void);
+int UiGetPruCtlBit(const pru_mem_t* pru_mem, unsigned char n);
 void UiSetPruCtlBit(const pru_mem_t* pru_mem, unsigned char n);
 void UiClearPruCtlBit(const pru_mem_t* pru_mem, unsigned char n);
 void UiPollPruCtlBit(const pru_mem_t* pru_mem, unsigned char n,
