@@ -48,7 +48,11 @@
     "P9.30",  /* SPI1_D1 */
     "P9.31",  /* SPI1_SCLK */
 
+    /**** PWM pins ****/
+    "P8.19",  /* ehrpwm2A */
+
     /* the hardware IP uses */
+    "ehrpwm2A",
     "i2c1",
     "i2c2",
     "spi1",
@@ -112,6 +116,11 @@
           0x150 0x72  /* P9.22 - i2c1_sda, MODE2 | INPUT_PULLUP (bi-dir)*/
         >;
       };
+      pwm_pins: pinmux_pwm_pins {
+        pinctrl-single,pins = <
+          0x020 0x0C  /* P8.19 - ehrpwm2A, MODE4 */
+        >;
+      };
     };
   };
 
@@ -165,6 +174,31 @@
         reg = <0>;
         compatible = "linux,spidev,openWearable";
       };
+    };
+  };
+
+  /*------ PWM enable ------*/
+  fragment@5 {
+    target = <&ocp>;
+    __overlay__ {
+      pwm2_test_helper: pwm2_helper {
+        compatible = "bone-pinmux-helper";
+        pinctrl-names = "default";
+        pinctrl-0 = <&pwm_pins>;
+        status = "okay";
+      };
+    };
+  };
+  fragment@6 {
+    target = <&epwmss2>;
+    __overlay__ {
+      status = "okay";
+    };
+  };
+  fragment@7 {
+    target = <&ehrpwm2>;
+    __overlay__ {
+      status = "okay";
     };
   };
 
