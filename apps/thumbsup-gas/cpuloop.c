@@ -1,4 +1,4 @@
-/* Copyright 2019 Jonathan Realmuto
+/* Copyright 2017-2019 Jonathan Realmuto
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -13,24 +13,31 @@
  limitations under the License.
 =============================================================================*/
 
-#ifndef _REFLEX_H_
-#define _REFLEX_H_
 
+#include "cpuloop.h"
+#include <stdio.h>
+#include "rc_i2c.h"
+#include "bno055_arm.h"
 
-#include "pam.h"
+imu_t* imu1;
+uint32_t frame;
 
-typedef struct {
-  volatile uint32_t flag;
-  volatile fix16_t triggersignal;
-  volatile fix16_t pm1_0;
-  volatile fix16_t pm2_0;
-  iir_filt_t* filt;
-  pam_t* pam_1;
-  pam_t* pam_2;
-} reflex_t;
+void CpuInit(cpudata_t* cpudata) {
+  frame = 0;
+  rc_i2c_init(1,0x0);
+  imu1 = ImuInit(0x29);
 
-reflex_t* ReflexInit(pam_t* pam_1, pam_t* pam_2, iir_filt_t* filt);
-void ReflexUpdate(reflex_t* reflex,
-                  fix16_t p0, fix16_t threshold, fix16_t delta);
+}
 
-#endif
+void CpuLoop(cpudata_t* cpudata)  {
+
+//  printf("%u\t%u\t%u\n",frame, (frame % 10), ((frame+5) % 10));
+  if ((frame % 10) == 0)
+    ImuUpdate(imu1);
+  cpudata->imu1 = ImuGetEuler(imu1);
+  frame++;
+}
+
+void CpuCleanup(void) {
+  rc_i2c_close(1);
+}

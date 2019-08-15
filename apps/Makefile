@@ -5,27 +5,30 @@ TARGET = main
 PRU0_TARGET = pru0_main
 PRU1_TARGET = pru1_main
 
+# openWearable path
+OW_DIR = /root/openWearable
+
 # C Source Directories
-CSRC_DIR = ../library/src
-CINC_DIR = ../library/include \
+CSRC_DIR = $(OW_DIR)/library/src
+CINC_DIR = $(OW_DIR)/library/include \
 					 -I/usr/lib/ti/pru-software-support-package/include/am335x \
 					 -I/usr/lib/ti/pru-software-support-package/include
 CLIB = -lpthread
 SRC_IGNORE =
 
 # PRU_C Source Directories
-PRU_CSRC_DIR = ../library/pru_src
-PRU_CINC_DIR = -I../library/include/ \
+PRU_CSRC_DIR = $(OW_DIR)/library/pru_src
+PRU_CINC_DIR = -I$(OW_DIR)/library/include/ \
 							 -I/usr/lib/ti/pru-software-support-package/include/am335x \
 							 -I/usr/lib/ti/pru-software-support-package/include
 PRU_CLIB =
 
 # Build Directories
 TARGET_DIR = ./bin
-BUILD_DIR = $(MAKECMDGOALS)/build
+BUILD_DIR = $(OW_DIR)/apps/$(MAKECMDGOALS)/build
 
 # ROS
-ROS_DIR = ../ros
+ROS_DIR = $(OW_DIR)/ros
 ROS_CPP_SRC = $(ROS_DIR)/rospub.cpp
 ROS_OBJ = $(BUILD_DIR)/rospub.o
 ROS_TARGET = $(BUILD_DIR)/libRosPub.so
@@ -101,13 +104,31 @@ clean-reflex :
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-reflex-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-reflex-fw
 
 # ---
-pam-thumbs-test : $(ROS_TARGET) linker install
-clean-pam-thumbs-test :
-	@echo " Cleaning pam-thumbs-test...";
-	@echo " $(RM) -r ./pam-thumbs-test/build"; $(RM) -r ./pam-thumbs-test/build
-	@echo " $(RM) -r $(TARGET_DIR)/pam-thumbs-test"; $(RM) -r $(TARGET_DIR)/pam-thumbs-test
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-pam-thumbs-test-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-pam-thumbs-test-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-pam-thumbs-test-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-pam-thumbs-test-fw
+thumbsup-triggered : $(ROS_TARGET) linker install
+clean-thumbsup-triggered :
+	@echo " Cleaning thumbsup-triggered...";
+	@echo " $(RM) -r ./thumbsup-triggered/build"; $(RM) -r ./thumbsup-triggered/build
+	@echo " $(RM) -r $(TARGET_DIR)/thumbsup-triggered"; $(RM) -r $(TARGET_DIR)/thumbsup-triggered
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-thumbsup-triggered-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-thumbsup-triggered-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-thumbsup-triggered-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-thumbsup-triggered-fw
+
+# ---
+thumbsup-gas : $(ROS_TARGET) linker install
+clean-thumbsup-gas :
+	@echo " Cleaning thumbsup-gas...";
+	@echo " $(RM) -r ./thumbsup-gas/build"; $(RM) -r ./thumbsup-gas/build
+	@echo " $(RM) -r $(TARGET_DIR)/thumbsup-gas"; $(RM) -r $(TARGET_DIR)/thumbsup-gas
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-thumbsup-gas-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-thumbsup-gas-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-thumbsup-gas-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-thumbsup-gas-fw
+
+# ---
+thumbsup-assist : $(ROS_TARGET) linker install
+clean-thumbsup-assist :
+	@echo " Cleaning thumbsup-assist...";
+	@echo " $(RM) -r ./thumbsup-assist/build"; $(RM) -r ./thumbsup-assist/build
+	@echo " $(RM) -r $(TARGET_DIR)/thumbsup-assist"; $(RM) -r $(TARGET_DIR)/thumbsup-assist
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-thumbsup-assist-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-thumbsup-assist-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-thumbsup-assist-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-thumbsup-assist-fw
 
 # ---
 pam-haptic : $(ROS_TARGET) linker install

@@ -19,7 +19,7 @@ class RosPub {
 };
 
 RosPub::RosPub(void) {
-  _pub = _n.advertise<std_msgs::String>("openwearable", 1000);
+  _pub = _n.advertise<std_msgs::String>("openwearable", 10);
 }
 
 RosPub::~RosPub(void) {

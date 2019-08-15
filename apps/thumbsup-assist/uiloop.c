@@ -9,31 +9,24 @@ extern volatile sig_atomic_t input_ready;
 static void UiParamMenu(void) {
   printf(
     "\n"
-    "\t\t a - Psense\n"
-    "\t\t s - Psup\n"
-    "\t\t d - Ppro\n"
-    "\t\t f - Sup_th\n"
-    "\t\t g - Pro_th\n"
-    "\t\t h - hold\n"
+    "\t\t a - P0 - base pressure\n"
+    "\t\t s - dP - reflex step size\n"
+    "\t\t d - thrs - reflex threshold\n"
     );
 }
 
 void UiPrintMenu(const pru_mem_t* pru_mem) {
   printf(
   "\n\n---------------------------------------------------------------------\n"
-  " \tPsense = %3.2f,\tPsup = %3.2f,\tPpro = %3.2f\n"
-  " \tSup_th = %3.2f,\tPro_th = %3.2f,\thold = %3.2f\n\n"
+  " \tP0 = %3.2f,\tdP = %3.2f,\tthrs = %3.2f\n\n"
   "Menu: f - start trial\n"
   "      s - stop trial\n"
   "      p - change parameter\n"
   "      e - exit\n"
   "-----------------------------------------------------------------------\n",
-  fix16_to_float(pru_mem->p->p_sense),
-  fix16_to_float(pru_mem->p->p_sup),
-  fix16_to_float(pru_mem->p->p_pro),
-  fix16_to_float(pru_mem->p->thr_sup),
-  fix16_to_float(pru_mem->p->thr_pro),
-  (float)pru_mem->p->hold_cnt/(float)pru_mem->p->fs_hz
+  fix16_to_float(pru_mem->p->p_0),
+  fix16_to_float(pru_mem->p->dp),
+  fix16_to_float(pru_mem->p->thr)
   );
   fflush(stdout);
 }
@@ -42,13 +35,19 @@ int UiLoop(const pru_mem_t* pru_mem) {
   char input_char = 0;
   float input_float = 0;
   char input_string[256] = {0};
-  char log_file[256] = "datalog/";
+  char log_file[256] = "/root/openWearable/apps/datalog/";
 
   UiPrintMenu(pru_mem);
   while (1) {
     // Clear inputs
     input_char = ' ';
     input_string[0] = '\0';
+
+    if (UiGetPruCtlBit(pru_mem, 1)) {
+      UiStopAndSaveLog();
+      printf("done.\n");
+      return 1;
+    }
 
     // Wait for user input.
     if (input_ready) {
@@ -102,7 +101,7 @@ int UiLoop(const pru_mem_t* pru_mem) {
           }
 
           log_file[0] = '\0';
-          strcat(log_file, "datalog/");
+          strcat(log_file, "/root/openWearable/apps/datalog/");
           UiPrintMenu(pru_mem);
           break;
         }
@@ -123,7 +122,7 @@ int UiLoop(const pru_mem_t* pru_mem) {
               fflush(stdout);
               UiPollForUserInput();
               scanf(" %f", &input_float);
-              pru_mem->p->p_sense = fix16_from_float(input_float);
+              pru_mem->p->p_0 = fix16_from_float(input_float);
               break;
             }
             case 's' : {
@@ -131,7 +130,7 @@ int UiLoop(const pru_mem_t* pru_mem) {
               fflush(stdout);
               UiPollForUserInput();
               scanf(" %f", &input_float);
-              pru_mem->p->p_sup = fix16_from_float(input_float);
+              pru_mem->p->dp = fix16_from_float(input_float);
               break;
             }
             case 'd' : {
@@ -139,32 +138,7 @@ int UiLoop(const pru_mem_t* pru_mem) {
               fflush(stdout);
               UiPollForUserInput();
               scanf(" %f", &input_float);
-              pru_mem->p->p_pro = fix16_from_float(input_float);
-              break;
-            }
-            case 'f' : {
-              printf("\t\tEnter new value: ");
-              fflush(stdout);
-              UiPollForUserInput();
-              scanf(" %f", &input_float);
-              pru_mem->p->thr_sup = fix16_from_float(input_float);
-              break;
-            }
-            case 'g' : {
-              printf("\t\tEnter new value: ");
-              fflush(stdout);
-              UiPollForUserInput();
-              scanf(" %f", &input_float);
-              pru_mem->p->thr_pro = fix16_from_float(input_float);
-              break;
-            }
-            case 'h' : {
-              printf("\t\tEnter new value: ");
-              fflush(stdout);
-              UiPollForUserInput();
-              scanf(" %f", &input_float);
-              pru_mem->p->hold_cnt =
-                (uint32_t)(input_float * (float)pru_mem->p->fs_hz);
+              pru_mem->p->thr = fix16_from_float(input_float);
               break;
             }
           }

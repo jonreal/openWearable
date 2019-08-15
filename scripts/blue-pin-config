@@ -1,9 +1,6 @@
-#!/bin/bash
-# pin muxes blue for openWearable
-# -----------------------------------------------------------------------------
+##!/bin/bash
 config-pin P9_21 i2c
 config-pin P9_22 i2c
-
+echo 80 > /sys/class/gpio/export
+echo high > /sys/class/gpio/gpio80/direction
 echo Pins configured
-config-pin -q P9_21
-config-pin -q P9_22
