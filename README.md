@@ -18,7 +18,7 @@ Use the appropiate applications during the protocol as follows:
 
 ### thumbsup-gas
 
-This application should be used during the goal attainment scaling (GAS) portion of the protocol. To start the application fro the terminal, run:
+This application should be used during the goal attainment scaling (GAS) portion of the protocol. To start the application from the terminal:
 
 ```
 > thumbsup-gas
@@ -33,7 +33,7 @@ Menu: f - start trial
 -----------------------------------------------------------------------
 ```
 
-To start a trial press 'f' then 'enter'. The use will be promtped to enter the trial name (e.g., gas-subject1):
+To start a trial press 'f' then 'enter'. The user will be promtped to enter the trial name (e.g., gas-subject1):
 
 ```
     		Enter trial name: gas-subject1
@@ -49,7 +49,7 @@ This application should be used during all regular trials/games for the experime
 ```
 > thumbsup-assist -r
 ```
-The '-r' argument specifies to publish a data stream to the ROS via the /openwearable topic.
+The '-r' argument specifies to publish a data stream to ROS via the /openwearable topic.
 After initialization the corresponding menu will appear:
 
 ```
