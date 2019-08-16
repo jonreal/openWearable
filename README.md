@@ -88,3 +88,14 @@ To copy the experiment data from the beaglebone to your local host computer use 
 ```
 That above command will copy all data file inside the datalog directory. If you only want a specific data file substitute the wildcard (\*) with the name of the data file.
 
+## Kernel Panic bug
+There is a bug in the beaglebone which causes a kernel panic error once per boot. You'll see the following printed to the terminal:
+
+```
+Message from syslogd@beaglebone at Aug 16 22:43:48 ...
+ kernel:[74472.745651] Internal error: Oops: 5 [#1] PREEMPT SMP ARM
+ ...
+ ...
+````
+
+Just ignore this for now.
