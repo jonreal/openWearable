@@ -28,7 +28,7 @@ i2cmux_t* mux;
 reservoir_t* reservoir;
 pam_t* pam1;
 pam_t* pam2;
-const uint32_t refract_cnts = 1000;
+const uint32_t refract_cnts = 350;
 
 // Reflex stuff
 reflex_t* reflex;
@@ -54,7 +54,7 @@ const uint8_t debounce = 100;
 // ---------------------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem) {
   mem->p->p_0 = 0x280000;   // 40 psi
-  mem->p->thr = 0x199A;     // 0.1
+  mem->p->thr = 0x4000;     // 0.1
   mem->p->dp =  0x80000;
 
   bred = InputButtonInit(bred_pin, debounce);
@@ -121,7 +121,7 @@ void Pru1UpdateState(const pru_count_t* c,
   PamReservoirUpdate(reservoir);
   PamUpdate(pam1);
   PamUpdate(pam2);
-  ReflexUpdate(reflex, p_->p_0, p_->thr, p_->dp);
+  ReflexUpdate(reflex, p_->thr, p_->dp);
 
 }
 

@@ -27,8 +27,7 @@ reflex_t* ReflexInit(pam_t* pam_1, pam_t* pam_2, iir_filt_t* filt) {
   reflex->pm2_0 = 0;
   return reflex;
 }
-void ReflexUpdate(reflex_t* reflex,
-                  fix16_t p0, fix16_t threshold, fix16_t delta) {
+void ReflexUpdate(reflex_t* reflex, fix16_t threshold, fix16_t delta) {
 
   fix16_t activation;
 
@@ -62,11 +61,11 @@ void ReflexUpdate(reflex_t* reflex,
 
 
     if (fix16_ssub(reflex->triggersignal,threshold) > 0) {
-      PamSetPd(reflex->pam_1, fix16_sadd(p0,delta));
-      PamSetPd(reflex->pam_2, fix16_ssub(p0,delta));
+      PamSetPd(reflex->pam_1, fix16_sadd(reflex->pam_1->s.pd,delta));
+      PamSetPd(reflex->pam_2, fix16_ssub(reflex->pam_2->s.pd,delta));
     } else if (fix16_sadd(reflex->triggersignal,threshold) < 0)  {
-      PamSetPd(reflex->pam_1, fix16_ssub(p0,delta));
-      PamSetPd(reflex->pam_2, fix16_sadd(p0,delta));
+      PamSetPd(reflex->pam_1, fix16_ssub(reflex->pam_1->s.pd,delta));
+      PamSetPd(reflex->pam_2, fix16_sadd(reflex->pam_2->s.pd,delta));
     }
   } else {
     reflex->triggersignal = 0;
