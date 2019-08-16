@@ -47,9 +47,10 @@ After pressing enter to start trial the original menu will appear. To stop a tri
 This application should be used during all regular trials/games for the experiment. Start the application from the terminal:
 
 ```
-> thumbsup-assist
+> thumbsup-assist -r
 ```
-And the corresponding menu:
+The '-r' argument specifies to publish a data stream to the ROS via the /openwearable topic.
+After initialization the corresponding menu will appear:
 
 ```
 ---------------------------------------------------------------------
