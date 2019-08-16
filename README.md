@@ -1,37 +1,96 @@
-openWearable
-===========
+# Thumbs-Up Project
 
-OpenWearable is an open source hardware/software project aimed at developing
-tools for wearable robotics. The hardware is designed on top of the TI
-Beaglebone Black and utilizes the programmable realtime units (PRUs).
+This branch of openWearable is specific to the thumbs-up project.
 
-Currently in develoment for upper arm exoskeletons.
+## Connecting to beaglebone
 
-```
-# cat /etc/os-release 
-PRETTY_NAME="Debian GNU/Linux 9 (stretch)"
-NAME="Debian GNU/Linux"
-VERSION_ID="9"
-VERSION="9 (stretch)"
-ID=debian
-HOME_URL="https://www.debian.org/"
-SUPPORT_URL="https://www.debian.org/support"
-BUG_REPORT_URL="https://bugs.debian.org/"
-```
+From host computer:
 
 ```
-# cat /proc/version 
-Linux version 4.14.108-ti-r104 (root@x2-am57xx-beagle-x15-2gb) (gcc version 6.3.0 20170516 (Debian 6.3.0-18+deb9u1)) #1 SMP PREEMPT Tue Apr 9 18:16:29 UTC 2019
+> ssh root@beaglebone.local
 ```
 
-### powered ankle-foot ###
-https://github.com/jonreal/openWearable/tree/poweredAnkle
+The default password is root.
 
-Realmuto, J. Towards Personalized Powered Ankle-Foot Prostheses. Diss. 2018.
+## Apps for Thumbs-Up Experiments
 
-### haptic feedback for lower limb prostheses ###
-https://github.com/jonreal/openWearable/tree/hapticFeedback
+### thumbsup-gas
 
-Sie A, Realmuto J, Rombokas E. A Lower Limb Prosthesis Haptic Feedback System
-for Stair Descent. ASME. Frontiers in Biomedical Devices, 2017 Design of
-Medical Devices Conference ():V001T05A004. doi:10.1115/DMD2017-3409.
+This application 
+
+```
+Give examples
+```
+
+### Installing
+
+A step by step series of examples that tell you how to get a development env running
+
+Say what the step will be
+
+```
+Give the example
+```
+
+And repeat
+
+```
+until finished
+```
+
+End with an example of getting some data out of the system or using it for a little demo
+
+## Running the tests
+
+Explain how to run the automated tests for this system
+
+### Break down into end to end tests
+
+Explain what these tests test and why
+
+```
+Give an example
+```
+
+### And coding style tests
+
+Explain what these tests test and why
+
+```
+Give an example
+```
+
+## Deployment
+
+Add additional notes about how to deploy this on a live system
+
+## Built With
+
+* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
+* [Maven](https://maven.apache.org/) - Dependency Management
+* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
+
+## Contributing
+
+Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
+
+## Versioning
+
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
+
+## Authors
+
+* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
+
+See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+
+## Acknowledgments
+
+* Hat tip to anyone whose code was used
+* Inspiration
+* etc
+
