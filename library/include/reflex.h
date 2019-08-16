@@ -30,7 +30,6 @@ typedef struct {
 } reflex_t;
 
 reflex_t* ReflexInit(pam_t* pam_1, pam_t* pam_2, iir_filt_t* filt);
-void ReflexUpdate(reflex_t* reflex,
-                  fix16_t p0, fix16_t threshold, fix16_t delta);
+void ReflexUpdate(reflex_t* reflex, fix16_t threshold, fix16_t delta);
 
 #endif
