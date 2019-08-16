@@ -14,83 +14,32 @@ The default password is root.
 
 ## Apps for Thumbs-Up Experiments
 
+Use the appropiate applications during the protocol as follows:
+
 ### thumbsup-gas
 
-This application 
+This application should be used during the goal attainment scaling (GAS) portion of the protocol. To start the application:
 
 ```
-Give examples
+> thumbsup-gas
 ```
-
-### Installing
-
-A step by step series of examples that tell you how to get a development env running
-
-Say what the step will be
+One the application has started, some information will be printed to the terminal along with the text-based user interface menu:
 
 ```
-Give the example
+---------------------------------------------------------------------
+Menu: f - start trial
+      s - stop trial
+      e - exit
+-----------------------------------------------------------------------
 ```
 
-And repeat
+To start a trial press 'f' then 'enter'. The use will be promtped to enter the trial name (e.g., gas-subject1):
 
 ```
-until finished
+    Enter trial name: gas-subject1
+		Saving data to /root/openWearable/apps/datalog/subject-1
+		Press enter to start trial...
 ```
+After pressing enter to start trial the original menu will appear. To stop a trial press 's' then 'enter', or 'e' then 'enter', which will also exit the application.
 
-End with an example of getting some data out of the system or using it for a little demo
-
-## Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-### And coding style tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-## Deployment
-
-Add additional notes about how to deploy this on a live system
-
-## Built With
-
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
-
-## Contributing
-
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
-
-## Authors
-
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
-## Acknowledgments
-
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
 
