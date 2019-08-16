@@ -116,12 +116,17 @@ void Pru1UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
-
-
   PamReservoirUpdate(reservoir);
   PamUpdate(pam1);
   PamUpdate(pam2);
+
   ReflexUpdate(reflex, p_->thr, p_->dp);
+
+  if (PruGetCtlBit(ctl_,2)) {
+    PamSetPd(pam1,p_->p_0);
+    PamSetPd(pam2,p_->p_0);
+    PruClearCtlBit(ctl_,2);
+  }
 
 }
 

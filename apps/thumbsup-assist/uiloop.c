@@ -123,6 +123,7 @@ int UiLoop(const pru_mem_t* pru_mem) {
               UiPollForUserInput();
               scanf(" %f", &input_float);
               pru_mem->p->p_0 = fix16_from_float(input_float);
+              UiSetPruCtlBit(pru_mem,2);
               break;
             }
             case 's' : {
