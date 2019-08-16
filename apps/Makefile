@@ -95,15 +95,6 @@ clean-template :
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-template-fw
 
 # ---
-reflex : $(ROS_TARGET) linker install
-clean-reflex :
-	@echo " Cleaning reflex...";
-	@echo " $(RM) -r ./reflex/build"; $(RM) -r ./reflex/build
-	@echo " $(RM) -r $(TARGET_DIR)/reflex"; $(RM) -r $(TARGET_DIR)/reflex
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-reflex-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-reflex-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-reflex-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-reflex-fw
-
-# ---
 thumbsup-triggered : $(ROS_TARGET) linker install
 clean-thumbsup-triggered :
 	@echo " Cleaning thumbsup-triggered...";
@@ -129,51 +120,6 @@ clean-thumbsup-assist :
 	@echo " $(RM) -r $(TARGET_DIR)/thumbsup-assist"; $(RM) -r $(TARGET_DIR)/thumbsup-assist
 	@echo " $(RM) -r /lib/firmware/am335x-pru0-thumbsup-assist-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-thumbsup-assist-fw
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-thumbsup-assist-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-thumbsup-assist-fw
-
-# ---
-pam-haptic : $(ROS_TARGET) linker install
-clean-pam-haptic :
-	@echo " Cleaning pam-haptic...";
-	@echo " $(RM) -r ./pam-haptic/build"; $(RM) -r ./pam-haptic/build
-	@echo " $(RM) -r $(TARGET_DIR)/pam-haptic"; $(RM) -r $(TARGET_DIR)/pam-haptic
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-pam-haptic-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-pam-haptic-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-pam-haptic-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-pam-haptic-fw
-
-# ---
-pamtest : $(ROS_TARGET) linker install
-clean-pamtest :
-	@echo " Cleaning pamtest...";
-	@echo " $(RM) -r ./pamtest/build"; $(RM) -r ./pamtest/build
-	@echo " $(RM) -r $(TARGET_DIR)/pamtest"; $(RM) -r $(TARGET_DIR)/pamtest
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-pamtest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-pamtest-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-pamtest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-pamtest-fw
-
-# ---
-haptictest : $(ROS_TARGET) linker install
-clean-haptictest :
-	@echo " Cleaning haptictest...";
-	@echo " $(RM) -r ./haptictest/build"; $(RM) -r ./haptictest/build
-	@echo " $(RM) -r $(TARGET_DIR)/haptictest"; $(RM) -r $(TARGET_DIR)/haptictest
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-haptictest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-haptictest-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-haptictest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-haptictest-fw
-
-# ---
-imutest : $(ROS_TARGET) linker install
-clean-imutest :
-	@echo " Cleaning imutest...";
-	@echo " $(RM) -r ./imutest/build"; $(RM) -r ./imutest/build
-	@echo " $(RM) -r $(TARGET_DIR)/imutest"; $(RM) -r $(TARGET_DIR)/imutest
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-imutest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-imutest-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-imutest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-imutest-fw
-
-# ---
-buttontest : $(ROS_TARGET) linker install
-clean-buttontest :
-	@echo " Cleaning buttontest...";
-	@echo " $(RM) -r ./buttontest/build"; $(RM) -r ./buttontest/build
-	@echo " $(RM) -r $(TARGET_DIR)/buttontest"; $(RM) -r $(TARGET_DIR)/buttontest
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-buttontest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-buttontest-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-buttontest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-buttontest-fw
 
 # ---- CPU
 
