@@ -14,83 +14,88 @@ The default password is root.
 
 ## Apps for Thumbs-Up Experiments
 
+Use the appropiate applications during the protocol as follows:
+
 ### thumbsup-gas
 
-This application 
+This application should be used during the goal attainment scaling (GAS) portion of the protocol. To start the application from the terminal:
 
 ```
-Give examples
+> thumbsup-gas
 ```
-
-### Installing
-
-A step by step series of examples that tell you how to get a development env running
-
-Say what the step will be
+Once the application has started, some information will be printed to the terminal along with the text-based user interface menu:
 
 ```
-Give the example
+---------------------------------------------------------------------
+Menu: f - start trial
+      s - stop trial
+      e - exit
+-----------------------------------------------------------------------
 ```
 
-And repeat
+To start a trial press 'f' then 'enter'. The user will be promtped to enter the trial name (e.g., gas-subject1):
 
 ```
-until finished
+    		Enter trial name: gas-subject1
+		Saving data to /root/openWearable/apps/datalog/subject-1
+		Press enter to start trial...
 ```
+After pressing enter to start trial the original menu will appear. To stop a trial press 's' then 'enter', or 'e' then 'enter', which will also exit the application.
 
-End with an example of getting some data out of the system or using it for a little demo
+### thumbsup-assist
 
-## Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
+This application should be used during all regular trials/games for the experiment. Start the application from the terminal:
 
 ```
-Give an example
+> thumbsup-assist -r
 ```
-
-### And coding style tests
-
-Explain what these tests test and why
+The '-r' argument specifies to publish a data stream to ROS via the /openwearable topic.
+After initialization the corresponding menu will appear:
 
 ```
-Give an example
+---------------------------------------------------------------------
+ 	P0 = 40.00,	dP = 8.00,	thrs = 0.25
+
+Menu: f - start trial
+      s - stop trial
+      p - change parameter
+      e - exit
+-----------------------------------------------------------------------
 ```
 
-## Deployment
+The top line in the menu reports the current values of modifiable parameters. Press 'p' then 'enter' to access the parameter change menu:
 
-Add additional notes about how to deploy this on a live system
+```
+		Choose a parameter to change
 
-## Built With
+		 a - P0 - base pressure
+		 s - dP - reflex step size
+		 d - thrs - reflex threshold
+```
 
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
+Press the correponding key and press enter to change a parameter, then enter the new value after the prompt.
+```
+		Enter new value: <new_value_here>
+```
+The default menu will appear after. Start/stop trials are the same as in the previous example.
 
-## Contributing
+## Extracting data from beaglebone
+To copy the experiment data from the beaglebone to your local host computer use rsync:
 
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
+```
+> cd [path_to_where_you_want_the_data]
+> rsync root@beaglebone.local:~/openWearable/apps/datalog/* ./
+```
+That above command will copy all data file inside the datalog directory. If you only want a specific data file substitute the wildcard (\*) with the name of the data file.
 
-## Versioning
+## Kernel Panic bug
+There is a bug in the beaglebone which causes a kernel panic error once per boot. You'll see the following printed to the terminal:
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
+```
+Message from syslogd@beaglebone at Aug 16 22:43:48 ...
+ kernel:[74472.745651] Internal error: Oops: 5 [#1] PREEMPT SMP ARM
+ ...
+ ...
+````
 
-## Authors
-
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
-## Acknowledgments
-
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
-
+Just ignore this for now.
