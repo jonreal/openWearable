@@ -101,11 +101,11 @@ void FormatSprintStateHeader(char* buff) {
 void FormatSprintPublishState(const state_t* st, char* buff) {
   sprintf(buff,
           "%u\t"        // timeStamp - uint32_t
-          "%i\t"        // thumbsfsm - int32_t
+          "%u\t"        // sync - int32_t
           "%i\t"        // buttons - int32_t
           "\n",
           st->time,
-          0,
+          st->sync,
           st->buttons
           );
 }
