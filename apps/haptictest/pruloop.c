@@ -14,20 +14,22 @@
 =============================================================================*/
 
 #include "pruloop.h"
+#include <stdlib.h>
+
 #include "encoder.h"
 #include "sync.h"
-#include "pwmdriver.h"
+#include "maxon.h"
+
 
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 
-
 const uint32_t Td_default = 5000;
 const uint32_t Np_default = 1;
 uint32_t flag, t0, t;
-const uint8_t sync_pin = 8;
-
 sync_t* sync;
+motor_t* motor;
+
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -38,9 +40,10 @@ void Pru0Init(pru_mem_t* mem) {
   mem->p->Td = Td_default;
   mem->p->Np = Np_default;
   flag = 0;
-  debug_buff[0] = encoderInit();
-  sync = SyncInitChan(sync_pin);
+  encoderInit();
+  sync = SyncInitChan(11);
   SyncOutLow(sync);
+
 }
 
 void Pru0UpdateState(const pru_count_t* c,
@@ -89,8 +92,16 @@ void Pru0Cleanup(void) {
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
-  pwmInit();
-  pwmSetCmpValue((uint16_t)5000);
+  motor = MaxonMotorInit(4,           // enable pin
+                         0,           // adc cur ch
+                         1,           // adc vel ch
+                         0x198000,    // torque constant (25.5 mNm/A)
+                         0x1760000,   // speed constant (374 rpm/V)
+                         0x40000,     // max current (4 A)
+                         0x4173290,   // max velocity (10000 rpm ~1047 rad/s)
+                         0x0,         // slope
+                         0x0          // bias
+                         );
 }
 
 void Pru1UpdateState(const pru_count_t* c,
@@ -98,6 +109,9 @@ void Pru1UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
+
+ // MaxonUpdate(motor);
+ // MaxonAction(motor);
 
 }
 
@@ -110,6 +124,6 @@ void Pru1UpdateControl(const pru_count_t* c,
 }
 
 void Pru1Cleanup(void) {
-  pwmCleanUp();
+  MaxonMotorFree(motor);
 }
 
