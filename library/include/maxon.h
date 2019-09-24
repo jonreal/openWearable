@@ -30,6 +30,7 @@ typedef struct {
   uint8_t enable_pin;
   uint8_t adc_vel_ch;
   uint8_t adc_cur_ch;
+  fix16_t G;
   fix16_t Kt;
   fix16_t Kv;
   fix16_t max_current;
@@ -41,7 +42,7 @@ typedef struct {
 
 motor_t* MaxonMotorInit(
                   uint8_t enable_pin, uint8_t adc_cur_ch, uint8_t adc_vel_ch,
-                  fix16_t Kt, fix16_t Kv,
+                  fix16_t G, fix16_t Kt, fix16_t Kv,
                   fix16_t max_current, fix16_t max_velocity,
                   fix16_t slope, fix16_t bias);
 void MaxonUpdate(motor_t* m);
