@@ -16,6 +16,8 @@
 #ifndef _ENCODER_H_
 #define _ENCODER_H_
 
+// Driver for CUI AMT20 series
+
 #include "fix16.h"
 
 #define FIX16_180           0xB40000
@@ -24,14 +26,23 @@
 
 #define SPI_ENCODER_CHAN    0x1
 
+typedef struct {
+  volatile fix16_t angle;
+  uint8_t active;
+  uint8_t spi_ch;
+} encoder_t;
+
+
+
+
 // Global ---------------------------------------------------------------------
 extern volatile uint32_t *debug_buff;
 
 // Prototypes -----------------------------------------------------------------
-int8_t encoderInit(void);
-void encoderCleanUp(void);
-void encoderSample(volatile fix16_t *pos);
-fix16_t encoderCnts2Degs(uint16_t cnts);
-void encoderSetZeroAngle(void);
+encoder_t* EncoderInit(uint8_t spi_ch);
+void EncoderCleanUp(encoder_t* enc);
+void EncoderUpdate(encoder_t* enc);
+void EncoderTare(encoder_t* enc);
+fix16_t EncoderGetAngle(encoder_t* enc);
 
 #endif

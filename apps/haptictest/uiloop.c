@@ -9,12 +9,14 @@ extern volatile sig_atomic_t input_ready;
 void UiPrintMenu(const pru_mem_t* pru_mem) {
   printf(
   "\n\n---------------------------------------------------------------------\n"
-  " \t fd = %3.2f,\t Np = %i\n\n"
+  " \t Bv = %3.2f,\t fd = %3.2f,\t Np = %i\n\n"
   "Menu: f - Start trial\n"
   "      p - change target frequency\n"
   "      n - change number of cycles\n"
+  "      b - change dampening\n"
   "      e - exit\n"
   "-----------------------------------------------------------------------\n",
+  fix16_to_float(pru_mem->p->bvirtual),
   (float)pru_mem->p->fs_hz/(float)pru_mem->p->Td,
   pru_mem->p->Np);
   fflush(stdout);
@@ -104,6 +106,19 @@ int UiLoop(const pru_mem_t* pru_mem) {
           UiPollForUserInput();
           scanf(" %u", &input_int);
           pru_mem->p->Np = (uint32_t)input_int;
+          UiPrintMenu(pru_mem);
+          break;
+        }
+
+        // ---- change damping -------------------------------------------------
+        case 'b' : {
+          printf("\t\tEnter damping factor: ");
+          fflush(stdout);
+
+          // Wait for input.
+          UiPollForUserInput();
+          scanf(" %f", &input_float);
+          pru_mem->p->bvirtual = fix16_from_float(input_float);
           UiPrintMenu(pru_mem);
           break;
         }

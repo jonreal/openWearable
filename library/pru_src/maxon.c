@@ -23,13 +23,14 @@ extern volatile uint32_t *debug_buff;
 
 motor_t* MaxonMotorInit(
                   uint8_t enable_pin, uint8_t adc_cur_ch, uint8_t adc_vel_ch,
-                  fix16_t Kt, fix16_t Kv,
+                  fix16_t G, fix16_t Kt, fix16_t Kv,
                   fix16_t max_current, fix16_t max_velocity,
                   fix16_t slope, fix16_t bias) {
   motor_t* m = malloc(sizeof(motor_t));
   m->enable_pin = enable_pin;
   m->adc_vel_ch = adc_vel_ch;
   m->adc_cur_ch = adc_cur_ch;
+  m->G = G;
   m->Kt = Kt;
   m->Kv = Kv;
   m->max_current = max_current;
@@ -38,12 +39,10 @@ motor_t* MaxonMotorInit(
   m->slope = slope;
   m->state.velocity = 0;
   m->state.current = 0;
-  m->state.u = 0;
-  m->state.pwmcmpvalue = 0xFFFF;
+  MaxonSetCurrent(m,0);
   pwmInit();
-  pwmSetCmpValue((uint16_t)m->state.pwmcmpvalue);
   __R30 |= (1 << m->enable_pin);
-  debug_buff[0] = m->enable_pin;
+  MaxonAction(m);
   return m;
 }
 
@@ -79,8 +78,8 @@ void MaxonAction(motor_t* m) {
 }
 
 void MaxonMotorFree(motor_t* m) {
+  pwmSetCmpValue(5000);
   __R30 &= ~(1 << m->enable_pin);
-  pwmSetCmpValue(0xFFFF);
   free(m);
 }
 

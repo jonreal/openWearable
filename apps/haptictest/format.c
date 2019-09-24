@@ -36,11 +36,23 @@ void FormatSprintState(const state_t* st, char* buff) {
           "%f\t"        // x - fix16_t
           "%f\t"        // xd - fix16_t
           "%u\t"        // sync - uint32_t
+          "%f\t"        // motor u - fix16_t
+          "%u\t"        // pwmcmp - uint32_t
+          "%f\t"        // motor current - fix16_t
+          "%f\t"        // motor vel - fix16_t
+          "%f\t"        // dx - fix16_t
+          "%f\t"        // dx - fix16_t
           "\n",
           st->time,
           fix16_to_float(st->x),
           fix16_to_float(st->xd),
-          st->vsync
+          st->vsync,
+          fix16_to_float(st->motor.u),
+          st->motor.pwmcmpvalue,
+          fix16_to_float(st->motor.current),
+          fix16_to_float(st->motor.velocity),
+          fix16_to_float(st->dx),
+          fix16_to_float(st->tau_active)
           );
 }
 
@@ -50,6 +62,12 @@ void FormatSprintStateHeader(char* buff) {
           "x\t"
           "xd\t"
           "sync\t"
+          "u\t"
+          "pwmcmp\t"
+          "current\t"
+          "velocity\t"
+          "dx\t"
+          "tau_active\t"
           "\n");
 }
 

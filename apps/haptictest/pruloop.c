@@ -19,7 +19,8 @@
 #include "encoder.h"
 #include "sync.h"
 #include "maxon.h"
-
+#include "haptic.h"
+#include "filtcoeff.h"
 
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
@@ -27,9 +28,11 @@ volatile register uint32_t __R31;
 const uint32_t Td_default = 5000;
 const uint32_t Np_default = 1;
 uint32_t flag, t0, t;
+
 sync_t* sync;
 motor_t* motor;
-
+encoder_t* encoder;
+hapitic_t* haptic;
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -37,12 +40,7 @@ motor_t* motor;
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem) {
-  mem->p->Td = Td_default;
-  mem->p->Np = Np_default;
-  flag = 0;
-  encoderInit();
-  sync = SyncInitChan(11);
-  SyncOutLow(sync);
+
 
 }
 
@@ -51,6 +49,61 @@ void Pru0UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
+
+
+}
+
+void Pru0UpdateControl(const pru_count_t* c,
+                       const param_mem_t* p_,
+                       const lut_mem_t* l_,
+                       state_t* s_,
+                       pru_ctl_t* ctl_){
+
+}
+
+void Pru0Cleanup(void) {
+}
+
+// ---------------------------------------------------------------------------
+// PRU1
+//
+// Edit user defined functions below
+// ---------------------------------------------------------------------------
+void Pru1Init(pru_mem_t* mem) {
+  mem->p->Td = Td_default;
+  mem->p->Np = Np_default;
+  mem->p->bvirtual = 0;
+  flag = 0;
+  sync = SyncInitChan(5);
+  SyncOutLow(sync);
+  motor = MaxonMotorInit(4,           // enable pin
+                         0,           // adc cur ch
+                         1,           // adc vel ch
+                         0x240000,    // gear ratio (31/1)
+                         0x198000,    // torque constant (25.5 mNm/A)
+                         0x1760000,   // speed constant (374 rpm/V)
+                         0x40000,     // max current (4 A)
+                         0x4173290,   // max velocity (10000 rpm ~1047 rad/s)
+                         0x4E20000,   // slope (10000/8)
+                         0x13880000   // bias (5000)
+                         );
+  encoder = EncoderInit(0x1);
+  haptic = HapticInit(motor,encoder,
+                      FiltIirInit(1, k_lp_1_5Hz_b, k_lp_1_5Hz_a),
+                      FiltIirInit(1, k_lp_1_5Hz_b, k_lp_1_5Hz_a),
+                      0x1F6A7A // 10pi (5 Hz)
+                      );
+}
+
+void Pru1UpdateState(const pru_count_t* c,
+                     const param_mem_t* p_,
+                     const lut_mem_t* l_,
+                     state_t* s_,
+                     pru_ctl_t* ctl_) {
+
+  EncoderUpdate(encoder);
+  MaxonUpdate(motor);
+  HapticUpdate(haptic, 0, p_->bvirtual, 0, 0, 0);
 
   if (PruGetCtlBit(ctl_, 0)) {
     if (flag == 0) {
@@ -71,48 +124,10 @@ void Pru0UpdateState(const pru_count_t* c,
 	} else {
     s_->xd = 0;
   }
-  encoderSample(&s_->x);
   s_->vsync = (uint32_t)SyncOutState(sync);
-}
 
-void Pru0UpdateControl(const pru_count_t* c,
-                       const param_mem_t* p_,
-                       const lut_mem_t* l_,
-                       state_t* s_,
-                       pru_ctl_t* ctl_){
-
-}
-
-void Pru0Cleanup(void) {
-}
-
-// ---------------------------------------------------------------------------
-// PRU1
-//
-// Edit user defined functions below
-// ---------------------------------------------------------------------------
-void Pru1Init(pru_mem_t* mem) {
-  motor = MaxonMotorInit(4,           // enable pin
-                         0,           // adc cur ch
-                         1,           // adc vel ch
-                         0x198000,    // torque constant (25.5 mNm/A)
-                         0x1760000,   // speed constant (374 rpm/V)
-                         0x40000,     // max current (4 A)
-                         0x4173290,   // max velocity (10000 rpm ~1047 rad/s)
-                         0x0,         // slope
-                         0x0          // bias
-                         );
-}
-
-void Pru1UpdateState(const pru_count_t* c,
-                     const param_mem_t* p_,
-                     const lut_mem_t* l_,
-                     state_t* s_,
-                     pru_ctl_t* ctl_) {
-
- // MaxonUpdate(motor);
- // MaxonAction(motor);
-
+  if (c->frame > 1000)
+    MaxonAction(motor);
 }
 
 void Pru1UpdateControl(const pru_count_t* c,
@@ -121,6 +136,10 @@ void Pru1UpdateControl(const pru_count_t* c,
                        state_t* s_,
                        pru_ctl_t* ctl_) {
 
+  s_->x = EncoderGetAngle(encoder);
+  s_->motor = MaxonGetState(motor);
+  s_->dx = haptic->dtheta;
+  s_->tau_active = haptic->tau_active;
 }
 
 void Pru1Cleanup(void) {
