@@ -56,10 +56,17 @@ motor_t* MaxonMotorInit(
 // 0 V (0 Bits) -- -max_value
 // Vadc V (2^12 bits) -- max_value
 void MaxonUpdate(motor_t* m) {
+
+//  m->state.velocity = AdcSampleChBits(m->adc_vel_ch);
+//  m->state.current = AdcSampleChBits(m->adc_cur_ch);
+
   m->state.velocity = fix16_smul(m->max_velocity,
-    fix16_ssub(fix16_smul(AdcSampleChBits(m->adc_vel_ch),0x20),fix16_one));
+    fix16_ssub(fix16_smul(
+              fix16_from_int(AdcSampleChBits(m->adc_vel_ch)),0x20),fix16_one));
   m->state.current = fix16_smul(m->max_current,
-    fix16_ssub(fix16_smul(AdcSampleChBits(m->adc_vel_ch),0x20),fix16_one));
+    fix16_ssub(fix16_smul(
+              fix16_from_int(AdcSampleChBits(m->adc_vel_ch)),0x20),fix16_one));
+
 }
 
 void MaxonSetCurrent(motor_t* m, fix16_t u) {

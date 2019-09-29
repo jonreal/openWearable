@@ -14,25 +14,35 @@
 =============================================================================*/
 
 #include "pruloop.h"
-#include <stdlib.h>
-
-#include "encoder.h"
-#include "sync.h"
 #include "maxon.h"
-#include "haptic.h"
+#include "encoder.h"
+#include "pam.h"
 #include "filtcoeff.h"
 
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 
-const uint32_t Td_default = 5000;
-const uint32_t Np_default = 1;
-uint32_t flag, t0, t;
-
-sync_t* sync;
 motor_t* motor;
 encoder_t* encoder;
-hapitic_t* haptic;
+
+i2c_t* i2c1;
+i2cmux_t* mux;
+reservoir_t* reservoir;
+pam_t* pam1;
+pam_t* pam2;
+
+uint32_t flag = 0;
+uint32_t t0 = 0;
+fix16_t t = 0;
+fix16_t k = 0;
+
+const uint32_t Tf_default = 60000;        // 60 s
+const fix16_t f0_default = 0x28F;         // 0.01 Hz
+const fix16_t f1_default = 0x20000;       // 2 Hz
+const fix16_t A_default = 0xC000;         // 0.75 A
+const fix16_t p0_default = 0x140000;      // 20 psi
+const uint32_t refractory = 150;
+
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -40,7 +50,6 @@ hapitic_t* haptic;
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem) {
-
 
 }
 
@@ -70,30 +79,40 @@ void Pru0Cleanup(void) {
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
-  mem->p->Td = Td_default;
-  mem->p->Np = Np_default;
-  mem->p->bvirtual = 0;
-  flag = 0;
-  sync = SyncInitChan(5);
-  SyncOutLow(sync);
+  mem->p->Tf = Tf_default;
+  mem->p->f0 = f0_default;
+  mem->p->f1 = f1_default;
+  mem->p->A = A_default;
+  mem->p->p0 = p0_default;
+
+  i2c1 = I2cInit(1);
+  mux = MuxI2cInit(i2c1,0x70,PCA9548);
+  reservoir = PamReservoirInit(PressureSensorInit(mux,0,0x28));
+
+  pam1 = PamInitMuscle(PressureSensorInit(mux,1,0x28), 0, 1, refractory,
+                        FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
+  PamSetPd(pam1,mem->p->p0);
+
+  pam2 = PamInitMuscle(PressureSensorInit(mux,2,0x28), 2, 3, refractory,
+                        FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
+  PamSetPd(pam2,mem->p->p0);
+
+  encoder = EncoderInit(0x1);
   motor = MaxonMotorInit(4,           // enable pin
                          0,           // adc cur ch
                          1,           // adc vel ch
                          0x240000,    // gear ratio (31/1)
                          0x198000,    // torque constant (25.5 mNm/A)
                          0x1760000,   // speed constant (374 rpm/V)
-                         0x40000,     // max current (4 A)
+                         0x20000,     // max current (2 A)
                          0x4173290,   // max velocity (10000 rpm ~1047 rad/s)
-                         0x4E20000,   // slope (10000/8)
+                         0xF63C0000,  // slope (-10000/4)
                          0x13880000   // bias (5000)
                          );
-  encoder = EncoderInit(0x1);
-//  EncoderTare(encoder);
-  haptic = HapticInit(motor,encoder,
-                      FiltIirInit(1, k_lp_1_5Hz_b, k_lp_1_5Hz_a),
-                      FiltIirInit(1, k_lp_1_5Hz_b, k_lp_1_5Hz_a),
-                      0x1F6A7A // 10pi (5 Hz)
-                      );
+
+  k = fix16_sdiv(fix16_ssub(mem->p->f1,mem->p->f0),
+                fix16_from_int(mem->p->Tf/mem->p->fs_hz));
+  debug_buff[0] = k;
 }
 
 void Pru1UpdateState(const pru_count_t* c,
@@ -104,31 +123,38 @@ void Pru1UpdateState(const pru_count_t* c,
 
   EncoderUpdate(encoder);
   MaxonUpdate(motor);
-  HapticUpdate(haptic, 0, p_->bvirtual, 0, 0, 0);
+  PamUpdate(pam1);
+  PamUpdate(pam2);
+
+  if (PruGetCtlBit(ctl_,2)) {
+    k = fix16_sdiv(fix16_ssub(p_->f1,p_->f0),
+                fix16_from_int(p_->Tf/p_->fs_hz));
+    PruClearCtlBit(ctl_,2);
+  }
+
+  if (PruGetCtlBit(ctl_,1)) {
+    PamSetPd(pam1,p_->p0);
+    PamSetPd(pam2,p_->p0);
+    PruClearCtlBit(ctl_,1);
+  }
 
   if (PruGetCtlBit(ctl_, 0)) {
     if (flag == 0) {
       t0 = c->frame;
-      SyncOutHigh(sync);
       flag = 1;
     }
-    t = (c->frame - t0)*p_->fs_hz / (p_->Td - p_->Td/p_->fs_hz);
-		s_->xd = fix16_ssub(fix16_smul(fix16_from_int(90),
-						 	fix16_sadd(fix16_sdiv(
-							fix16_from_int( (int32_t) l_->lut[t % 1000]),
-							fix16_from_int(1000)),fix16_one)),fix16_from_int(90));
-		if ((c->frame-t0) == (p_->Np*p_->Td)) {
+		t = fix16_sdiv(fix16_from_int((c->frame - t0)),fix16_from_int(p_->fs_hz));
+	  MaxonSetCurrent(motor,fix16_smul(p_->A,
+               fix16_sin(fix16_smul(fix16_smul(fix16_smul(0x20000,fix16_pi),t),
+                            fix16_sadd(fix16_smul(k,t),p_->f0)))));
+		if ((c->frame-t0) == p_->Tf) {
       flag = 0;
       PruClearCtlBit(ctl_,0);
-      SyncOutLow(sync);
     }
 	} else {
-    s_->xd = 0;
+    MaxonSetCurrent(motor,0);
   }
-  s_->vsync = (uint32_t)SyncOutState(sync);
 
-  if (c->frame > 1000)
-    MaxonAction(motor);
 }
 
 void Pru1UpdateControl(const pru_count_t* c,
@@ -136,14 +162,18 @@ void Pru1UpdateControl(const pru_count_t* c,
                        const lut_mem_t* l_,
                        state_t* s_,
                        pru_ctl_t* ctl_) {
-
+  MaxonAction(motor);
+  PamActionSimple(pam1);
+  PamActionSimple(pam2);
   s_->x = EncoderGetAngle(encoder);
   s_->motor = MaxonGetState(motor);
-  s_->dx = haptic->dtheta;
-  s_->tau_active = haptic->tau_active;
+  s_->pam1_state = PamGetState(pam1);
+  s_->pam2_state = PamGetState(pam2);
 }
 
 void Pru1Cleanup(void) {
   MaxonMotorFree(motor);
+  PamMuscleFree(pam1);
+  PamMuscleFree(pam2);
 }
 

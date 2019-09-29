@@ -40,9 +40,9 @@ reflex_t* reflex;
 const fix16_t b_dcblck[2] = {fix16_one, -fix16_one};
 const fix16_t a_dcblck[2] = {fix16_one, 0xFFFF028F};  // -0.99
 
-const uint32_t refractory = 350;
-const fix16_t reflexthreshold = 0x4000; // 0.25
-const fix16_t reflexdelta = 0x50000;
+const uint32_t refractory = 150;
+const fix16_t reflexthreshold = 0x2000; // 0.25
+const fix16_t reflexdelta = 0x20000;
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -88,8 +88,8 @@ void Pru1Init(pru_mem_t* mem) {
                         FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
   PamSetPd(pam2,fix16_from_int(35));
 
-  reflex = ReflexInit(pam1,pam2,FiltIirInit(1, b_dcblck, a_dcblck));
-
+  reflex = ReflexInit(pam1,pam2,fix16_from_int(15),
+                      FiltIirInit(1, b_dcblck, a_dcblck));
 }
 
 void Pru1UpdateState(const pru_count_t* c,
