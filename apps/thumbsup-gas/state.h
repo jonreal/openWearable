@@ -13,7 +13,7 @@
 // --- cpudata struct
 typedef struct {
   volatile euler_t imu1;
-  volatile euler_t imu2;
+  volatile uint32_t status;
 } cpudata_t;
 
 // --- state

@@ -39,6 +39,7 @@ const fix16_t a_hp[2] = {fix16_one, 0xFFFF028F};  // -0.99
 // Sync stuff
 sync_t* sync;
 const uint8_t sync_pin = 11;
+const uint8_t led_sync_pin = 10;
 
 // Button Stuff
 button_t* bred;
@@ -105,10 +106,12 @@ void Pru1Init(pru_mem_t* mem) {
                         FiltIirInit(1, k_lp_1_2Hz_b, k_lp_1_2Hz_a));
   PamSetPd(pam2,mem->p->p_0);
 
-  reflex = ReflexInit(pam1, pam2, FiltIirInit(1, b_hp, a_hp));
+  reflex = ReflexInit(pam1, pam2, fix16_from_int(15),
+                      FiltIirInit(1, b_hp, a_hp));
 
   sync = SyncInitChan(sync_pin);
   SyncOutLow(sync);
+  __R30 &= ~(1 << led_sync_pin);
 }
 
 void Pru1UpdateState(const pru_count_t* c,
@@ -140,10 +143,13 @@ void Pru1UpdateControl(const pru_count_t* c,
   PamActionSimple(pam1);
   PamActionSimple(pam2);
 
-  if (PruGetCtlBit(ctl_,0))
+  if (PruGetCtlBit(ctl_,0)) {
     SyncOutHigh(sync);
-  else
+    __R30 |= (1 << led_sync_pin);
+  } else {
     SyncOutLow(sync);
+    __R30 &= ~(1 << led_sync_pin);
+  }
 
   s_->p_res = PamReservoirGetPressure(reservoir);
   s_->pam1_state = PamGetState(pam1);

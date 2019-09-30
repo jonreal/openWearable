@@ -37,18 +37,14 @@ void FormatSprintState(const state_t* st, char* buff) {
           "%f\t"        // cpudata - imu1.x - fix16_t
           "%f\t"        // cpudata - imu1.y - fix16_t
           "%f\t"        // cpudata - imu1.z - fix16_t
-          "%f\t"        // cpudata - imu2.x - fix16_t
-          "%f\t"        // cpudata - imu2.y - fix16_t
-          "%f\t"        // cpudata - imu2.z - fix16_t
+          "%u\t"        // imu status - uint32_t
           "\n",
           st->time,
           st->sync,
           fix16_to_float(st->cpudata.imu1.x),
           fix16_to_float(st->cpudata.imu1.y),
           fix16_to_float(st->cpudata.imu1.z),
-          fix16_to_float(st->cpudata.imu2.x),
-          fix16_to_float(st->cpudata.imu2.y),
-          fix16_to_float(st->cpudata.imu2.z)
+          st->cpudata.status
           );
 }
 
@@ -56,14 +52,21 @@ void FormatSprintStateHeader(char* buff) {
   sprintf(buff,
           "\n# frame\t"
           "sync\t"
-          "imu1_x\t"
-          "imu1_y\t"
-          "imu1_z\t"
-          "imu2_x\t"
-          "imu2_y\t"
-          "imu2_z\t"
+          "imu_x\t"
+          "imu_y\t"
+          "imu_z\t"
+          "imu_status\t"
           "\n");
 }
 
 void FormatSprintPublishState(const state_t* st, char* buff) {
+  sprintf(buff,
+          "%u\t"        // timeStamp - uint32_t
+          "%u\t"        // sync - int32_t
+          "%i\t"        // buttons - int32_t
+          "\n",
+          st->time,
+          st->sync,
+          0
+          );
 }
