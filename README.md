@@ -12,6 +12,17 @@ From host computer:
 
 The default password is root.
 
+It's possible that the host name might not be recongnized be your cpu. In that case you should try:
+
+```
+> root@192.168.6.2
+```
+
+or
+
+```
+> root@192.168.7.2
+```
 ## Apps for Thumbs-Up Experiments
 
 Use the appropiate applications during the protocol as follows:
