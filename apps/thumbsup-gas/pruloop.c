@@ -22,6 +22,7 @@ volatile register uint32_t __R31;
 // Sync stuff
 sync_t* sync;
 const uint8_t sync_pin = 11;
+const uint8_t led_sync_pin = 10;
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -56,6 +57,7 @@ void Pru0Cleanup(void) {
 void Pru1Init(pru_mem_t* mem) {
   sync = SyncInitChan(sync_pin);
   SyncOutLow(sync);
+  __R30 &= ~(1 << led_sync_pin);
 }
 
 void Pru1UpdateState(const pru_count_t* c,
@@ -64,10 +66,13 @@ void Pru1UpdateState(const pru_count_t* c,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
 
-  if (PruGetCtlBit(ctl_,0))
+  if (PruGetCtlBit(ctl_,0)) {
     SyncOutHigh(sync);
-  else
+    __R30 |= (1 << led_sync_pin);
+  } else {
     SyncOutLow(sync);
+    __R30 &= ~(1 << led_sync_pin);
+  }
 }
 
 void Pru1UpdateControl(const pru_count_t* c,

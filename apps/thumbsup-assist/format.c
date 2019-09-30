@@ -48,9 +48,7 @@ void FormatSprintState(const state_t* st, char* buff) {
           "%f\t"        // cpudata - imu1.x - fix16_t
           "%f\t"        // cpudata - imu1.y - fix16_t
           "%f\t"        // cpudata - imu1.z - fix16_t
-          "%f\t"        // cpudata - imu2.x - fix16_t
-          "%f\t"        // cpudata - imu2.y - fix16_t
-          "%f\t"        // cpudata - imu2.z - fix16_t
+          "%u\t"        // cpudata - imu status - uint32_t
           "\n",
           st->time,
           fix16_to_float(st->p_res),
@@ -68,9 +66,7 @@ void FormatSprintState(const state_t* st, char* buff) {
           fix16_to_float(st->cpudata.imu1.x),
           fix16_to_float(st->cpudata.imu1.y),
           fix16_to_float(st->cpudata.imu1.z),
-          fix16_to_float(st->cpudata.imu2.x),
-          fix16_to_float(st->cpudata.imu2.y),
-          fix16_to_float(st->cpudata.imu2.z)
+          st->cpudata.status
           );
 }
 
@@ -92,9 +88,7 @@ void FormatSprintStateHeader(char* buff) {
           "imu1_x\t"
           "imu1_y\t"
           "imu1_z\t"
-          "imu2_x\t"
-          "imu2_y\t"
-          "imu2_z\t"
+          "imu_status\t"
           "\n");
 }
 

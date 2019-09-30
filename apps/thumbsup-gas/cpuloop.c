@@ -35,6 +35,7 @@ void CpuLoop(cpudata_t* cpudata)  {
   if ((frame % 10) == 0)
     ImuUpdate(imu1);
   cpudata->imu1 = ImuGetEuler(imu1);
+  cpudata->status = imu1->status;
   frame++;
 }
 

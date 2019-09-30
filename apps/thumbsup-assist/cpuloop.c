@@ -21,6 +21,7 @@
 
 imu_t* imu1;
 uint32_t frame;
+uint32_t flag = 0;
 
 void CpuInit(cpudata_t* cpudata) {
   frame = 0;
@@ -35,6 +36,7 @@ void CpuLoop(cpudata_t* cpudata)  {
   if ((frame % 10) == 0)
     ImuUpdate(imu1);
   cpudata->imu1 = ImuGetEuler(imu1);
+  cpudata->status = imu1->status;
   frame++;
 }
 
