@@ -12,7 +12,7 @@ From host computer:
 
 The default password is root.
 
-It possible that the host name might not be recongnized. In that case you should try:
+It's possible that the host name might not be recongnized be your cpu. In that case you should try:
 
 ```
 > root@192.168.6.2
