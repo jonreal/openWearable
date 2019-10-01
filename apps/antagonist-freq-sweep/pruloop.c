@@ -17,6 +17,7 @@
 #include "maxon.h"
 #include "encoder.h"
 #include "pam.h"
+#include "sync.h"
 #include "filtcoeff.h"
 
 volatile register uint32_t __R30;
@@ -30,16 +31,19 @@ i2cmux_t* mux;
 reservoir_t* reservoir;
 pam_t* pam1;
 pam_t* pam2;
+sync_t* sync;
+
 
 uint32_t flag = 0;
 uint32_t t0 = 0;
 fix16_t t = 0;
+fix16_t dt = 0;
 fix16_t k = 0;
 
-const uint32_t Tf_default = 60000;        // 60 s
+const uint32_t Tf_default = 240000;        // 240 s
 const fix16_t f0_default = 0x28F;         // 0.01 Hz
-const fix16_t f1_default = 0x20000;       // 2 Hz
-const fix16_t A_default = 0xC000;         // 0.75 A
+const fix16_t f1_default = fix16_one;       // 2 Hz
+const fix16_t A_default = 0x8000;         // 0.75 A
 const fix16_t p0_default = 0x140000;      // 20 psi
 const uint32_t refractory = 150;
 
@@ -110,8 +114,13 @@ void Pru1Init(pru_mem_t* mem) {
                          0x13880000   // bias (5000)
                          );
 
+
+  sync = SyncInitChan(5);
+  SyncOutLow(sync);
+
   k = fix16_sdiv(fix16_ssub(mem->p->f1,mem->p->f0),
                 fix16_from_int(mem->p->Tf/mem->p->fs_hz));
+  dt = fix16_sdiv(fix16_one,fix16_from_int(mem->p->fs_hz));
   debug_buff[0] = k;
 }
 
@@ -141,15 +150,19 @@ void Pru1UpdateState(const pru_count_t* c,
   if (PruGetCtlBit(ctl_, 0)) {
     if (flag == 0) {
       t0 = c->frame;
+      SyncOutHigh(sync);
       flag = 1;
     }
-		t = fix16_sdiv(fix16_from_int((c->frame - t0)),fix16_from_int(p_->fs_hz));
+		t += dt;
 	  MaxonSetCurrent(motor,fix16_smul(p_->A,
                fix16_sin(fix16_smul(fix16_smul(fix16_smul(0x20000,fix16_pi),t),
                             fix16_sadd(fix16_smul(k,t),p_->f0)))));
 		if ((c->frame-t0) == p_->Tf) {
       flag = 0;
+      t = 0;
+      t0 = 0;
       PruClearCtlBit(ctl_,0);
+      SyncOutLow(sync);
     }
 	} else {
     MaxonSetCurrent(motor,0);
@@ -169,6 +182,7 @@ void Pru1UpdateControl(const pru_count_t* c,
   s_->motor = MaxonGetState(motor);
   s_->pam1_state = PamGetState(pam1);
   s_->pam2_state = PamGetState(pam2);
+  s_->sync = SyncOutState(sync);
 }
 
 void Pru1Cleanup(void) {
