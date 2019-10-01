@@ -21,6 +21,7 @@ typedef struct {
   volatile motor_state_t motor;
   volatile pam_state_t pam1_state;
   volatile pam_state_t pam2_state;
+  volatile uint32_t sync;
  } state_t;
 
 // --- Parameters
