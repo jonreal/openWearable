@@ -33,8 +33,10 @@ void FormatSprintParams(const param_mem_t* param, char* buff) {
 void FormatSprintState(const state_t* st, char* buff) {
   sprintf(buff,
           "%u\t"        // timeStamp - uint32_t
+          "%u\t"        // cpu var - uint32_t
           "\n",
-          st->time
+          st->time,
+          st->cpudata.varcpu
           );
 }
 

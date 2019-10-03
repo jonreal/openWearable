@@ -25,21 +25,24 @@ extern volatile uint32_t* debug_buff;
 void Pru0Init(pru_mem_t* mem);
 void Pru0UpdateState(const pru_count_t* c,
                      const param_mem_t* p_,
-                     int16_t* lut,
+                     const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_);
 void Pru0UpdateControl(const pru_count_t* c,
                        const param_mem_t* p_,
+                       const lut_mem_t* l_,
                        state_t* s_,
                        pru_ctl_t* ctl_);
 void Pru0Cleanup(void);
 void Pru1Init(pru_mem_t* mem);
 void Pru1UpdateState(const pru_count_t* c,
                      const param_mem_t* p_,
+                     const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_);
 void Pru1UpdateControl(const pru_count_t* c,
                        const param_mem_t* p_,
+                       const lut_mem_t* l_,
                        state_t* s_,
                        pru_ctl_t* ctl_);
 void Pru1Cleanup(void);
@@ -48,5 +51,16 @@ uint8_t PruGetCtlBit(const pru_ctl_t* ctl_, uint8_t nbit);
 void PruSetCtlBit(pru_ctl_t* ctl_, uint8_t nbit);
 void PruClearCtlBit(pru_ctl_t* ctl_, uint8_t nbit);
 
+// inline helpers here
+inline uint8_t PruGetCtlBit(const pru_ctl_t* ctl_, uint8_t nbit) {
+  return ((ctl_->bit.utility & (1 << nbit)) == (1 << nbit));
+}
 
+inline void PruSetCtlBit(pru_ctl_t* ctl_, uint8_t nbit) {
+  ctl_->bit.utility |= (1 << nbit);
+}
+
+inline void PruClearCtlBit(pru_ctl_t* ctl_, uint8_t nbit) {
+  ctl_->bit.utility &= ~(1 << nbit);
+}
 #endif

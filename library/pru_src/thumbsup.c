@@ -16,10 +16,11 @@
 #include "thumbsup.h"
 #include <stdlib.h>
 
+// --- Button Based
 
-thumbs_up_t* ThumbsUpInit(button_t* b_pro, button_t* b_sup,
+thumbsup_t* ThumbsUpInit(button_t* b_pro, button_t* b_sup,
                           pam_t* pam_pro, pam_t* pam_sup) {
-  thumbs_up_t* th = malloc(sizeof(thumbs_up_t));
+  thumbsup_t* th = malloc(sizeof(thumbsup_t));
   th->cnt = 0;
   th->state = NEUTRAL;
 
@@ -30,13 +31,13 @@ thumbs_up_t* ThumbsUpInit(button_t* b_pro, button_t* b_sup,
 
   PamSetPd(th->pam_pro,fix16_from_int(0));
   PamSetPd(th->pam_sup,fix16_from_int(0));
-  PamSimple(th->pam_sup);
-  PamSimple(th->pam_sup);
+  PamActionSimple(th->pam_sup);
+  PamActionSimple(th->pam_sup);
 
   return th;
 }
 
-void ThumbsUpUpdate(thumbs_up_t* th, uint32_t hold_cnt,
+void ThumbsUpUpdate(thumbsup_t* th, uint32_t hold_cnt,
                     fix16_t pd_sup, fix16_t pd_pro) {
 
   // update button states
@@ -74,27 +75,149 @@ void ThumbsUpUpdate(thumbs_up_t* th, uint32_t hold_cnt,
       break;
   }
 
-  PamSimple(th->pam_sup);
-  PamSimple(th->pam_pro);
+  PamActionSimple(th->pam_sup);
+  PamActionSimple(th->pam_pro);
 }
 
-fsm_state_t ThumbsUpGetState(thumbs_up_t* th) {
+fsm_state_t ThumbsUpGetState(thumbsup_t* th) {
   return th->state;
 }
-void ThumbsUpFree(thumbs_up_t* th) {
+void ThumbsUpFree(thumbsup_t* th) {
   PamMuscleFree(th->pam_sup);
   PamMuscleFree(th->pam_pro);
 }
 
-fix16_t ThumbsUpGetSupPm(thumbs_up_t* th) {
-  return th->pam_sup->p_m;
+
+
+
+
+//fix16_t ThumbsUpGetSupPm(thumbs_up_t* th) {
+//  return th->pam_sup->s.pm;
+//}
+//fix16_t ThumbsUpGetSupPd(thumbs_up_t* th) {
+//  return th->pam_sup->s.pd;
+//}
+//fix16_t ThumbsUpGetProPm(thumbs_up_t* th) {
+//  return th->pam_pro->s.pm;
+//}
+//fix16_t ThumbsUpGetProPd(thumbs_up_t* th) {
+//  return th->pam_pro->s.pd;
+//}
+//
+//
+
+
+// --- Trigger base
+thumbsup_trigger_t* ThumbsUpTriggerInit(pam_t* pam_pro,
+                                                  pam_t* pam_sup,
+                                                  iir_filt_t* filt) {
+  thumbsup_trigger_t* th = malloc(sizeof(thumbsup_trigger_t));
+  th->cnt = 0;
+  th->flag = 0;
+  th->state = NEUTRAL;
+  th->pam_pro = pam_pro;
+  th->pam_sup = pam_sup;
+  th->triggersignal = 0;
+  th->filt = filt;
+  th->pm1_0 = 0;
+  th->pm2_0 = 0;
+
+  return th;
 }
-fix16_t ThumbsUpGetSupPd(thumbs_up_t* th) {
-  return th->pam_sup->p_d;
+
+void ThumbsUpTriggerUpdate(thumbsup_trigger_t* th,
+                                uint32_t hold_cnt,
+                                fix16_t pd_sup, fix16_t pd_pro,
+                                fix16_t sup_thrs, fix16_t pro_thrs,
+                                fix16_t p_sens) {
+  fix16_t activation;
+
+
+  if ((th->pam_pro->fsm == HOLD) && (th->pam_sup->fsm == HOLD)) {
+
+    if (th->flag == 0) {
+      th->pm1_0 = th->pam_pro->s.pm;
+      th->pm2_0 = th->pam_sup->s.pm;
+      activation = fix16_ssub(fix16_ssub(th->pm1_0,
+                                        th->pam_pro->s.pm),
+                            fix16_ssub(th->pm2_0,
+                                        th->pam_sup->s.pm));
+      th->filt->x[0] = activation;
+      th->filt->x[1] = activation;
+      th->filt->y[0] = activation;
+      th->filt->y[1] = activation;
+      //th->triggersignal = fix16_ssub(activation,
+      //                          FiltIir(activation,th->filt));
+      th->triggersignal = FiltIir(activation,th->filt);
+      th->flag = 1;
+    } else {
+      activation = fix16_ssub(fix16_ssub(th->pm1_0,
+                                        th->pam_pro->s.pm),
+                            fix16_ssub(th->pm2_0,
+                                        th->pam_sup->s.pm));
+//      th->triggersignal = fix16_ssub(activation,
+//                                FiltIir(activation,th->filt));
+//
+      th->triggersignal = FiltIir(activation,th->filt);
+    }
+
+    switch (th->state) {
+      case NEUTRAL :
+        if (fix16_ssub(th->triggersignal,pro_thrs) > 0) {
+          th->state = PRONATE;
+          th->cnt = 0;
+          PamSetPd(th->pam_pro, pd_pro);
+          PamSetPd(th->pam_sup,0x20000);
+        } else if (fix16_ssub(th->triggersignal,sup_thrs) < 0) {
+          th->state = SUPINATE;
+          th->cnt = 0;
+          PamSetPd(th->pam_sup, pd_sup);
+          PamSetPd(th->pam_pro, 0x20000);
+        }
+        break;
+
+      case PRONATE :
+        if (th->cnt >= hold_cnt) {
+          th->state = RECOVER;
+          th->cnt = 0;
+          PamSetPd(th->pam_pro, 0x20000);
+          PamSetPd(th->pam_sup, 0x20000);
+        }
+        th->cnt++;
+        break;
+
+      case SUPINATE :
+        if (th->cnt >= hold_cnt) {
+          th->state = RECOVER;
+          th->cnt = 0;
+          PamSetPd(th->pam_sup, 0x20000);
+          PamSetPd(th->pam_pro, 0x20000);
+        }
+        th->cnt++;
+        break;
+
+      case RECOVER :
+        if (th->cnt >= 500) {
+          th->state = NEUTRAL;
+          th->cnt = 0;
+          PamSetPd(th->pam_sup, p_sens);
+          PamSetPd(th->pam_pro, p_sens);
+        }
+        th->cnt++;
+        break;
+    }
+  } else {
+    th->triggersignal = 0;
+    th->flag = 0;
+  }
 }
-fix16_t ThumbsUpGetProPm(thumbs_up_t* th) {
-  return th->pam_pro->p_m;
+
+
+fix16_t ThumbsUpTriggerGetTriggerSig(thumbsup_trigger_t* th) {
+  return th->triggersignal;
 }
-fix16_t ThumbsUpGetProPd(thumbs_up_t* th) {
-  return th->pam_pro->p_d;
+
+fsm_state_t ThumbsUpTriggerGetState(thumbsup_trigger_t* th) {
+  return th->state;
 }
+

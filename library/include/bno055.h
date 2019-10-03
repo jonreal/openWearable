@@ -18,6 +18,7 @@
 
 #include <stdint.h>
 #include "fix16.h"
+#include "i2cdriver.h"
 
 // register maps from:
 // https://github.com/adafruit/Adafruit_BNO055/
@@ -204,6 +205,7 @@ typedef struct {
 } euler_t;
 
 typedef struct {
+  i2c_t* i2c;
 	int32_t sensorID;
   uint8_t addrs;
   volatile euler_t euler;
@@ -225,7 +227,7 @@ typedef struct {
 
 
 
-imu_t* ImuInit(uint8_t i2c_address);
+imu_t* ImuInit(i2c_t* i2c, uint8_t i2c_address);
 void ImuUpdate(imu_t* imu);
 euler_t ImuGetEuler(imu_t* imu);
 
