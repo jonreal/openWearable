@@ -12,11 +12,8 @@ def callback(data):
 
     frame = int(temp[1])
     state = int(val[1])
-    pm_pro = float(val[2])
-    pd_pro = float(val[3])
-    pm_sup = float(val[4])
-    pd_sup = float(val[5])
-    print(frame, state, pm_pro, pd_pro, pm_sup, pd_sup)
+    buttons = int(val[2])
+    print(frame, state, buttons)
 
 def listener():
     rospy.init_node('listener', anonymous=True)

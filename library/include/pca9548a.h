@@ -17,15 +17,23 @@
 #define _PCA9548A_H_
 
 #include <stdint.h>
+#include "i2cdriver.h"
+
+typedef enum {
+  PCA9548 = 0,
+  PCA9544 = 1
+} i2cmux_version_t;
 
 typedef struct {
+  i2c_t* i2c;
+  i2cmux_version_t version;
   uint8_t address;
 } i2cmux_t;
 
 //TODO add interrupt masks
 
 // Public
-i2cmux_t* MuxI2cInit(uint8_t addrs);
+i2cmux_t* MuxI2cInit(i2c_t* i2c, uint8_t addrs, i2cmux_version_t ver);
 uint8_t MuxI2cRead(const i2cmux_t* mux);
 void MuxI2cSetChannel(const i2cmux_t* mux, uint8_t chan);
 void MuxI2cFree(i2cmux_t* mux);

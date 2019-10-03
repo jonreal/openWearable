@@ -16,6 +16,8 @@
 #ifndef _PWMDRIVER_H_
 #define _PWMDRIVER_H_
 
+#include <stdint.h>
+
 /* ---- Global ---- */
 extern volatile uint32_t *debug_buff;
 

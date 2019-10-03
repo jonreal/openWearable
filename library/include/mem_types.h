@@ -16,6 +16,7 @@
 #ifndef _MEM_TYPES_
 #define _MEM_TYPES_
 
+#include <stddef.h>
 #include "state.h"
 
 #define PRU_CTRL_BASE     0x00022000
@@ -44,6 +45,7 @@ typedef union {
 typedef struct {
   volatile uint32_t cbuff_index;
   state_t state[STATE_BUFF_LEN];
+  cpudata_t cpudata;
   pru_ctl_t pru_ctl;
 } shared_mem_t;
 

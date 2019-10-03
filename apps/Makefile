@@ -5,27 +5,30 @@ TARGET = main
 PRU0_TARGET = pru0_main
 PRU1_TARGET = pru1_main
 
+# openWearable path
+OW_DIR = /root/openWearable
+
 # C Source Directories
-CSRC_DIR = ../library/src
-CINC_DIR = ../library/include \
+CSRC_DIR = $(OW_DIR)/library/src
+CINC_DIR = $(OW_DIR)/library/include \
 					 -I/usr/lib/ti/pru-software-support-package/include/am335x \
 					 -I/usr/lib/ti/pru-software-support-package/include
 CLIB = -lpthread
 SRC_IGNORE =
 
 # PRU_C Source Directories
-PRU_CSRC_DIR = ../library/pru_src
-PRU_CINC_DIR = -I../library/include/ \
+PRU_CSRC_DIR = $(OW_DIR)/library/pru_src
+PRU_CINC_DIR = -I$(OW_DIR)/library/include/ \
 							 -I/usr/lib/ti/pru-software-support-package/include/am335x \
 							 -I/usr/lib/ti/pru-software-support-package/include
 PRU_CLIB =
 
 # Build Directories
 TARGET_DIR = ./bin
-BUILD_DIR = $(MAKECMDGOALS)/build
+BUILD_DIR = $(OW_DIR)/apps/$(MAKECMDGOALS)/build
 
 # ROS
-ROS_DIR = ../ros
+ROS_DIR = $(OW_DIR)/ros
 ROS_CPP_SRC = $(ROS_DIR)/rospub.cpp
 ROS_OBJ = $(BUILD_DIR)/rospub.o
 ROS_TARGET = $(BUILD_DIR)/libRosPub.so
@@ -40,7 +43,7 @@ LDFLAGS =
 
 # PRU compiler
 PRU_CC = clpru
-PRU_CFLAGS = -q --c99 -v3 --define=am3359d -O4 -D=am335x -D=FIXMATH_NO_CACHE
+PRU_CFLAGS = -q --c99 -v3 --define=am3359d -O4 -D=am335x -D=FIXMATH_NO_CACHE -D=PRU
 PRU_LDFLAGS =
 
 # Install stuff
@@ -49,24 +52,23 @@ INSTALLDIR = install -d -m 755
 INSTALLNONEXEC = install -m 644
 
 # ----
-
 # CPU library sources (openWearable core)
 CPU_SRC_PRE = $(filter-out $(CSRC_DIR)/$(TARGET).c, $(wildcard $(CSRC_DIR)/*.c))
 CPU_SRC = $(filter-out $(CSRC_DIR)/$(SRC_IGNORE).c, $(CPU_SRC_PRE))
 CPU_OBJ = $(patsubst $(CSRC_DIR)/%,$(BUILD_DIR)/%,$(CPU_SRC:.c=.o))
 
 # App specific CPU sources
-APP_SPEC_CPU_SRC = $(MAKECMDGOALS)/format.c $(MAKECMDGOALS)/uiloop.c
+APP_SPEC_CPU_SRC = $(MAKECMDGOALS)/format.c $(MAKECMDGOALS)/uiloop.c $(MAKECMDGOALS)/cpuloop.c
 APP_SPEC_CPU_OBJ = $(patsubst $(MAKECMDGOALS)/%,$(BUILD_DIR)/%,$(APP_SPEC_CPU_SRC:.c=.o))
 
 # PRU library source (mostly drivers, ect)
 PRU_SRC = $(filter-out $(PRU_CSRC_DIR)/$(PRU0_TARGET).c $(PRU_CSRC_DIR)/$(PRU1_TARGET).c, $(wildcard $(PRU_CSRC_DIR)/*.c))
 
-PRU_OBJ = $(patsubst $(PRU_CSRC_DIR)/%,$(BUILD_DIR)/%,$(PRU_SRC:.c=.o))
+PRU_OBJ = $(patsubst $(PRU_CSRC_DIR)/%,$(BUILD_DIR)/%,$(PRU_SRC:.c=.po))
 
 # App specific pru source files
 APP_SPEC_PRU_SRC = $(MAKECMDGOALS)/pruloop.c
-APP_SPEC_PRU_OBJ = $(patsubst $(MAKECMDGOALS)/%,$(BUILD_DIR)/%,$(APP_SPEC_PRU_SRC:.c=.o))
+APP_SPEC_PRU_OBJ = $(patsubst $(MAKECMDGOALS)/%,$(BUILD_DIR)/%,$(APP_SPEC_PRU_SRC:.c=.po))
 
 APP_SPEC_INC = $(MAKECMDGOALS)/
 
@@ -82,6 +84,7 @@ APP_SPEC_INC = $(MAKECMDGOALS)/
 					reflex-single clean-reflex-single
 
 
+# --- Template
 # ---
 template : $(ROS_TARGET) linker install
 clean-template :
@@ -90,6 +93,60 @@ clean-template :
 	@echo " $(RM) -r $(TARGET_DIR)/template"; $(RM) -r $(TARGET_DIR)/template
 	@echo " $(RM) -r /lib/firmware/am335x-pru0-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-template-fw
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-template-fw
+
+# ---
+reflex : $(ROS_TARGET) linker install
+clean-reflex :
+	@echo " Cleaning reflex...";
+	@echo " $(RM) -r ./reflex/build"; $(RM) -r ./reflex/build
+	@echo " $(RM) -r $(TARGET_DIR)/reflex"; $(RM) -r $(TARGET_DIR)/reflex
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-reflex-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-reflex-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-reflex-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-reflex-fw
+
+# ---
+thumbsup-triggered : $(ROS_TARGET) linker install
+clean-thumbsup-triggered :
+	@echo " Cleaning thumbsup-triggered...";
+	@echo " $(RM) -r ./thumbsup-triggered/build"; $(RM) -r ./thumbsup-triggered/build
+	@echo " $(RM) -r $(TARGET_DIR)/thumbsup-triggered"; $(RM) -r $(TARGET_DIR)/thumbsup-triggered
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-thumbsup-triggered-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-thumbsup-triggered-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-thumbsup-triggered-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-thumbsup-triggered-fw
+
+# ---
+thumbsup-gas : $(ROS_TARGET) linker install
+clean-thumbsup-gas :
+	@echo " Cleaning thumbsup-gas...";
+	@echo " $(RM) -r ./thumbsup-gas/build"; $(RM) -r ./thumbsup-gas/build
+	@echo " $(RM) -r $(TARGET_DIR)/thumbsup-gas"; $(RM) -r $(TARGET_DIR)/thumbsup-gas
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-thumbsup-gas-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-thumbsup-gas-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-thumbsup-gas-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-thumbsup-gas-fw
+
+# ---
+thumbsup-assist : $(ROS_TARGET) linker install
+clean-thumbsup-assist :
+	@echo " Cleaning thumbsup-assist...";
+	@echo " $(RM) -r ./thumbsup-assist/build"; $(RM) -r ./thumbsup-assist/build
+	@echo " $(RM) -r $(TARGET_DIR)/thumbsup-assist"; $(RM) -r $(TARGET_DIR)/thumbsup-assist
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-thumbsup-assist-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-thumbsup-assist-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-thumbsup-assist-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-thumbsup-assist-fw
+
+# ---
+pam-haptic : $(ROS_TARGET) linker install
+clean-pam-haptic :
+	@echo " Cleaning pam-haptic...";
+	@echo " $(RM) -r ./pam-haptic/build"; $(RM) -r ./pam-haptic/build
+	@echo " $(RM) -r $(TARGET_DIR)/pam-haptic"; $(RM) -r $(TARGET_DIR)/pam-haptic
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-pam-haptic-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-pam-haptic-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-pam-haptic-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-pam-haptic-fw
+
+# ---
+pamtest : $(ROS_TARGET) linker install
+clean-pamtest :
+	@echo " Cleaning pamtest...";
+	@echo " $(RM) -r ./pamtest/build"; $(RM) -r ./pamtest/build
+	@echo " $(RM) -r $(TARGET_DIR)/pamtest"; $(RM) -r $(TARGET_DIR)/pamtest
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-pamtest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-pamtest-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-pamtest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-pamtest-fw
 
 # ---
 haptictest : $(ROS_TARGET) linker install
@@ -117,25 +174,6 @@ clean-buttontest :
 	@echo " $(RM) -r $(TARGET_DIR)/buttontest"; $(RM) -r $(TARGET_DIR)/buttontest
 	@echo " $(RM) -r /lib/firmware/am335x-pru0-buttontest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-buttontest-fw
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-buttontest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-buttontest-fw
-
-# ---
-reflex : $(ROS_TARGET) linker install
-clean-reflex :
-	@echo " Cleaning reflex...";
-	@echo " $(RM) -r ./reflex/build"; $(RM) -r ./reflex/build
-	@echo " $(RM) -r $(TARGET_DIR)/reflex"; $(RM) -r $(TARGET_DIR)/reflex
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-reflex-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-reflex-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-reflex-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-reflex-fw
-
-# ---
-reflex-single : $(ROS_TARGET) linker install
-clean-reflex-single :
-	@echo " Cleaning reflex-single...";
-	@echo " $(RM) -r ./reflex-single/build"; $(RM) -r ./reflex-single/build
-	@echo " $(RM) -r $(TARGET_DIR)/reflex-single"; $(RM) -r $(TARGET_DIR)/reflex-single
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-reflex-single-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-reflex-single-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-reflex-single-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-reflex-single-fw
-
 
 # ---- CPU
 
@@ -170,6 +208,12 @@ $(BUILD_DIR)/format.o : $(MAKECMDGOALS)/format.c
 	$(CC) $(CFLAGS) -I$(CINC_DIR) -I./$(APP_SPEC_INC) -c -o $@ $< $(CLIB) -lm
 
 # Build app specific C dependencies
+$(BUILD_DIR)/cpuloop.o : $(MAKECMDGOALS)/cpuloop.c
+	@echo "\n Building app specific dependencies... \n";
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -I$(CINC_DIR) -I./$(APP_SPEC_INC) -c -o $@ $< $(CLIB) -lm
+
+# Build app specific C dependencies
 $(BUILD_DIR)/uiloop.o : $(MAKECMDGOALS)/uiloop.c
 	@echo "\n Building app specific dependencies... \n";
 	@mkdir -p $(BUILD_DIR)
@@ -178,51 +222,47 @@ $(BUILD_DIR)/uiloop.o : $(MAKECMDGOALS)/uiloop.c
 # ---- PRU
 
 # Install PRU
-install : $(BUILD_DIR)/$(PRU0_TARGET).elf \
-					$(BUILD_DIR)/$(PRU1_TARGET).elf
+install : $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
 	@echo "\n Installing pru firmware... \n";
 	$(INSTALLDIR) /etc/modprobe.d
 	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU0_TARGET).elf /lib/firmware/am335x-pru0-$(MAKECMDGOALS)-fw
 	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU1_TARGET).elf /lib/firmware/am335x-pru1-$(MAKECMDGOALS)-fw
 
 # Linker PRU0
-$(BUILD_DIR)/$(PRU0_TARGET).elf : $(BUILD_DIR)/$(PRU0_TARGET).o \
-																	$(PRU_OBJ) \
-																	$(APP_SPEC_PRU_OBJ)
+$(BUILD_DIR)/$(PRU0_TARGET).elf : $(BUILD_DIR)/$(PRU0_TARGET).po $(PRU_OBJ) $(APP_SPEC_PRU_OBJ)
 	@echo "\n Linking pru0... \n"
-	$(PRU_CC) $(PRU_CFLAGS) -z $^ -llibc.a -m $(MAKECMDGOALS)/build/$(PRU0_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU0_TARGET).elf $(PRU_CSRC_DIR)/PRU0.cmd
+	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=512 $^ -llibc.a -m $(MAKECMDGOALS)/build/$(PRU0_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU0_TARGET).elf $(PRU_CSRC_DIR)/PRU0.cmd
 
 
 # Linker PRU1
-$(BUILD_DIR)/$(PRU1_TARGET).elf : $(BUILD_DIR)/$(PRU1_TARGET).o \
-																	$(PRU_OBJ) \
-																	$(APP_SPEC_PRU_OBJ)
+$(BUILD_DIR)/$(PRU1_TARGET).elf : $(BUILD_DIR)/$(PRU1_TARGET).po $(PRU_OBJ) $(APP_SPEC_PRU_OBJ)
 	@echo "\n Linking pru1... \n"
-	$(PRU_CC) $(PRU_CFLAGS) -z $^ -llibc.a -m $(MAKECMDGOALS)/build/$(PRU1_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU1_TARGET).elf $(PRU_CSRC_DIR)/PRU1.cmd
+	$(PRU_CC)  $(PRU_CFLAGS) -z --heap_size=512 $^ -llibc.a -m $(MAKECMDGOALS)/build/$(PRU1_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU1_TARGET).elf $(PRU_CSRC_DIR)/PRU1.cmd
 
 # Build PRU-core
-$(BUILD_DIR)%.o : $(PRU_CSRC_DIR)%.c
+$(BUILD_DIR)%.po : $(PRU_CSRC_DIR)%.c
 	@echo "\n Building pru dependencies... \n";
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -I$(APP_SPEC_INC) -c -fe $@ $<
 
 # Build App specific PRU dependencies
-$(BUILD_DIR)/pruloop.o : $(MAKECMDGOALS)/pruloop.c
+$(BUILD_DIR)/pruloop.po : $(MAKECMDGOALS)/pruloop.c
 	@echo "\n Building app specific pru dependencies... \n";
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -I$(APP_SPEC_INC) -c -fe $@ $<
 
 # --- DEBUG
-#all :
-#	@echo "\n APP  = $(APP_NAME) ... \n";
-#	@echo "\n PRU-OBJ $(PRU_OBJ) ... \n";
-#	@echo "\n PRU-SRC $(PRU_SRC) ... \n";
-#	@echo "\n APP-PRU-OBJ $(APP_SPEC_PRU_OBJ) ... \n";
-#	@echo "\n APP-PRU-SRC $(APP_SPEC_PRU_SRC) ... \n";
-#	@echo "\n CPU-OBJ $(CPU_OBJ) ... \n";
-#	@echo "\n CPU-SRC $(CPU_SRC) ... \n";
-#	@echo "\n APP-CPU-OBJ $(APP_SPEC_CPU_OBJ) ... \n";
-#	@echo "\n APP-CPU-SRC $(APP_SPEC_CPU_SRC) ... \n";
-#	@echo "\n ROS_CPP_SRC $(ROS_CPP_SRC) ... \n";
-#	@echo "\n ROS_OBJ $(ROS_OBJ) ... \n";
-#	@echo "\n ROS_TARGET $(ROS_TARGET) ... \n";
+debug :
+	@echo "\n APP  = $(APP_NAME) ... \n";
+	@echo "\n PRU-OBJ $(PRU_OBJ) ... \n";
+	@echo "\n PRU-SRC $(PRU_SRC) ... \n";
+	@echo "\n APP-PRU-OBJ $(APP_SPEC_PRU_OBJ) ... \n";
+	@echo "\n APP-PRU-SRC $(APP_SPEC_PRU_SRC) ... \n";
+	@echo "\n CPU-OBJ $(CPU_OBJ) ... \n";
+	@echo "\n CPU-SRC $(CPU_SRC) ... \n";
+	@echo "\n CPU-SRC-PRE $(CPU_SRC_PRE) ... \n";
+	@echo "\n APP-CPU-OBJ $(APP_SPEC_CPU_OBJ) ... \n";
+	@echo "\n APP-CPU-SRC $(APP_SPEC_CPU_SRC) ... \n";
+	@echo "\n ROS_CPP_SRC $(ROS_CPP_SRC) ... \n";
+	@echo "\n ROS_OBJ $(ROS_OBJ) ... \n";
+	@echo "\n ROS_TARGET $(ROS_TARGET) ... \n";

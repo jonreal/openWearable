@@ -21,7 +21,7 @@
 #include <linux/gpio.h>
 #endif
 
-#include <rc/gpio.h>
+#include <gpio.h>
 
 // preposessor macros
 #define unlikely(x)	__builtin_expect (!!(x), 0)
@@ -32,12 +32,10 @@
 #define MAX_BUF		64
 
 
+
 static int chip_fd[CHIPS_MAX];
 static int handle_fd[CHIPS_MAX][GPIOHANDLES_MAX];
 static int event_fd[CHIPS_MAX][GPIOHANDLES_MAX];
-
-
-
 
 static int __open_gpiochip(int chip)
 {
@@ -53,7 +51,6 @@ static int __open_gpiochip(int chip)
 	chip_fd[chip]=temp_fd;
 	return 0;
 }
-
 
 int rc_gpio_init(int chip, int pin, int handle_flags)
 {

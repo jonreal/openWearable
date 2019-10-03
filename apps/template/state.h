@@ -3,12 +3,21 @@
 
 #include "fix16.h"
 
-// State
+// packing can be issue -- use 32bit types
+
+
+// --- cpudata struct
+typedef struct {
+  volatile uint32_t varcpu;
+} cpudata_t;
+
+// --- State
 typedef struct {
   volatile uint32_t time;
+  cpudata_t cpudata;
  } state_t;
 
-// Parameters
+// --- Parameters
 typedef struct {
   volatile uint32_t debug_buff[10];
   uint32_t fs_hz;

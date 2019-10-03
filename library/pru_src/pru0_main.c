@@ -83,7 +83,7 @@ int main(void) {
     // Estimate
     Pru0UpdateState(&counter,
                     mem.p,
-                    mem.l->lut,
+                    mem.l,
                     &mem.s->state[counter.index],
                     &mem.s->pru_ctl);
 
@@ -97,8 +97,12 @@ int main(void) {
     // Control
     Pru0UpdateControl(&counter,
                       mem.p,
+                      mem.l,
                       &mem.s->state[counter.index],
                       &mem.s->pru_ctl);
+
+    // Copy cpudata to state
+    mem.s->state[counter.index].cpudata = mem.s->cpudata;
 
     // Post bookkeeping
     mem.s->cbuff_index = counter.index;
@@ -130,9 +134,12 @@ void initialize(pru_mem_t* mem) {
   iepTimerInit(mem->p->fs_ticks);
   clearIepInterrupt();
 
+  // clear gpio
+  __R30 = 0x0;
+  __R31 = 0x0;
+
   // drivers
   AdcInit();
-  I2cInit();
   spiInit();
 
   // user defined inits
@@ -147,14 +154,13 @@ void cleanup(void) {
 
   // drivers
   AdcCleanup();
-  I2cCleanUp();
-
-  // user defined cleanups
-  Pru0Cleanup();
 
   // clear gpio
   __R30 = 0x0;
   __R31 = 0x0;
+
+  // user defined cleanups
+  Pru0Cleanup();
 }
 void memInit(pru_mem_t* mem) {
   // Memory map for shared memory

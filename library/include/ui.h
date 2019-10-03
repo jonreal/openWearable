@@ -30,11 +30,14 @@ typedef struct {
 } ui_flags_t;
 
 typedef struct {
+  unsigned int counter;
   ui_flags_t flag;
   pru_mem_t* pru_mem;
+  cpudata_t* cpudata;
   log_t* log;
   udp_t* udp;
   rospub_t* ros;
+  char rosbuffer[1024];
 } ui_data_t;
 
 extern int UiLoop(const pru_mem_t* pru_mem);
@@ -43,16 +46,18 @@ extern void UiPrintMenu(const pru_mem_t* pru_mem);
 ui_flags_t UiInitFlags(void);
 int UiInit(pru_mem_t* pru_mem, ui_flags_t flags);
 int UiCleanup(void);
-//int UiInitLogAndPublishThread(const pru_mem_t* pru_mem);
-//void UiCloseLogAndPublishThread(void);
 void UiNewLogFile(char* log_file);
 void UiStartLog(void);
 void UiStopAndSaveLog(void);
 
 void UiWelcome(void);
 void UiPollForUserInput(void);
+int UiGetPruCtlBit(const pru_mem_t* pru_mem, unsigned char n);
 void UiSetPruCtlBit(const pru_mem_t* pru_mem, unsigned char n);
 void UiClearPruCtlBit(const pru_mem_t* pru_mem, unsigned char n);
-void UiPollPruCtlBit(const pru_mem_t* pru_mem, unsigned char n);
+void UiPollPruCtlBit(const pru_mem_t* pru_mem, unsigned char n,
+                     unsigned char value);
+
+int UiLogging(void);
 
 #endif /* _TUI_H_ */
