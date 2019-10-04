@@ -33,35 +33,23 @@ void FormatSprintParams(const param_mem_t* param, char* buff) {
 void FormatSprintState(const state_t* st, char* buff) {
   sprintf(buff,
           "%u\t"        // timeStamp - uint32_t
-          "%f\t"        // x - fix16_t
-          "%f\t"        // motor u - fix16_t
-          "%u\t"        // pwmcmp - uint32_t
-          "%f\t"        // motor current - fix16_t
-          "%f\t"        // motor vel - fix16_t
-          "%u\t"        // sync - uint32_t
+          "%u\t"        // cpu var - uint32_t
           "\n",
           st->time,
-          fix16_to_float(st->x),
-          fix16_to_float(st->motor.u),
-          st->motor.pwmcmpvalue,
-          fix16_to_float(st->motor.current),
-          fix16_to_float(st->motor.velocity),
-          st->sync
+          st->cpudata.varcpu
           );
 }
 
 void FormatSprintStateHeader(char* buff) {
   sprintf(buff,
           "\n# frame\t"
-          "x\t"
-          "u\t"
-          "pwmcmp\t"
-          "current\t"
-          "velocity\t"
-          "sync\t"
           "\n");
 }
 
 void FormatSprintPublishState(const state_t* st, char* buff) {
-  FormatSprintState(st, buff);
+    sprintf(buff,
+            "%u\t"        // timeStamp - uint32_t
+            "\n",
+            st->time
+            );
 }

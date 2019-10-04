@@ -9,20 +9,23 @@ extern volatile sig_atomic_t input_ready;
 void UiPrintMenu(const pru_mem_t* pru_mem) {
   printf(
   "\n\n---------------------------------------------------------------------\n"
-  " \t fd = %3.2f,\t Np = %i\n\n"
+  " \t Tf = %3.2f,\t f0 = %3.2f,\t f1 = %3.2f,\t A = %3.2f\n\n"
   "Menu: f - Start trial\n"
-  "      p - change target frequency\n"
-  "      n - change number of cycles\n"
+  "      p - change total time\n"
+  "      o - change initial frequency\n"
+  "      i - change final frequency\n"
+  "      u - change amplitude\n"
   "      e - exit\n"
   "-----------------------------------------------------------------------\n",
-  (float)pru_mem->p->fs_hz/(float)pru_mem->p->Td,
-  pru_mem->p->Np);
+  (float)pru_mem->p->Tf/(float)pru_mem->p->fs_hz,
+  fix16_to_float(pru_mem->p->f0),
+  fix16_to_float(pru_mem->p->f1),
+  fix16_to_float(pru_mem->p->A));
   fflush(stdout);
 }
 
 int UiLoop(const pru_mem_t* pru_mem) {
   char input_char = 0;
-  int input_int = 0;
   float input_float = 0;
   char input_string[256] = {0};
   char log_file[256] = "datalog/";
@@ -84,26 +87,55 @@ int UiLoop(const pru_mem_t* pru_mem) {
 
         // ---- change time -------------------------------------------------
         case 'p' : {
-          printf("\t\tEnter new target frequency (Hz): ");
+          printf("\t\tEnter new total time: ");
           fflush(stdout);
 
           // Wait for input.
           UiPollForUserInput();
           scanf(" %f", &input_float);
-          pru_mem->p->Td = (uint32_t)((float)pru_mem->p->fs_hz/input_float);
+          pru_mem->p->Tf = (uint32_t)((float)pru_mem->p->fs_hz*input_float);
+          UiSetPruCtlBit(pru_mem,2);
           UiPrintMenu(pru_mem);
           break;
         }
 
-        // ---- change time -------------------------------------------------
-        case 'n' : {
-          printf("\t\tEnter new cycle count: ");
+        // ---- start freq -------------------------------------------------
+        case 'o' : {
+          printf("\t\tEnter new start frequency: ");
           fflush(stdout);
 
           // Wait for input.
           UiPollForUserInput();
-          scanf(" %u", &input_int);
-          pru_mem->p->Np = (uint32_t)input_int;
+          scanf(" %f", &input_float);
+          pru_mem->p->f0 = fix16_from_float(input_float);
+          UiSetPruCtlBit(pru_mem,2);
+          UiPrintMenu(pru_mem);
+          break;
+        }
+
+        // ---- end freq -------------------------------------------------
+        case 'i' : {
+          printf("\t\tEnter new end frequency: ");
+          fflush(stdout);
+
+          // Wait for input.
+          UiPollForUserInput();
+          scanf(" %f", &input_float);
+          pru_mem->p->f1 = fix16_from_float(input_float);
+          UiSetPruCtlBit(pru_mem,2);
+          UiPrintMenu(pru_mem);
+          break;
+        }
+
+        // ---- amplitude -------------------------------------------------
+        case 'u' : {
+          printf("\t\tEnter new amplitude: ");
+          fflush(stdout);
+
+          // Wait for input.
+          UiPollForUserInput();
+          scanf(" %f", &input_float);
+          pru_mem->p->A = fix16_from_float(input_float);
           UiPrintMenu(pru_mem);
           break;
         }
