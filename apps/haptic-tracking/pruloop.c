@@ -25,14 +25,21 @@
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 
-const uint32_t Td_default = 5000;
-const uint32_t Np_default = 1;
-uint32_t flag, t0, t;
+
+uint32_t flag = 0;
+uint32_t t0 = 0;
+uint32_t t = 0;
+uint32_t itarg = 0;
 
 sync_t* sync;
 motor_t* motor;
 encoder_t* encoder;
 hapitic_t* haptic;
+
+const uint32_t Td_default = 5000;
+const uint32_t Np_default = 10;
+const fix16_t f1_default = fix16_one;       // 2 Hz
+const fix16_t A_default = 0x8000;         // 0.5 A
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -72,7 +79,13 @@ void Pru0Cleanup(void) {
 void Pru1Init(pru_mem_t* mem) {
   mem->p->Td = Td_default;
   mem->p->Np = Np_default;
+
+  mem->p->Jvirtual = 0;
   mem->p->bvirtual = 0;
+  mem->p->kvirtual = 0;
+
+
+
   flag = 0;
   sync = SyncInitChan(5);
   SyncOutLow(sync);
@@ -88,7 +101,6 @@ void Pru1Init(pru_mem_t* mem) {
                          0x13880000   // bias (5000)
                          );
   encoder = EncoderInit(0x1);
-//  EncoderTare(encoder);
   haptic = HapticInit(motor,encoder,
                       FiltIirInit(1, k_lp_1_5Hz_b, k_lp_1_5Hz_a),
                       FiltIirInit(1, k_lp_1_5Hz_b, k_lp_1_5Hz_a),
@@ -104,8 +116,10 @@ void Pru1UpdateState(const pru_count_t* c,
 
   EncoderUpdate(encoder);
   MaxonUpdate(motor);
-  HapticUpdate(haptic, 0, p_->bvirtual, 0, 0, 0);
+  //HapticUpdate(haptic, p_->Jvirtual, p_->bvirtual, p_->kvirtual, 0, 0);
+  HapticPendulumUpdate(haptic, p_->Jvirtual, p_->bvirtual, p_->kvirtual);
 
+  // Tracking
   if (PruGetCtlBit(ctl_, 0)) {
     if (flag == 0) {
       t0 = c->frame;
@@ -113,20 +127,39 @@ void Pru1UpdateState(const pru_count_t* c,
       flag = 1;
     }
     t = (c->frame - t0)*p_->fs_hz / (p_->Td - p_->Td/p_->fs_hz);
-		s_->xd = fix16_ssub(fix16_smul(fix16_from_int(90),
-						 	fix16_sadd(fix16_sdiv(
-							fix16_from_int( (int32_t) l_->lut[t % 1000]),
-							fix16_from_int(1000)),fix16_one)),fix16_from_int(90));
 		if ((c->frame-t0) == (p_->Np*p_->Td)) {
       flag = 0;
       PruClearCtlBit(ctl_,0);
       SyncOutLow(sync);
     }
-	} else {
+		s_->xd = fix16_ssub(fix16_smul(fix16_from_int(90),
+						 	fix16_sadd(fix16_sdiv(
+							fix16_from_int( (int32_t) l_->lut[t % 1000]),
+							fix16_from_int(1000)),fix16_one)),fix16_from_int(90));
+	}
+  // Ballistic
+  else if (PruGetCtlBit(ctl_, 1)) {
+    if (flag == 0) {
+      SyncOutHigh(sync);
+      flag = 1;
+    }
+		if (itarg > p_->Np) {
+      flag = 0;
+      itarg = 0;
+      PruClearCtlBit(ctl_,1);
+      SyncOutLow(sync);
+    }
+    s_->xd = p_->targets[itarg];
+    if ((fix16_ssub(fix16_ssub(s_->xd,s_->x),fix16_one) < 0)
+    && (fix16_sadd(fix16_ssub(s_->xd,s_->x),fix16_one) > 0)){
+      itarg++;
+      s_->xd = p_->targets[itarg];
+    }
+  } else {
     s_->xd = 0;
   }
-  s_->vsync = (uint32_t)SyncOutState(sync);
 
+  s_->vsync = (uint32_t)SyncOutState(sync);
   if (c->frame > 1000)
     MaxonAction(motor);
 }

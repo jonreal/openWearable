@@ -43,3 +43,17 @@ void HapticUpdate(hapitic_t* h,
                     fix16_smul(Kvirt,fix16_ssub(angle,theta0)));
   MaxonSetCurrent(h->m,h->tau_active);
 }
+
+void HapticPendulumUpdate(hapitic_t* h,
+                  fix16_t a, fix16_t b, fix16_t c) {
+  fix16_t angle = EncoderGetAngle(h->enc);
+  h->dtheta = fix16_ssub(angle,FiltIir(angle,h->lp1));
+  h->ddtheta = fix16_ssub(h->dtheta,FiltIir(h->dtheta,h->lp2));
+
+
+  h->tau_active = fix16_sadd(fix16_sadd(
+                    fix16_smul(a,h->ddtheta),
+                    fix16_smul(b,fix16_sin(fix16_smul(0x394BB8,angle)))),
+                    fix16_smul(fix16_smul(c,fix16_smul(angle,angle)),angle));
+  MaxonSetCurrent(h->m,h->tau_active);
+}

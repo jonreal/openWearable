@@ -40,9 +40,9 @@ reflex_t* reflex;
 const fix16_t b_dcblck[2] = {fix16_one, -fix16_one};
 const fix16_t a_dcblck[2] = {fix16_one, 0xFFFF028F};  // -0.99
 
-const uint32_t refractory = 150;
-const fix16_t reflexthreshold = 0x2000; // 0.25
-const fix16_t reflexdelta = 0x20000;
+const uint32_t refractory = 250;
+const fix16_t reflexthreshold = 0xCCD; // 0.05
+const fix16_t reflexdelta = 0x80000;
 
 // ---------------------------------------------------------------------------
 // PRU0

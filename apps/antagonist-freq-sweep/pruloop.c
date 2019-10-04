@@ -43,7 +43,7 @@ fix16_t k = 0;
 const uint32_t Tf_default = 240000;        // 240 s
 const fix16_t f0_default = 0x28F;         // 0.01 Hz
 const fix16_t f1_default = fix16_one;       // 2 Hz
-const fix16_t A_default = 0x8000;         // 0.75 A
+const fix16_t A_default = 0x8000;         // 0.5 A
 const fix16_t p0_default = 0x140000;      // 20 psi
 const uint32_t refractory = 150;
 
