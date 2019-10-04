@@ -6,3 +6,4 @@ build/
 tags
 types_c.taghl
 types_matlab.taghl
+*.qmake*
