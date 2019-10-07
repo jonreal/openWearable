@@ -9,8 +9,9 @@ extern volatile sig_atomic_t input_ready;
 void UiPrintMenu(const pru_mem_t* pru_mem) {
   printf(
   "\n\n---------------------------------------------------------------------\n"
-  " \t Jv = %3.2f,\t Bv = %3.2f,\t Kv = %3.7f\n\n"
-  " \t fd = %3.2f,\t Np = %i\n\n"
+  " \t Jv = %3.2f,\t Bv = %3.2f,\t Kv = %3.7f\n"
+  " \t fd = %3.2f,\t Np = %i\n"
+  " \t P0 = %3.2f,\t dP = %3.2f,\t threshold = %3.5f\n\n"
   "Menu: t - start tracking experiment\n"
   "      r - start ballistic experiment\n"
   "      p - change target frequency\n"
@@ -18,13 +19,19 @@ void UiPrintMenu(const pru_mem_t* pru_mem) {
   "      b - change damping\n"
   "      k - change stiffnes\n"
   "      j - change inertia\n"
+  "      h - change P0\n"
+  "      g - change dP\n"
+  "      f - change threshold\n"
   "      e - exit\n"
   "-----------------------------------------------------------------------\n",
   fix16_to_float(pru_mem->p->Jvirtual),
   fix16_to_float(pru_mem->p->bvirtual),
   fix16_to_float(pru_mem->p->kvirtual),
   (float)pru_mem->p->fs_hz/(float)pru_mem->p->Td,
-  pru_mem->p->Np);
+  pru_mem->p->Np,
+  fix16_to_float(pru_mem->p->P0),
+  fix16_to_float(pru_mem->p->dP),
+  fix16_to_float(pru_mem->p->threshold));
   fflush(stdout);
 }
 
@@ -197,6 +204,46 @@ int UiLoop(const pru_mem_t* pru_mem) {
           UiPollForUserInput();
           scanf(" %f", &input_float);
           pru_mem->p->Jvirtual = fix16_from_float(input_float);
+          UiPrintMenu(pru_mem);
+          break;
+        }
+
+        // ---- change P0 -------------------------------------------------
+        case 'h' : {
+          printf("\t\tEnter new P0: ");
+          fflush(stdout);
+
+          // Wait for input.
+          UiPollForUserInput();
+          scanf(" %f", &input_float);
+          pru_mem->p->P0 = fix16_from_float(input_float);
+          UiSetPruCtlBit(pru_mem,2);
+          UiPrintMenu(pru_mem);
+          break;
+        }
+
+        // ---- change dP -------------------------------------------------
+        case 'g' : {
+          printf("\t\tEnter new dP: ");
+          fflush(stdout);
+
+          // Wait for input.
+          UiPollForUserInput();
+          scanf(" %f", &input_float);
+          pru_mem->p->dP = fix16_from_float(input_float);
+          UiPrintMenu(pru_mem);
+          break;
+        }
+
+        // ---- change threshold -------------------------------------------------
+        case 'f' : {
+          printf("\t\tEnter threshold: ");
+          fflush(stdout);
+
+          // Wait for input.
+          UiPollForUserInput();
+          scanf(" %f", &input_float);
+          pru_mem->p->threshold = fix16_from_float(input_float);
           UiPrintMenu(pru_mem);
           break;
         }

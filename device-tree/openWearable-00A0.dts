@@ -27,6 +27,8 @@
 
     /**** pru0 GPIO pins ****/
     "P9.27",  /* pr1_pru0_pru_[r30_5 | r31_5] ---- DEBUG OUT */
+    "P9.41",  /* pr1_pru0_pru_[r30_6 | r31_6] ---- motor | general use */
+    "P9.25",  /* pr1_pru0_pru_[r30_7 | r31_7] ---- sync | general use */
 
     /**** CPU GPIO pins ****/
     "P9.13", /* gpio0[31] ---- DEBUG OUT */
@@ -88,6 +90,9 @@
           0x0A0 0x05  /* P8.45 - pr1_pru1_pru_r30_0,  MODE5 | OUTPUT | PD */
           0x0A4 0x05  /* P8.46 - pr1_pru1_pru_r30_1,  MODE5 | OUTPUT | PD */
           0x1A4 0x05  /* P9.27 - pr1_pru0_pru_r30_5,  MODE5 | OUTPUT | PD */
+          0x1A8 0x05  /* P9.41 - pr1_pru0_pru_r30_6,  MODE5 | OUTPUT | PD */
+          0x1B5 0x20  /* alterative mode for p9.41 -- set as input */
+          0x1AC 0x05  /* P9.25 - pr1_pru0_pru_r30_7,  MODE5 | OUTPUT | PD */
           0x074 0x07  /* P9.13 - gpio0[31],           MODE7 | OUTPUT | PD */
         >;
       };

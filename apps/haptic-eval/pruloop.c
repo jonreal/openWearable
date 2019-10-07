@@ -20,27 +20,48 @@
 #include "sync.h"
 #include "maxon.h"
 #include "haptic.h"
+#include "pam.h"
+#include "reflex.h"
 #include "filtcoeff.h"
 
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 
 
-uint32_t flag = 0;
-uint32_t t0 = 0;
-uint32_t t = 0;
-uint32_t itarg = 0;
-uint32_t debounce = 0;
-
+// Haptic pru0
 sync_t* sync;
 motor_t* motor;
 encoder_t* encoder;
 hapitic_t* haptic;
 
+uint32_t flag = 0;
+uint32_t t0 = 0;
+uint32_t t = 0;
+uint32_t itarg = 0;
+uint32_t debounce = 0;
+fix16_t theta0 = 0;
+
 const uint32_t Td_default = 5000;
 const uint32_t Np_default = 10;
 const fix16_t f1_default = fix16_one;       // 2 Hz
 const fix16_t A_default = 0x8000;         // 0.5 A
+
+// PAMs pru1
+i2c_t* i2c1;
+i2cmux_t* mux;
+reservoir_t* reservoir;
+pam_t* pam1;
+pam_t* pam2;
+reflex_t* reflex;
+
+// DC blocking filter
+const fix16_t b_dcblck[2] = {fix16_one, -fix16_one};
+const fix16_t a_dcblck[2] = {fix16_one, 0xFFFF028F};  // -0.99
+
+const uint32_t refractory = 150;
+const fix16_t reflexthreshold = 0x4000; // 0.2
+const fix16_t reflexdelta = 0x80000;
+const fix16_t P0 = 0x1E0000; // 30 psi
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -49,35 +70,6 @@ const fix16_t A_default = 0x8000;         // 0.5 A
 // ---------------------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem) {
 
-
-}
-
-void Pru0UpdateState(const pru_count_t* c,
-                     const param_mem_t* p_,
-                     const lut_mem_t* l_,
-                     state_t* s_,
-                     pru_ctl_t* ctl_) {
-
-
-}
-
-void Pru0UpdateControl(const pru_count_t* c,
-                       const param_mem_t* p_,
-                       const lut_mem_t* l_,
-                       state_t* s_,
-                       pru_ctl_t* ctl_){
-
-}
-
-void Pru0Cleanup(void) {
-}
-
-// ---------------------------------------------------------------------------
-// PRU1
-//
-// Edit user defined functions below
-// ---------------------------------------------------------------------------
-void Pru1Init(pru_mem_t* mem) {
   mem->p->Td = Td_default;
   mem->p->Np = Np_default;
 
@@ -85,12 +77,11 @@ void Pru1Init(pru_mem_t* mem) {
   mem->p->bvirtual = 0;
   mem->p->kvirtual = 0;
 
-
-
   flag = 0;
-  sync = SyncInitChan(5);
+  sync = SyncInitChan(7); // pru0.7
   SyncOutLow(sync);
-  motor = MaxonMotorInit(4,           // enable pin
+  encoder = EncoderInit(0x1);
+  motor = MaxonMotorInit(6,           // enable pin pru0.6
                          0,           // adc cur ch
                          1,           // adc vel ch
                          0x240000,    // gear ratio (31/1)
@@ -101,27 +92,31 @@ void Pru1Init(pru_mem_t* mem) {
                          0x4E20000,   // slope (10000/8)
                          0x13880000   // bias (5000)
                          );
-  encoder = EncoderInit(0x1);
   haptic = HapticInit(motor,encoder,
                       FiltIirInit(1, k_lp_1_5Hz_b, k_lp_1_5Hz_a),
                       FiltIirInit(1, k_lp_1_5Hz_b, k_lp_1_5Hz_a),
                       0x1F6A7A // 10pi (5 Hz)
                       );
+
 }
 
-void Pru1UpdateState(const pru_count_t* c,
+void Pru0UpdateState(const pru_count_t* c,
                      const param_mem_t* p_,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
 
-  fix16_t theta0 = 0;
-
   EncoderUpdate(encoder);
   MaxonUpdate(motor);
   HapticUpdate(haptic, p_->Jvirtual, p_->bvirtual, p_->kvirtual, theta0, 0);
-  //HapticPendulumUpdate(haptic, p_->Jvirtual, p_->bvirtual, p_->kvirtual);
 
+}
+
+void Pru0UpdateControl(const pru_count_t* c,
+                       const param_mem_t* p_,
+                       const lut_mem_t* l_,
+                       state_t* s_,
+                       pru_ctl_t* ctl_){
   // Tracking
   if (PruGetCtlBit(ctl_, 0)) {
     if (flag == 0) {
@@ -165,19 +160,12 @@ void Pru1UpdateState(const pru_count_t* c,
     theta0 = s_->xd;
   } else {
     s_->xd = 0;
-    theta0 = s_->xd;
+    theta0 = 0;
   }
 
   s_->vsync = (uint32_t)SyncOutState(sync);
   if (c->frame > 1000)
     MaxonAction(motor);
-}
-
-void Pru1UpdateControl(const pru_count_t* c,
-                       const param_mem_t* p_,
-                       const lut_mem_t* l_,
-                       state_t* s_,
-                       pru_ctl_t* ctl_) {
 
   s_->x = EncoderGetAngle(encoder);
   s_->motor = MaxonGetState(motor);
@@ -185,7 +173,77 @@ void Pru1UpdateControl(const pru_count_t* c,
   s_->tau_active = haptic->tau_active;
 }
 
-void Pru1Cleanup(void) {
+void Pru0Cleanup(void) {
   MaxonMotorFree(motor);
+}
+
+// ---------------------------------------------------------------------------
+// PRU1
+//
+// Edit user defined functions below
+// ---------------------------------------------------------------------------
+void Pru1Init(pru_mem_t* mem) {
+
+  mem->p->P0 = P0;
+  mem->p->threshold = reflexthreshold;
+  mem->p->dP = reflexdelta;
+
+
+  i2c1 = I2cInit(1);
+  mux = MuxI2cInit(i2c1,0x70,PCA9548);
+  reservoir = PamReservoirInit(PressureSensorInit(mux,0,0x28));
+
+  pam1 = PamInitMuscle(PressureSensorInit(mux,1,0x28), 0, 1, refractory,
+                        FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
+  PamSetPd(pam1,mem->p->P0);
+
+  pam2 = PamInitMuscle(PressureSensorInit(mux,2,0x28), 2, 3, refractory,
+                        FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
+  PamSetPd(pam2,mem->p->P0);
+
+  reflex = ReflexInit(pam1,pam2,fix16_from_int(15), fix16_from_int(95),
+                      FiltIirInit(1, b_dcblck, a_dcblck));
+
+
+}
+
+void Pru1UpdateState(const pru_count_t* c,
+                     const param_mem_t* p_,
+                     const lut_mem_t* l_,
+                     state_t* s_,
+                     pru_ctl_t* ctl_) {
+
+  PamReservoirUpdate(reservoir);
+  PamUpdate(pam1);
+  PamUpdate(pam2);
+  ReflexUpdate(reflex, p_->threshold, p_->dP);
+
+  if (PruGetCtlBit(ctl_,2)) {
+    PamSetPd(pam1,p_->P0);
+    PamSetPd(pam2,p_->P0);
+    PruClearCtlBit(ctl_,2);
+  }
+
+}
+
+void Pru1UpdateControl(const pru_count_t* c,
+                       const param_mem_t* p_,
+                       const lut_mem_t* l_,
+                       state_t* s_,
+                       pru_ctl_t* ctl_) {
+  PamActionSimple(pam1);
+  PamActionSimple(pam2);
+
+  // Store data
+  s_->p_res = PamReservoirGetPressure(reservoir);
+  s_->pam1_state = PamGetState(pam1);
+  s_->pam2_state = PamGetState(pam2);
+  s_->triggersignal = reflex->triggersignal;
+}
+
+void Pru1Cleanup(void) {
+  PamReservoirFree(reservoir);
+  PamMuscleFree(pam1);
+  PamMuscleFree(pam2);
 }
 
