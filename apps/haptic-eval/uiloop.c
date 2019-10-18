@@ -5,6 +5,7 @@
 #include <string.h>
 
 extern volatile sig_atomic_t input_ready;
+extern volatile sig_atomic_t sigexit;
 
 void UiPrintMenu(const pru_mem_t* pru_mem) {
   printf(
@@ -47,6 +48,12 @@ int UiLoop(const pru_mem_t* pru_mem) {
     // Clear inputs
     input_char = ' ';
     input_string[0] = '\0';
+
+    if (sigexit) {
+      UiStopAndSaveLog();
+      printf("done.\n");
+      return 1;
+    }
 
     // Wait for user input.
     if (input_ready) {
@@ -109,12 +116,25 @@ int UiLoop(const pru_mem_t* pru_mem) {
           printf("\t\tSaving data to %s\n",log_file);
           UiNewLogFile(log_file);
 
-          for (int i=0; i<20; i++) {
+          pru_mem->p->targets[0] = fix16_sdiv(
+                                fix16_from_int((rand() % 1600) - 800),
+                                fix16_from_int(10));
+
+         // printf("%i = %f\n", 0, fix16_to_float(pru_mem->p->targets[0]));
+          for (int i=1; i<20; i++) {
             // random target between -170 and 170
-            pru_mem->p->targets[i] = fix16_sdiv(
-                                  fix16_from_int((rand() % 1600) - 800),
-                                  fix16_from_int(10));
-           // printf("%f\n", fix16_to_float(pru_mem->p->targets[i]));
+            while (1)  {
+              pru_mem->p->targets[i] = fix16_sdiv(
+                                    fix16_from_int((rand() % 1600) - 800),
+                                    fix16_from_int(10));
+              fix16_t diff =
+                fix16_ssub(pru_mem->p->targets[i-1], pru_mem->p->targets[i]);
+              if ((fix16_ssub(diff,fix16_from_int(20)) > 0)
+                || (fix16_sadd(diff,fix16_from_int(20)) < 0)) {
+                  break;
+              }
+            }
+           // printf("%i = %f\n", i, fix16_to_float(pru_mem->p->targets[i]));
           }
 
           // Wait for user input to start saving data

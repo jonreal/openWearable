@@ -4,6 +4,7 @@
 #include "fix16.h"
 #include "maxon.h"
 #include "pam.h"
+#include "emg.h"
 
 // --- cpudata struct
 typedef struct {
@@ -24,6 +25,8 @@ typedef struct {
   volatile pam_state_t pam1_state;
   volatile pam_state_t pam2_state;
   volatile fix16_t triggersignal;
+  volatile emg_state_t emg1_state;
+  volatile emg_state_t emg2_state;
  } state_t;
 
 // --- parameters

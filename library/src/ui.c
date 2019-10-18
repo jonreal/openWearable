@@ -28,9 +28,14 @@
 #include "format.h"
 #include "roshelper.h"
 
-// Global
 volatile sig_atomic_t input_ready;
+volatile sig_atomic_t sigexit;
 ui_data_t uidata;
+
+static void sigintHandler(int sig) {
+  sigexit = 1;
+  signal(sig, SIG_IGN);
+}
 
 // ---------------------------------------------------------------------------
 static void UiInputCallback(int sig) {
@@ -79,6 +84,8 @@ ui_flags_t UiInitFlags(void) {
 }
 
 int UiInit(pru_mem_t* pru_mem, ui_flags_t flags) {
+  sigexit = 0;
+  signal(SIGINT, sigintHandler);
 
   uidata.flag = flags;
   uidata.log = LogInit(pru_mem);
@@ -163,7 +170,7 @@ void UiNewLogFile(char* log_file) {
 void UiPollForUserInput(void) {
   input_ready = 0;
   while (1)
-    if (input_ready)
+    if (input_ready || sigexit)
       break;
 }
 
@@ -190,7 +197,9 @@ void UiClearPruCtlBit(const pru_mem_t* pru_mem, unsigned char n) {
 
 void UiPollPruCtlBit(const pru_mem_t* pru_mem, unsigned char n,
                     unsigned char value) {
-  while (1)
+  while (1) {
+    if (sigexit)
+      break;
     if (value == 1) {
       if ((pru_mem->s->pru_ctl.bit.utility & (1 << n)) == (1 << n))
         break;
@@ -198,6 +207,7 @@ void UiPollPruCtlBit(const pru_mem_t* pru_mem, unsigned char n,
       if (!((pru_mem->s->pru_ctl.bit.utility & (1 << n)) == (1 << n)))
         break;
     }
+  }
 }
 
 int UiLogging(void) {
