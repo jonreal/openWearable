@@ -1,4 +1,4 @@
-/* Copyright 2017 Jonathan Realmuto
+/* Copyright 2017-2019 Jonathan Realmuto
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -13,15 +13,18 @@
  limitations under the License.
 =============================================================================*/
 
-#ifndef _SPIDRIVER_H_
-#define _SPIDRIVER_H_
 
-// Global ---------------------------------------------------------------------
-extern volatile uint32_t *debug_buff;
+#include "cpuloop.h"
+#include <stdio.h>
 
-// Prototypes -----------------------------------------------------------------
-void spiInit(void);
-void spiCleanUp(void);
-uint32_t spiXfer(uint8_t channel, uint32_t tx);
+void CpuInit(cpudata_t* cpudata) {
+  cpudata->varcpu = 0;
+}
 
-#endif
+void CpuLoop(cpudata_t* cpudata)  {
+  (cpudata->varcpu)++;
+}
+
+void CpuCleanup(void) {
+  
+}

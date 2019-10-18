@@ -16,18 +16,32 @@
 
 #include "emg.h"
 #include <stdlib.h>
-#include "adcdriver.h"
+#include "spidriver.h"
+
+extern volatile uint32_t *debug_buff;
+
+// using mcp6008 over spi for adc
 
 emg_t* EmgInitSensor(uint8_t chan) {
-  emg_t* sens = malloc(sizeof(emg_t));
-  sens->adc_ch = chan;
-  return sens;
+  emg_t* emg = malloc(sizeof(emg_t));
+  emg->adc_ch = chan;
+  emg->s.mV = 0;
+  return emg;
 }
 
-void EmgCleanup(emg_t* sens) {
-  free(sens);
+void EmgCleanup(emg_t* emg) {
+  free(emg);
 }
 
-fix16_t EmgSample(const emg_t* sens) {
-  return AdcSampleChmV(sens->adc_ch);
+void EmgUpdate(emg_t* emg) {
+  uint32_t tx = (0x3 << 19) | (emg->adc_ch << 16);
+  uint32_t rx = spiXfer(0x0, tx);
+
+  // bits*vref/1024 - vref/2
+  emg->s.mV = fix16_ssub(fix16_smul(
+      fix16_from_int((int)(rx & 0x3FF)),0x33900), 0x6720000);
+}
+
+fix16_t EmgGetmV(emg_t* emg) {
+  return emg->s.mV;
 }

@@ -4,15 +4,17 @@
 #include "fix16.h"
 
 typedef struct {
-  uint8_t adc_ch; 
+  fix16_t mV;
+} emg_state_t;
+
+typedef struct {
+  uint8_t adc_ch;
+  volatile emg_state_t s;
 } emg_t;
 
-//---- Global ----
-extern volatile uint32_t *debug_buff;
-
-//---- Prototypes ----
 emg_t* EmgInitSensor(uint8_t chan);
-void EmgCleanup(emg_t* sens);
-fix16_t EmgSample(const emg_t* sens);
+void EmgCleanup(emg_t* emg);
+void EmgUpdate(emg_t* emg);
+fix16_t EmgGetmV(emg_t* emg);
 
 #endif

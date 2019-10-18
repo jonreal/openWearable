@@ -30,7 +30,7 @@
 
 volatile sig_atomic_t doneFlag;
 
-void sigintHandler(int sig) {
+static void sigintHandler(int sig) {
   doneFlag = 1;
   signal(sig, SIG_IGN);
 }
@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
     PruRestart();
   } else {
     PruEnable(1, &pru_mem.s->pru_ctl);
-    if (UiLoop(&pru_mem) == 1) {
+    if ((UiLoop(&pru_mem) == 1) | (doneFlag)){
       PruEnable(0, &pru_mem.s->pru_ctl);
       PruRestart();
     }

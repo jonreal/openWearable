@@ -24,6 +24,9 @@
 #include "reflex.h"
 #include "filtcoeff.h"
 
+#include "spidriver.h"
+
+
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 
@@ -41,7 +44,7 @@ uint32_t itarg = 0;
 uint32_t debounce = 0;
 fix16_t theta0 = 0;
 
-const uint32_t Td_default = 5000;
+const uint32_t Td_default = 10000;
 const uint32_t Np_default = 10;
 const fix16_t f1_default = fix16_one;       // 2 Hz
 const fix16_t A_default = 0x8000;         // 0.5 A
@@ -53,15 +56,19 @@ reservoir_t* reservoir;
 pam_t* pam1;
 pam_t* pam2;
 reflex_t* reflex;
+emg_t* emg1;
+emg_t* emg2;
+
 
 // DC blocking filter
 const fix16_t b_dcblck[2] = {fix16_one, -fix16_one};
 const fix16_t a_dcblck[2] = {fix16_one, 0xFFFF028F};  // -0.99
 
-const uint32_t refractory = 150;
-const fix16_t reflexthreshold = 0x4000; // 0.2
+const uint32_t refractory = 250;
+const fix16_t reflexthreshold = 0x199A; // 0.1
 const fix16_t reflexdelta = 0x80000;
 const fix16_t P0 = 0x1E0000; // 30 psi
+
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -98,18 +105,20 @@ void Pru0Init(pru_mem_t* mem) {
                       0x1F6A7A // 10pi (5 Hz)
                       );
 
+  emg1 = EmgInitSensor(0x0);
+  emg2 = EmgInitSensor(0x1);
 }
 
 void Pru0UpdateState(const pru_count_t* c,
                      const param_mem_t* p_,
                      const lut_mem_t* l_,
                      state_t* s_,
-                     pru_ctl_t* ctl_) {
-
+                     pru_ctl_t* ctl_){
   EncoderUpdate(encoder);
   MaxonUpdate(motor);
   HapticUpdate(haptic, p_->Jvirtual, p_->bvirtual, p_->kvirtual, theta0, 0);
-
+  EmgUpdate(emg1);
+  EmgUpdate(emg2);
 }
 
 void Pru0UpdateControl(const pru_count_t* c,
@@ -148,10 +157,10 @@ void Pru0UpdateControl(const pru_count_t* c,
       SyncOutLow(sync);
     }
     s_->xd = p_->targets[itarg];
-    if ((fix16_ssub(fix16_ssub(s_->xd,s_->x),0x20000) < 0)
-    && (fix16_sadd(fix16_ssub(s_->xd,s_->x),0x20000) > 0)){
+    if ((fix16_ssub(fix16_ssub(s_->xd,s_->x),0x40000) < 0)
+    && (fix16_sadd(fix16_ssub(s_->xd,s_->x),0x40000) > 0)){
       debounce++;
-      if (debounce > 500) {
+      if (debounce > 250) {
         itarg++;
         s_->xd = p_->targets[itarg];
         debounce = 0;
@@ -203,8 +212,6 @@ void Pru1Init(pru_mem_t* mem) {
 
   reflex = ReflexInit(pam1,pam2,fix16_from_int(15), fix16_from_int(95),
                       FiltIirInit(1, b_dcblck, a_dcblck));
-
-
 }
 
 void Pru1UpdateState(const pru_count_t* c,
