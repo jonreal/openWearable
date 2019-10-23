@@ -76,6 +76,7 @@ pam_t* PamInitMuscle(pressure_sensor_t* sensor,
   pam->s.pm = 0;
   pam->s.pd = 0;
   pam->filt = filter;
+  pam->pcnt = 0;
 
 
   // Will hang here if i2c mux/channel is off
@@ -119,25 +120,75 @@ void PamSetPd(pam_t* pam, fix16_t Pd) {
 }
 
 void PamActionSimple(pam_t* p) {
-  //const fix16_t pad =  0x10000;
-  const fix16_t pad = 0;
   switch (p->fsm) {
     case INFLATE : {
-      if (fix16_ssub(fix16_sadd(p->s.pd,pad),p->s.pm) < 0) {
+      if (fix16_ssub(p->s.pd,p->s.pm) < 0) {
         p->fsm = REFRACT;
+        p->pcnt = 0;
         PamSetU(p,0);
       } else {
-        PamSetU(p,1);
+          PamSetU(p,1);
       }
       break;
     }
     case DEFLATE : {
-      if (fix16_ssub(fix16_ssub(p->s.pd,pad),p->s.pm) > 0) {
+      if (fix16_ssub(p->s.pd,p->s.pm) > 0) {
         p->fsm = REFRACT;
+        p->pcnt = 0;
         PamSetU(p,0);
       } else {
         PamSetU(p,-1);
       }
+      break;
+    }
+    case REFRACT : {
+      if (p->cnt == p->T_refract) {
+        p->fsm = HOLD;
+        p->cnt = 0;
+      } else {
+        p->cnt++;
+      }
+      break;
+    }
+  }
+  PamUpdateControl(p);
+}
+
+void PamActionPulse(pam_t* p) {
+  static const uint32_t pulse_width = 5;
+  static const uint32_t pulse_period = 50;
+
+  switch (p->fsm) {
+    case INFLATE : {
+      if (fix16_ssub(p->s.pd,p->s.pm) < 0) {
+        p->fsm = REFRACT;
+        p->pcnt = 0;
+        PamSetU(p,0);
+      } else {
+        if ((p->pcnt%pulse_period) < pulse_width) {
+          PamSetU(p,1);
+        }
+        else {
+          PamSetU(p,0);
+        }
+      }
+      p->pcnt++;
+      break;
+    }
+    case DEFLATE : {
+      if (fix16_ssub(p->s.pd,p->s.pm) > 0) {
+        p->fsm = REFRACT;
+        p->pcnt = 0;
+        PamSetU(p,0);
+      } else {
+        if ((p->pcnt%pulse_period) < pulse_width) {
+          PamSetU(p,-1);
+        }
+        else {
+          PamSetU(p,0);
+        }
+      }
+      p->pcnt++;
       break;
     }
     case REFRACT : {

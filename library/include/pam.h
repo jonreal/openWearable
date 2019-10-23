@@ -33,7 +33,7 @@ typedef enum {
   HOLD = 0x0,
   REFRACT,
   INFLATE,
-  DEFLATE
+  DEFLATE,
 } pam_fsm_t;
 
 
@@ -42,6 +42,7 @@ typedef struct {
   uint8_t hp_pin;                   // high pressure pin
   uint8_t lp_pin;                   // low pressure pin
   volatile uint32_t cnt;
+  volatile uint32_t pcnt;
   uint32_t T_refract;
   volatile pam_fsm_t fsm;
   volatile pam_state_t s;
@@ -67,6 +68,7 @@ pam_t* PamInitMuscle(pressure_sensor_t* sens,
 void PamMuscleFree(pam_t* pam);
 void PamUpdate(pam_t* pam);
 void PamActionSimple(pam_t* p);
+void PamActionPulse(pam_t* p);
 pam_state_t PamGetState(const pam_t* p);
 void PamSetPd(pam_t* pam, fix16_t Pd);
 void PamSetU(pam_t* pam, int8_t u);

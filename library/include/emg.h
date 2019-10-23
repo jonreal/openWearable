@@ -4,7 +4,7 @@
 #include "fix16.h"
 
 typedef struct {
-  fix16_t mV;
+  fix16_t bits;
 } emg_state_t;
 
 typedef struct {
@@ -15,6 +15,6 @@ typedef struct {
 emg_t* EmgInitSensor(uint8_t chan);
 void EmgCleanup(emg_t* emg);
 void EmgUpdate(emg_t* emg);
-fix16_t EmgGetmV(emg_t* emg);
+fix16_t EmgGetBits(emg_t* emg);
 
 #endif

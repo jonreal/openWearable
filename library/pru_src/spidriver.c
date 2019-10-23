@@ -22,7 +22,7 @@
 void spiInit(void)
 {
 
-  uint16_t clkdiv_ch0 = 10;
+  uint16_t clkdiv_ch0 = 1000;
   uint16_t clkdiv_ch1 = 200;
 
   // CM_PER_SPI1_CLKCTRL: MODULEMODE = 0x2
@@ -67,7 +67,8 @@ void spiInit(void)
   //                  WL = 0x7 - word length of 8-bits
   //                  EPOL = 0x1 - CS low for active state
   //                  CLKD = 0x4 - divide by 16
-  HWREG(SOC_SPI_1_REGS + 0x12C) = (0x1 << 29) | (0x0 << 25) | (0x0 << 18) | (0x1 << 16)
+  HWREG(SOC_SPI_1_REGS + 0x12C) = (0x1 << 29) | (0x0 << 25) | (0x0 << 18)
+                                | (0x1 << 16)
                                 | (0x17 << 7) | (0x1 << 6)
                                 | ( (clkdiv_ch0 & 0xF) << 2) | (0x1);
 

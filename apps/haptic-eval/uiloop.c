@@ -15,6 +15,8 @@ void UiPrintMenu(const pru_mem_t* pru_mem) {
   " \t P0 = %3.2f,\t dP = %3.2f,\t threshold = %3.5f\n\n"
   "Menu: t - start tracking experiment\n"
   "      r - start ballistic experiment\n"
+  "      s - start log\n"
+  "      d - stop log\n"
   "      p - change target frequency\n"
   "      n - change number of cycles\n"
   "      b - change damping\n"
@@ -44,6 +46,7 @@ int UiLoop(const pru_mem_t* pru_mem) {
   char log_file[256] = "datalog/";
 
   UiPrintMenu(pru_mem);
+
   while (1) {
     // Clear inputs
     input_char = ' ';
@@ -67,6 +70,45 @@ int UiLoop(const pru_mem_t* pru_mem) {
           printf("done.\n");
           return 1;
         }
+
+        // ---- Start data collection -----------------------------------------
+        case 's' : {
+          printf("\t\tEnter trial name: ");
+          fflush(stdout);
+
+          // Wait for input.
+          UiPollForUserInput();
+          scanf(" %s", input_string);
+          strcat(log_file, input_string);
+          printf("\t\tSaving data to %s\n",log_file);
+          UiNewLogFile(log_file);
+
+          // Wait for user input to start saving data
+          printf("\t\tPress enter to start collection...\n");
+          fflush(stdout);
+          UiPollForUserInput();
+          scanf(" %c", &input_char);
+
+          // Data collection loop
+          UiStartLog();
+
+          UiPrintMenu(pru_mem);
+          break;
+        }
+
+        // ---- Stop data collection -----------------------------------------
+        case 'd' : {
+          if (!UiLogging())
+            printf("\t\t Not currently logging data!\n");
+          else
+            UiStopAndSaveLog();
+
+          log_file[0] = '\0';
+          strcat(log_file, "datalog/");
+          UiPrintMenu(pru_mem);
+          break;
+        }
+
 
         // ---- Collect trial -------------------------------------------------
         case 't' : {
