@@ -25,7 +25,7 @@ extern volatile uint32_t *debug_buff;
 emg_t* EmgInitSensor(uint8_t chan) {
   emg_t* emg = malloc(sizeof(emg_t));
   emg->adc_ch = chan;
-  emg->s.mV = 0;
+  emg->s.bits = 0;
   return emg;
 }
 
@@ -34,14 +34,16 @@ void EmgCleanup(emg_t* emg) {
 }
 
 void EmgUpdate(emg_t* emg) {
-  uint32_t tx = (0x3 << 19) | (emg->adc_ch << 16);
+  uint32_t tx = (0x3 << 22) | (emg->adc_ch << 19);
   uint32_t rx = spiXfer(0x0, tx);
 
-  // bits*vref/1024 - vref/2
-  emg->s.mV = fix16_ssub(fix16_smul(
-      fix16_from_int((int)(rx & 0x3FF)),0x33900), 0x6720000);
+ // remove channel bias (found emperically)
+ if (emg->adc_ch == 0)
+   emg->s.bits = fix16_from_int( ((int)(((rx & 0x1FFFF) >> 7) & 0x3FF)) - 505);
+ else
+   emg->s.bits = fix16_from_int( ((int)(((rx & 0x1FFFF) >> 7) & 0x3FF)) - 496);
 }
 
-fix16_t EmgGetmV(emg_t* emg) {
-  return emg->s.mV;
+fix16_t EmgGetBits(emg_t* emg) {
+  return emg->s.bits;
 }

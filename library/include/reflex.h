@@ -18,6 +18,7 @@
 
 
 #include "pam.h"
+#include "emg.h"
 
 typedef struct {
   volatile uint32_t flag;
@@ -31,9 +32,31 @@ typedef struct {
   pam_t* pam_2;
 } reflex_t;
 
+typedef struct {
+  volatile uint32_t flag;
+  volatile fix16_t triggersignal;
+  volatile fix16_t pm1_0;
+  volatile fix16_t pm2_0;
+  fix16_t p_min;
+  fix16_t p_max;
+  iir_filt_t* filt;
+  pam_t* pam_1;
+  pam_t* pam_2;
+  emg_t* emg_1;
+  emg_t* emg_2;
+} reflex_myo_t;
+
+
+
 reflex_t* ReflexInit(pam_t* pam_1, pam_t* pam_2,
                       fix16_t p_min, fix16_t p_max,
                       iir_filt_t* filt);
+reflex_myo_t* ReflexMyoInit(pam_t* pam_1, pam_t* pam_2,
+                            emg_t* emg_1, emg_t* emg_2,
+                            fix16_t p_min, fix16_t p_max,
+                            iir_filt_t* filt);
 void ReflexUpdate(reflex_t* reflex, fix16_t threshold, fix16_t delta);
+void ReflexMyoUpdate(reflex_myo_t* reflex, fix16_t emg1, fix16_t emg2,
+    fix16_t threshold, fix16_t delta);
 
 #endif

@@ -44,8 +44,8 @@ uint32_t itarg = 0;
 uint32_t debounce = 0;
 fix16_t theta0 = 0;
 
-const uint32_t Td_default = 10000;
-const uint32_t Np_default = 10;
+const uint32_t Td_default = 5000;
+const uint32_t Np_default = 15;
 const fix16_t f1_default = fix16_one;       // 2 Hz
 const fix16_t A_default = 0x8000;         // 0.5 A
 
@@ -55,20 +55,14 @@ i2cmux_t* mux;
 reservoir_t* reservoir;
 pam_t* pam1;
 pam_t* pam2;
-
-//reflex_t* reflex;
-reflex_myo_t* reflex;
-
+reflex_t* reflex;
 emg_t* emg1;
 emg_t* emg2;
 
 
 // DC blocking filter
-//const fix16_t b_dcblck[2] = {fix16_one, -fix16_one};
-//const fix16_t a_dcblck[2] = {fix16_one, 0xFFFF028F};  // -0.99
-
-const fix16_t b_dcblck[2] = {fix16_one, fix16_one};
-const fix16_t a_dcblck[2] = {fix16_one,  0xFFFF199A};  // -0.90
+const fix16_t b_dcblck[2] = {fix16_one, -fix16_one};
+const fix16_t a_dcblck[2] = {fix16_one, 0xFFFF028F};  // -0.99
 
 const uint32_t refractory = 100;
 const fix16_t reflexthreshold = 0x3333; // 0.1
@@ -111,8 +105,8 @@ void Pru0Init(pru_mem_t* mem) {
                       0x1F6A7A // 10pi (5 Hz)
                       );
 
-  emg1 = EmgInitSensor(0x0);
-  emg2 = EmgInitSensor(0x1);
+  //emg1 = EmgInitSensor(0x0);
+  //emg2 = EmgInitSensor(0x1);
 }
 
 void Pru0UpdateState(const pru_count_t* c,
@@ -120,17 +114,11 @@ void Pru0UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_){
+  //EmgUpdate(emg1);
   EncoderUpdate(encoder);
   MaxonUpdate(motor);
   HapticUpdate(haptic, p_->Jvirtual, p_->bvirtual, p_->kvirtual, theta0, 0);
-  // must down sample adc
-  if (c->frame % 2) {
-    EmgUpdate(emg1);
-  } else {
-    EmgUpdate(emg2);
-  }
-  s_->emg1_state.bits = EmgGetBits(emg1);
-  s_->emg2_state.bits = EmgGetBits(emg2);
+  //EmgUpdate(emg2);
 }
 
 void Pru0UpdateControl(const pru_count_t* c,
@@ -188,7 +176,8 @@ void Pru0UpdateControl(const pru_count_t* c,
   if (c->frame > 1000)
     MaxonAction(motor);
 
-
+  s_->emg1_state.mV = EmgGetmV(emg1);
+  s_->emg2_state.mV = EmgGetmV(emg2);
   s_->x = EncoderGetAngle(encoder);
   s_->motor = MaxonGetState(motor);
   s_->dx = haptic->dtheta;
@@ -223,11 +212,7 @@ void Pru1Init(pru_mem_t* mem) {
                         FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
   PamSetPd(pam2,mem->p->P0);
 
-//  reflex = ReflexInit(pam1,pam2,fix16_from_int(15), fix16_from_int(95),
-//                      FiltIirInit(1, b_dcblck, a_dcblck));
-
-  reflex = ReflexMyoInit(pam1,pam2,emg1,emg2,
-                      fix16_from_int(15), fix16_from_int(95),
+  reflex = ReflexInit(pam1,pam2,fix16_from_int(15), fix16_from_int(95),
                       FiltIirInit(1, b_dcblck, a_dcblck));
 }
 
@@ -240,11 +225,7 @@ void Pru1UpdateState(const pru_count_t* c,
   PamReservoirUpdate(reservoir);
   PamUpdate(pam1);
   PamUpdate(pam2);
- // ReflexUpdate(reflex, p_->threshold, p_->dP);
-  ReflexMyoUpdate(reflex,
-                  s_->emg1_state.bits,
-                  s_->emg2_state.bits,
-                  0x320000, p_->dP);
+  ReflexUpdate(reflex, p_->threshold, p_->dP);
 
   if (PruGetCtlBit(ctl_,2)) {
     PamSetPd(pam1,p_->P0);
@@ -266,7 +247,10 @@ void Pru1UpdateControl(const pru_count_t* c,
   s_->p_res = PamReservoirGetPressure(reservoir);
   s_->pam1_state = PamGetState(pam1);
   s_->pam2_state = PamGetState(pam2);
-  s_->triggersignal = reflex->triggersignal;
+ // s_->triggersignal = reflex->triggersignal;
+ //
+ //
+ s_->triggersignal = fix16_from_int(pam1->pcnt);
 }
 
 void Pru1Cleanup(void) {
