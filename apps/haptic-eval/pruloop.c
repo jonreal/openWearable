@@ -42,10 +42,10 @@ uint32_t t0 = 0;
 uint32_t t = 0;
 uint32_t itarg = 0;
 uint32_t debounce = 0;
-fix16_t theta0 = 0;
+fix16_t theta0 = 0xB40000;
 
 const uint32_t Td_default = 10000;
-const uint32_t Np_default = 10;
+const uint32_t Np_default = 1;
 const fix16_t f1_default = fix16_one;       // 2 Hz
 const fix16_t A_default = 0x8000;         // 0.5 A
 
@@ -56,8 +56,8 @@ reservoir_t* reservoir;
 pam_t* pam1;
 pam_t* pam2;
 
-//reflex_t* reflex;
-reflex_myo_t* reflex;
+reflex_t* reflex;
+//reflex_myo_t* reflex;
 
 emg_t* emg1;
 emg_t* emg2;
@@ -67,13 +67,16 @@ emg_t* emg2;
 //const fix16_t b_dcblck[2] = {fix16_one, -fix16_one};
 //const fix16_t a_dcblck[2] = {fix16_one, 0xFFFF028F};  // -0.99
 
-const fix16_t b_dcblck[2] = {fix16_one, fix16_one};
-const fix16_t a_dcblck[2] = {fix16_one,  0xFFFF199A};  // -0.90
+const fix16_t b_dcblck[2] = {fix16_one, -fix16_one};
+const fix16_t a_dcblck[2] = {fix16_one, 0xFFFF3333};  // -0.80
 
-const uint32_t refractory = 100;
-const fix16_t reflexthreshold = 0x3333; // 0.1
-const fix16_t reflexdelta = 0x20000;
-const fix16_t P0 = 0x1E0000; // 30 psi
+const uint32_t refractory = 150;
+const fix16_t reflexthreshold = 0x666; // 0.1
+const fix16_t reflexdelta = 0x40000;
+const fix16_t P0 = 0x3C0000; // 60 psi
+
+
+
 
 
 // ---------------------------------------------------------------------------
@@ -123,6 +126,7 @@ void Pru0UpdateState(const pru_count_t* c,
   EncoderUpdate(encoder);
   MaxonUpdate(motor);
   HapticUpdate(haptic, p_->Jvirtual, p_->bvirtual, p_->kvirtual, theta0, 0);
+  HapticPendulumUpdate(haptic, p_->Jvirtual, p_->bvirtual, p_->kvirtual, theta0, 0);
   // must down sample adc
   if (c->frame % 2) {
     EmgUpdate(emg1);
@@ -223,12 +227,12 @@ void Pru1Init(pru_mem_t* mem) {
                         FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
   PamSetPd(pam2,mem->p->P0);
 
-//  reflex = ReflexInit(pam1,pam2,fix16_from_int(15), fix16_from_int(95),
-//                      FiltIirInit(1, b_dcblck, a_dcblck));
-
-  reflex = ReflexMyoInit(pam1,pam2,emg1,emg2,
-                      fix16_from_int(15), fix16_from_int(95),
+  reflex = ReflexInit(pam1,pam2,fix16_from_int(15), fix16_from_int(95),
                       FiltIirInit(1, b_dcblck, a_dcblck));
+
+//  reflex = ReflexMyoInit(pam1,pam2,emg1,emg2,
+//                      fix16_from_int(15), fix16_from_int(95),
+//                      FiltIirInit(1, b_dcblck, a_dcblck));
 }
 
 void Pru1UpdateState(const pru_count_t* c,
@@ -240,11 +244,11 @@ void Pru1UpdateState(const pru_count_t* c,
   PamReservoirUpdate(reservoir);
   PamUpdate(pam1);
   PamUpdate(pam2);
- // ReflexUpdate(reflex, p_->threshold, p_->dP);
-  ReflexMyoUpdate(reflex,
-                  s_->emg1_state.bits,
-                  s_->emg2_state.bits,
-                  0x320000, p_->dP);
+  ReflexUpdate(reflex, p_->threshold, p_->dP);
+  //ReflexMyoUpdate(reflex,
+  //                s_->emg1_state.bits,
+  //                s_->emg2_state.bits,
+  //                0x320000, p_->dP);
 
   if (PruGetCtlBit(ctl_,2)) {
     PamSetPd(pam1,p_->P0);

@@ -41,6 +41,8 @@ uint32_t flag = 0;
 uint32_t t0 = 0;
 uint32_t t = 0;
 uint32_t itarg = 0;
+uint32_t targtimeout = 5000;
+uint32_t timeoutcnt = 0;
 uint32_t debounce = 0;
 fix16_t theta0 = 0;
 
@@ -62,12 +64,12 @@ emg_t* emg2;
 
 // DC blocking filter
 const fix16_t b_dcblck[2] = {fix16_one, -fix16_one};
-const fix16_t a_dcblck[2] = {fix16_one, 0xFFFF028F};  // -0.99
+const fix16_t a_dcblck[2] = {fix16_one, 0xFFFF3333};  // -0.80
 
-const uint32_t refractory = 100;
-const fix16_t reflexthreshold = 0x3333; // 0.1
-const fix16_t reflexdelta = 0x20000;
-const fix16_t P0 = 0x1E0000; // 30 psi
+const uint32_t refractory = 150;
+const fix16_t reflexthreshold = 0x666; // 0.1
+const fix16_t reflexdelta = 0x40000;
+const fix16_t P0 = 0; // 60 psi
 
 
 // ---------------------------------------------------------------------------
@@ -83,6 +85,7 @@ void Pru0Init(pru_mem_t* mem) {
   mem->p->Jvirtual = 0;
   mem->p->bvirtual = 0;
   mem->p->kvirtual = 0;
+  mem->p->G = 0;
 
   flag = 0;
   sync = SyncInitChan(7); // pru0.7
@@ -105,8 +108,8 @@ void Pru0Init(pru_mem_t* mem) {
                       0x1F6A7A // 10pi (5 Hz)
                       );
 
-  //emg1 = EmgInitSensor(0x0);
-  //emg2 = EmgInitSensor(0x1);
+  emg1 = EmgInitSensor(0x0);
+  emg2 = EmgInitSensor(0x1);
 }
 
 void Pru0UpdateState(const pru_count_t* c,
@@ -114,11 +117,20 @@ void Pru0UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_){
-  //EmgUpdate(emg1);
   EncoderUpdate(encoder);
   MaxonUpdate(motor);
-  HapticUpdate(haptic, p_->Jvirtual, p_->bvirtual, p_->kvirtual, theta0, 0);
-  //EmgUpdate(emg2);
+  //HapticUpdate(haptic, p_->Jvirtual, p_->bvirtual, p_->kvirtual, theta0, 0);
+  HapticPendulumUpdate(haptic,
+      p_->Jvirtual, p_->bvirtual, p_->kvirtual, theta0, 0, p_->G);
+
+  // must down sample adc
+  if (c->frame % 2) {
+    EmgUpdate(emg1);
+  } else {
+    EmgUpdate(emg2);
+  }
+  s_->emg1_state.bits = EmgGetBits(emg1);
+  s_->emg2_state.bits = EmgGetBits(emg2);
 }
 
 void Pru0UpdateControl(const pru_count_t* c,
@@ -157,13 +169,16 @@ void Pru0UpdateControl(const pru_count_t* c,
       SyncOutLow(sync);
     }
     s_->xd = p_->targets[itarg];
+    timeoutcnt++;
     if ((fix16_ssub(fix16_ssub(s_->xd,s_->x),0x40000) < 0)
-    && (fix16_sadd(fix16_ssub(s_->xd,s_->x),0x40000) > 0)){
+       && (fix16_sadd(fix16_ssub(s_->xd,s_->x),0x40000) > 0)
+       || (timeoutcnt > targtimeout)){
       debounce++;
-      if (debounce > 250) {
+      if ((debounce > 250) || (timeoutcnt > targtimeout)) {
         itarg++;
         s_->xd = p_->targets[itarg];
         debounce = 0;
+        timeoutcnt = 0;
       }
     }
     theta0 = s_->xd;
@@ -176,8 +191,8 @@ void Pru0UpdateControl(const pru_count_t* c,
   if (c->frame > 1000)
     MaxonAction(motor);
 
-  s_->emg1_state.mV = EmgGetmV(emg1);
-  s_->emg2_state.mV = EmgGetmV(emg2);
+  s_->emg1_state.bits = EmgGetBits(emg1);
+  s_->emg2_state.bits = EmgGetBits(emg2);
   s_->x = EncoderGetAngle(encoder);
   s_->motor = MaxonGetState(motor);
   s_->dx = haptic->dtheta;
@@ -222,16 +237,13 @@ void Pru1UpdateState(const pru_count_t* c,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
 
+
+
   PamReservoirUpdate(reservoir);
   PamUpdate(pam1);
   PamUpdate(pam2);
-  ReflexUpdate(reflex, p_->threshold, p_->dP);
 
-  if (PruGetCtlBit(ctl_,2)) {
-    PamSetPd(pam1,p_->P0);
-    PamSetPd(pam2,p_->P0);
-    PruClearCtlBit(ctl_,2);
-  }
+  ReflexUpdate(reflex, p_->threshold, p_->dP);
 
 }
 
@@ -240,17 +252,22 @@ void Pru1UpdateControl(const pru_count_t* c,
                        const lut_mem_t* l_,
                        state_t* s_,
                        pru_ctl_t* ctl_) {
+
+  if (PruGetCtlBit(ctl_,2)) {
+    PamSetPd(pam1,p_->P0);
+    PamSetPd(pam2,p_->P0);
+    PruClearCtlBit(ctl_,2);
+  }
+
   PamActionSimple(pam1);
   PamActionSimple(pam2);
+
 
   // Store data
   s_->p_res = PamReservoirGetPressure(reservoir);
   s_->pam1_state = PamGetState(pam1);
   s_->pam2_state = PamGetState(pam2);
- // s_->triggersignal = reflex->triggersignal;
- //
- //
- s_->triggersignal = fix16_from_int(pam1->pcnt);
+  s_->triggersignal = reflex->triggersignal;
 }
 
 void Pru1Cleanup(void) {

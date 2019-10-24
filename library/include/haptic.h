@@ -40,6 +40,7 @@ void HapticUpdate(hapitic_t* h,
                   fix16_t Jvirt, fix16_t Bvirt, fix16_t Kvirt,
                   fix16_t dtheta0, fix16_t theta0);
 void HapticPendulumUpdate(hapitic_t* h,
-                  fix16_t a, fix16_t b, fix16_t c);
+                  fix16_t Jvirt, fix16_t Bvirt, fix16_t Kvirt,
+                  fix16_t dtheta0, fix16_t theta0, fix16_t g);
 
 #endif
