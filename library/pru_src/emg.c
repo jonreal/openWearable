@@ -39,9 +39,9 @@ void EmgUpdate(emg_t* emg) {
 
  // remove channel bias (found emperically)
  if (emg->adc_ch == 0)
-   emg->s.bits = fix16_from_int( ((int)(((rx & 0x1FFFF) >> 7) & 0x3FF)) - 505);
+   emg->s.bits = fix16_from_int( ((int)(((rx & 0x1FFFF) >> 7) & 0x3FF)) - 506);
  else
-   emg->s.bits = fix16_from_int( ((int)(((rx & 0x1FFFF) >> 7) & 0x3FF)) - 496);
+   emg->s.bits = fix16_from_int( ((int)(((rx & 0x1FFFF) >> 7) & 0x3FF))-422);
 }
 
 fix16_t EmgGetBits(emg_t* emg) {

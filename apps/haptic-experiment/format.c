@@ -75,8 +75,8 @@ void FormatSprintState(const state_t* st, char* buff) {
           fix16_to_float(st->pam2_state.pd),
           st->pam2_state.u,
           fix16_to_float(st->triggersignal),
-          fix16_to_float(st->emg1_state.mV),
-          fix16_to_float(st->emg2_state.mV)
+          fix16_to_float(st->emg1_state.bits),
+          fix16_to_float(st->emg2_state.bits)
           );
 }
 

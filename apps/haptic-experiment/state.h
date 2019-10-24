@@ -43,6 +43,7 @@ typedef struct {
   fix16_t P0;
   fix16_t threshold;
   fix16_t dP;
+  fix16_t G;
 } param_mem_t;
 
 

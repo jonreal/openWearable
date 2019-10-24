@@ -108,8 +108,14 @@ void PamSetU(pam_t* pam, int8_t u) {
 }
 
 void PamSetPd(pam_t* pam, fix16_t Pd) {
-  if (pam->fsm == HOLD) {
-    if (Pd < pam->s.pm) {
+
+  if (Pd == 0)
+    pam->fsm = ZERO;
+
+  if ((pam->fsm == HOLD) || (pam->fsm == ZERO)){
+    if (Pd == 0) {
+      pam->fsm = ZERO;
+    } else if (Pd < pam->s.pm) {
       pam->fsm = DEFLATE;
       pam->s.pd = Pd;
     } else if (Pd > pam->s.pm) {
@@ -121,10 +127,15 @@ void PamSetPd(pam_t* pam, fix16_t Pd) {
 
 void PamActionSimple(pam_t* p) {
   switch (p->fsm) {
+    case ZERO : {
+      p->fsm = ZERO;
+      PamSetU(p,-1);
+      PamSetU(p,-1);
+      break;
+    }
     case INFLATE : {
       if (fix16_ssub(p->s.pd,p->s.pm) < 0) {
         p->fsm = REFRACT;
-        p->pcnt = 0;
         PamSetU(p,0);
       } else {
           PamSetU(p,1);
@@ -134,7 +145,6 @@ void PamActionSimple(pam_t* p) {
     case DEFLATE : {
       if (fix16_ssub(p->s.pd,p->s.pm) > 0) {
         p->fsm = REFRACT;
-        p->pcnt = 0;
         PamSetU(p,0);
       } else {
         PamSetU(p,-1);

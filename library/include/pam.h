@@ -34,6 +34,7 @@ typedef enum {
   REFRACT,
   INFLATE,
   DEFLATE,
+  ZERO,
 } pam_fsm_t;
 
 
