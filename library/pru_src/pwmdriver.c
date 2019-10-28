@@ -21,7 +21,7 @@
 
 void pwmInit(void)
 {
-  /* T_tbclk = PWM_CLK/CLK_DIV
+  /* T_tbclk = PWM_CLK/CLK_DIV = 1/100MHz
    *
    * For up-down-count mode
    *    T_pwm = 2 x TBPRD x T_tbclk
@@ -34,7 +34,8 @@ void pwmInit(void)
   //HWREGH(SOC_CM_PER_REGS + 0xD8) = 0x2;
 
   /* TODO: make this a param */
-  uint16_t pwm_prd = 10000; // 5 kHz
+  //uint16_t pwm_prd = 10000; // 5 kHz
+  uint16_t pwm_prd = 250;  // 200 kHz
 
   /* Disable Global enable interrupts */
   //CT_INTC.GER = 0;
@@ -48,25 +49,25 @@ void pwmInit(void)
 
   /**** EPWM registers *****/
 
-  /* CMPCTL: SHDWAMODE = 0x1 - no shadow mode */
-  HWREGH(SOC_EPWM_2_REGS + 0xE) = (0x1 << 4);
-
-  /* CMPA: compare reg */
-//  HWREGH(SOC_EPWM_2_REGS + 0x12) = pwm_prd;
-
-  /* CMPAHR: high res compare reg */
-  HWREGH(SOC_EPWM_2_REGS + 0x10) = 0x1;
-
-  /* AQCTLA:  CAD = 0x1 - when cnt = compare (increasing) force EPWMxA high
-   *          CAU = 0x2 - when cnt = compare (decreasing) force EPWMxA high */
-  HWREGH(SOC_EPWM_2_REGS + 0x16) = (0x1 << 6) | (0x2 << 4);
-
   /* TBCTL: PRDLD = 0x1 - shadow prd off
    *        CTRMODE = 0x2 - up-down-cnt mode */
   HWREGH(SOC_EPWM_2_REGS) = (0x1 << 3) | 0x2;
 
   /* TBPRD: set period */
   HWREGH(SOC_EPWM_2_REGS + 0xA) = pwm_prd;
+
+  /* CMPCTL: SHDWAMODE = 0x0 - shadow mode */
+  HWREGH(SOC_EPWM_2_REGS + 0xE) = (0x0 << 4) | (0x1);
+
+  /* Set High-Res Mode */
+  HWREGH(SOC_EPWM_2_REGS + 0x40) = (0x1 << 3) | (0x1);
+
+  /* CMPAHR: high res compare reg */
+  HWREGH(SOC_EPWM_2_REGS + 0x10) = (0x1 << 8);
+
+  /* AQCTLA:  CAD = 0x1 - when cnt = compare (increasing) force EPWMxA high
+   *          CAU = 0x2 - when cnt = compare (decreasing) force EPWMxA high */
+  HWREGH(SOC_EPWM_2_REGS + 0x16) = (0x1 << 6) | (0x2 << 4);
 
   /*ETCLR: clear interrupts */
   HWREGH(SOC_EPWM_2_REGS + 0x38) = 0x1;
@@ -76,7 +77,6 @@ void pwmInit(void)
 
   /* Globaly enable interrupts */
   //CT_INTC.GER = 1;
-
 }
 
 void pwmCleanUp(void)
@@ -90,9 +90,23 @@ void pwmCleanUp(void)
   HWREGH(SOC_EPWM_2_REGS + 0x12) = 0x1;
 }
 
+//void pwmSetDutyCycle(fix16_t duty)
+//{
+//  
+//}
+
+
 void pwmSetCmpValue(uint16_t cmpvalue)
 {
   /* CMPA: compare register */
-  HWREGH(SOC_EPWM_2_REGS + 0x12) = cmpvalue;
+ // HWREGH(SOC_EPWM_2_REGS + 0x12) = cmpvalue;
+
+  /* CMPAHR: high res compare reg (not working) */
+  HWREGH(SOC_EPWM_2_REGS + 0x10) = (0x1 << 8);
+
+  /* CMPA: compare register */
+  HWREGH(SOC_EPWM_2_REGS + 0x12) = 126;
+
+
 }
 
