@@ -24,7 +24,6 @@
 #include "reflex.h"
 #include "filtcoeff.h"
 
-#include "spidriver.h"
 
 
 volatile register uint32_t __R30;
@@ -62,6 +61,8 @@ reflex_t* reflex;
 emg_t* emg1;
 emg_t* emg2;
 
+fix16_t tt = 0;
+fix16_t dt = 0;
 
 // DC blocking filter
 //const fix16_t b_dcblck[2] = {fix16_one, -fix16_one};
@@ -72,12 +73,8 @@ const fix16_t a_dcblck[2] = {fix16_one, 0xFFFF3333};  // -0.80
 
 const uint32_t refractory = 150;
 const fix16_t reflexthreshold = 0x666; // 0.1
-const fix16_t reflexdelta = 0x40000;
-const fix16_t P0 = 0x3C0000; // 60 psi
-
-
-
-
+const fix16_t reflexdelta = 0x20000;
+const fix16_t P0 = 0x280000; // 60 psi
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -125,8 +122,9 @@ void Pru0UpdateState(const pru_count_t* c,
                      pru_ctl_t* ctl_){
   EncoderUpdate(encoder);
   MaxonUpdate(motor);
-  HapticUpdate(haptic, p_->Jvirtual, p_->bvirtual, p_->kvirtual, theta0, 0);
-  HapticPendulumUpdate(haptic, p_->Jvirtual, p_->bvirtual, p_->kvirtual, theta0, 0);
+  HapticPendulumUpdate(haptic, p_->Jvirtual, p_->bvirtual,
+      p_->kvirtual, theta0, 0, fix16_one);
+
   // must down sample adc
   if (c->frame % 2) {
     EmgUpdate(emg1);
@@ -200,7 +198,7 @@ void Pru0UpdateControl(const pru_count_t* c,
 }
 
 void Pru0Cleanup(void) {
-  MaxonMotorFree(motor);
+ // MaxonMotorFree(motor);
 }
 
 // ---------------------------------------------------------------------------
@@ -214,6 +212,7 @@ void Pru1Init(pru_mem_t* mem) {
   mem->p->threshold = reflexthreshold;
   mem->p->dP = reflexdelta;
 
+  dt = fix16_sdiv(fix16_one,fix16_from_int(mem->p->fs_hz));
 
   i2c1 = I2cInit(1);
   mux = MuxI2cInit(i2c1,0x70,PCA9548);
@@ -230,9 +229,9 @@ void Pru1Init(pru_mem_t* mem) {
   reflex = ReflexInit(pam1,pam2,fix16_from_int(15), fix16_from_int(95),
                       FiltIirInit(1, b_dcblck, a_dcblck));
 
-//  reflex = ReflexMyoInit(pam1,pam2,emg1,emg2,
-//                      fix16_from_int(15), fix16_from_int(95),
-//                      FiltIirInit(1, b_dcblck, a_dcblck));
+  reflex = ReflexMyoInit(pam1,pam2,emg1,emg2,
+                      fix16_from_int(15), fix16_from_int(95),
+                      FiltIirInit(1, b_dcblck, a_dcblck));
 }
 
 void Pru1UpdateState(const pru_count_t* c,
@@ -240,22 +239,14 @@ void Pru1UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
-
   PamReservoirUpdate(reservoir);
   PamUpdate(pam1);
   PamUpdate(pam2);
-  ReflexUpdate(reflex, p_->threshold, p_->dP);
   //ReflexMyoUpdate(reflex,
   //                s_->emg1_state.bits,
-  //                s_->emg2_state.bits,
-  //                0x320000, p_->dP);
-
-  if (PruGetCtlBit(ctl_,2)) {
-    PamSetPd(pam1,p_->P0);
-    PamSetPd(pam2,p_->P0);
-    PruClearCtlBit(ctl_,2);
-  }
-
+//                s_->emg2_state.bits,
+//                0x320000, p_->dP);
+//
 }
 
 void Pru1UpdateControl(const pru_count_t* c,
@@ -263,6 +254,21 @@ void Pru1UpdateControl(const pru_count_t* c,
                        const lut_mem_t* l_,
                        state_t* s_,
                        pru_ctl_t* ctl_) {
+  tt += dt;
+  fix16_t ref = fix16_smul(0x3333,
+      fix16_sin(fix16_smul(fix16_smul(0x199A,
+            fix16_smul(0x20000,fix16_pi)),tt)));
+
+  ReflexUpdate(reflex, p_->threshold, p_->dP, ref);
+
+
+  if (PruGetCtlBit(ctl_,2)) {
+    PamSetPd(pam1,p_->P0);
+    PamSetPd(pam2,p_->P0);
+    PruClearCtlBit(ctl_,2);
+  }
+
+
   PamActionSimple(pam1);
   PamActionSimple(pam2);
 
