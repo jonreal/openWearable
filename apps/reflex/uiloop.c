@@ -35,6 +35,7 @@ int UiLoop(const pru_mem_t* pru_mem) {
 
         // ---- Exit ----------------------------------------------------------
         case 'e' : {
+          UiClearPruCtlBit(pru_mem, 0);
           UiStopAndSaveLog();
           printf("done.\n");
           return 1;
@@ -60,6 +61,7 @@ int UiLoop(const pru_mem_t* pru_mem) {
 
           // Data collection loop
           UiStartLog();
+          UiSetPruCtlBit(pru_mem, 0);
 
           UiPrintMenu(pru_mem);
           break;
@@ -67,10 +69,12 @@ int UiLoop(const pru_mem_t* pru_mem) {
 
         // ---- Stop data collection -----------------------------------------
         case 'd' : {
-          if (!UiLogging())
+          if (!UiLogging()) {
             printf("\t\t Not currently logging data!\n");
-          else
+          } else {
+            UiClearPruCtlBit(pru_mem, 0);
             UiStopAndSaveLog();
+          }
 
           log_file[0] = '\0';
           strcat(log_file, "datalog/");

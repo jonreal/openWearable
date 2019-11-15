@@ -22,6 +22,6 @@ extern volatile uint32_t *debug_buff;
 // Prototypes -----------------------------------------------------------------
 void spiInit(void);
 void spiCleanUp(void);
-uint16_t spiXfer(uint8_t channel, uint16_t tx);
+uint32_t spiXfer(uint8_t channel, uint32_t tx);
 
 #endif

@@ -28,5 +28,9 @@ static const fix16_t k_lp_1_10Hz_a[2] = {fix16_one, 0xFFFF0F97};
 static const fix16_t k_lp_1_30Hz_b[2] = {0x161E, 0x161E};
 static const fix16_t k_lp_1_30Hz_a[2] = {fix16_one, 0xFFFF2C36};
 
+// 1st order lowpass 300Hz
+static const fix16_t k_lp_1_100Hz_b[2] = {0x3EC5, 0x3EC5};
+static const fix16_t k_lp_1_100Hz_a[2] = {fix16_one, 0xFFFF7D91};
+
 
 #endif
