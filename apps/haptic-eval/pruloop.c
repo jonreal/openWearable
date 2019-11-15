@@ -55,8 +55,8 @@ reservoir_t* reservoir;
 pam_t* pam1;
 pam_t* pam2;
 
-//reflex_t* reflex;
-reflex_myo_t* reflex;
+reflex_t* reflex;
+reflex_myo_t* reflexmyo;
 
 emg_t* emg1;
 emg_t* emg2;
@@ -84,7 +84,7 @@ const fix16_t a_dcblck[2] = {fix16_one, 0xFFFF3333};  // -0.80
 const uint32_t refractory = 150;
 const fix16_t reflexthreshold = 0x666; // 0.1
 const fix16_t reflexdelta = 0x80000;
-const fix16_t P0 = 0x280000; // 60 psi
+const fix16_t P0 = 0x280000; // 40 psi
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -252,11 +252,11 @@ void Pru1Init(pru_mem_t* mem) {
                         refractory,
                         FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
   PamSetPd(pam2,mem->p->P0);
+  
+  reflex = ReflexInit(pam1,pam2,fix16_from_int(15), fix16_from_int(95),
+                      FiltIirInit(1, b_dcblck, a_dcblck));
 
-//  reflex = ReflexInit(pam1,pam2,fix16_from_int(15), fix16_from_int(95),
-//                      FiltIirInit(1, b_dcblck, a_dcblck));
-
-  reflex = ReflexMyoInit(pam1,pam2,emg1,emg2,
+  reflexmyo = ReflexMyoInit(pam1,pam2,emg1,emg2,
                       fix16_from_int(15), fix16_from_int(95));
 }
 
@@ -280,8 +280,8 @@ void Pru1UpdateControl(const pru_count_t* c,
 //      fix16_sin(fix16_smul(fix16_smul(0x199A,
 //            fix16_smul(0x20000,fix16_pi)),tt)));
 //
-//  ReflexUpdate(reflex, p_->threshold, p_->dP, 0);
-  ReflexMyoUpdate(reflex,
+  ReflexUpdate(reflex, p_->threshold, p_->dP, 0);
+  ReflexMyoUpdate(reflexmyo,
                   s_->emg1_state.value,
                 s_->emg2_state.value,
                 fix16_one, p_->dP);
@@ -302,6 +302,7 @@ void Pru1UpdateControl(const pru_count_t* c,
   s_->pam1_state = PamGetState(pam1);
   s_->pam2_state = PamGetState(pam2);
   s_->triggersignal = reflex->triggersignal;
+  s_->triggersignal_myo = reflexmyo->triggersignal;
 }
 
 void Pru1Cleanup(void) {

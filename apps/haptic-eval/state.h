@@ -26,6 +26,7 @@ typedef struct {
   volatile pam_state_t pam1_state;
   volatile pam_state_t pam2_state;
   volatile fix16_t triggersignal;
+  volatile fix16_t triggersignal_myo;
   volatile emg_state_t emg1_state;
   volatile emg_state_t emg2_state;
  } state_t;

@@ -25,8 +25,10 @@ typedef struct {
   volatile pam_state_t pam1_state;
   volatile pam_state_t pam2_state;
   volatile fix16_t triggersignal;
+  volatile fix16_t triggersignal_myo;
   volatile emg_state_t emg1_state;
   volatile emg_state_t emg2_state;
+  volatile uint32_t game;
  } state_t;
 
 // --- parameters
@@ -44,6 +46,7 @@ typedef struct {
   fix16_t threshold;
   fix16_t dP;
   fix16_t G;
+  uint32_t reflex_condition;
 } param_mem_t;
 
 
