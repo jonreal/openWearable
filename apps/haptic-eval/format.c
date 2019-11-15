@@ -33,6 +33,16 @@ void FormatSprintParams(const param_mem_t* param, char* buff) {
 void FormatSprintState(const state_t* st, char* buff) {
   sprintf(buff,
           "%u\t"        // timeStamp - uint32_t
+          "%f\t"        // x - fix16_t
+          "%f\t"        // xd - fix16_t
+          "%u\t"        // sync - uint32_t
+          "%f\t"        // motor u - fix16_t
+          "%f\t"        // motor duty - fix16_t
+          "%f\t"        // motor current - fix16_t
+          "%f\t"        // motor vel - fix16_t
+          "%f\t"        // dx - fix16_t
+          "%f\t"        // ddx - fix16_t
+          "%f\t"        // tau - fix16_t
           "%f\t"        // p_res - fix16_t
           "%f\t"        // pam1 pm_raw - fix16_t
           "%f\t"        // pam1 pm - fix16_t
@@ -43,10 +53,23 @@ void FormatSprintState(const state_t* st, char* buff) {
           "%f\t"        // pam2 pd - fix16_t
           "%i\t"        // pam2 u - uint8_t
           "%f\t"        // trigger signal - fix16_t
-          "%u\t"        // sync
-          "%f\t"        // ref - fix16_t
+          "%f\t"        // trigger signal_myo - fix16_t
+          "%f\t"        // emg1 raw signal - fix16_t
+          "%f\t"        // emg1 signal - fix16_t
+          "%f\t"        // emg2 raw signal - fix16_t
+          "%f\t"        // emg2 signal - fix16_t
           "\n",
           st->time,
+          fix16_to_float(st->x),
+          fix16_to_float(st->xd),
+          st->vsync,
+          fix16_to_float(st->motor.u),
+          fix16_to_float(st->motor.duty),
+          fix16_to_float(st->motor.current),
+          fix16_to_float(st->motor.velocity),
+          fix16_to_float(st->dx),
+          fix16_to_float(st->ddx),
+          fix16_to_float(st->tau_active),
           fix16_to_float(st->p_res),
           fix16_to_float(st->pam1_state.pm_raw),
           fix16_to_float(st->pam1_state.pm),
@@ -57,14 +80,27 @@ void FormatSprintState(const state_t* st, char* buff) {
           fix16_to_float(st->pam2_state.pd),
           st->pam2_state.u,
           fix16_to_float(st->triggersignal),
-          st->sync,
-          fix16_to_float(st->ref)
+          fix16_to_float(st->triggersignal_myo),
+          fix16_to_float(st->emg1_state.raw),
+          fix16_to_float(st->emg1_state.value),
+          fix16_to_float(st->emg1_state.raw),
+          fix16_to_float(st->emg2_state.value)
           );
 }
 
 void FormatSprintStateHeader(char* buff) {
   sprintf(buff,
           "\n# frame\t"
+          "x\t"
+          "xd\t"
+          "sync\t"
+          "u\t"
+          "duty\t"
+          "current\t"
+          "velocity\t"
+          "dx\t"
+          "ddx\t"
+          "tau_active\t"
           "p_res\t"
           "pm1_raw\t"
           "pm1\t"
@@ -75,11 +111,23 @@ void FormatSprintStateHeader(char* buff) {
           "pd2\t"
           "u2\t"
           "triggersignal\t"
-          "sync\t"
-          "ref\t"
+          "triggersignal_myo\t"
+          "emg1_raw\t"
+          "emg1\t"
+          "emg2_raw\t"
+          "emg2\t"
           "\n");
 }
 
 void FormatSprintPublishState(const state_t* st, char* buff) {
-  FormatSprintState(st,buff);
+//  FormatSprintState(st, buff);
+    sprintf(buff,
+            "%u\t"        // timeStamp - uint32_t
+            "%f\t"
+            "%f\t"
+            "\n",
+            st->time,
+            fix16_to_float(st->x),
+            fix16_to_float(st->xd)
+            );
 }

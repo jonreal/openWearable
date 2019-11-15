@@ -42,32 +42,19 @@ i2c_t* I2cInit(uint8_t channel)
       i2c->regmap = SOC_I2C_1_REGS;
       /* CM_PER_I2C1_CLKCTRL: MODULEMODE = 0x2 - enable */
       HWREG(0x44E00000 + 0x48) = 0x2;
-#ifdef PRU
       __delay_cycles(1000);
-#else
-      usleep(1000);
-#endif
       break;
     case 2 :
       i2c->regmap = SOC_I2C_2_REGS;
       /* CM_PER_I2C2_CLKCTRL: MODULEMODE = 0x2 - enable */
       HWREG(0x44E00000 + 0x44) = 0x2;
-#ifdef PRU
       __delay_cycles(1000);
-#else
-      usleep(1000);
-#endif
       break;
   }
 
   /* I2C_SYS : soft reset */
   HWREG(i2c->regmap + 0x10) = (1 << 1);
-
-#ifdef PRU
   __delay_cycles(1000);
-#else
-  usleep(1000);
-#endif
 
   /* Reset/disable i2c */
   I2CMasterDisable(i2c->regmap);
@@ -77,21 +64,11 @@ i2c_t* I2cInit(uint8_t channel)
 
   /* Bus speed 400 kHz */
   I2CMasterInitExpClk(i2c->regmap, 48000000, 12000000, 400000);
-
-#ifdef PRU
   __delay_cycles(1000);
-#else
-  usleep(1000);
-#endif
 
   /* Enable */
   I2CMasterEnable(i2c->regmap);
-
-#ifdef PRU
   __delay_cycles(5000);
-#else
-  usleep(5000);
-#endif
 
   return i2c;
 }

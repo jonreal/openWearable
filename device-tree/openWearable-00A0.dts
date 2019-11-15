@@ -27,6 +27,8 @@
 
     /**** pru0 GPIO pins ****/
     "P9.27",  /* pr1_pru0_pru_[r30_5 | r31_5] ---- DEBUG OUT */
+    "P9.41",  /* pr1_pru0_pru_[r30_6 | r31_6] ---- motor | general use */
+    "P9.25",  /* pr1_pru0_pru_[r30_7 | r31_7] ---- sync | general use */
 
     /**** CPU GPIO pins ****/
     "P9.13", /* gpio0[31] ---- DEBUG OUT */
@@ -36,8 +38,8 @@
     "P9.18",  /* I2C1_SDA */
 
     /**** I2C2 pins ****/
-    "P9.21",  /* I2C2_SCL */
-    "P9.22",  /* I2C2_SDA */
+    //"P9.19",  /* I2C2_SCL */
+    //"P9.20",  /* I2C2_SDA */
 
     /**** SPI1 pins ****/
     "P9.28",  /* SPI1_CS0 */
@@ -88,6 +90,9 @@
           0x0A0 0x05  /* P8.45 - pr1_pru1_pru_r30_0,  MODE5 | OUTPUT | PD */
           0x0A4 0x05  /* P8.46 - pr1_pru1_pru_r30_1,  MODE5 | OUTPUT | PD */
           0x1A4 0x05  /* P9.27 - pr1_pru0_pru_r30_5,  MODE5 | OUTPUT | PD */
+          0x1A8 0x05  /* P9.41 - pr1_pru0_pru_r30_6,  MODE5 | OUTPUT | PD */
+          0x1B5 0x20  /* alterative mode for p9.41 -- set as input */
+          0x1AC 0x05  /* P9.25 - pr1_pru0_pru_r30_7,  MODE5 | OUTPUT | PD */
           0x074 0x07  /* P9.13 - gpio0[31],           MODE7 | OUTPUT | PD */
         >;
       };
@@ -110,12 +115,12 @@
         >;
       };
 
-      i2c2_pins: pinmux_i2c2_pins{
-        pinctrl-single,pins = <
-          0x154 0x72  /* P9.21 - i2c1_scl, MODE2 | INPUT_PULLUP (bi-dir)*/
-          0x150 0x72  /* P9.22 - i2c1_sda, MODE2 | INPUT_PULLUP (bi-dir)*/
-        >;
-      };
+      //i2c2_pins: pinmux_i2c2_pins{
+      //  pinctrl-single,pins = <
+      //    0x17C 0x73  /* P9.19 - i2c2_scl, MODE2 | INPUT_PULLUP (bi-dir)*/
+      //    0x178 0x73  /* P9.20 - i2c2_sda, MODE3 | INPUT_PULLUP (bi-dir)*/
+      //  >;
+      //};
       pwm_pins: pinmux_pwm_pins {
         pinctrl-single,pins = <
           0x020 0x0C  /* P8.19 - ehrpwm2A, MODE4 */
@@ -147,18 +152,18 @@
     };
  };
 
-  /*----- I2C2 ------*/
-  fragment@3 {
-    target = <&i2c2>;
-    __overlay__ {
-      #address-cells = <1>;
-      #size-cells = <1>;
-      status = "okay";
-      pinctrl-names = "default";
-      pinctrl-0 = <&i2c2_pins>;
-      clock-frequency = <400000>;
-    };
- };
+  ///*----- I2C2 ------*/
+  //fragment@3 {
+  //  target = <&i2c2>;
+  //  __overlay__ {
+  //    #address-cells = <1>;
+  //    #size-cells = <1>;
+  //    status = "okay";
+  //    pinctrl-names = "default";
+  //    pinctrl-0 = <&i2c2_pins>;
+  //    clock-frequency = <400000>;
+  //  };
+  //};
 
   /*------ SPI settings -----*/
   fragment@4 {

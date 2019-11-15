@@ -28,7 +28,10 @@ typedef struct {
   uint32_t fs_ticks;
   uint32_t Td;  // cycle period (in clock cnts)
   uint32_t Np; // number of cycles
+  fix16_t Jvirtual;
   fix16_t bvirtual;
+  fix16_t kvirtual;
+  fix16_t targets[20];
 } param_mem_t;
 
 

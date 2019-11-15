@@ -9,22 +9,18 @@ extern volatile sig_atomic_t input_ready;
 void UiPrintMenu(const pru_mem_t* pru_mem) {
   printf(
   "\n\n---------------------------------------------------------------------\n"
-  " \t Bv = %3.2f,\t fd = %3.2f,\t Np = %i\n\n"
-  "Menu: f - Start trial\n"
-  "      p - change target frequency\n"
-  "      n - change number of cycles\n"
-  "      b - change dampening\n"
+  " holdtime = %f,\t which-pam = %i\n\n"
+  "Menu: s - start step\n"
+  "      d - change holdtime\n"
+  "      f - change whichpam\n"
   "      e - exit\n"
   "-----------------------------------------------------------------------\n",
-  fix16_to_float(pru_mem->p->bvirtual),
-  (float)pru_mem->p->fs_hz/(float)pru_mem->p->Td,
-  pru_mem->p->Np);
+  ((float)pru_mem->p->holdtime)/1000.0, pru_mem->p->whichpam);
   fflush(stdout);
 }
 
 int UiLoop(const pru_mem_t* pru_mem) {
   char input_char = 0;
-  int input_int = 0;
   float input_float = 0;
   char input_string[256] = {0};
   char log_file[256] = "datalog/";
@@ -48,8 +44,8 @@ int UiLoop(const pru_mem_t* pru_mem) {
           return 1;
         }
 
-        // ---- Collect trial -------------------------------------------------
-        case 'f' : {
+        // ---- Start data collection -----------------------------------------
+        case 's' : {
           printf("\t\tEnter trial name: ");
           fflush(stdout);
 
@@ -61,20 +57,16 @@ int UiLoop(const pru_mem_t* pru_mem) {
           UiNewLogFile(log_file);
 
           // Wait for user input to start saving data
-          printf("\t\tPress enter to start trial...\n");
+          printf("\t\tPress enter to start collection...\n");
           fflush(stdout);
           UiPollForUserInput();
           scanf(" %c", &input_char);
 
-          // Wait for enter to stop collection
-          printf("\t\tTrial ongoing...\n");
-          fflush(stdout);
-
           // Data collection loop
+          printf("\t\tStep Response ongoing...\n");
           UiStartLog();
           UiSetPruCtlBit(pru_mem, 0);
 
-          // Poll for PRU done
           UiPollPruCtlBit(pru_mem, 0, 0);
           UiStopAndSaveLog();
 
@@ -85,44 +77,30 @@ int UiLoop(const pru_mem_t* pru_mem) {
         }
 
         // ---- change time -------------------------------------------------
-        case 'p' : {
-          printf("\t\tEnter new target frequency (Hz): ");
+        case 'd' : {
+          printf("\t\tEnter new holdtime (s): ");
           fflush(stdout);
 
           // Wait for input.
           UiPollForUserInput();
           scanf(" %f", &input_float);
-          pru_mem->p->Td = (uint32_t)((float)pru_mem->p->fs_hz/input_float);
+          pru_mem->p->holdtime = (uint32_t)(input_float * 1000.0);
           UiPrintMenu(pru_mem);
           break;
         }
 
         // ---- change time -------------------------------------------------
-        case 'n' : {
-          printf("\t\tEnter new cycle count: ");
-          fflush(stdout);
-
-          // Wait for input.
-          UiPollForUserInput();
-          scanf(" %u", &input_int);
-          pru_mem->p->Np = (uint32_t)input_int;
-          UiPrintMenu(pru_mem);
-          break;
-        }
-
-        // ---- change damping -------------------------------------------------
-        case 'b' : {
-          printf("\t\tEnter damping factor: ");
+        case 'f' : {
+          printf("\t\tEnter new whichpam (0 | 1 | 2): ");
           fflush(stdout);
 
           // Wait for input.
           UiPollForUserInput();
           scanf(" %f", &input_float);
-          pru_mem->p->bvirtual = fix16_from_float(input_float);
+          pru_mem->p->whichpam = (uint32_t)(input_float);
           UiPrintMenu(pru_mem);
           break;
         }
-
       }
     }
   }

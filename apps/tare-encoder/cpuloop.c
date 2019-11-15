@@ -1,4 +1,4 @@
-/* Copyright 2017 Jonathan Realmuto
+/* Copyright 2017-2019 Jonathan Realmuto
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -13,19 +13,18 @@
  limitations under the License.
 =============================================================================*/
 
-#ifndef _PWMDRIVER_H_
-#define _PWMDRIVER_H_
 
-#include <stdint.h>
-#include "fix16.h"
+#include "cpuloop.h"
+#include <stdio.h>
 
-/* ---- Global ---- */
-extern volatile uint32_t *debug_buff;
+void CpuInit(cpudata_t* cpudata) {
+  cpudata->varcpu = 0;
+}
 
-/* ---- Prototype ---- */
-void pwmInit(void);
-void pwmCleanUp(void);
-void pwmSetCmpValue(uint16_t cmpvalue);
-void pwmSetDutyCycle(fix16_t duty);
+void CpuLoop(cpudata_t* cpudata)  {
+  (cpudata->varcpu)++;
+}
 
-#endif
+void CpuCleanup(void) {
+  
+}

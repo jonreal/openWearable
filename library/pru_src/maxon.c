@@ -24,8 +24,7 @@ extern volatile uint32_t *debug_buff;
 motor_t* MaxonMotorInit(
                   uint8_t enable_pin, uint8_t adc_cur_ch, uint8_t adc_vel_ch,
                   fix16_t G, fix16_t Kt, fix16_t Kv,
-                  fix16_t max_current, fix16_t max_velocity,
-                  fix16_t slope, fix16_t bias) {
+                  fix16_t max_current, fix16_t max_velocity) {
   motor_t* m = malloc(sizeof(motor_t));
   m->enable_pin = enable_pin;
   m->adc_vel_ch = adc_vel_ch;
@@ -35,8 +34,6 @@ motor_t* MaxonMotorInit(
   m->Kv = Kv;
   m->max_current = max_current;
   m->max_velocity = max_velocity;
-  m->bias = bias;
-  m->slope = slope;
   m->state.velocity = 0;
   m->state.current = 0;
   MaxonSetCurrent(m,0);
@@ -78,14 +75,17 @@ void MaxonSetCurrent(motor_t* m, fix16_t u) {
     m->state.u = u;
 }
 
+// 0%   - Imin
+// 50%  - 0
+// 100% - Imax
 void MaxonAction(motor_t* m) {
-  m->state.pwmcmpvalue = (uint32_t)fix16_to_int(fix16_sadd(
-              fix16_smul(m->slope, m->state.u),m->bias));
-  pwmSetCmpValue((uint16_t)m->state.pwmcmpvalue);
+  m->state.duty =  fix16_sadd(fix16_smul(fix16_sdiv(
+            0x320000,m->max_current),m->state.u),0x320000);
+  pwmSetDutyCycle(m->state.duty);
 }
 
 void MaxonMotorFree(motor_t* m) {
-  pwmSetCmpValue(5000);
+  pwmSetDutyCycle(0x320000);        // 50% duty
   __R30 &= ~(1 << m->enable_pin);
   free(m);
 }

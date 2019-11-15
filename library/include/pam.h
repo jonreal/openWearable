@@ -22,6 +22,21 @@
 #include "pca9548a.h"           // i2c multiplexer
 #include "filter.h"
 
+
+
+typedef struct {
+pressure_sensor_t* sensor;
+volatile fix16_t pressure;
+} reservoir_t;
+
+typedef enum {
+  HOLD = 0x0,
+  REFRACT,
+  INFLATE,
+  DEFLATE,
+  ZERO,
+} pam_fsm_t;
+
 typedef struct {
   fix16_t pd;               // desired pressure
   fix16_t pm;               // muscle pressure
@@ -29,29 +44,21 @@ typedef struct {
   int32_t u;                // valve command
 } pam_state_t;
 
-typedef enum {
-  HOLD = 0x0,
-  REFRACT,
-  INFLATE,
-  DEFLATE
-} pam_fsm_t;
-
-
 typedef struct {
   pressure_sensor_t* sensor;
+  reservoir_t* res;
   uint8_t hp_pin;                   // high pressure pin
   uint8_t lp_pin;                   // low pressure pin
-  volatile uint32_t cnt;
+  fix16_t tau_in;                   // msec
+  fix16_t tau_out;                  // msec
+  iir_filt_t* filt;
   uint32_t T_refract;
+  volatile uint32_t pw;
+  volatile uint32_t pcnt;
+  volatile uint32_t cnt;
   volatile pam_fsm_t fsm;
   volatile pam_state_t s;
-  iir_filt_t* filt;
 } pam_t;
-
-typedef struct {
-  pressure_sensor_t* sensor;
-  volatile fix16_t pressure;
-} reservoir_t;
 
 
 reservoir_t* PamReservoirInit(pressure_sensor_t* sens);
@@ -60,13 +67,18 @@ void PamReservoirUpdate(reservoir_t* reservoir);
 fix16_t PamReservoirGetPressure(const reservoir_t* reservoir);
 
 pam_t* PamInitMuscle(pressure_sensor_t* sens,
-                     uint32_t in_pin,
-                     uint32_t out_pin,
-                     uint32_t refract,
-                     iir_filt_t* filter);
+                      reservoir_t* reservoir,
+                      uint32_t in_pin,
+                      uint32_t out_pin,
+                      fix16_t tau_in,
+                      fix16_t tau_out,
+                      uint32_t refract,
+                      iir_filt_t* filter);
 void PamMuscleFree(pam_t* pam);
 void PamUpdate(pam_t* pam);
 void PamActionSimple(pam_t* p);
+void PamActionPulse(pam_t* p);
+void PamActionModel(pam_t* p);
 pam_state_t PamGetState(const pam_t* p);
 void PamSetPd(pam_t* pam, fix16_t Pd);
 void PamSetU(pam_t* pam, int8_t u);

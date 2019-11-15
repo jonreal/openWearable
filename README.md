@@ -5,18 +5,12 @@ OpenWearable is an open source hardware/software project aimed at developing
 tools for wearable robotics. The hardware is designed on top of the TI
 Beaglebone Black and utilizes the programmable realtime units (PRUs).
 
-Currently in develoment for upper arm exoskeletons.
+Currently in develoment for upper limb soft exosuits.
 
 ```
 # cat /etc/os-release 
 PRETTY_NAME="Debian GNU/Linux 9 (stretch)"
-NAME="Debian GNU/Linux"
-VERSION_ID="9"
-VERSION="9 (stretch)"
-ID=debian
-HOME_URL="https://www.debian.org/"
-SUPPORT_URL="https://www.debian.org/support"
-BUG_REPORT_URL="https://bugs.debian.org/"
+
 ```
 
 ```
