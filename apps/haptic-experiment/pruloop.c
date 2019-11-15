@@ -46,10 +46,6 @@ uint32_t timeoutcnt = 0;
 uint32_t debounce = 0;
 fix16_t theta0 = 0;
 
-const uint32_t Td_default = 5000;
-const uint32_t Np_default = 1;
-const fix16_t f1_default = fix16_one;       // 2 Hz
-const fix16_t A_default = 0x8000;         // 0.5 A
 
 // PAMs pru1
 i2c_t* i2c1;
@@ -87,8 +83,8 @@ const fix16_t P0 = 0;
 // ---------------------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem) {
 
-  mem->p->Td = Td_default;
-  mem->p->Np = Np_default;
+  //mem->p->Td = 5000;
+  //mem->p->Np = 10;
 
   mem->p->Jvirtual = 0;
   mem->p->bvirtual = 0;
@@ -184,7 +180,7 @@ void Pru0UpdateControl(const pru_count_t* c,
       SyncOutLow(sync);
       s_->game = 0;
     }
-    s_->game = 1;
+    s_->game = 2;
     s_->xd = p_->targets[itarg];
     timeoutcnt++;
     if ((fix16_ssub(fix16_ssub(s_->xd,s_->x),0x40000) < 0)
