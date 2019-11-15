@@ -21,7 +21,7 @@
 
 #define PRU_CTRL_BASE     0x00022000
 //#define STATE_BUFF_LEN    149
-#define STATE_BUFF_LEN    128
+#define STATE_BUFF_LEN    100
 
 // Debug pins
 #define PRU0_DEBUG_PIN  5

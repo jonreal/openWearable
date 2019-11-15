@@ -37,11 +37,12 @@ void FormatSprintState(const state_t* st, char* buff) {
           "%f\t"        // xd - fix16_t
           "%u\t"        // sync - uint32_t
           "%f\t"        // motor u - fix16_t
-          "%u\t"        // pwmcmp - uint32_t
+          "%f\t"        // motor duty - fix16_t
           "%f\t"        // motor current - fix16_t
           "%f\t"        // motor vel - fix16_t
           "%f\t"        // dx - fix16_t
-          "%f\t"        // dx - fix16_t
+          "%f\t"        // ddx - fix16_t
+          "%f\t"        // tau - fix16_t
           "%f\t"        // p_res - fix16_t
           "%f\t"        // pam1 pm_raw - fix16_t
           "%f\t"        // pam1 pm - fix16_t
@@ -52,7 +53,9 @@ void FormatSprintState(const state_t* st, char* buff) {
           "%f\t"        // pam2 pd - fix16_t
           "%i\t"        // pam2 u - uint8_t
           "%f\t"        // trigger signal - fix16_t
+          "%f\t"        // emg1 raw signal - fix16_t
           "%f\t"        // emg1 signal - fix16_t
+          "%f\t"        // emg2 raw signal - fix16_t
           "%f\t"        // emg2 signal - fix16_t
           "\n",
           st->time,
@@ -60,10 +63,11 @@ void FormatSprintState(const state_t* st, char* buff) {
           fix16_to_float(st->xd),
           st->vsync,
           fix16_to_float(st->motor.u),
-          st->motor.pwmcmpvalue,
+          fix16_to_float(st->motor.duty),
           fix16_to_float(st->motor.current),
           fix16_to_float(st->motor.velocity),
           fix16_to_float(st->dx),
+          fix16_to_float(st->ddx),
           fix16_to_float(st->tau_active),
           fix16_to_float(st->p_res),
           fix16_to_float(st->pam1_state.pm_raw),
@@ -75,8 +79,10 @@ void FormatSprintState(const state_t* st, char* buff) {
           fix16_to_float(st->pam2_state.pd),
           st->pam2_state.u,
           fix16_to_float(st->triggersignal),
-          fix16_to_float(st->emg1_state.bits),
-          fix16_to_float(st->emg2_state.bits)
+          fix16_to_float(st->emg1_state.raw),
+          fix16_to_float(st->emg1_state.value),
+          fix16_to_float(st->emg1_state.raw),
+          fix16_to_float(st->emg2_state.value)
           );
 }
 
@@ -87,10 +93,11 @@ void FormatSprintStateHeader(char* buff) {
           "xd\t"
           "sync\t"
           "u\t"
-          "pwmcmp\t"
+          "duty\t"
           "current\t"
           "velocity\t"
           "dx\t"
+          "ddx\t"
           "tau_active\t"
           "p_res\t"
           "pm1_raw\t"
@@ -102,7 +109,9 @@ void FormatSprintStateHeader(char* buff) {
           "pd2\t"
           "u2\t"
           "triggersignal\t"
+          "emg1_raw\t"
           "emg1\t"
+          "emg2_raw\t"
           "emg2\t"
           "\n");
 }

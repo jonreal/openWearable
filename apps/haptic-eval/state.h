@@ -20,6 +20,7 @@ typedef struct {
   volatile uint32_t vsync;
   volatile motor_state_t motor;
   volatile fix16_t dx;
+  volatile fix16_t ddx;
   volatile fix16_t tau_active;
   volatile fix16_t p_res;
   volatile pam_state_t pam1_state;

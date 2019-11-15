@@ -43,6 +43,8 @@ void FormatSprintState(const state_t* st, char* buff) {
           "%f\t"        // pam2 pd - fix16_t
           "%i\t"        // pam2 u - uint8_t
           "%f\t"        // trigger signal - fix16_t
+          "%u\t"        // sync
+          "%f\t"        // ref - fix16_t
           "\n",
           st->time,
           fix16_to_float(st->p_res),
@@ -54,7 +56,9 @@ void FormatSprintState(const state_t* st, char* buff) {
           fix16_to_float(st->pam2_state.pm),
           fix16_to_float(st->pam2_state.pd),
           st->pam2_state.u,
-          fix16_to_float(st->triggersignal)
+          fix16_to_float(st->triggersignal),
+          st->sync,
+          fix16_to_float(st->ref)
           );
 }
 
@@ -71,6 +75,8 @@ void FormatSprintStateHeader(char* buff) {
           "pd2\t"
           "u2\t"
           "triggersignal\t"
+          "sync\t"
+          "ref\t"
           "\n");
 }
 

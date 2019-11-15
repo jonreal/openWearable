@@ -67,7 +67,7 @@ const fix16_t b_dcblck[2] = {fix16_one, -fix16_one};
 const fix16_t a_dcblck[2] = {fix16_one, 0xFFFF3333};  // -0.80
 
 const uint32_t refractory = 150;
-const fix16_t reflexthreshold = 0x666; // 0.1
+const fix16_t reflexthreshold = 0x28F; // 0.1
 const fix16_t reflexdelta = 0x40000;
 const fix16_t P0 = 0; // 60 psi
 
@@ -98,9 +98,7 @@ void Pru0Init(pru_mem_t* mem) {
                          0x198000,    // torque constant (25.5 mNm/A)
                          0x1760000,   // speed constant (374 rpm/V)
                          0x40000,     // max current (4 A)
-                         0x4173290,   // max velocity (10000 rpm ~1047 rad/s)
-                         0x4E20000,   // slope (10000/8)
-                         0x13880000   // bias (5000)
+                         0x4173290    // max velocity (10000 rpm ~1047 rad/s)
                          );
   haptic = HapticInit(motor,encoder,
                       FiltIirInit(1, k_lp_1_5Hz_b, k_lp_1_5Hz_a),
@@ -243,7 +241,7 @@ void Pru1UpdateState(const pru_count_t* c,
   PamUpdate(pam1);
   PamUpdate(pam2);
 
-  ReflexUpdate(reflex, p_->threshold, p_->dP);
+  ReflexUpdate(reflex, p_->threshold, p_->dP, 0);
 
 }
 

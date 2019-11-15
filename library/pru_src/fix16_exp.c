@@ -1,7 +1,7 @@
 #include "fix16.h"
 #include "int64.h"
 
-
+static const fix16_t fix16_minimum  = 0x80000000; /*!< the minimum value of fix16_t */
 
 #ifndef FIXMATH_NO_CACHE
 static fix16_t _fix16_exp_cache_index[4096]  = { 0 };
@@ -47,3 +47,45 @@ fix16_t fix16_exp(fix16_t inValue) {
   return int64_lo(tempOut);
 }
 
+fix16_t fix16_log(fix16_t inValue)
+{
+	fix16_t guess = fix16_from_int(2);
+	fix16_t delta;
+	int scaling = 0;
+	int count = 0;
+	
+	if (inValue <= 0)
+		return fix16_minimum;
+	
+	// Bring the value to the most accurate range (1 < x < 100)
+	const fix16_t e_to_fourth = 3578144;
+	while (inValue > fix16_from_int(100))
+	{
+		inValue = fix16_div(inValue, e_to_fourth);
+		scaling += 4;
+	}
+	
+	while (inValue < fix16_one)
+	{
+		inValue = fix16_mul(inValue, e_to_fourth);
+		scaling -= 4;
+	}
+	
+	do
+	{
+		// Solving e(x) = y using Newton's method
+		// f(x) = e(x) - y
+		// f'(x) = e(x)
+		fix16_t e = fix16_exp(guess);
+		delta = fix16_div(inValue - e, e);
+		
+		// It's unlikely that logarithm is very large, so avoid overshooting.
+		if (delta > fix16_from_int(3))
+			delta = fix16_from_int(3);
+		
+		guess += delta;
+	} while ((count++ < 10)
+		&& ((delta > 1) || (delta < -1)));
+	
+	return guess + fix16_from_int(scaling);
+}

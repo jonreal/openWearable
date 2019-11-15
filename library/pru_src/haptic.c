@@ -37,7 +37,9 @@ void HapticUpdate(hapitic_t* h,
   fix16_t angle = EncoderGetAngle(h->enc);
   h->dtheta = fix16_ssub(angle,FiltIir(angle,h->lp1));
   h->ddtheta = fix16_ssub(h->dtheta,FiltIir(h->dtheta,h->lp2));
-  h->tau_active = fix16_sadd(fix16_sadd(
+
+  // negative sign is needed
+  h->tau_active = -fix16_sadd(fix16_sadd(
                     fix16_smul(Jvirt,h->ddtheta),
                     fix16_smul(Bvirt,fix16_ssub(h->dtheta,dtheta0))),
                     fix16_smul(Kvirt,fix16_ssub(angle,theta0)));
@@ -52,10 +54,10 @@ void HapticPendulumUpdate(hapitic_t* h,
   h->dtheta = fix16_ssub(angle,FiltIir(angle,h->lp1));
   h->ddtheta = fix16_ssub(h->dtheta,FiltIir(h->dtheta,h->lp2));
   h->tau_active = fix16_sadd(fix16_sadd(fix16_sadd(
-                    fix16_smul(Jvirt,h->ddtheta),
-                    fix16_smul(Bvirt,fix16_ssub(h->dtheta,dtheta0))),
-                    fix16_smul(Kvirt,fix16_ssub(angle,theta0))),
-                    fix16_smul(fix16_smul(Jvirt,g),
+                    -fix16_smul(Jvirt,h->ddtheta),
+                    fix16_smul(Bvirt,fix16_ssub(dtheta0,h->dtheta))),
+                    fix16_smul(Kvirt,fix16_ssub(theta0,angle))),
+                    -fix16_smul(fix16_smul(Jvirt,g),
                       -fix16_sin(fix16_smul(0x478,angle))));
   MaxonSetCurrent(h->m,h->tau_active);
 }
