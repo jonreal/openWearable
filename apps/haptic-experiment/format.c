@@ -51,7 +51,10 @@ void FormatSprintState(const state_t* st, char* buff) {
           "%f\t"        // pam2 pd - fix16_t
           "%i\t"        // pam2 u - uint8_t
           "%f\t"        // trigger signal - fix16_t
+          "%f\t"        // trigger signalmyo - fix16_t
+          "%f\t"        // emg1 raw signal - fix16_t
           "%f\t"        // emg1 signal - fix16_t
+          "%f\t"        // emg2 raw signal - fix16_t
           "%f\t"        // emg2 signal - fix16_t
           "\n",
           st->time,
@@ -73,8 +76,11 @@ void FormatSprintState(const state_t* st, char* buff) {
           fix16_to_float(st->pam2_state.pd),
           st->pam2_state.u,
           fix16_to_float(st->triggersignal),
-          fix16_to_float(st->emg1_state.bits),
-          fix16_to_float(st->emg2_state.bits)
+          fix16_to_float(st->triggersignal_myo),
+          fix16_to_float(st->emg1_state.raw),
+          fix16_to_float(st->emg1_state.value),
+          fix16_to_float(st->emg1_state.raw),
+          fix16_to_float(st->emg2_state.value)
           );
 }
 
@@ -99,7 +105,10 @@ void FormatSprintStateHeader(char* buff) {
           "pd2\t"
           "u2\t"
           "triggersignal\t"
+          "triggersignal_myo\t"
+          "emg1_raw\t"
           "emg1\t"
+          "emg2_raw\t"
           "emg2\t"
           "\n");
 }
@@ -110,9 +119,11 @@ void FormatSprintPublishState(const state_t* st, char* buff) {
             "%u\t"        // timeStamp - uint32_t
             "%f\t"
             "%f\t"
+            "%i\t"
             "\n",
             st->time,
             fix16_to_float(st->x),
-            fix16_to_float(st->xd)
+            fix16_to_float(st->xd),
+            st->game
             );
 }

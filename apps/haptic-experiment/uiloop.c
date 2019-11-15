@@ -21,101 +21,143 @@ typedef struct {
   fix16_t Kv;
   fix16_t P0;
   fix16_t G;
+  uint32_t reflex_condition;
 } conditions_t;
 
-uint32_t random_index[60];
+uint32_t random_index[80];
 uint32_t nBlocks = 5;
-uint32_t nCond = 4;
-conditions_t conditions[4] = { {.game = TRACKING,
-                                .Jv = 0,            // 0
-                                .Kv = 0,            // 0
-                                .P0 = 0,            // 0
-                                .G = 0},            // 0
-                                {.game = TRACKING,
-                                .Jv = 0,            // 0
-                                .Kv = 0x7AE,        // 0.03
-                                .P0 = 0,            // 0
-                                .G = 0},            // 0
-                              {.game = TRACKING,
-                                .Jv = 0x50000,      // 5
-                                .Kv = 0,            // 0
-                                .P0 = 0,            // 0
-                                .G = 0},            // 0
-                              {.game = TRACKING,
-                                .Jv = 0x50000,      // 5
-                                .Kv = 0xCCD,        // 0.05
-                                .P0 = 0,            // 0
-                                .G = fix16_one},    // 1
-                               };
 
 
-
-
-
-
-//uint32_t nCond = 12;
-//conditions_t conditions[12] = { {.game = TRACKING,
+//uint32_t nCond = 4;
+//conditions_t conditions[4] = { {.game = TRACKING,
+//                                .Jv = 0,            // 0
+//                                .Kv = 0,            // 0
+//                                .P0 = 0,            // 0
+//                                .G = 0},            // 0
+//                                {.game = TRACKING,
 //                                .Jv = 0,            // 0
 //                                .Kv = 0x7AE,        // 0.03
 //                                .P0 = 0,            // 0
-//                                .G = 0},            // 0
-//                               {.game = TRACKING,
-//                                .Jv = 0,            // 0
-//                                .Kv = 0x7AE,        // 0.03
-//                                .P0 =  0x1E0000,     // 60
 //                                .G = 0},            // 0
 //                              {.game = TRACKING,
 //                                .Jv = 0x50000,      // 5
 //                                .Kv = 0,            // 0
 //                                .P0 = 0,            // 0
-//                                .G = 0},            // 0
-//                              {.game = TRACKING,
-//                                .Jv = 0x50000,      // 5
-//                                .Kv = 0,            // 0
-//                                .P0 =  0x1E0000,     // 60
 //                                .G = 0},            // 0
 //                              {.game = TRACKING,
 //                                .Jv = 0x50000,      // 5
 //                                .Kv = 0xCCD,        // 0.05
 //                                .P0 = 0,            // 0
 //                                .G = fix16_one},    // 1
-//                              {.game = TRACKING,
-//                                .Jv = 0x50000,      // 5
-//                                .Kv = 0xCCD,        // 0.05
-//                                .P0 =  0x1E0000,     // 60
-//                                .G = fix16_one},    // 1
-//                              {.game = BALLISTIC,
-//                                .Jv = 0,            // 0
-//                                .Kv = 0x7AE,        // 0.03
-//                                .P0 = 0,            // 0
-//                                .G = 0},            // 0
-//                               {.game = BALLISTIC,
-//                                .Jv = 0,            // 0
-//                                .Kv = 0x7AE,        // 0.03
-//                                .P0 =  0x1E0000,     // 60
-//                                .G = 0},            // 0
-//                              {.game = BALLISTIC,
-//                                .Jv = 0x50000,      // 5
-//                                .Kv = 0,            // 0
-//                                .P0 = 0,            // 0
-//                                .G = 0},            // 0
-//                              {.game = BALLISTIC,
-//                                .Jv = 0x50000,      // 5
-//                                .Kv = 0,            // 0
-//                                .P0 =  0x1E0000,     // 60
-//                                .G = 0},            // 0
-//                              {.game = BALLISTIC,
-//                                .Jv = 0x50000,      // 5
-//                                .Kv = 0xCCD,        // 0.05
-//                                .P0 = 0,            // 0
-//                                .G = fix16_one},    // 1
-//                              {.game = BALLISTIC,
-//                                .Jv = 0x50000,      // 5
-//                                .Kv = 0xCCD,        // 0.05
-//                                .P0 =  0x1E0000,     // 60
-//                                .G = fix16_one}     // 1
 //                               };
 //
+
+
+
+
+
+uint32_t nCond = 16;
+conditions_t conditions[16] = { {.game = TRACKING,
+                                .Jv = 0,                  // 0
+                                .Kv = 0x51F,              // 0.03
+                                .P0 = 0,                  // 0
+                                .G = 0,                   // 0
+                                .reflex_condition = 0},   // 0
+                                {.game = TRACKING,
+                                .Jv = 0x40000,            // 4
+                                .Kv = 0,                  // 0
+                                .P0 = 0,                  // 0
+                                .G = 0,                   // 0
+                                .reflex_condition = 0},   // 0
+                                {.game = BALLISTIC,
+                                .Jv = 0,                  // 0
+                                .Kv = 0x51F,              // 0.03
+                                .P0 = 0,                  // 0
+                                .G = 0,                   // 0
+                                .reflex_condition = 0},   // 0
+                                {.game = BALLISTIC,
+                                .Jv = 0x40000,            // 4
+                                .Kv = 0,                  // 0
+                                .P0 = 0,                  // 0
+                                .G = 0,                   // 0
+                                .reflex_condition = 0},   // 0
+                                ////////////////////////////
+                                {.game = TRACKING,
+                                .Jv = 0,                  // 0
+                                .Kv = 0x51F,              // 0.03
+                                .P0 = 0x280000,           // 40 psi
+                                .G = 0,                   // 0
+                                .reflex_condition = 1},   // myo
+                                {.game = TRACKING,
+                                .Jv = 0x40000,            // 4
+                                .Kv = 0,                  // 0
+                                .P0 = 0x280000,           // 40 psi
+                                .G = 0,                   // 0
+                                .reflex_condition = 1},   // myo
+                                {.game = BALLISTIC,
+                                .Jv = 0,                  // 0
+                                .Kv = 0x51F,              // 0.03
+                                .P0 = 0x280000,           // 40 psi
+                                .G = 0,                   // 0
+                                .reflex_condition = 1},   // myo
+                                {.game = BALLISTIC,
+                                .Jv = 0x40000,            // 4
+                                .Kv = 0,                  // 0
+                                .P0 = 0x280000,           // 40 psi
+                                .G = 0,                   // 0
+                                .reflex_condition = 1},   // myo
+                                ////////////////////////////
+                                {.game = TRACKING,
+                                .Jv = 0,                  // 0
+                                .Kv = 0x51F,              // 0.03
+                                .P0 = 0x280000,           // 40 psi
+                                .G = 0,                   // 0
+                                .reflex_condition = 2},   // reflex
+                                {.game = TRACKING,
+                                .Jv = 0x40000,            // 4
+                                .Kv = 0,                  // 0
+                                .P0 = 0x280000,           // 40 psi
+                                .G = 0,                   // 0
+                                .reflex_condition = 2},   // reflex
+                                {.game = BALLISTIC,
+                                .Jv = 0,                  // 0
+                                .Kv = 0x51F,              // 0.03
+                                .P0 = 0x280000,           // 40 psi
+                                .G = 0,                   // 0
+                                .reflex_condition = 2},   // reflex
+                                {.game = BALLISTIC,
+                                .Jv = 0x40000,            // 4
+                                .Kv = 0,                  // 0
+                                .P0 = 0x280000,           // 40 psi
+                                .G = 0,                   // 0
+                                .reflex_condition = 2},   // reflex
+                                ////////////////////////////
+                                {.game = TRACKING,
+                                .Jv = 0,                  // 0
+                                .Kv = 0x51F,              // 0.03
+                                .P0 = 0x280000,           // 40 psi
+                                .G = 0,                   // 0
+                                .reflex_condition = 3},   // both
+                                {.game = TRACKING,
+                                .Jv = 0x40000,            // 4
+                                .Kv = 0,                  // 0
+                                .P0 = 0x280000,           // 40 psi
+                                .G = 0,                   // 0
+                                .reflex_condition = 3},   // both
+                                {.game = BALLISTIC,
+                                .Jv = 0,                  // 0
+                                .Kv = 0x51F,              // 0.03
+                                .P0 = 0x280000,           // 40 psi
+                                .G = 0,                   // 0
+                                .reflex_condition = 3},   // both
+                                {.game = BALLISTIC,
+                                .Jv = 0x40000,            // 4
+                                .Kv = 0,                  // 0
+                                .P0 = 0x280000,           // 40 psi
+                                .G = 0,                   // 0
+                                .reflex_condition = 3}    // both
+                              };
+
 
 
 static void my_sleep(unsigned duration)
@@ -235,6 +277,8 @@ int UiLoop(const pru_mem_t* pru_mem) {
               pru_mem->p->kvirtual = conditions[icond].Kv;
               pru_mem->p->P0 = conditions[icond].P0;
               pru_mem->p->G = conditions[icond].G;
+              pru_mem->p->reflex_condition = conditions[icond].reflex_condition;
+
               UiSetPruCtlBit(pru_mem,2);
 							my_sleep(2);
 
@@ -332,7 +376,8 @@ int UiLoop(const pru_mem_t* pru_mem) {
           UiPollForUserInput();
           scanf(" %c", &input_char);
 
-          pru_mem->p->P0 =  0x1E0000;
+          pru_mem->p->P0 =  0x280000;
+          pru_mem->p->reflex_condition = 3;
           UiSetPruCtlBit(pru_mem,2);
 					my_sleep(2);
 
@@ -349,6 +394,7 @@ int UiLoop(const pru_mem_t* pru_mem) {
           pru_mem->p->Jvirtual = 0;
           pru_mem->p->kvirtual = 0;
           pru_mem->p->P0 = 0;
+          pru_mem->p->reflex_condition = 0;
           UiSetPruCtlBit(pru_mem,2);
 					my_sleep(2);
 
