@@ -31,7 +31,7 @@ fix16_t t = 0;
 fix16_t dt = 0;
 fix16_t k = 0;
 
-const uint32_t Tf_default = 240000;        // 240 s
+const uint32_t Tf_default = 10000;        // 240 s
 const fix16_t f0_default = 0x28F;         // 0.01 Hz
 const fix16_t f1_default = fix16_one;       // 2 Hz
 const fix16_t A_default = 0x8000;         // 0.5 A
@@ -42,51 +42,20 @@ const fix16_t A_default = 0x8000;         // 0.5 A
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem) {
-
-}
-
-void Pru0UpdateState(const pru_count_t* c,
-                     const param_mem_t* p_,
-                     const lut_mem_t* l_,
-                     state_t* s_,
-                     pru_ctl_t* ctl_) {
-
-
-}
-
-void Pru0UpdateControl(const pru_count_t* c,
-                       const param_mem_t* p_,
-                       const lut_mem_t* l_,
-                       state_t* s_,
-                       pru_ctl_t* ctl_){
-
-}
-
-void Pru0Cleanup(void) {
-}
-
-// ---------------------------------------------------------------------------
-// PRU1
-//
-// Edit user defined functions below
-// ---------------------------------------------------------------------------
-void Pru1Init(pru_mem_t* mem) {
   mem->p->Tf = Tf_default;
   mem->p->f0 = f0_default;
   mem->p->f1 = f1_default;
   mem->p->A = A_default;
 
   encoder = EncoderInit(0x1);
-  motor = MaxonMotorInit(4,           // enable pin
+  motor = MaxonMotorInit(6,           // enable pin pru0.6
                          0,           // adc cur ch
                          1,           // adc vel ch
                          0x240000,    // gear ratio (31/1)
                          0x198000,    // torque constant (25.5 mNm/A)
                          0x1760000,   // speed constant (374 rpm/V)
                          0x20000,     // max current (2 A)
-                         0x4173290,   // max velocity (10000 rpm ~1047 rad/s)
-                         0xF63C0000,  // slope (-10000/4)
-                         0x13880000   // bias (5000)
+                         0x4173290   // max velocity (10000 rpm ~1047 rad/s)
                          );
   sync = SyncInitChan(5);
   SyncOutLow(sync);
@@ -95,7 +64,7 @@ void Pru1Init(pru_mem_t* mem) {
   dt = fix16_sdiv(fix16_one,fix16_from_int(mem->p->fs_hz));
 }
 
-void Pru1UpdateState(const pru_count_t* c,
+void Pru0UpdateState(const pru_count_t* c,
                      const param_mem_t* p_,
                      const lut_mem_t* l_,
                      state_t* s_,
@@ -125,6 +94,43 @@ void Pru1UpdateState(const pru_count_t* c,
     MaxonSetCurrent(motor,0);
   }
   MaxonAction(motor);
+
+
+
+}
+
+void Pru0UpdateControl(const pru_count_t* c,
+                       const param_mem_t* p_,
+                       const lut_mem_t* l_,
+                       state_t* s_,
+                       pru_ctl_t* ctl_){
+
+  s_->x = EncoderGetAngle(encoder);
+  s_->motor = MaxonGetState(motor);
+  s_->sync = SyncOutState(sync);
+
+}
+
+void Pru0Cleanup(void) {
+
+  MaxonMotorFree(motor);
+}
+
+// ---------------------------------------------------------------------------
+// PRU1
+//
+// Edit user defined functions below
+// ---------------------------------------------------------------------------
+void Pru1Init(pru_mem_t* mem) {
+}
+
+
+void Pru1UpdateState(const pru_count_t* c,
+                     const param_mem_t* p_,
+                     const lut_mem_t* l_,
+                     state_t* s_,
+                     pru_ctl_t* ctl_) {
+
 }
 
 void Pru1UpdateControl(const pru_count_t* c,
@@ -132,12 +138,9 @@ void Pru1UpdateControl(const pru_count_t* c,
                        const lut_mem_t* l_,
                        state_t* s_,
                        pru_ctl_t* ctl_) {
-  s_->x = EncoderGetAngle(encoder);
-  s_->motor = MaxonGetState(motor);
-  s_->sync = SyncOutState(sync);
+
 }
 
 void Pru1Cleanup(void) {
-  MaxonMotorFree(motor);
 }
 

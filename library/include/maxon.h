@@ -23,7 +23,7 @@ typedef struct{
   fix16_t velocity;
   fix16_t current;
   fix16_t u;
-  uint32_t pwmcmpvalue;
+  fix16_t duty;
 } motor_state_t;
 
 typedef struct {
@@ -35,16 +35,13 @@ typedef struct {
   fix16_t Kv;
   fix16_t max_current;
   fix16_t max_velocity;
-  fix16_t slope;
-  fix16_t bias;
   volatile motor_state_t state;
 } motor_t;
 
 motor_t* MaxonMotorInit(
                   uint8_t enable_pin, uint8_t adc_cur_ch, uint8_t adc_vel_ch,
                   fix16_t G, fix16_t Kt, fix16_t Kv,
-                  fix16_t max_current, fix16_t max_velocity,
-                  fix16_t slope, fix16_t bias);
+                  fix16_t max_current, fix16_t max_velocity);
 void MaxonUpdate(motor_t* m);
 void MaxonSetCurrent(motor_t* m, fix16_t u);
 void MaxonAction(motor_t* m);

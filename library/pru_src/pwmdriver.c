@@ -19,6 +19,9 @@
 #include "hw_types.h"
 #include "pwmdriver.h"
 
+//static const uint16_t pwm_prd = 250;  // 200 kHz
+static const uint16_t pwm_prd = 500;  // 100 kHz
+
 void pwmInit(void)
 {
   /* T_tbclk = PWM_CLK/CLK_DIV = 1/100MHz
@@ -30,15 +33,6 @@ void pwmInit(void)
    * PWM resolution
    *    Res (%) = F_pwm/F_sysclkout X 100
    *    Res (bits) = log2(F_pwm/F_sysclkout) */
-
-  //HWREGH(SOC_CM_PER_REGS + 0xD8) = 0x2;
-
-  /* TODO: make this a param */
-  //uint16_t pwm_prd = 10000; // 5 kHz
-  uint16_t pwm_prd = 250;  // 200 kHz
-
-  /* Disable Global enable interrupts */
-  //CT_INTC.GER = 0;
 
   /**** PWM SS 2 registers *****/
 
@@ -90,10 +84,15 @@ void pwmCleanUp(void)
   HWREGH(SOC_EPWM_2_REGS + 0x12) = 0x1;
 }
 
-//void pwmSetDutyCycle(fix16_t duty)
-//{
-//  
-//}
+void pwmSetDutyCycle(fix16_t duty)
+{
+  fix16_t Tpwm = fix16_from_int(pwm_prd);
+
+  // CMPA: compare register
+  //  cmp = -Tpwm/100 * duty + Tpwm
+  HWREGH(SOC_EPWM_2_REGS + 0x12) = (uint16_t) fix16_to_int(
+      fix16_sadd(fix16_smul(fix16_smul(0xFFFFFD71,Tpwm),duty),Tpwm));
+}
 
 
 void pwmSetCmpValue(uint16_t cmpvalue)
@@ -101,12 +100,8 @@ void pwmSetCmpValue(uint16_t cmpvalue)
   /* CMPA: compare register */
  // HWREGH(SOC_EPWM_2_REGS + 0x12) = cmpvalue;
 
-  /* CMPAHR: high res compare reg (not working) */
-  HWREGH(SOC_EPWM_2_REGS + 0x10) = (0x1 << 8);
-
   /* CMPA: compare register */
-  HWREGH(SOC_EPWM_2_REGS + 0x12) = 126;
-
+  HWREGH(SOC_EPWM_2_REGS + 0x12) = cmpvalue;
 
 }
 

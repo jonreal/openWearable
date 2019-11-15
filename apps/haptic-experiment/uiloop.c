@@ -23,71 +23,99 @@ typedef struct {
   fix16_t G;
 } conditions_t;
 
-uint32_t nCond = 12;
+uint32_t random_index[60];
 uint32_t nBlocks = 5;
-conditions_t conditions[12] = { {.game = TRACKING,
+uint32_t nCond = 4;
+conditions_t conditions[4] = { {.game = TRACKING,
+                                .Jv = 0,            // 0
+                                .Kv = 0,            // 0
+                                .P0 = 0,            // 0
+                                .G = 0},            // 0
+                                {.game = TRACKING,
                                 .Jv = 0,            // 0
                                 .Kv = 0x7AE,        // 0.03
                                 .P0 = 0,            // 0
-                                .G = 0},            // 0
-                               {.game = TRACKING,
-                                .Jv = 0,            // 0
-                                .Kv = 0x7AE,        // 0.03
-                                .P0 = 0x3C0000,     // 60
                                 .G = 0},            // 0
                               {.game = TRACKING,
                                 .Jv = 0x50000,      // 5
                                 .Kv = 0,            // 0
                                 .P0 = 0,            // 0
-                                .G = 0},            // 0
-                              {.game = TRACKING,
-                                .Jv = 0x50000,      // 5
-                                .Kv = 0,            // 0
-                                .P0 = 0x3C0000,     // 60
                                 .G = 0},            // 0
                               {.game = TRACKING,
                                 .Jv = 0x50000,      // 5
                                 .Kv = 0xCCD,        // 0.05
                                 .P0 = 0,            // 0
                                 .G = fix16_one},    // 1
-                              {.game = TRACKING,
-                                .Jv = 0x50000,      // 5
-                                .Kv = 0xCCD,        // 0.05
-                                .P0 = 0x3C0000,     // 60
-                                .G = fix16_one},    // 1
-                              {.game = BALLISTIC,
-                                .Jv = 0,            // 0
-                                .Kv = 0x7AE,        // 0.03
-                                .P0 = 0,            // 0
-                                .G = 0},            // 0
-                               {.game = BALLISTIC,
-                                .Jv = 0,            // 0
-                                .Kv = 0x7AE,        // 0.03
-                                .P0 = 0x3C0000,     // 60
-                                .G = 0},            // 0
-                              {.game = BALLISTIC,
-                                .Jv = 0x50000,      // 5
-                                .Kv = 0,            // 0
-                                .P0 = 0,            // 0
-                                .G = 0},            // 0
-                              {.game = BALLISTIC,
-                                .Jv = 0x50000,      // 5
-                                .Kv = 0,            // 0
-                                .P0 = 0x3C0000,     // 60
-                                .G = 0},            // 0
-                              {.game = BALLISTIC,
-                                .Jv = 0x50000,      // 5
-                                .Kv = 0xCCD,        // 0.05
-                                .P0 = 0,            // 0
-                                .G = fix16_one},    // 1
-                              {.game = BALLISTIC,
-                                .Jv = 0x50000,      // 5
-                                .Kv = 0xCCD,        // 0.05
-                                .P0 = 0x3C0000,     // 60
-                                .G = fix16_one}     // 1
                                };
 
-uint32_t random_index[60];
+
+
+
+
+
+//uint32_t nCond = 12;
+//conditions_t conditions[12] = { {.game = TRACKING,
+//                                .Jv = 0,            // 0
+//                                .Kv = 0x7AE,        // 0.03
+//                                .P0 = 0,            // 0
+//                                .G = 0},            // 0
+//                               {.game = TRACKING,
+//                                .Jv = 0,            // 0
+//                                .Kv = 0x7AE,        // 0.03
+//                                .P0 =  0x1E0000,     // 60
+//                                .G = 0},            // 0
+//                              {.game = TRACKING,
+//                                .Jv = 0x50000,      // 5
+//                                .Kv = 0,            // 0
+//                                .P0 = 0,            // 0
+//                                .G = 0},            // 0
+//                              {.game = TRACKING,
+//                                .Jv = 0x50000,      // 5
+//                                .Kv = 0,            // 0
+//                                .P0 =  0x1E0000,     // 60
+//                                .G = 0},            // 0
+//                              {.game = TRACKING,
+//                                .Jv = 0x50000,      // 5
+//                                .Kv = 0xCCD,        // 0.05
+//                                .P0 = 0,            // 0
+//                                .G = fix16_one},    // 1
+//                              {.game = TRACKING,
+//                                .Jv = 0x50000,      // 5
+//                                .Kv = 0xCCD,        // 0.05
+//                                .P0 =  0x1E0000,     // 60
+//                                .G = fix16_one},    // 1
+//                              {.game = BALLISTIC,
+//                                .Jv = 0,            // 0
+//                                .Kv = 0x7AE,        // 0.03
+//                                .P0 = 0,            // 0
+//                                .G = 0},            // 0
+//                               {.game = BALLISTIC,
+//                                .Jv = 0,            // 0
+//                                .Kv = 0x7AE,        // 0.03
+//                                .P0 =  0x1E0000,     // 60
+//                                .G = 0},            // 0
+//                              {.game = BALLISTIC,
+//                                .Jv = 0x50000,      // 5
+//                                .Kv = 0,            // 0
+//                                .P0 = 0,            // 0
+//                                .G = 0},            // 0
+//                              {.game = BALLISTIC,
+//                                .Jv = 0x50000,      // 5
+//                                .Kv = 0,            // 0
+//                                .P0 =  0x1E0000,     // 60
+//                                .G = 0},            // 0
+//                              {.game = BALLISTIC,
+//                                .Jv = 0x50000,      // 5
+//                                .Kv = 0xCCD,        // 0.05
+//                                .P0 = 0,            // 0
+//                                .G = fix16_one},    // 1
+//                              {.game = BALLISTIC,
+//                                .Jv = 0x50000,      // 5
+//                                .Kv = 0xCCD,        // 0.05
+//                                .P0 =  0x1E0000,     // 60
+//                                .G = fix16_one}     // 1
+//                               };
+//
 
 
 static void my_sleep(unsigned duration)
@@ -141,10 +169,11 @@ int UiLoop(const pru_mem_t* pru_mem) {
   }
 
   FILE* ff = fopen("datalog/condition-key","w");
-  for (int i=0; i<(nCond*nBlocks); i++){
-    fprintf(ff,"%i - %i\n",(i+1),(random_index[i]+1));
-    if ((((i+1)%nCond) == 0) && (i != 0))
-      fprintf(ff,"\n");
+  for (int j=0; j<nBlocks; j++) {
+    for (int i=0; i<nCond; i++){
+      fprintf(ff,"%i.%i - %i\n",(j+1),(i+1),(random_index[nCond*j+i]+1));
+    }
+    fprintf(ff,"\n");
   }
   fclose(ff);
 
@@ -303,7 +332,7 @@ int UiLoop(const pru_mem_t* pru_mem) {
           UiPollForUserInput();
           scanf(" %c", &input_char);
 
-          pru_mem->p->P0 = fix16_from_int(60);
+          pru_mem->p->P0 =  0x1E0000;
           UiSetPruCtlBit(pru_mem,2);
 					my_sleep(2);
 
