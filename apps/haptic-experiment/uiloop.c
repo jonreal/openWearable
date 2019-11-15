@@ -186,6 +186,10 @@ int UiLoop(const pru_mem_t* pru_mem) {
   char input_string[256] = {0};
   char log_file[256] = "datalog/";
 
+
+  pru_mem->p->Td = 5000;
+  pru_mem->p->Np = 10;
+
   UiPrintMenu(pru_mem);
 
   // make sample back with each condition
