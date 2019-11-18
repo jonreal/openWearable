@@ -37,9 +37,9 @@ motor_t* motor;
 encoder_t* encoder;
 hapitic_t* haptic;
 
+fix16_t t = 0;
+fix16_t dt = 0;
 uint32_t flag = 0;
-uint32_t t0 = 0;
-uint32_t t = 0;
 uint32_t itarg = 0;
 uint32_t targtimeout = 5000;
 uint32_t timeoutcnt = 0;
@@ -72,9 +72,7 @@ const fix16_t b_dcblck[2] = {fix16_one, -fix16_one};
 const fix16_t a_dcblck[2] = {fix16_one, 0xFFFF3333};  // -0.80
 
 const uint32_t refractory = 150;
-const fix16_t reflexthreshold = 0x666; // 0.1
-const fix16_t reflexdelta = 0x80000;
-const fix16_t P0 = 0; 
+
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -82,14 +80,6 @@ const fix16_t P0 = 0;
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem) {
-
-  //mem->p->Td = 5000;
-  //mem->p->Np = 10;
-
-  mem->p->Jvirtual = 0;
-  mem->p->bvirtual = 0;
-  mem->p->kvirtual = 0;
-  mem->p->G = 0;
 
   flag = 0;
   sync = SyncInitChan(7); // pru0.7
@@ -117,6 +107,8 @@ void Pru0Init(pru_mem_t* mem) {
                     FiltIirInit(1, k_hp_emg_b, k_hp_emg_a),
                     FiltIirInit(1, k_lp_emg_b, k_lp_emg_a));
 
+  dt = fix16_sdiv(fix16_one,fix16_from_int(mem->p->fs_hz));
+
 }
 
 void Pru0UpdateState(const pru_count_t* c,
@@ -126,7 +118,6 @@ void Pru0UpdateState(const pru_count_t* c,
                      pru_ctl_t* ctl_){
   EncoderUpdate(encoder);
   MaxonUpdate(motor);
-  //HapticUpdate(haptic, p_->Jvirtual, p_->bvirtual, p_->kvirtual, theta0, 0);
   HapticPendulumUpdate(haptic,
       p_->Jvirtual, p_->bvirtual, p_->kvirtual, theta0, 0, p_->G);
 
@@ -150,30 +141,27 @@ void Pru0UpdateControl(const pru_count_t* c,
   // Tracking
   if (PruGetCtlBit(ctl_, 0)) {
     if (flag == 0) {
-      t0 = c->frame;
       SyncOutHigh(sync);
       flag = 1;
+      t = 0;
     }
     s_->game = 1;
-    t = (c->frame - t0)*p_->fs_hz / (p_->Td - p_->Td/p_->fs_hz);
-		if ((c->frame-t0) == (p_->Np*p_->Td)) {
+		if (t >= p_->Td){
       flag = 0;
       s_->game = 0;
       PruClearCtlBit(ctl_,0);
       SyncOutLow(sync);
     }
-		s_->xd = fix16_ssub(fix16_smul(fix16_from_int(90),
-						 	fix16_sadd(fix16_sdiv(
-							fix16_from_int( (int32_t) l_->lut[t % 1000]),
-							fix16_from_int(1000)),fix16_one)),fix16_from_int(90));
+    s_->xd = fix16_smul(0x5A0000, fix16_sin(fix16_smul(p_->k2PiFd,t)));
 	}
   // Ballistic
   else if (PruGetCtlBit(ctl_, 1)) {
     if (flag == 0) {
       SyncOutHigh(sync);
       flag = 1;
+      t = 0;
     }
-		if (itarg > (p_->Np-1)) {
+		if (itarg == p_->Nb) {
       flag = 0;
       itarg = 0;
       PruClearCtlBit(ctl_,1);
@@ -204,11 +192,10 @@ void Pru0UpdateControl(const pru_count_t* c,
   s_->vsync = (uint32_t)SyncOutState(sync);
   if (c->frame > 1000)
     MaxonAction(motor);
-
-
   s_->motor = MaxonGetState(motor);
   s_->dx = haptic->dtheta;
   s_->tau_active = haptic->tau_active;
+  t += dt;
 }
 
 void Pru0Cleanup(void) {
@@ -222,9 +209,7 @@ void Pru0Cleanup(void) {
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
 
-  mem->p->P0 = P0;
-  mem->p->threshold = reflexthreshold;
-  mem->p->dP = reflexdelta;
+
 
 
   i2c1 = I2cInit(1);
