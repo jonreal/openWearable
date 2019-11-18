@@ -186,9 +186,20 @@ int UiLoop(const pru_mem_t* pru_mem) {
   char input_string[256] = {0};
   char log_file[256] = "datalog/";
 
+  pru_mem->p->fd = 0x3333;  // 0.2 Hz
+  pru_mem->p->Np = fix16_from_int(1); // number of cycles
+  pru_mem->p->Nb = 15; // number of ballistic trials
+  pru_mem->p->Jvirtual = 0;
+  pru_mem->p->bvirtual = 0;
+  pru_mem->p->kvirtual = 0;
+  pru_mem->p->G = 0;
 
-  pru_mem->p->Td = 5000;
-  pru_mem->p->Np = 10;
+  pru_mem->p->P0 = 0;
+  pru_mem->p->threshold = 0x666; //0.1
+  pru_mem->p->dP = 0x80000;
+
+  pru_mem->p->Td = fix16_sdiv(pru_mem->p->Np,pru_mem->p->fd);
+  pru_mem->p->k2PiFd = fix16_smul(fix16_smul(0x20000,fix16_pi),pru_mem->p->fd);
 
   UiPrintMenu(pru_mem);
 
@@ -282,6 +293,30 @@ int UiLoop(const pru_mem_t* pru_mem) {
               pru_mem->p->P0 = conditions[icond].P0;
               pru_mem->p->G = conditions[icond].G;
               pru_mem->p->reflex_condition = conditions[icond].reflex_condition;
+
+
+              pru_mem->p->targets[0] = fix16_sdiv(
+                                    fix16_from_int((rand() % 1600) - 800),
+                                    fix16_from_int(10));
+
+
+              if (conditions[icond].game == BALLISTIC) {
+                for (int i=1; i<20; i++) {
+                  // random target between -170 and 170
+                  while (1)  {
+                    pru_mem->p->targets[i] = fix16_sdiv(
+                                        fix16_from_int((rand() % 1600) - 800),
+                                        fix16_from_int(10));
+                    fix16_t diff =
+                      fix16_ssub(pru_mem->p->targets[i-1],
+                                 pru_mem->p->targets[i]);
+                    if ((fix16_ssub(diff,fix16_from_int(20)) > 0)
+                      || (fix16_sadd(diff,fix16_from_int(20)) < 0)) {
+                      break;
+                    }
+                  }
+                }
+              }
 
               UiSetPruCtlBit(pru_mem,2);
 							my_sleep(2);
