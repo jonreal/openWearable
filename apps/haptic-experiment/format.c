@@ -18,8 +18,16 @@
 
 void FormatSprintParams(const param_mem_t* param, char* buff) {
   sprintf(buff, "\n#Parameters:\n"
-          "#\tFs = %i (Hz)\n#",
-          param->fs_hz);
+          "#\tFs = %i\n"
+          "#\tdP = %f\n"
+          "#\tthreshold = %f\n"
+          "#\temg_up_threshold = %f\n"
+          "#\temg_low_threshold = %f\n#",
+          param->fs_hz,
+          fix16_to_float(param->dP),
+          fix16_to_float(param->threshold),
+          fix16_to_float(param->emg_up_thres),
+          fix16_to_float(param->emg_low_thres));
 }
 
 // ---------------------------------------------------------------------------

@@ -176,32 +176,37 @@ void UiPrintMenu(const pru_mem_t* pru_mem) {
   "Menu: s - start experiment\n"
   "      m - collect mvc\n"
   "      f - collect free play\n"
+  "      p - parameter menu\n"
   "      e - exit\n"
   "-----------------------------------------------------------------------\n");
   fflush(stdout);
 }
 
+static void UiPrintParamMenu(const pru_mem_t* pru_mem) {
+  printf(
+  "\n\n---------------------------------------------------------------------\n"
+  " \t dP = %.2f,\t threshold = %.3f,\n"
+  " \t emg_up_thres = %.3f,\t emg_low_thres = %.3f\n"
+  "Parameters: d - change dP\n"
+  "            f - change threshold\n"
+  "            g - change emg_up_thres\n"
+  "            h - change emg_low_thres\n"
+  "            a - done\n"
+  "-----------------------------------------------------------------------\n",
+  fix16_to_float(pru_mem->p->dP),
+  fix16_to_float(pru_mem->p->threshold),
+  fix16_to_float(pru_mem->p->emg_up_thres),
+  fix16_to_float(pru_mem->p->emg_low_thres)
+  );
+  fflush(stdout);
+}
+
 int UiLoop(const pru_mem_t* pru_mem) {
   char input_char = 0;
+  float input_float = 0.0;
   char input_string[256] = {0};
   char log_file[256] = "datalog/";
 
-  pru_mem->p->fd = 0x3333;  // 0.2 Hz
-  pru_mem->p->Np = fix16_from_int(1); // number of cycles
-  pru_mem->p->Nb = 15; // number of ballistic trials
-  pru_mem->p->Jvirtual = 0;
-  pru_mem->p->bvirtual = 0;
-  pru_mem->p->kvirtual = 0;
-  pru_mem->p->G = 0;
-
-  pru_mem->p->P0 = 0;
-  pru_mem->p->threshold = 0x666; //0.1
-  pru_mem->p->dP = 0x80000;
-
-  pru_mem->p->Td = fix16_sdiv(pru_mem->p->Np,pru_mem->p->fd);
-  pru_mem->p->k2PiFd = fix16_smul(fix16_smul(0x20000,fix16_pi),pru_mem->p->fd);
-
-  UiPrintMenu(pru_mem);
 
   // make sample back with each condition
   // first nCond should be in order
@@ -234,6 +239,8 @@ int UiLoop(const pru_mem_t* pru_mem) {
   }
   fclose(ff);
 
+  UiPrintMenu(pru_mem);
+
   while (1) {
     // Clear inputs
     input_char = ' ';
@@ -257,6 +264,62 @@ int UiLoop(const pru_mem_t* pru_mem) {
           printf("done.\n");
           return 1;
         }
+
+
+        // ---- Exit ----------------------------------------------------------
+        case 'p' : {
+          int loopdone = 0;
+          while(!loopdone) {
+            UiPrintParamMenu(pru_mem);
+            fflush(stdout);
+            // Wait for input.
+            UiPollForUserInput();
+            scanf(" %c", &input_char);
+
+            switch (input_char) {
+              case 'd' : {
+                printf("\t\tEnter new value: ");
+                fflush(stdout);
+                UiPollForUserInput();
+                scanf(" %f", &input_float);
+                pru_mem->p->dP = fix16_from_float(input_float);
+                break;
+              }
+              case 'f' : {
+                printf("\t\tEnter new value: ");
+                fflush(stdout);
+                UiPollForUserInput();
+                scanf(" %f", &input_float);
+                pru_mem->p->threshold = fix16_from_float(input_float);
+                break;
+              }
+              case 'g' : {
+                printf("\t\tEnter new value: ");
+                fflush(stdout);
+                UiPollForUserInput();
+                scanf(" %f", &input_float);
+                pru_mem->p->emg_up_thres = fix16_from_float(input_float);
+                break;
+              }
+              case 'h' : {
+                printf("\t\tEnter new value: ");
+                fflush(stdout);
+                UiPollForUserInput();
+                scanf(" %f", &input_float);
+                pru_mem->p->emg_low_thres = fix16_from_float(input_float);
+                break;
+              }
+              case 'a' : {
+                loopdone = 1;
+                break;
+              }
+            }
+          }
+          UiPrintMenu(pru_mem);
+          break;
+        }
+
+
 
         // ---- Start data collection -----------------------------------------
         case 's' : {
@@ -448,3 +511,52 @@ int UiLoop(const pru_mem_t* pru_mem) {
   }
 }
 
+
+int PruLoadParams(const char* file, param_mem_t* param) {
+
+  // Defaults
+  param->fs_hz = 1000;
+  param->fs_ticks = HZ_TO_TICKS(param->fs_hz);
+
+  // App specific
+  param->Jvirtual = 0;
+  param->bvirtual = 0;
+  param->kvirtual = 0;
+
+  param->P0 = 0;
+
+  // patient specific
+  param->threshold = fix16_from_float(0.1);
+  param->dP = fix16_from_int(8);
+  param->emg_up_thres = fix16_from_int(1);
+  param->emg_low_thres = -fix16_from_int(1);
+
+  param->reflex_condition = 0;
+  param->Nb = 20;
+  param->Np = fix16_from_int(15);
+  param->fd = fix16_from_float(0.2);
+
+  param->Td = fix16_sdiv(param->Np,param->fd);
+  param->k2PiFd = fix16_smul(fix16_smul(0x20000,fix16_pi),param->fd);
+
+
+  FILE* fp = fopen(file, "r");
+  float infloat;
+  if (fp != NULL) {
+    fscanf(fp, "%f%*[^\n]\n", &infloat);
+    param->dP = fix16_from_float(infloat);
+
+    fscanf(fp, "%f%*[^\n]\n", &infloat);
+    param->threshold = fix16_from_float(infloat);
+
+    fscanf(fp, "%f%*[^\n]\n", &infloat);
+    param->emg_up_thres = fix16_from_float(infloat);
+
+    fscanf(fp, "%f%*[^\n]\n", &infloat);
+    param->emg_low_thres = fix16_from_float(infloat);
+
+    fclose(fp);
+    return 0;
+  }
+  return 0;
+}

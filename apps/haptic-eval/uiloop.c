@@ -45,6 +45,21 @@ int UiLoop(const pru_mem_t* pru_mem) {
   char input_string[256] = {0};
   char log_file[256] = "datalog/";
 
+  pru_mem->p->fd = 0x3333;  // 0.2 Hz
+  pru_mem->p->Np = fix16_from_int(15); // number of cycles
+  pru_mem->p->Nb = 20; // number of ballistic trials
+  pru_mem->p->Jvirtual = 0;
+  pru_mem->p->bvirtual = 0;
+  pru_mem->p->kvirtual = 0;
+  pru_mem->p->G = 0;
+
+  pru_mem->p->P0 = 0;
+  pru_mem->p->threshold = 0x666; //0.1
+  pru_mem->p->dP = 0x80000;
+
+  pru_mem->p->Td = fix16_sdiv(pru_mem->p->Np,pru_mem->p->fd);
+  pru_mem->p->k2PiFd = fix16_smul(fix16_smul(0x20000,fix16_pi),pru_mem->p->fd);
+
   UiPrintMenu(pru_mem);
 
   while (1) {

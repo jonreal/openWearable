@@ -40,10 +40,12 @@ typedef struct {
   fix16_t Jvirtual;
   fix16_t bvirtual;
   fix16_t kvirtual;
+  fix16_t G;
   fix16_t P0;
   fix16_t threshold;
   fix16_t dP;
-  fix16_t G;
+  fix16_t emg_up_thres;
+  fix16_t emg_low_thres;
   uint32_t reflex_condition;
   uint32_t Nb;
   fix16_t Np;

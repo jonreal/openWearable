@@ -43,13 +43,13 @@ int PruMemMap(pru_mem_t* pru_mem) {
   pru_mem->p = (param_mem_t*) ptr;
 
   // Memory Map for lookup table (pru1 DRAM)
-  ptr = mmap(0, sizeof(lut_mem_t),
-             PROT_READ | PROT_WRITE, MAP_SHARED, fd, PRU1_DRAM);
-  if (ptr == MAP_FAILED) {
-    printf ("ERROR: could not map memory.\n\n");
-    return 1;
-  }
-  pru_mem->l = (lut_mem_t *) ptr;
+  //ptr = mmap(0, sizeof(lut_mem_t),
+  //           PROT_READ | PROT_WRITE, MAP_SHARED, fd, PRU1_DRAM);
+  //if (ptr == MAP_FAILED) {
+  //  printf ("ERROR: could not map memory.\n\n");
+  //  return 1;
+  //}
+  //pru_mem->l = (lut_mem_t *) ptr;
 
   // Memory Map for state (shared DRAM)
   ptr = mmap(0, sizeof(shared_mem_t),
@@ -272,7 +272,8 @@ void PruSprintMalloc(const pru_mem_t* pru_mem, char* buff) {
           "#\tLookup table memory: %i bytes.\n"
           "#\tData memory: %i bytes.\n#",
           sizeof(*(pru_mem->p)),
-          sizeof(*(pru_mem->l)),
+          0,
+          //sizeof(*(pru_mem->l)),
           sizeof(*(pru_mem->s)));
 }
 
@@ -285,17 +286,17 @@ void PruSprintMalloc(const pru_mem_t* pru_mem, char* buff) {
 //
 // TODO: Use strcmp for parameter inputs
 // ------------------------------------------------------------------------- */
-int PruLoadParams(const char* file, param_mem_t* param) {
-  FILE* fp = fopen(file, "r");
-  if (fp != NULL) {
-    fscanf(fp, "%u%*[^\n]\n", &param->fs_hz);
-    fclose(fp);
-    param->fs_ticks = HZ_TO_TICKS(param->fs_hz);
-    return 0;
-  }
-  return -1;
-}
-
+//int PruLoadParams(const char* file, param_mem_t* param) {
+//  FILE* fp = fopen(file, "r");
+//  if (fp != NULL) {
+//    fscanf(fp, "%u%*[^\n]\n", &param->fs_hz);
+//    fclose(fp);
+//    param->fs_ticks = HZ_TO_TICKS(param->fs_hz);
+//    return 0;
+//  }
+//  return -1;
+//}
+//
 // ----------------------------------------------------------------------------
 // Function: void PruEnable(int en, pru_ctl_t* ctl)
 //
@@ -327,20 +328,20 @@ void PruPrintDebugBuffer(const volatile uint32_t* db) {
  *
  * This function loads lookup table (Feedforward) from file to memory.
  * ------------------------------------------------------------------------- */
-int PruLoadLut(char* file, lut_mem_t* l)
-{
-  FILE* fp = fopen(file, "r");
-  float value;
-
-  if(fp != NULL){
-    for(int i=0; i<1000; i++){
-      fscanf(fp, "%f\n", &value);
-      // Scale signal by 1000 to store as int16_t
-      l->lut[i] = (int16_t)fix16_to_int(fix16_from_float(value * 1000.0));
-    }
-    fclose(fp);
-    return 0;
-  }
-  printf("File not found\n");
-  return -1;
-}
+//int PruLoadLut(char* file, lut_mem_t* l)
+//{
+//  FILE* fp = fopen(file, "r");
+//  float value;
+//
+//  if(fp != NULL){
+//    for(int i=0; i<1000; i++){
+//      fscanf(fp, "%f\n", &value);
+//      // Scale signal by 1000 to store as int16_t
+//      l->lut[i] = (int16_t)fix16_to_int(fix16_from_float(value * 1000.0));
+//    }
+//    fclose(fp);
+//    return 0;
+//  }
+//  printf("File not found\n");
+//  return -1;
+//}

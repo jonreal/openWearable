@@ -209,9 +209,6 @@ void Pru0Cleanup(void) {
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
 
-
-
-
   i2c1 = I2cInit(1);
   mux = MuxI2cInit(i2c1,0x70,PCA9548);
   reservoir = PamReservoirInit(PressureSensorInit(mux,0,0x28));
@@ -223,7 +220,7 @@ void Pru1Init(pru_mem_t* mem) {
                         0x2FAAD48, // 762.6769 ms
                         refractory,
                         FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
-  PamSetPd(pam1,mem->p->P0);
+  PamSetPd(pam1,0);
 
   pam2 = PamInitMuscle(PressureSensorInit(mux,2,0x28),
                         reservoir,
@@ -232,7 +229,7 @@ void Pru1Init(pru_mem_t* mem) {
                         0x33DD3A4, //829.8267 ms
                         refractory,
                         FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
-  PamSetPd(pam2,mem->p->P0);
+  PamSetPd(pam2,0);
 
   reflex = ReflexInit(pam1,pam2,fix16_from_int(15), fix16_from_int(95),
                       FiltIirInit(1, b_dcblck, a_dcblck));
@@ -267,8 +264,8 @@ void Pru1UpdateControl(const pru_count_t* c,
     case 1:
       ReflexMyoUpdate(reflexmyo,
                       s_->emg1_state.value,
-                    s_->emg2_state.value,
-                    fix16_one, p_->dP);
+                      s_->emg2_state.value,
+                      p_->emg_up_thres, p_->emg_low_thres, p_->dP);
       break;
     case 2:
       ReflexUpdate(reflex, p_->threshold, p_->dP, 0);
@@ -276,8 +273,8 @@ void Pru1UpdateControl(const pru_count_t* c,
     case 3:
       ReflexMyoUpdate(reflexmyo,
                       s_->emg1_state.value,
-                    s_->emg2_state.value,
-                    fix16_one, p_->dP);
+                      s_->emg2_state.value,
+                      p_->emg_up_thres, p_->emg_low_thres, p_->dP);
       ReflexUpdate(reflex, p_->threshold, p_->dP, 0);
       break;
   }

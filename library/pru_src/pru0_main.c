@@ -172,8 +172,9 @@ void memInit(pru_mem_t* mem) {
   mem->p = (param_mem_t*) ptr;
 
   // Memory map for feedforward lookup table (pru1 DRAM)
-  ptr = (void*) PRU_OTHER_DRAM;
-  mem->l = (lut_mem_t*) ptr;
+  //ptr = (void*) PRU_OTHER_DRAM;
+  //mem->l = (lut_mem_t*) ptr;
+  mem->l = (lut_mem_t*) NULL;
 
   // Point global debug buffer
   debug_buff = &(mem->p->debug_buff[0]);
