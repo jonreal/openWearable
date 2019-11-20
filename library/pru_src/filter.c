@@ -17,6 +17,8 @@
 #include <stdlib.h>
 #include "fix16.h"
 
+extern volatile uint32_t* debug_buff;
+
 // ----------------------------------------------------------------------------
 iir_filt_t* FiltIirInit(const uint32_t filtorder,
                     const fix16_t* b_coeff, const fix16_t* a_coeff) {

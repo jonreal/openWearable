@@ -40,26 +40,11 @@ int main(int argc, char **argv) {
   doneFlag = 0;
   char buff[65536] = {0,};
   pru_mem_t pru_mem;
-
-  if (PruMemMap(&pru_mem) != 0) {
-    printf("pru_mem_init() failed.");
-    return -1;
-  }
-  if (PruLoadParams("/root/openWearable/apps/config/default", pru_mem.p) != 0) {
-    printf("\nParameter file not found!\n");
-  }
-  buff[0] = '\0';
-  FormatSprintParams(pru_mem.p, buff);
-  fprintf(stdout,buff);
-  if (PruLoadLut("/root/openWearable/apps/config/sine_1Hz",pru_mem.l) != 0) {
-    printf("\nLookup table file not found!\n");
-  }
-  if(PruInit(FWSUFFIX) != 0)
-    return -1;
-
   int c;
   ui_flags_t uiflags = UiInitFlags();
-  while((c = getopt(argc, argv, "vur")) != -1) {
+  char configfile[256] = "/root/openWearable/apps/config/";
+  int configFlag = 0;
+  while((c = getopt(argc, argv, "vurc:")) != -1) {
     switch (c) {
       case 'v':
         uiflags.debug = 1;
@@ -70,8 +55,38 @@ int main(int argc, char **argv) {
       case 'u':
         uiflags.udppublish = 1;
         break;
+      case 'c':
+        strcat(configfile,optarg);
+        printf("\nloading config file %s\n\n", configfile);
+        configFlag = 1;
+        break;
     }
   }
+
+  if (PruMemMap(&pru_mem) != 0) {
+    printf("pru_mem_init() failed.");
+    return -1;
+  }
+  if (configFlag) {
+    if (PruLoadParams(configfile, pru_mem.p) != 0) {
+      printf("\nParameter file not found!\n");
+      return -1;
+    }
+  }
+  else {
+    if (PruLoadParams(NULL, pru_mem.p) != 0) {
+      return -1;
+    }
+  }
+  buff[0] = '\0';
+  FormatSprintParams(pru_mem.p, buff);
+  fprintf(stdout,buff);
+  //if (PruLoadLut("/root/openWearable/apps/config/sine_1Hz",pru_mem.l) != 0) {
+  //  printf("\nLookup table file not found!\n");
+  //}
+  if(PruInit(FWSUFFIX) != 0)
+    return -1;
+
   UiWelcome();
   if (UiInit(&pru_mem,uiflags) != 0) {
     printf("Tui init failed.\n");

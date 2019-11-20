@@ -29,6 +29,7 @@ typedef struct {
   volatile fix16_t triggersignal_myo;
   volatile emg_state_t emg1_state;
   volatile emg_state_t emg2_state;
+  volatile uint32_t game;
  } state_t;
 
 // --- parameters
@@ -36,15 +37,20 @@ typedef struct {
   volatile uint32_t debug_buff[10];
   uint32_t fs_hz;
   uint32_t fs_ticks;
-  uint32_t Td;  // cycle period (in clock cnts)
-  uint32_t Np; // number of cycles (or ballistic targets)
-  fix16_t targets[40];
+  fix16_t targets[20];
   fix16_t Jvirtual;
   fix16_t bvirtual;
   fix16_t kvirtual;
   fix16_t P0;
   fix16_t threshold;
   fix16_t dP;
+  fix16_t G;
+  uint32_t reflex_condition;
+  uint32_t Nb;
+  fix16_t Np;
+  fix16_t fd;
+  fix16_t Td;
+  fix16_t k2PiFd;
 } param_mem_t;
 
 
