@@ -24,8 +24,7 @@ typedef struct {
   uint32_t reflex_condition;
 } conditions_t;
 
-uint32_t random_index[80];
-uint32_t nBlocks = 5;
+
 
 
 //uint32_t nCond = 4;
@@ -56,8 +55,10 @@ uint32_t nBlocks = 5;
 
 
 
-uint32_t nCond = 16;
-conditions_t conditions[16] = { {.game = TRACKING,
+uint32_t nCond = 8;
+uint32_t nBlocks = 5;
+uint32_t random_index[40];
+conditions_t conditions[8] = { {.game = TRACKING,
                                 .Jv = 0,                  // 0
                                 .Kv = 0x51F,              // 0.03
                                 .P0 = 0,                  // 0
@@ -87,75 +88,25 @@ conditions_t conditions[16] = { {.game = TRACKING,
                                 .Kv = 0x51F,              // 0.03
                                 .P0 = 0x280000,           // 40 psi
                                 .G = 0,                   // 0
-                                .reflex_condition = 1},   // myo
+                                .reflex_condition = 2},   // both
                                 {.game = TRACKING,
                                 .Jv = 0x40000,            // 4
                                 .Kv = 0,                  // 0
                                 .P0 = 0x280000,           // 40 psi
                                 .G = 0,                   // 0
-                                .reflex_condition = 1},   // myo
+                                .reflex_condition = 2},   // both
                                 {.game = BALLISTIC,
                                 .Jv = 0,                  // 0
                                 .Kv = 0x51F,              // 0.03
                                 .P0 = 0x280000,           // 40 psi
                                 .G = 0,                   // 0
-                                .reflex_condition = 1},   // myo
+                                .reflex_condition = 2},   // both
                                 {.game = BALLISTIC,
                                 .Jv = 0x40000,            // 4
                                 .Kv = 0,                  // 0
                                 .P0 = 0x280000,           // 40 psi
                                 .G = 0,                   // 0
-                                .reflex_condition = 1},   // myo
-                                ////////////////////////////
-                                {.game = TRACKING,
-                                .Jv = 0,                  // 0
-                                .Kv = 0x51F,              // 0.03
-                                .P0 = 0x280000,           // 40 psi
-                                .G = 0,                   // 0
-                                .reflex_condition = 2},   // reflex
-                                {.game = TRACKING,
-                                .Jv = 0x40000,            // 4
-                                .Kv = 0,                  // 0
-                                .P0 = 0x280000,           // 40 psi
-                                .G = 0,                   // 0
-                                .reflex_condition = 2},   // reflex
-                                {.game = BALLISTIC,
-                                .Jv = 0,                  // 0
-                                .Kv = 0x51F,              // 0.03
-                                .P0 = 0x280000,           // 40 psi
-                                .G = 0,                   // 0
-                                .reflex_condition = 2},   // reflex
-                                {.game = BALLISTIC,
-                                .Jv = 0x40000,            // 4
-                                .Kv = 0,                  // 0
-                                .P0 = 0x280000,           // 40 psi
-                                .G = 0,                   // 0
-                                .reflex_condition = 2},   // reflex
-                                ////////////////////////////
-                                {.game = TRACKING,
-                                .Jv = 0,                  // 0
-                                .Kv = 0x51F,              // 0.03
-                                .P0 = 0x280000,           // 40 psi
-                                .G = 0,                   // 0
-                                .reflex_condition = 3},   // both
-                                {.game = TRACKING,
-                                .Jv = 0x40000,            // 4
-                                .Kv = 0,                  // 0
-                                .P0 = 0x280000,           // 40 psi
-                                .G = 0,                   // 0
-                                .reflex_condition = 3},   // both
-                                {.game = BALLISTIC,
-                                .Jv = 0,                  // 0
-                                .Kv = 0x51F,              // 0.03
-                                .P0 = 0x280000,           // 40 psi
-                                .G = 0,                   // 0
-                                .reflex_condition = 3},   // both
-                                {.game = BALLISTIC,
-                                .Jv = 0x40000,            // 4
-                                .Kv = 0,                  // 0
-                                .P0 = 0x280000,           // 40 psi
-                                .G = 0,                   // 0
-                                .reflex_condition = 3}    // both
+                                .reflex_condition = 2}    // both
                               };
 
 
@@ -328,6 +279,13 @@ int UiLoop(const pru_mem_t* pru_mem) {
           uint32_t icond = 0;
           for (int j=0; j<nBlocks; j++) {
             for (int i=0; i<nCond; i++) {
+
+              // Add here to skip trials
+              //if ((j == 0) || (conditions[random_index[trialcnt]].reflex_condition == 2)) {
+              //  trialcnt++;
+              //  continue;
+              //}
+
               icond = random_index[trialcnt];
               sprintf(input_string,
                   "block%i-trial%i",(j+1), (i+1));

@@ -51,6 +51,7 @@ typedef struct {
 
 // Lookuptable
 typedef struct {
+  int16_t lut[1000];
 } lut_mem_t;
 
 // Pointers to memory
