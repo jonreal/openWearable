@@ -75,6 +75,8 @@ i2c_t* I2cInit(uint8_t channel)
 
 void I2cCleanUp(i2c_t* i2c)
 {
+  I2cClearInterrupts(i2c->regmap);
+
   /* I2C_CON : reset */
   HWREG(i2c->regmap + 0xA4) = 0x0;
 
