@@ -55,10 +55,10 @@ typedef struct {
 
 
 
-uint32_t nCond = 8;
+uint32_t nCond = 12;
 uint32_t nBlocks = 5;
-uint32_t random_index[40];
-conditions_t conditions[8] = { {.game = TRACKING,
+uint32_t random_index[60];
+conditions_t conditions[12] = { {.game = TRACKING,
                                 .Jv = 0,                  // 0
                                 .Kv = 0x51F,              // 0.03
                                 .P0 = 0,                  // 0
@@ -88,25 +88,50 @@ conditions_t conditions[8] = { {.game = TRACKING,
                                 .Kv = 0x51F,              // 0.03
                                 .P0 = 0x280000,           // 40 psi
                                 .G = 0,                   // 0
-                                .reflex_condition = 2},   // both
+                                .reflex_condition = 1},   // myo
                                 {.game = TRACKING,
                                 .Jv = 0x40000,            // 4
                                 .Kv = 0,                  // 0
                                 .P0 = 0x280000,           // 40 psi
                                 .G = 0,                   // 0
-                                .reflex_condition = 2},   // both
+                                .reflex_condition = 1},   // myo
                                 {.game = BALLISTIC,
                                 .Jv = 0,                  // 0
                                 .Kv = 0x51F,              // 0.03
                                 .P0 = 0x280000,           // 40 psi
                                 .G = 0,                   // 0
-                                .reflex_condition = 2},   // both
+                                .reflex_condition = 1},   // myo
                                 {.game = BALLISTIC,
                                 .Jv = 0x40000,            // 4
                                 .Kv = 0,                  // 0
                                 .P0 = 0x280000,           // 40 psi
                                 .G = 0,                   // 0
-                                .reflex_condition = 2}    // both
+                                .reflex_condition = 1},    // myo
+                                ////////////////////////////
+                                {.game = TRACKING,
+                                .Jv = 0,                  // 0
+                                .Kv = 0x51F,              // 0.03
+                                .P0 = 0x280000,           // 40 psi
+                                .G = 0,                   // 0
+                                .reflex_condition = 3},   // myo + reflex
+                                {.game = TRACKING,
+                                .Jv = 0x40000,            // 4
+                                .Kv = 0,                  // 0
+                                .P0 = 0x280000,           // 40 psi
+                                .G = 0,                   // 0
+                                .reflex_condition = 3},   // myo + reflex
+                                {.game = BALLISTIC,
+                                .Jv = 0,                  // 0
+                                .Kv = 0x51F,              // 0.03
+                                .P0 = 0x280000,           // 40 psi
+                                .G = 0,                   // 0
+                                .reflex_condition = 3},   // myo + reflex
+                                {.game = BALLISTIC,
+                                .Jv = 0x40000,            // 4
+                                .Kv = 0,                  // 0
+                                .P0 = 0x280000,           // 40 psi
+                                .G = 0,                   // 0
+                                .reflex_condition = 3}    // myo + reflex
                               };
 
 
