@@ -306,10 +306,10 @@ int UiLoop(const pru_mem_t* pru_mem) {
             for (int i=0; i<nCond; i++) {
 
               // Add here to skip trials
-              //if ((j == 0) || (conditions[random_index[trialcnt]].reflex_condition == 2)) {
-              //  trialcnt++;
-              //  continue;
-              //}
+              if ((j == 0) && (i < 4)) {
+                trialcnt++;
+                continue;
+              }
 
               icond = random_index[trialcnt];
               sprintf(input_string,

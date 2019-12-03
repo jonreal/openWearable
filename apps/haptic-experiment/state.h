@@ -5,10 +5,12 @@
 #include "maxon.h"
 #include "pam.h"
 #include "emg.h"
+#include "bno055_arm.h"
 
 // --- cpudata struct
 typedef struct {
-  volatile uint32_t varcpu;
+  volatile euler_t imu1;
+  volatile uint32_t status;
 } cpudata_t;
 
 // --- state
