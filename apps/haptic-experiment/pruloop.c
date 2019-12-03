@@ -209,7 +209,7 @@ void Pru0Cleanup(void) {
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
 
-  i2c1 = I2cInit(1);
+  i2c1 = I2cInit(2);
   mux = MuxI2cInit(i2c1,0x70,PCA9548);
   reservoir = PamReservoirInit(PressureSensorInit(mux,0,0x28));
 
