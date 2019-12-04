@@ -28,13 +28,14 @@ i2cmux_t* mux;
 reservoir_t* reservoir;
 pam_t* pam1;
 pam_t* pam2;
-const uint32_t refract_cnts = 350;
 
 // Reflex stuff
 reflex_t* reflex;
-// DC Blocking
-const fix16_t b_hp[2] = {fix16_one, -fix16_one};
-const fix16_t a_hp[2] = {fix16_one, 0xFFFF028F};  // -0.99
+
+// DC blocking filter
+const fix16_t b_dcblck[2] = {fix16_one, -fix16_one};
+const fix16_t a_dcblck[2] = {fix16_one, 0xFFFF3333};  // -0.80
+const uint32_t refract_cnts = 170;
 
 // Sync stuff
 sync_t* sync;
@@ -55,7 +56,7 @@ const uint8_t debounce = 100;
 // ---------------------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem) {
   mem->p->p_0 = 0x280000;   // 40 psi
-  mem->p->thr = 0x4000;     // 0.1
+  mem->p->thr = 0xCCD;     // 0.05
   mem->p->dp =  0x80000;
 
   bred = InputButtonInit(bred_pin, debounce);
@@ -106,8 +107,8 @@ void Pru1Init(pru_mem_t* mem) {
                         FiltIirInit(1, k_lp_1_2Hz_b, k_lp_1_2Hz_a));
   PamSetPd(pam2,mem->p->p_0);
 
-  reflex = ReflexInit(pam1, pam2, fix16_from_int(15),
-                      FiltIirInit(1, b_hp, a_hp));
+  reflex = ReflexInit(pam1, pam2, fix16_from_int(15), fix16_from_int(95),
+                      FiltIirInit(1, b_dcblck, a_dcblck));
 
   sync = SyncInitChan(sync_pin);
   SyncOutLow(sync);
@@ -123,7 +124,7 @@ void Pru1UpdateState(const pru_count_t* c,
   PamUpdate(pam1);
   PamUpdate(pam2);
 
-  ReflexUpdate(reflex, p_->thr, p_->dp);
+  ReflexUpdate(reflex, p_->thr, p_->dp, 0);
 
   if (PruGetCtlBit(ctl_,2)) {
     PamSetPd(pam1,p_->p_0);

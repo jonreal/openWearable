@@ -39,9 +39,7 @@ static void UiInputCallback(int sig) {
 
 static void UiTimerCallback(int sig) {
 
-  DebugPinHigh();
-
-  CpuLoop(uidata.cpudata);
+  //DebugPinHigh();
 
   // always update circular buffer
   LogCircBuffUpdate(uidata.log);
@@ -59,8 +57,9 @@ static void UiTimerCallback(int sig) {
   if (uidata.flag.udppublish)
     UdpPublish(uidata.log, uidata.udp);
 
+  CpuLoop(uidata.cpudata);
 
-  DebugPinLow();
+  //DebugPinLow();
 }
 // ----------------------------------------------------------------------------
 
