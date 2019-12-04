@@ -27,27 +27,33 @@ typedef struct {
 
 
 
+//uint32_t nBlocks = 5;
 //uint32_t nCond = 4;
+//uint32_t random_index[20];
 //conditions_t conditions[4] = { {.game = TRACKING,
-//                                .Jv = 0,            // 0
-//                                .Kv = 0,            // 0
-//                                .P0 = 0,            // 0
-//                                .G = 0},            // 0
+//                                .Jv = 0,                  // 0
+//                                .Kv = 0,                  // 0
+//                                .P0 = 0,                  // 0
+//                                .G = 0,                   // 0
+//                                .reflex_condition = 0},   // 0
 //                                {.game = TRACKING,
-//                                .Jv = 0,            // 0
-//                                .Kv = 0x7AE,        // 0.03
-//                                .P0 = 0,            // 0
-//                                .G = 0},            // 0
+//                                .Jv = 0,                  // 0
+//                                .Kv = 0x7AE,              // 0.03
+//                                .P0 = 0,                  // 0
+//                                .G = 0,                   // 0
+//                                .reflex_condition = 0},   // 0
 //                              {.game = TRACKING,
-//                                .Jv = 0x50000,      // 5
-//                                .Kv = 0,            // 0
-//                                .P0 = 0,            // 0
-//                                .G = 0},            // 0
+//                                .Jv = 0x50000,            // 5
+//                                .Kv = 0,                  // 0
+//                                .P0 = 0,                  // 0
+//                                .G = 0,                   // 0
+//                                .reflex_condition = 0},   // 0
 //                              {.game = TRACKING,
-//                                .Jv = 0x50000,      // 5
-//                                .Kv = 0xCCD,        // 0.05
-//                                .P0 = 0,            // 0
-//                                .G = fix16_one},    // 1
+//                                .Jv = 0x50000,            // 5
+//                                .Kv = 0xCCD,              // 0.05
+//                                .P0 = 0,                  // 0
+//                                .G = fix16_one,           // 1
+//                                .reflex_condition = 0}    // 0
 //                               };
 //
 
@@ -305,11 +311,11 @@ int UiLoop(const pru_mem_t* pru_mem) {
           for (int j=0; j<nBlocks; j++) {
             for (int i=0; i<nCond; i++) {
 
-              // Add here to skip trials
-              if ((j == 0) && (i < 4)) {
-                trialcnt++;
-                continue;
-              }
+              //// Add here to skip trials
+              //if ((j == 0) && (i < 4)) {
+              //  trialcnt++;
+              //  continue;
+              //}
 
               icond = random_index[trialcnt];
               sprintf(input_string,
