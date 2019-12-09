@@ -331,14 +331,11 @@ int UiLoop(const pru_mem_t* pru_mem) {
               strcat(log_file, input_string);
               UiNewLogFile(log_file);
 
-
-
               // Wait for user input to start saving data
               printf("\t\tPress enter start block%i trial%i,...\n",(j+1),(i+1));
               fflush(stdout);
               UiPollForUserInput();
               scanf(" %c", &input_char);
-
 
               pru_mem->p->Jvirtual = conditions[icond].Jv;
               pru_mem->p->kvirtual = conditions[icond].Kv;
