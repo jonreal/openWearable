@@ -1,7 +1,13 @@
 #!/bin/bash
 # pin muxes bbbw for openWearable
 
+config-pin P9_17 i2c
+config-pin P9_18 i2c
+config-pin P9_19 i2c
+config-pin P9_20 i2c
+
 # --- enable pwm2
+
 
 # 5 kHz period
 echo 0 > /sys/class/pwm/pwm-0\:0/enable

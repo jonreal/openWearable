@@ -125,14 +125,14 @@ void PamSetPd(pam_t* pam, fix16_t Pd) {
       pam->fsm = DEFLATE;
       pam->s.pd = Pd;
       //pam->pw = (uint32_t)
-      //  (-fix16_smul(pam->tau_out,fix16_log(fix16_sdiv(Pd,pam->s.pm))));
+      //  (-fix16_mul(pam->tau_out,fix16_log(fix16_div(Pd,pam->s.pm))));
     } else if (Pd > pam->s.pm) {
       pam->fsm = INFLATE;
       pam->s.pd = Pd;
       //pam->pw = (uint32_t)
-      //  (-fix16_smul(pam->tau_out,
-      //    fix16_log(fix16_sdiv(fix16_ssub(Pd,pam->res->pressure),
-      //              fix16_ssub(pam->s.pm,pam->res->pressure)))));
+      //  (-fix16_mul(pam->tau_out,
+      //    fix16_log(fix16_div(fix16_sub(Pd,pam->res->pressure),
+      //              fix16_sub(pam->s.pm,pam->res->pressure)))));
     }
   }
 }
@@ -146,7 +146,7 @@ void PamActionSimple(pam_t* p) {
       break;
     }
     case INFLATE : {
-      if (fix16_ssub(p->s.pd,p->s.pm) < 0) {
+      if (fix16_sub(p->s.pd,p->s.pm) < 0) {
         p->fsm = REFRACT;
         PamSetU(p,0);
       } else {
@@ -155,7 +155,7 @@ void PamActionSimple(pam_t* p) {
       break;
     }
     case DEFLATE : {
-      if (fix16_ssub(p->s.pd,p->s.pm) > 0) {
+      if (fix16_sub(p->s.pd,p->s.pm) > 0) {
         p->fsm = REFRACT;
         PamSetU(p,0);
       } else {
@@ -222,7 +222,7 @@ void PamActionPulse(pam_t* p) {
 
   switch (p->fsm) {
     case INFLATE : {
-      if (fix16_ssub(p->s.pd,p->s.pm) < 0) {
+      if (fix16_sub(p->s.pd,p->s.pm) < 0) {
         p->fsm = REFRACT;
         p->pcnt = 0;
         PamSetU(p,0);
@@ -238,7 +238,7 @@ void PamActionPulse(pam_t* p) {
       break;
     }
     case DEFLATE : {
-      if (fix16_ssub(p->s.pd,p->s.pm) > 0) {
+      if (fix16_sub(p->s.pd,p->s.pm) > 0) {
         p->fsm = REFRACT;
         p->pcnt = 0;
         PamSetU(p,0);

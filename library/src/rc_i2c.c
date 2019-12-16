@@ -138,7 +138,7 @@ int rc_i2c_read_bytes(int bus, uint8_t regAddr, size_t count, uint8_t *data)
 
 	// write register to device
 	ret = write(i2c[bus].fd, &regAddr, 1);
-	if(unlikely(ret!=1)){
+	if(ret!=1){
 		fprintf(stderr,"ERROR: in rc_i2c_read_bytes, failed to write to bus\n");
 		i2c[bus].lock = old_lock;
 		return -1;

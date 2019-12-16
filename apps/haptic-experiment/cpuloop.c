@@ -16,15 +16,26 @@
 
 #include "cpuloop.h"
 #include <stdio.h>
+#include "rc_i2c.h"
+#include "bno055_arm.h"
+
+imu_t* imu1;
+uint32_t frame;
 
 void CpuInit(cpudata_t* cpudata) {
-  cpudata->varcpu = 0;
+//  frame = 0;
+//  rc_i2c_init(1,0x0);
+//  imu1 = ImuInit(0x29);
 }
 
 void CpuLoop(cpudata_t* cpudata)  {
-  (cpudata->varcpu)++;
+//  if ((frame % 10) == 0)
+//    ImuUpdate(imu1);
+//  cpudata->imu1 = ImuGetEuler(imu1);
+//  cpudata->status = imu1->status;
+//  frame++;
 }
 
 void CpuCleanup(void) {
-  
+//  rc_i2c_close(1);
 }

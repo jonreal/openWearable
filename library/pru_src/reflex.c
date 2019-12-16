@@ -76,24 +76,22 @@ void ReflexUpdate(reflex_t* reflex, fix16_t threshold,
       reflex->triggersignal = FiltIir(activation,reflex->filt) + ref;
     }
 
-    if ( (reflex->triggersignal > threshold) && (threshold > 0)
-    && (fix16_ssub(reflex->pam_2->s.pd,delta) > reflex->p_min)
-    && (fix16_sadd(reflex->pam_1->s.pd,delta) < reflex->p_max) ) {
+    // Compute logicals
+    uint32_t pm1_min_sat = fix16_ssub(reflex->pam_1->s.pd,delta) > reflex->p_min;
+    uint32_t pm1_max_sat = fix16_sadd(reflex->pam_1->s.pd,delta) < reflex->p_max;
+    uint32_t pm2_min_sat = fix16_ssub(reflex->pam_2->s.pd,delta) > reflex->p_min;
+    uint32_t pm2_max_sat = fix16_sadd(reflex->pam_2->s.pd,delta) < reflex->p_max;
+    uint32_t pos = reflex->triggersignal > threshold;
+    uint32_t neg = reflex->triggersignal < -threshold;
+    uint32_t dpos = delta > 0;
+    uint32_t dneg = delta < 0;
+
+    if ( pos && ( (dpos && pm2_min_sat && pm1_max_sat)
+               || (dneg && pm2_min_sat && pm1_max_sat))){
       PamSetPd(reflex->pam_1, fix16_sadd(reflex->pam_1->s.pd,delta));
       PamSetPd(reflex->pam_2, fix16_ssub(reflex->pam_2->s.pd,delta));
-    } else if ( (reflex->triggersignal < -threshold) && (threshold > 0)
-    && (fix16_ssub(reflex->pam_1->s.pd,delta) > reflex->p_min)
-    && (fix16_sadd(reflex->pam_2->s.pd,delta) < reflex->p_max) ) {
-      PamSetPd(reflex->pam_1, fix16_ssub(reflex->pam_1->s.pd,delta));
-      PamSetPd(reflex->pam_2, fix16_sadd(reflex->pam_2->s.pd,delta));
-    } else if ( (reflex->triggersignal > threshold) && (threshold < 0)
-    && (fix16_ssub(reflex->pam_1->s.pd,delta) > reflex->p_min)
-    && (fix16_sadd(reflex->pam_2->s.pd,delta) < reflex->p_max) ) {
-      PamSetPd(reflex->pam_1, fix16_sadd(reflex->pam_1->s.pd,delta));
-      PamSetPd(reflex->pam_2, fix16_ssub(reflex->pam_2->s.pd,delta));
-    } else if ( (reflex->triggersignal < -threshold) && (threshold < 0)
-    && (fix16_ssub(reflex->pam_2->s.pd,delta) > reflex->p_min)
-    && (fix16_sadd(reflex->pam_1->s.pd,delta) < reflex->p_max) ) {
+    } else if  ( neg && ( (dpos && pm1_min_sat && pm2_max_sat)
+               || (dneg && pm1_min_sat && pm2_max_sat))){
       PamSetPd(reflex->pam_1, fix16_ssub(reflex->pam_1->s.pd,delta));
       PamSetPd(reflex->pam_2, fix16_sadd(reflex->pam_2->s.pd,delta));
     }
@@ -101,33 +99,30 @@ void ReflexUpdate(reflex_t* reflex, fix16_t threshold,
     reflex->triggersignal = 0;
     reflex->flag = 0;
   }
-
 }
 
 void ReflexMyoUpdate(reflex_myo_t* reflex, fix16_t emg1, fix16_t emg2,
-    fix16_t threshold, fix16_t delta) {
+    fix16_t thres_u, fix16_t thres_l, fix16_t delta) {
 
   reflex->triggersignal = fix16_ssub(emg1,emg2);
 
   if ((reflex->pam_2->fsm == HOLD) && (reflex->pam_1->fsm == HOLD)) {
-    if ( (reflex->triggersignal > threshold) && (threshold > 0)
-    && (fix16_ssub(reflex->pam_2->s.pd,delta) > reflex->p_min)
-    && (fix16_sadd(reflex->pam_1->s.pd,delta) < reflex->p_max) ) {
+    // Compute logicals
+    uint32_t pm1_min_sat = fix16_ssub(reflex->pam_1->s.pd,delta) > reflex->p_min;
+    uint32_t pm1_max_sat = fix16_sadd(reflex->pam_1->s.pd,delta) < reflex->p_max;
+    uint32_t pm2_min_sat = fix16_ssub(reflex->pam_2->s.pd,delta) > reflex->p_min;
+    uint32_t pm2_max_sat = fix16_sadd(reflex->pam_2->s.pd,delta) < reflex->p_max;
+    uint32_t pos = reflex->triggersignal > thres_u;
+    uint32_t neg = reflex->triggersignal < thres_l;
+    uint32_t dpos = delta > 0;
+    uint32_t dneg = delta < 0;
+
+    if ( pos && ( (dpos && pm2_min_sat && pm1_max_sat)
+               || (dneg && pm2_min_sat && pm1_max_sat))){
       PamSetPd(reflex->pam_1, fix16_sadd(reflex->pam_1->s.pd,delta));
       PamSetPd(reflex->pam_2, fix16_ssub(reflex->pam_2->s.pd,delta));
-    } else if ( (reflex->triggersignal < -threshold) && (threshold > 0)
-    && (fix16_ssub(reflex->pam_1->s.pd,delta) > reflex->p_min)
-    && (fix16_sadd(reflex->pam_2->s.pd,delta) < reflex->p_max) ) {
-      PamSetPd(reflex->pam_1, fix16_ssub(reflex->pam_1->s.pd,delta));
-      PamSetPd(reflex->pam_2, fix16_sadd(reflex->pam_2->s.pd,delta));
-    } else if ( (reflex->triggersignal > threshold) && (threshold < 0)
-    && (fix16_ssub(reflex->pam_1->s.pd,delta) > reflex->p_min)
-    && (fix16_sadd(reflex->pam_2->s.pd,delta) < reflex->p_max) ) {
-      PamSetPd(reflex->pam_1, fix16_sadd(reflex->pam_1->s.pd,delta));
-      PamSetPd(reflex->pam_2, fix16_ssub(reflex->pam_2->s.pd,delta));
-    } else if ( (reflex->triggersignal < -threshold) && (threshold < 0)
-    && (fix16_ssub(reflex->pam_2->s.pd,delta) > reflex->p_min)
-    && (fix16_sadd(reflex->pam_1->s.pd,delta) < reflex->p_max) ) {
+    } else if  ( neg && ( (dpos && pm1_min_sat && pm2_max_sat)
+               || (dneg && pm1_min_sat && pm2_max_sat))){
       PamSetPd(reflex->pam_1, fix16_ssub(reflex->pam_1->s.pd,delta));
       PamSetPd(reflex->pam_2, fix16_sadd(reflex->pam_2->s.pd,delta));
     }

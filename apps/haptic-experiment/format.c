@@ -18,8 +18,16 @@
 
 void FormatSprintParams(const param_mem_t* param, char* buff) {
   sprintf(buff, "\n#Parameters:\n"
-          "#\tFs = %i (Hz)\n#",
-          param->fs_hz);
+          "#\tFs = %i\n"
+          "#\tdP = %f\n"
+          "#\tthreshold = %f\n"
+          "#\temg_up_threshold = %f\n"
+          "#\temg_low_threshold = %f\n#",
+          param->fs_hz,
+          fix16_to_float(param->dP),
+          fix16_to_float(param->threshold),
+          fix16_to_float(param->emg_up_thres),
+          fix16_to_float(param->emg_low_thres));
 }
 
 // ---------------------------------------------------------------------------
@@ -56,6 +64,10 @@ void FormatSprintState(const state_t* st, char* buff) {
           "%f\t"        // emg1 signal - fix16_t
           "%f\t"        // emg2 raw signal - fix16_t
           "%f\t"        // emg2 signal - fix16_t
+          "%f\t"        // cpudata - imu1.x - fix16_t
+          "%f\t"        // cpudata - imu1.y - fix16_t
+          "%f\t"        // cpudata - imu1.z - fix16_t
+          "%u\t"        // cpudata - imu-status
           "\n",
           st->time,
           fix16_to_float(st->x),
@@ -80,7 +92,11 @@ void FormatSprintState(const state_t* st, char* buff) {
           fix16_to_float(st->emg1_state.raw),
           fix16_to_float(st->emg1_state.value),
           fix16_to_float(st->emg1_state.raw),
-          fix16_to_float(st->emg2_state.value)
+          fix16_to_float(st->emg2_state.value),
+          fix16_to_float(st->cpudata.imu1.x),
+          fix16_to_float(st->cpudata.imu1.y),
+          fix16_to_float(st->cpudata.imu1.z),
+          st->cpudata.status
           );
 }
 
@@ -110,6 +126,10 @@ void FormatSprintStateHeader(char* buff) {
           "emg1\t"
           "emg2_raw\t"
           "emg2\t"
+          "imu_x\t"
+          "imu_y\t"
+          "imu_z\t"
+          "imu_status\t"
           "\n");
 }
 
