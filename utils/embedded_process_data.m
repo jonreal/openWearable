@@ -74,25 +74,20 @@ function rtn = embedded_process_data(trialName,varargin)
   lineCnt = lineCnt + 1;
 
   % parameters
-  rtn.params.fs = fscanf(fid,'#\tFs = %i (Hz)\n',1);
-  fs = rtn.params.fs;
-  lineCnt = lineCnt + 1;
-  tline = fgetl(fid);
-  lineCnt = lineCnt + 1;
-
-%  % filter order
-%  rtn.params.filt.N = fscanf(fid,'#IIR Filter Parameters(N = %i):\n',1);
-%  lineCnt = lineCnt + 1;
-%
-%  for i=0:rtn.params.filt.N
-%    rtn.params.filt.b(i+1) = fscanf(fid,['#\tb[', num2str(i) ,'] = %f'], 1);
-%    rtn.params.filt.a(i+1) = fscanf(fid,['\ta[', num2str(i) ,'] = %f\n'],1);
-%    lineCnt = lineCnt + 1;
-%  end
-%
-%  % skip 1 line
-%  tline = fgetl(fid);
-%  lineCnt = lineCnt + 1;
+  while (1)
+    tline = fgetl(fid);
+    lineCnt = lineCnt + 1;
+    if strcmp(tline,'#')
+      break;
+    end
+    C = strsplit(tline,'#');
+    C = strsplit(C{2},' = ');
+    name = strtrim(C{1});
+    rtn.params.(name) = str2num(C{2});
+    if strcmp(name,'Fs')
+      fs = rtn.params.(name)
+    end
+  end
 
   % headers
   tline = fgetl(fid);
@@ -152,7 +147,7 @@ function rtn = embedded_process_data(trialName,varargin)
 
   % calculate time vector
   cnt0 = D(1,1);
-  rtn.data.time = (D(:,1) - D(1,1)).*(1/rtn.params.fs);
+  rtn.data.time = (D(:,1) - D(1,1)).*(1/fs);
   time = rtn.data.time;
 
   % store data in struct
