@@ -29,24 +29,21 @@
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 
-
 // Haptic pru0
 sync_t* sync;
 motor_t* motor;
 encoder_t* encoder;
 hapitic_t* haptic;
 
+fix16_t t = 0;
+fix16_t dt = 0;
 uint32_t flag = 0;
-uint32_t t0 = 0;
-uint32_t t = 0;
 uint32_t itarg = 0;
+uint32_t targtimeout = 5000;
+uint32_t timeoutcnt = 0;
 uint32_t debounce = 0;
-fix16_t theta0 = 0xB40000;
+fix16_t theta0 = 0;
 
-const uint32_t Td_default = 10000;
-const uint32_t Np_default = 1;
-const fix16_t f1_default = fix16_one;       // 2 Hz
-const fix16_t A_default = 0x8000;         // 0.5 A
 
 // PAMs pru1
 i2c_t* i2c1;
@@ -54,10 +51,8 @@ i2cmux_t* mux;
 reservoir_t* reservoir;
 pam_t* pam1;
 pam_t* pam2;
-
 reflex_t* reflex;
 reflex_myo_t* reflexmyo;
-
 emg_t* emg1;
 emg_t* emg2;
 
@@ -70,21 +65,12 @@ const fix16_t k_hp_emg_a[2] = {fix16_one,0x826F};
 const fix16_t k_lp_emg_b[2] = {0x4BC,0x4BC};
 const fix16_t k_lp_emg_a[2] = {fix16_one,-0xF687};
 
-
-fix16_t tt = 0;
-fix16_t dt = 0;
-
 // DC blocking filter
-//const fix16_t b_dcblck[2] = {fix16_one, -fix16_one};
-//const fix16_t a_dcblck[2] = {fix16_one, 0xFFFF028F};  // -0.99
-
 const fix16_t b_dcblck[2] = {fix16_one, -fix16_one};
 const fix16_t a_dcblck[2] = {fix16_one, 0xFFFF3333};  // -0.80
 
 const uint32_t refractory = 150;
-const fix16_t reflexthreshold = 0x666; // 0.1
-const fix16_t reflexdelta = 0x80000;
-const fix16_t P0 = 0x280000; // 40 psi
+
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -92,13 +78,6 @@ const fix16_t P0 = 0x280000; // 40 psi
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem) {
-
-  mem->p->Td = Td_default;
-  mem->p->Np = Np_default;
-
-  mem->p->Jvirtual = 0;
-  mem->p->bvirtual = 0;
-  mem->p->kvirtual = 0;
 
   flag = 0;
   sync = SyncInitChan(7); // pru0.7
@@ -110,8 +89,8 @@ void Pru0Init(pru_mem_t* mem) {
                          0x240000,    // gear ratio (31/1)
                          0x198000,    // torque constant (25.5 mNm/A)
                          0x1760000,   // speed constant (374 rpm/V)
-                         0x20000,     // max current (2 A)
-                         0x4173290   // max velocity (10000 rpm ~1047 rad/s)
+                         0x40000,     // max current (4 A)
+                         0x4173290    // max velocity (10000 rpm ~1047 rad/s)
                          );
   haptic = HapticInit(motor,encoder,
                       FiltIirInit(1, k_lp_1_5Hz_b, k_lp_1_5Hz_a),
@@ -126,6 +105,8 @@ void Pru0Init(pru_mem_t* mem) {
                     FiltIirInit(1, k_hp_emg_b, k_hp_emg_a),
                     FiltIirInit(1, k_lp_emg_b, k_lp_emg_a));
 
+  dt = fix16_sdiv(fix16_one,fix16_from_int(mem->p->fs_hz));
+
 }
 
 void Pru0UpdateState(const pru_count_t* c,
@@ -133,12 +114,11 @@ void Pru0UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_){
-
   EncoderUpdate(encoder);
   MaxonUpdate(motor);
-  //HapticUpdate(haptic, p_->Jvirtual, p_->bvirtual, p_->kvirtual, 0, theta0);
-  HapticPendulumUpdate(haptic, p_->Jvirtual, p_->bvirtual,
-      p_->kvirtual, theta0, 0, fix16_one);
+  HapticPendulumUpdate(haptic,
+      p_->Jvirtual, p_->bvirtual, p_->kvirtual, theta0, 0, p_->G);
+
   // must down sample adc
   if (c->frame % 2) {
     EmgUpdate(emg1);
@@ -147,6 +127,7 @@ void Pru0UpdateState(const pru_count_t* c,
   }
   s_->emg1_state = EmgGetState(emg1);
   s_->emg2_state = EmgGetState(emg2);
+  s_->x = EncoderGetAngle(encoder);
 }
 
 void Pru0UpdateControl(const pru_count_t* c,
@@ -155,63 +136,64 @@ void Pru0UpdateControl(const pru_count_t* c,
                        state_t* s_,
                        pru_ctl_t* ctl_){
 
-
-
   // Tracking
   if (PruGetCtlBit(ctl_, 0)) {
     if (flag == 0) {
-      t0 = c->frame;
       SyncOutHigh(sync);
       flag = 1;
+      t = 0;
     }
-    t = (c->frame - t0)*p_->fs_hz / (p_->Td - p_->Td/p_->fs_hz);
-		if ((c->frame-t0) == (p_->Np*p_->Td)) {
+    s_->game = 1;
+		if (t >= p_->Td){
       flag = 0;
+      s_->game = 0;
       PruClearCtlBit(ctl_,0);
       SyncOutLow(sync);
     }
-		s_->xd = fix16_ssub(fix16_smul(fix16_from_int(90),
-						 	fix16_sadd(fix16_sdiv(
-							fix16_from_int( (int32_t) l_->lut[t % 1000]),
-							fix16_from_int(1000)),fix16_one)),fix16_from_int(90));
+    s_->xd = fix16_smul(0x5A0000, fix16_sin(fix16_smul(p_->k2PiFd,t)));
 	}
   // Ballistic
   else if (PruGetCtlBit(ctl_, 1)) {
     if (flag == 0) {
       SyncOutHigh(sync);
       flag = 1;
+      t = 0;
     }
-		if (itarg > (p_->Np-1)) {
+		if (itarg == p_->Nb) {
       flag = 0;
       itarg = 0;
       PruClearCtlBit(ctl_,1);
       SyncOutLow(sync);
+      s_->game = 0;
     }
+    s_->game = 2;
     s_->xd = p_->targets[itarg];
+    timeoutcnt++;
     if ((fix16_ssub(fix16_ssub(s_->xd,s_->x),0x40000) < 0)
-    && (fix16_sadd(fix16_ssub(s_->xd,s_->x),0x40000) > 0)){
+       && (fix16_sadd(fix16_ssub(s_->xd,s_->x),0x40000) > 0)
+       || (timeoutcnt > targtimeout)){
       debounce++;
-      if (debounce > 250) {
+      if ((debounce > 250) || (timeoutcnt > targtimeout)) {
         itarg++;
         s_->xd = p_->targets[itarg];
         debounce = 0;
+        timeoutcnt = 0;
       }
     }
     theta0 = s_->xd;
   } else {
     s_->xd = 0;
     theta0 = 0;
+    s_->game = 0;
   }
 
   s_->vsync = (uint32_t)SyncOutState(sync);
   if (c->frame > 1000)
     MaxonAction(motor);
-
-  s_->x = EncoderGetAngle(encoder);
   s_->motor = MaxonGetState(motor);
   s_->dx = haptic->dtheta;
-  s_->ddx = haptic->ddtheta;
   s_->tau_active = haptic->tau_active;
+  t += dt;
 }
 
 void Pru0Cleanup(void) {
@@ -225,11 +207,8 @@ void Pru0Cleanup(void) {
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
 
-  mem->p->P0 = P0;
-  mem->p->threshold = reflexthreshold;
-  mem->p->dP = reflexdelta;
 
-  dt = fix16_sdiv(fix16_one,fix16_from_int(mem->p->fs_hz));
+
 
   i2c1 = I2cInit(1);
   mux = MuxI2cInit(i2c1,0x70,PCA9548);
@@ -242,7 +221,7 @@ void Pru1Init(pru_mem_t* mem) {
                         0x2FAAD48, // 762.6769 ms
                         refractory,
                         FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
-  PamSetPd(pam1,mem->p->P0);
+  PamSetPd(pam1,0);
 
   pam2 = PamInitMuscle(PressureSensorInit(mux,2,0x28),
                         reservoir,
@@ -251,8 +230,8 @@ void Pru1Init(pru_mem_t* mem) {
                         0x33DD3A4, //829.8267 ms
                         refractory,
                         FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
-  PamSetPd(pam2,mem->p->P0);
-  
+  PamSetPd(pam2,0);
+
   reflex = ReflexInit(pam1,pam2,fix16_from_int(15), fix16_from_int(95),
                       FiltIirInit(1, b_dcblck, a_dcblck));
 
@@ -265,9 +244,13 @@ void Pru1UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
+
+
+
   PamReservoirUpdate(reservoir);
   PamUpdate(pam1);
   PamUpdate(pam2);
+
 }
 
 void Pru1UpdateControl(const pru_count_t* c,
@@ -275,16 +258,28 @@ void Pru1UpdateControl(const pru_count_t* c,
                        const lut_mem_t* l_,
                        state_t* s_,
                        pru_ctl_t* ctl_) {
-//  tt += dt;
-//  fix16_t ref = fix16_smul(0x3333,
-//      fix16_sin(fix16_smul(fix16_smul(0x199A,
-//            fix16_smul(0x20000,fix16_pi)),tt)));
-//
-  ReflexUpdate(reflex, p_->threshold, p_->dP, 0);
-  ReflexMyoUpdate(reflexmyo,
-                  s_->emg1_state.value,
-                s_->emg2_state.value,
-                fix16_one, p_->dP);
+
+  ReflexUpdate(reflex, p_->threshold, -0x80000, 0);
+ // switch (p_->reflex_condition) {
+ //   case 0:
+ //     break;
+ //   case 1:
+ //     ReflexMyoUpdate(reflexmyo,
+ //                     s_->emg1_state.value,
+ //                   s_->emg2_state.value,
+ //                   fix16_one, p_->dP);
+ //     break;
+ //   case 2:
+ //     ReflexUpdate(reflex, p_->threshold, p_->dP, 0);
+ //     break;
+ //   case 3:
+ //     ReflexMyoUpdate(reflexmyo,
+ //                     s_->emg1_state.value,
+ //                   s_->emg2_state.value,
+ //                   fix16_one, p_->dP);
+ //     ReflexUpdate(reflex, p_->threshold, p_->dP, 0);
+ //     break;
+ // }
 
 
   if (PruGetCtlBit(ctl_,2)) {
@@ -292,7 +287,6 @@ void Pru1UpdateControl(const pru_count_t* c,
     PamSetPd(pam2,p_->P0);
     PruClearCtlBit(ctl_,2);
   }
-
 
   PamActionSimple(pam1);
   PamActionSimple(pam2);
@@ -310,4 +304,3 @@ void Pru1Cleanup(void) {
   PamMuscleFree(pam1);
   PamMuscleFree(pam2);
 }
-

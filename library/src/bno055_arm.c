@@ -67,7 +67,9 @@ void ImuUpdate(imu_t* imu) {
   uint8_t buf[6];
   uint8_t status;
   rc_i2c_set_device_address(1,imu->addr);
+  usleep(350);
   rc_i2c_read_byte(1, BNO055_CALIB_STAT_ADDR, &status);
+  usleep(350);
   rc_i2c_read_bytes(1, BNO055_EULER_H_LSB_ADDR, 6, buf);
 
   // 1 deg = 16 LSB (0x100000 in fix16)
