@@ -43,7 +43,7 @@ LDFLAGS =
 
 # PRU compiler
 PRU_CC = clpru
-PRU_CFLAGS = -q --c99 -v3 --define=am3359d -O4 -D=am335x -D=FIXMATH_NO_CACHE -D=PRU
+PRU_CFLAGS = -q --c99 -v3 --define=am3359d -O4 -D=am335x -D=FIXMATH_NO_CACHE -D=PRU --hardware_mac=on --gen_func_subsections=on
 PRU_LDFLAGS =
 
 # Install stuff
@@ -95,6 +95,42 @@ clean-template :
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-template-fw
 
 # ---
+pam-step-response : $(ROS_TARGET) linker install
+clean-pam-step-response :
+	@echo " Cleaning pam-step-response...";
+	@echo " $(RM) -r ./pam-step-response/build"; $(RM) -r ./pam-step-response/build
+	@echo " $(RM) -r $(TARGET_DIR)/pam-step-response"; $(RM) -r $(TARGET_DIR)/pam-step-response
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-pam-step-response-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-pam-step-response-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-pam-step-response-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-pam-step-response-fw
+
+# ---
+close-all-valves : $(ROS_TARGET) linker install
+clean-close-all-valves :
+	@echo " Cleaning close-all-valves...";
+	@echo " $(RM) -r ./close-all-valves/build"; $(RM) -r ./close-all-valves/build
+	@echo " $(RM) -r $(TARGET_DIR)/close-all-valves"; $(RM) -r $(TARGET_DIR)/close-all-valves
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-close-all-valves-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-close-all-valves-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-close-all-valves-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-close-all-valves-fw
+
+# ---
+maxon-freq-sweep : $(ROS_TARGET) linker install
+clean-maxon-freq-sweep :
+	@echo " Cleaning maxon-freq-sweep...";
+	@echo " $(RM) -r ./maxon-freq-sweep/build"; $(RM) -r ./maxon-freq-sweep/build
+	@echo " $(RM) -r $(TARGET_DIR)/maxon-freq-sweep"; $(RM) -r $(TARGET_DIR)/maxon-freq-sweep
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-maxon-freq-sweep-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-maxon-freq-sweep-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-maxon-freq-sweep-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-maxon-freq-sweep-fw
+
+# ---
+antagonist-freq-sweep : $(ROS_TARGET) linker install
+clean-antagonist-freq-sweep :
+	@echo " Cleaning antagonist-freq-sweep...";
+	@echo " $(RM) -r ./antagonist-freq-sweep/build"; $(RM) -r ./antagonist-freq-sweep/build
+	@echo " $(RM) -r $(TARGET_DIR)/antagonist-freq-sweep"; $(RM) -r $(TARGET_DIR)/antagonist-freq-sweep
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-antagonist-freq-sweep-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-antagonist-freq-sweep-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-antagonist-freq-sweep-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-antagonist-freq-sweep-fw
+
+# ---
 reflex : $(ROS_TARGET) linker install
 clean-reflex :
 	@echo " Cleaning reflex...";
@@ -102,6 +138,24 @@ clean-reflex :
 	@echo " $(RM) -r $(TARGET_DIR)/reflex"; $(RM) -r $(TARGET_DIR)/reflex
 	@echo " $(RM) -r /lib/firmware/am335x-pru0-reflex-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-reflex-fw
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-reflex-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-reflex-fw
+
+# ---
+reflex-tracking : $(ROS_TARGET) linker install
+clean-reflex-tracking :
+	@echo " Cleaning reflex-tracking...";
+	@echo " $(RM) -r ./reflex-tracking/build"; $(RM) -r ./reflex-tracking/build
+	@echo " $(RM) -r $(TARGET_DIR)/reflex-tracking"; $(RM) -r $(TARGET_DIR)/reflex-tracking
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-reflex-tracking-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-reflex-tracking-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-reflex-tracking-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-reflex-tracking-fw
+
+# ---
+tare-encoder : $(ROS_TARGET) linker install
+clean-tare-encoder :
+	@echo " Cleaning tare-encoder...";
+	@echo " $(RM) -r ./tare-encoder/build"; $(RM) -r ./tare-encoder/build
+	@echo " $(RM) -r $(TARGET_DIR)/tare-encoder"; $(RM) -r $(TARGET_DIR)/tare-encoder
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-tare-encoder-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-tare-encoder-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-tare-encoder-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-tare-encoder-fw
 
 # ---
 thumbsup-triggered : $(ROS_TARGET) linker install
@@ -130,14 +184,6 @@ clean-thumbsup-assist :
 	@echo " $(RM) -r /lib/firmware/am335x-pru0-thumbsup-assist-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-thumbsup-assist-fw
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-thumbsup-assist-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-thumbsup-assist-fw
 
-# ---
-pam-haptic : $(ROS_TARGET) linker install
-clean-pam-haptic :
-	@echo " Cleaning pam-haptic...";
-	@echo " $(RM) -r ./pam-haptic/build"; $(RM) -r ./pam-haptic/build
-	@echo " $(RM) -r $(TARGET_DIR)/pam-haptic"; $(RM) -r $(TARGET_DIR)/pam-haptic
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-pam-haptic-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-pam-haptic-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-pam-haptic-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-pam-haptic-fw
 
 # ---
 pamtest : $(ROS_TARGET) linker install
@@ -149,13 +195,31 @@ clean-pamtest :
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-pamtest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-pamtest-fw
 
 # ---
-haptictest : $(ROS_TARGET) linker install
-clean-haptictest :
-	@echo " Cleaning haptictest...";
-	@echo " $(RM) -r ./haptictest/build"; $(RM) -r ./haptictest/build
-	@echo " $(RM) -r $(TARGET_DIR)/haptictest"; $(RM) -r $(TARGET_DIR)/haptictest
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-haptictest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-haptictest-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-haptictest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-haptictest-fw
+haptic-tracking : $(ROS_TARGET) linker install
+clean-haptic-tracking :
+	@echo " Cleaning haptic-tracking...";
+	@echo " $(RM) -r ./haptic-tracking/build"; $(RM) -r ./haptic-tracking/build
+	@echo " $(RM) -r $(TARGET_DIR)/haptic-tracking"; $(RM) -r $(TARGET_DIR)/haptic-tracking
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-haptic-tracking-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-haptic-tracking-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-haptic-tracking-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-haptic-tracking-fw
+
+# ---
+haptic-eval : $(ROS_TARGET) linker install
+clean-haptic-eval :
+	@echo " Cleaning haptic-eval...";
+	@echo " $(RM) -r ./haptic-eval/build"; $(RM) -r ./haptic-eval/build
+	@echo " $(RM) -r $(TARGET_DIR)/haptic-eval"; $(RM) -r $(TARGET_DIR)/haptic-eval
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-haptic-eval-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-haptic-eval-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-haptic-eval-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-haptic-eval-fw
+
+# ---
+haptic-experiment : $(ROS_TARGET) linker install
+clean-haptic-experiment :
+	@echo " Cleaning haptic-experiment...";
+	@echo " $(RM) -r ./haptic-experiment/build"; $(RM) -r ./haptic-experiment/build
+	@echo " $(RM) -r $(TARGET_DIR)/haptic-experiment"; $(RM) -r $(TARGET_DIR)/haptic-experiment
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-haptic-experiment-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-haptic-experiment-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-haptic-experiment-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-haptic-experiment-fw
 
 # ---
 imutest : $(ROS_TARGET) linker install
@@ -231,13 +295,13 @@ install : $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
 # Linker PRU0
 $(BUILD_DIR)/$(PRU0_TARGET).elf : $(BUILD_DIR)/$(PRU0_TARGET).po $(PRU_OBJ) $(APP_SPEC_PRU_OBJ)
 	@echo "\n Linking pru0... \n"
-	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=512 $^ -llibc.a -m $(MAKECMDGOALS)/build/$(PRU0_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU0_TARGET).elf $(PRU_CSRC_DIR)/PRU0.cmd
+	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=1024 $^ -llibc.a -m $(MAKECMDGOALS)/build/$(PRU0_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU0_TARGET).elf $(PRU_CSRC_DIR)/PRU0.cmd
 
 
 # Linker PRU1
 $(BUILD_DIR)/$(PRU1_TARGET).elf : $(BUILD_DIR)/$(PRU1_TARGET).po $(PRU_OBJ) $(APP_SPEC_PRU_OBJ)
 	@echo "\n Linking pru1... \n"
-	$(PRU_CC)  $(PRU_CFLAGS) -z --heap_size=512 $^ -llibc.a -m $(MAKECMDGOALS)/build/$(PRU1_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU1_TARGET).elf $(PRU_CSRC_DIR)/PRU1.cmd
+	$(PRU_CC)  $(PRU_CFLAGS) -z --heap_size=1024 $^ -llibc.a -m $(MAKECMDGOALS)/build/$(PRU1_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU1_TARGET).elf $(PRU_CSRC_DIR)/PRU1.cmd
 
 # Build PRU-core
 $(BUILD_DIR)%.po : $(PRU_CSRC_DIR)%.c

@@ -55,7 +55,7 @@ typedef struct {
 //                                .G = fix16_one,           // 1
 //                                .reflex_condition = 0}    // 0
 //                               };
-//
+
 
 
 
@@ -311,11 +311,11 @@ int UiLoop(const pru_mem_t* pru_mem) {
           for (int j=0; j<nBlocks; j++) {
             for (int i=0; i<nCond; i++) {
 
-              // Add here to skip trials
-              if ((j < 2)) {
-                trialcnt++;
-                continue;
-              }
+              ////Add here to skip trials
+              //if ((j == 0) && (i < 5)) {
+              //  trialcnt++;
+              //  continue;
+              //}
 
               icond = random_index[trialcnt];
               sprintf(input_string,
