@@ -311,11 +311,11 @@ int UiLoop(const pru_mem_t* pru_mem) {
           for (int j=0; j<nBlocks; j++) {
             for (int i=0; i<nCond; i++) {
 
-              ////Add here to skip trials
-              //if ((j == 0) && (i < 5)) {
-              //  trialcnt++;
-              //  continue;
-              //}
+              //Add here to skip trials
+              if ((j == 0) && (i < 4)) {
+                trialcnt++;
+                continue;
+              }
 
               icond = random_index[trialcnt];
               sprintf(input_string,
@@ -519,8 +519,8 @@ int PruLoadParams(const char* file, param_mem_t* param) {
 
   param->reflex_condition = 0;
   param->Nb = 20;
-  param->Np = fix16_from_int(15);
-  param->fd = fix16_from_float(0.2);
+  param->Np = fix16_from_int(9);
+  param->fd = fix16_from_float(0.05);
 
   param->Td = fix16_sdiv(param->Np,param->fd);
   param->k2PiFd = fix16_smul(fix16_smul(0x20000,fix16_pi),param->fd);
