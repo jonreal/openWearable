@@ -1,0 +1,4 @@
+8         // dP
+0.025     // interaction threshold
+1       // emg_up_thres
+-1 // emg_low_thres
