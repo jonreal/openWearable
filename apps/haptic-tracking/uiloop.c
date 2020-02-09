@@ -206,3 +206,22 @@ int UiLoop(const pru_mem_t* pru_mem) {
   }
 }
 
+int PruLoadParams(const char* file, param_mem_t* param) {
+
+  // Defaults
+  param->fs_hz = 1000;
+  param->fs_ticks = HZ_TO_TICKS(param->fs_hz);
+
+  // App specific
+  param->Jvirtual = 0;
+  param->bvirtual = 0;
+  param->kvirtual = 0;
+
+  param->Np = fix16_from_int(15);
+  param->fd = fix16_from_float(0.2);
+  param->Td = fix16_sdiv(param->Np,param->fd);
+  param->k2PiFd = fix16_smul(fix16_smul(0x20000,fix16_pi),param->fd);
+
+  return 0;
+}
+
