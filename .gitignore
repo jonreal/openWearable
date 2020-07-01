@@ -7,3 +7,7 @@ tags
 types_c.taghl
 types_matlab.taghl
 *.qmake*
+*.o
+*.app/*
+moc_*
+**/rotation_display.app/*
