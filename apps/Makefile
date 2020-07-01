@@ -85,159 +85,13 @@ APP_SPEC_INC = $(MAKECMDGOALS)/
 
 
 # --- Template
-# ---
-template : $(ROS_TARGET) linker install
+template : linker install
 clean-template :
 	@echo " Cleaning template...";
 	@echo " $(RM) -r ./template/build"; $(RM) -r ./template/build
 	@echo " $(RM) -r $(TARGET_DIR)/template"; $(RM) -r $(TARGET_DIR)/template
 	@echo " $(RM) -r /lib/firmware/am335x-pru0-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-template-fw
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-template-fw
-
-# ---
-pam-step-response : $(ROS_TARGET) linker install
-clean-pam-step-response :
-	@echo " Cleaning pam-step-response...";
-	@echo " $(RM) -r ./pam-step-response/build"; $(RM) -r ./pam-step-response/build
-	@echo " $(RM) -r $(TARGET_DIR)/pam-step-response"; $(RM) -r $(TARGET_DIR)/pam-step-response
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-pam-step-response-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-pam-step-response-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-pam-step-response-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-pam-step-response-fw
-
-# ---
-close-all-valves : $(ROS_TARGET) linker install
-clean-close-all-valves :
-	@echo " Cleaning close-all-valves...";
-	@echo " $(RM) -r ./close-all-valves/build"; $(RM) -r ./close-all-valves/build
-	@echo " $(RM) -r $(TARGET_DIR)/close-all-valves"; $(RM) -r $(TARGET_DIR)/close-all-valves
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-close-all-valves-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-close-all-valves-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-close-all-valves-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-close-all-valves-fw
-
-# ---
-maxon-freq-sweep : $(ROS_TARGET) linker install
-clean-maxon-freq-sweep :
-	@echo " Cleaning maxon-freq-sweep...";
-	@echo " $(RM) -r ./maxon-freq-sweep/build"; $(RM) -r ./maxon-freq-sweep/build
-	@echo " $(RM) -r $(TARGET_DIR)/maxon-freq-sweep"; $(RM) -r $(TARGET_DIR)/maxon-freq-sweep
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-maxon-freq-sweep-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-maxon-freq-sweep-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-maxon-freq-sweep-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-maxon-freq-sweep-fw
-
-# ---
-antagonist-freq-sweep : $(ROS_TARGET) linker install
-clean-antagonist-freq-sweep :
-	@echo " Cleaning antagonist-freq-sweep...";
-	@echo " $(RM) -r ./antagonist-freq-sweep/build"; $(RM) -r ./antagonist-freq-sweep/build
-	@echo " $(RM) -r $(TARGET_DIR)/antagonist-freq-sweep"; $(RM) -r $(TARGET_DIR)/antagonist-freq-sweep
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-antagonist-freq-sweep-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-antagonist-freq-sweep-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-antagonist-freq-sweep-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-antagonist-freq-sweep-fw
-
-# ---
-reflex : $(ROS_TARGET) linker install
-clean-reflex :
-	@echo " Cleaning reflex...";
-	@echo " $(RM) -r ./reflex/build"; $(RM) -r ./reflex/build
-	@echo " $(RM) -r $(TARGET_DIR)/reflex"; $(RM) -r $(TARGET_DIR)/reflex
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-reflex-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-reflex-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-reflex-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-reflex-fw
-
-# ---
-reflex-tracking : $(ROS_TARGET) linker install
-clean-reflex-tracking :
-	@echo " Cleaning reflex-tracking...";
-	@echo " $(RM) -r ./reflex-tracking/build"; $(RM) -r ./reflex-tracking/build
-	@echo " $(RM) -r $(TARGET_DIR)/reflex-tracking"; $(RM) -r $(TARGET_DIR)/reflex-tracking
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-reflex-tracking-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-reflex-tracking-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-reflex-tracking-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-reflex-tracking-fw
-
-# ---
-tare-encoder : $(ROS_TARGET) linker install
-clean-tare-encoder :
-	@echo " Cleaning tare-encoder...";
-	@echo " $(RM) -r ./tare-encoder/build"; $(RM) -r ./tare-encoder/build
-	@echo " $(RM) -r $(TARGET_DIR)/tare-encoder"; $(RM) -r $(TARGET_DIR)/tare-encoder
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-tare-encoder-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-tare-encoder-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-tare-encoder-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-tare-encoder-fw
-
-# ---
-thumbsup-triggered : $(ROS_TARGET) linker install
-clean-thumbsup-triggered :
-	@echo " Cleaning thumbsup-triggered...";
-	@echo " $(RM) -r ./thumbsup-triggered/build"; $(RM) -r ./thumbsup-triggered/build
-	@echo " $(RM) -r $(TARGET_DIR)/thumbsup-triggered"; $(RM) -r $(TARGET_DIR)/thumbsup-triggered
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-thumbsup-triggered-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-thumbsup-triggered-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-thumbsup-triggered-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-thumbsup-triggered-fw
-
-# ---
-thumbsup-gas : $(ROS_TARGET) linker install
-clean-thumbsup-gas :
-	@echo " Cleaning thumbsup-gas...";
-	@echo " $(RM) -r ./thumbsup-gas/build"; $(RM) -r ./thumbsup-gas/build
-	@echo " $(RM) -r $(TARGET_DIR)/thumbsup-gas"; $(RM) -r $(TARGET_DIR)/thumbsup-gas
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-thumbsup-gas-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-thumbsup-gas-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-thumbsup-gas-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-thumbsup-gas-fw
-
-# ---
-thumbsup-assist : $(ROS_TARGET) linker install
-clean-thumbsup-assist :
-	@echo " Cleaning thumbsup-assist...";
-	@echo " $(RM) -r ./thumbsup-assist/build"; $(RM) -r ./thumbsup-assist/build
-	@echo " $(RM) -r $(TARGET_DIR)/thumbsup-assist"; $(RM) -r $(TARGET_DIR)/thumbsup-assist
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-thumbsup-assist-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-thumbsup-assist-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-thumbsup-assist-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-thumbsup-assist-fw
-
-
-# ---
-pamtest : $(ROS_TARGET) linker install
-clean-pamtest :
-	@echo " Cleaning pamtest...";
-	@echo " $(RM) -r ./pamtest/build"; $(RM) -r ./pamtest/build
-	@echo " $(RM) -r $(TARGET_DIR)/pamtest"; $(RM) -r $(TARGET_DIR)/pamtest
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-pamtest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-pamtest-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-pamtest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-pamtest-fw
-
-# ---
-haptic-tracking : $(ROS_TARGET) linker install
-clean-haptic-tracking :
-	@echo " Cleaning haptic-tracking...";
-	@echo " $(RM) -r ./haptic-tracking/build"; $(RM) -r ./haptic-tracking/build
-	@echo " $(RM) -r $(TARGET_DIR)/haptic-tracking"; $(RM) -r $(TARGET_DIR)/haptic-tracking
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-haptic-tracking-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-haptic-tracking-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-haptic-tracking-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-haptic-tracking-fw
-
-# ---
-haptic-eval : $(ROS_TARGET) linker install
-clean-haptic-eval :
-	@echo " Cleaning haptic-eval...";
-	@echo " $(RM) -r ./haptic-eval/build"; $(RM) -r ./haptic-eval/build
-	@echo " $(RM) -r $(TARGET_DIR)/haptic-eval"; $(RM) -r $(TARGET_DIR)/haptic-eval
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-haptic-eval-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-haptic-eval-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-haptic-eval-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-haptic-eval-fw
-
-# ---
-haptic-experiment : $(ROS_TARGET) linker install
-clean-haptic-experiment :
-	@echo " Cleaning haptic-experiment...";
-	@echo " $(RM) -r ./haptic-experiment/build"; $(RM) -r ./haptic-experiment/build
-	@echo " $(RM) -r $(TARGET_DIR)/haptic-experiment"; $(RM) -r $(TARGET_DIR)/haptic-experiment
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-haptic-experiment-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-haptic-experiment-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-haptic-experiment-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-haptic-experiment-fw
-
-# ---
-imutest : $(ROS_TARGET) linker install
-clean-imutest :
-	@echo " Cleaning imutest...";
-	@echo " $(RM) -r ./imutest/build"; $(RM) -r ./imutest/build
-	@echo " $(RM) -r $(TARGET_DIR)/imutest"; $(RM) -r $(TARGET_DIR)/imutest
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-imutest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-imutest-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-imutest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-imutest-fw
-
-# ---
-buttontest : $(ROS_TARGET) linker install
-clean-buttontest :
-	@echo " Cleaning buttontest...";
-	@echo " $(RM) -r ./buttontest/build"; $(RM) -r ./buttontest/build
-	@echo " $(RM) -r $(TARGET_DIR)/buttontest"; $(RM) -r $(TARGET_DIR)/buttontest
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-buttontest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-buttontest-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-buttontest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-buttontest-fw
 
 # ---- CPU
 
@@ -257,13 +111,15 @@ $(ROS_OBJ) : $(ROS_CPP_SRC)
 linker : $(CPU_OBJ) $(APP_SPEC_CPU_OBJ)
 	@echo "\n Linking cpu ... \n";
 	@mkdir -p $(TARGET_DIR)
-	$(CC) -Wl,-rpath,$(BUILD_DIR) -L$(BUILD_DIR) $(CFLAGS) $(CPU_OBJ) $(APP_SPEC_CPU_OBJ) $(CSRC_DIR)/$(TARGET).c -I$(CINC_DIR) -I$(APP_SPEC_INC) -I$(ROS_DIR) -o $(TARGET_DIR)/$(MAKECMDGOALS) $(CLIB) -lm -DFWSUFFIX=\"$(MAKECMDGOALS)\" -lRosPub
+	$(CC) -Wl,-rpath,$(BUILD_DIR) -L$(BUILD_DIR) $(CFLAGS) $(CPU_OBJ) $(APP_SPEC_CPU_OBJ) $(CSRC_DIR)/$(TARGET).c -I$(CINC_DIR) -I$(APP_SPEC_INC) -I$(ROS_DIR) -o $(TARGET_DIR)/$(MAKECMDGOALS) $(CLIB) -lm -DFWSUFFIX=\"$(MAKECMDGOALS)\"
+	#-lRosPub
 
 # Build C dependencies
 $(BUILD_DIR)%.o: $(CSRC_DIR)%.c
 	@echo "\n Building core dependencies... \n";
 	@mkdir -p $(BUILD_DIR)
-	$(CC) -Wl,-rpath,$(BUILD_DIR) -L$(BUILD_DIR) $(CFLAGS) $(ROS_INC_DIR) -I$(ROS_DIR) -I$(CINC_DIR) -I./$(APP_SPEC_INC) -c -o $@ $< $(CLIB) -lm -lRosPub
+	$(CC) -Wl,-rpath,$(BUILD_DIR) -L$(BUILD_DIR) $(CFLAGS) $(ROS_INC_DIR) -I$(ROS_DIR) -I$(CINC_DIR) -I./$(APP_SPEC_INC) -c -o $@ $< $(CLIB) -lm
+	#-lRosPub
 
 # Build app specific C dependencies
 $(BUILD_DIR)/format.o : $(MAKECMDGOALS)/format.c

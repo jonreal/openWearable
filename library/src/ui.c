@@ -26,7 +26,8 @@
 #include "pru.h"
 #include "debug.h"
 #include "format.h"
-#include "roshelper.h"
+
+//#include "roshelper.h"
 
 volatile sig_atomic_t input_ready;
 volatile sig_atomic_t sigexit;
@@ -52,12 +53,12 @@ static void UiTimerCallback(int sig) {
   if (uidata.flag.logging)
     LogWriteStateToFile(uidata.log);
 
-  if (uidata.flag.rospublish) {
-    FormatSprintPublishState(
-      &uidata.log->pru_mem->s->state[uidata.log->cbuff->end % STATE_BUFF_LEN],
-      uidata.rosbuffer);
-    RosPubPublish(uidata.ros, uidata.rosbuffer);
-  }
+  //if (uidata.flag.rospublish) {
+  //  FormatSprintPublishState(
+  //    &uidata.log->pru_mem->s->state[uidata.log->cbuff->end % STATE_BUFF_LEN],
+  //    uidata.rosbuffer);
+  //  RosPubPublish(uidata.ros, uidata.rosbuffer);
+  //}
 
   if (uidata.flag.udppublish)
     UdpPublish(uidata.log, uidata.udp);
@@ -97,8 +98,8 @@ int UiInit(pru_mem_t* pru_mem, ui_flags_t flags) {
   if (uidata.flag.udppublish)
     uidata.udp = UdpInit();
 
-  if (uidata.flag.rospublish)
-    uidata.ros = RosPubInit();
+  //if (uidata.flag.rospublish)
+  //  uidata.ros = RosPubInit();
 
   // init debug pin
   if (DebugInit() != 0) {
@@ -227,8 +228,8 @@ int UiCleanup(void) {
     return -1;
   }
 //  DebugCleanup();
-  if (uidata.flag.rospublish)
-    RosPubCleanup(uidata.ros);
+  //if (uidata.flag.rospublish)
+  //  RosPubCleanup(uidata.ros);
   LogCleanup(uidata.log);
   CpuCleanup();
   return 0;

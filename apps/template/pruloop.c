@@ -33,7 +33,8 @@ void Pru0UpdateState(const pru_count_t* c,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
 
-
+  // time (ms) * 0.25
+  s_->pruVar1 = fix16_smul(fix16_from_int(s_->time), 0x4000);
 }
 
 void Pru0UpdateControl(const pru_count_t* c,
@@ -67,7 +68,7 @@ void Pru1UpdateState(const pru_count_t* c,
     __R30 ^= (1 << 1);
   }
 
-
+  s_->pruVar2 = s_->time;
 
 }
 
@@ -77,6 +78,7 @@ void Pru1UpdateControl(const pru_count_t* c,
                        state_t* s_,
                        pru_ctl_t* ctl_) {
 
+  s_->pruVar2 = s_->pruVar2 + s_->cpudata.cpuVar;
 }
 
 void Pru1Cleanup(void) {

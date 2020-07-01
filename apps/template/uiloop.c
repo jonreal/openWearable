@@ -5,6 +5,7 @@
 #include <string.h>
 
 extern volatile sig_atomic_t input_ready;
+extern volatile sig_atomic_t sigexit;
 
 void UiPrintMenu(const pru_mem_t* pru_mem) {
   printf(
@@ -26,6 +27,12 @@ int UiLoop(const pru_mem_t* pru_mem) {
     // Clear inputs
     input_char = ' ';
     input_string[0] = '\0';
+
+    if (sigexit) {
+      UiStopAndSaveLog();
+      printf("done.\n");
+      return 1;
+    }
 
     // Wait for user input.
     if (input_ready) {
@@ -72,6 +79,9 @@ int UiLoop(const pru_mem_t* pru_mem) {
           else
             UiStopAndSaveLog();
 
+					if (sigexit)
+						return 1;
+
           log_file[0] = '\0';
           strcat(log_file, "datalog/");
           UiPrintMenu(pru_mem);
@@ -80,5 +90,16 @@ int UiLoop(const pru_mem_t* pru_mem) {
       }
     }
   }
+}
+
+
+// ----------------------------------------------------------------------------
+int PruLoadParams(const char* file, param_mem_t* param) {
+
+  // Defaults
+  param->fs_hz = 1000;
+  param->fs_ticks = HZ_TO_TICKS(param->fs_hz);
+
+  return 0;
 }
 

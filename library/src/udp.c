@@ -26,7 +26,7 @@ udp_t* UdpInit(void) {
   udp->buff[0] = '\0';
 
   // get ip
-  udp->h = gethostbyname("labrat.local");
+  udp->h = gethostbyname("deepthought.local");
   if (udp->h == NULL) {
     printf("unknown host\n");
     exit(1);
