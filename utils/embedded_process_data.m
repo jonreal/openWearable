@@ -85,7 +85,7 @@ function rtn = embedded_process_data(trialName,varargin)
     name = strtrim(C{1});
     rtn.params.(name) = str2num(C{2});
     if strcmp(name,'Fs')
-      fs = rtn.params.(name)
+      fs = rtn.params.(name);
     end
   end
 
@@ -115,6 +115,12 @@ function rtn = embedded_process_data(trialName,varargin)
     return
   end
 
+  % sort and remove duplicates
+  [~,I] = sort(D(:,1));
+  D = D(I,:);
+  [~,i1,i2] = unique(D(:,1));
+  D = D(i1,:);
+
   % remove unsynced data
   if (sync)
     D(D(:,syncColumn) ~= 1,:) = [];
@@ -127,23 +133,61 @@ function rtn = embedded_process_data(trialName,varargin)
   % This happens, I think, because the kernel interrupts during circular buffer
   % writes.
 
-  if(doPlot)
-  figure;
+  dt = D(2:end,1) - D(1:end-1,1);
+  istart= find(dt ~= 1);
+  missing = (D(istart+1,1) - 1) - (D(istart,1) + 1);
+
+  if (istart ~= 0)
+  figure; hold all;
     plot(D(:,1))
+    plot(istart,D(istart,1),'ok');
+    plot(istart+1,D(istart+1,1),'or');
     xlabel('Data Point','fontsize',20)
     ylabel('Time Stamp','fontsize',20)
-  end
 
-  dt = D(2:end,1) - D(1:end-1,1);
-  startMissingData_index = find(dt ~= 1);
-  endMissingData_index = startMissingData_index + 1;
-
-  if(doPlot)
   figure;
     plot(1:numel(D(1:end-1,1)),dt)
     xlabel('Data Point','fontsize',20)
     ylabel('Stamp[k+1] - Stamp[k]','fontsize',20)
   end
+
+  % generate missing data points
+  if (numel(istart) ~= 0)
+    fprintf('\nFound %i instances of dropped data...',numel(istart))
+    DD = D(1:(istart(1)),:);
+    for i=1:numel(istart)
+      frame1 = D(istart(i),1) + 1;
+      frame2 = D(istart(i)+1,1) - 1;
+      Dnew = NaN.*ones((frame2 - frame1)+1,numel(D(1,:)));
+      Dnew(:,1) = frame1:frame2';
+      if (i == numel(istart))
+        Dgood = D((istart(i)+1):end,:);
+      else
+        Dgood = D((istart(i)+1):(istart(i+1)),:);
+      end
+      DD = [DD; Dnew; Dgood];
+    end
+    % check
+    dt = DD(2:end,1) - DD(1:end-1,1);
+    if(doPlot)
+    figure; hold all;
+      title('Fixed')
+      plot(DD(:,1))
+      xlabel('Data Point','fontsize',20)
+      ylabel('Time Stamp','fontsize',20)
+
+    figure;
+      plot(1:numel(DD(1:end-1,1)),dt)
+      xlabel('Data Point','fontsize',20)
+      ylabel('Stamp[k+1] - Stamp[k]','fontsize',20)
+    end
+    D = DD;
+    total_missing = (numel(find(isnan(D(:,2)))))*(1/fs);
+    total_time = (D(end,1) - D(1,1))*1/fs;
+    fprintf('patch %.2f(s) of data out of %.2f(s) total.\n\n', ...
+            total_missing,total_time)
+  end
+
 
   % calculate time vector
   cnt0 = D(1,1);
