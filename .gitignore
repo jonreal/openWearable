@@ -4,6 +4,7 @@ build/
 *.swp
 */datalog
 tags
+*.taghl
 types_c.taghl
 types_matlab.taghl
 *.qmake*

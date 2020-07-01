@@ -34,22 +34,36 @@ void FormatSprintState(const state_t* st, char* buff) {
   sprintf(buff,
           "%u\t"        // timeStamp - uint32_t
           "%u\t"        // cpu var - uint32_t
+          "%f\t"        // pru1Var - fix16_t
+          "%u\t"        // pru2Var - uint32_t
           "\n",
           st->time,
-          st->cpudata.varcpu
+          st->cpudata.cpuVar,
+          fix16_to_float(st->pruVar1),
+          st->pruVar2
           );
 }
 
 void FormatSprintStateHeader(char* buff) {
   sprintf(buff,
           "\n# frame\t"
+          "cpuVar\t"
+          "pru1Var\t"
+          "pru2Var\t"
           "\n");
 }
 
+// Variables to 'publish' over udp or ROS
 void FormatSprintPublishState(const state_t* st, char* buff) {
-    sprintf(buff,
-            "%u\t"        // timeStamp - uint32_t
-            "\n",
-            st->time
-            );
+  sprintf(buff,
+          "%u\t"        // timeStamp - uint32_t
+          "%u\t"        // cpu var - uint32_t
+          "%f\t"        // pru1Var - fix16_t
+          "%u\t"        // pru2Var - uint32_t
+          "\n",
+          st->time,
+          st->cpudata.cpuVar,
+          fix16_to_float(st->pruVar1),
+          st->pruVar2
+          );
 }
