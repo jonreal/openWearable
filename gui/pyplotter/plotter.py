@@ -62,11 +62,18 @@ def animate(i):
             ymax = np.amax(np.concatenate([y1,y2,y3]))
             ax.set_ylim([(ymin - 0.1*(ymax-ymin)),(ymax + 0.1*(ymax-ymin))])
 
-        except os.error as e:
-            if e.errno == errno.EAGAIN :
-                break;
+        # Errno 35, Resource temporarily unavailable
+        except socket.error as e:
+            if str(e) == "[Errno 35] Resource temporarily unavailable" :
+                break
             else :
                 raise e
+
+#        except os.error as e:
+#            if e.errno == errno.EAGAIN :
+#                break;
+#            else :
+#                raise e
 
     ln1.set_data(x,y1)
     ln2.set_data(x,y2)
