@@ -73,18 +73,16 @@ APP_SPEC_PRU_OBJ = $(patsubst $(MAKECMDGOALS)/%,$(BUILD_DIR)/%,$(APP_SPEC_PRU_SR
 APP_SPEC_INC = $(MAKECMDGOALS)/
 
 # ----
+#.PHONY : linker install \
+#					template clean-template \
+#					reflex clean-reflex \
+#					reflex-single clean-reflex-single
 
 # ---- Apps
 #  For each app add the following recipes, but replacing template with dir name
 #  of app
 
-.PHONY : linker install \
-					template clean-template \
-					reflex clean-reflex \
-					reflex-single clean-reflex-single
-
-
-# --- Template
+# --- template
 template : linker install
 clean-template :
 	@echo " Cleaning template...";
@@ -92,6 +90,26 @@ clean-template :
 	@echo " $(RM) -r $(TARGET_DIR)/template"; $(RM) -r $(TARGET_DIR)/template
 	@echo " $(RM) -r /lib/firmware/am335x-pru0-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-template-fw
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-template-fw
+
+# --- maxon-freq-sweep
+maxon-freq-sweep : linker install
+clean-maxon-freq-sweep :
+	@echo " Cleaning maxon-freq-sweep...";
+	@echo " $(RM) -r ./maxon-freq-sweep/build"; $(RM) -r ./maxon-freq-sweep/build
+	@echo " $(RM) -r $(TARGET_DIR)/maxon-freq-sweep"; $(RM) -r $(TARGET_DIR)/maxon-freq-sweep
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-maxon-freq-sweep-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-maxon-freq-sweep-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-maxon-freq-sweep-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-maxon-freq-sweep-fw
+
+# --- tare-encoder
+tare-encoder : linker install
+clean-tare-encoder :
+	@echo " Cleaning tare-encoder...";
+	@echo " $(RM) -r ./tare-encoder/build"; $(RM) -r ./tare-encoder/build
+	@echo " $(RM) -r $(TARGET_DIR)/tare-encoder"; $(RM) -r $(TARGET_DIR)/tare-encoder
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-tare-encoder-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-tare-encoder-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-tare-encoder-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-tare-encoder-fw
+
+
 
 # ---- CPU
 
