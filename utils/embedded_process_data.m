@@ -83,7 +83,8 @@ function rtn = embedded_process_data(trialName,varargin)
     C = strsplit(tline,'#');
     C = strsplit(C{2},' = ');
     name = strtrim(C{1});
-    rtn.params.(name) = str2num(C{2});
+    C = strsplit(C{2},' ');
+    rtn.params.(name) = str2num(C{1});
     if strcmp(name,'Fs')
       fs = rtn.params.(name);
     end
