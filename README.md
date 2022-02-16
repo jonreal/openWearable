@@ -18,14 +18,9 @@ PRETTY_NAME="Debian GNU/Linux 9 (stretch)"
 Linux version 4.14.108-ti-r104 (root@x2-am57xx-beagle-x15-2gb) (gcc version 6.3.0 20170516 (Debian 6.3.0-18+deb9u1)) #1 SMP PREEMPT Tue Apr 9 18:16:29 UTC 2019
 ```
 
-### powered ankle-foot ###
-https://github.com/jonreal/openWearable/tree/poweredAnkle
+This branch is an archive for the soft wearable robot equilibrium-point
+controller experiments.
 
-Realmuto, J. Towards Personalized Powered Ankle-Foot Prostheses. Diss. 2018.
-
-### haptic feedback for lower limb prostheses ###
-https://github.com/jonreal/openWearable/tree/hapticFeedback
-
-Sie A, Realmuto J, Rombokas E. A Lower Limb Prosthesis Haptic Feedback System
-for Stair Descent. ASME. Frontiers in Biomedical Devices, 2017 Design of
-Medical Devices Conference ():V001T05A004. doi:10.1115/DMD2017-3409.
+Jonathan Realmuto and Terence Sanger.  Assisting Forearm Function in Children
+With Movement Disorders Via A Soft Wearable Robot With Equilibrium-Point
+Control. Frontiers in Robotics and AI, 2022 (in review).
