@@ -18,11 +18,11 @@
 #include <stdio.h>
 
 void CpuInit(cpudata_t* cpudata) {
-  cpudata->varcpu = 0;
+  cpudata->cpuvar = 0;
 }
 
 void CpuLoop(cpudata_t* cpudata)  {
-  (cpudata->varcpu)++;
+  (cpudata->cpuvar)++;
 }
 
 void CpuCleanup(void) {
