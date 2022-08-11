@@ -23,6 +23,9 @@ typedef struct {
   volatile uint32_t debug_buff[10];
   uint32_t fs_hz;
   uint32_t fs_ticks;
+  fix16_t Pmax;
+  uint32_t stepwidth;
+  fix16_t dP;
 } param_mem_t;
 
 

@@ -195,6 +195,15 @@ clean-pamtest :
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-pamtest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-pamtest-fw
 
 # ---
+pam-starecase : $(ROS_TARGET) linker install
+clean-pam-starecase :
+	@echo " Cleaning pam-starecase...";
+	@echo " $(RM) -r ./pam-starecase/build"; $(RM) -r ./pam-starecase/build
+	@echo " $(RM) -r $(TARGET_DIR)/pam-starecase"; $(RM) -r $(TARGET_DIR)/pam-starecase
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-pam-starecase-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-pam-starecase-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-pam-starecase-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-pam-starecase-fw
+
+# ---
 haptic-tracking : $(ROS_TARGET) linker install
 clean-haptic-tracking :
 	@echo " Cleaning haptic-tracking...";
