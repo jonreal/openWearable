@@ -16,6 +16,7 @@ typedef struct {
   volatile fix16_t p_res;
   volatile pam_state_t pam1_state;
   volatile pam_state_t pam2_state;
+  volatile uint32_t sync;
 } state_t;
 
 // Parameters

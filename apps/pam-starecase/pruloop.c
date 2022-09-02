@@ -138,6 +138,7 @@ void Pru1UpdateControl(const pru_count_t* c,
   PamUpdate(pam2);
   s_->pam1_state = PamGetState(pam1);
   s_->pam2_state = PamGetState(pam2);
+  s_->sync = SyncOutState(sync);
 }
 
 void Pru1Cleanup(void) {
