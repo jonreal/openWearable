@@ -144,3 +144,19 @@ int UiLoop(const pru_mem_t* pru_mem) {
   }
 }
 
+int PruLoadParams(const char* file, param_mem_t* param) {
+
+  // Defaults
+  param->fs_hz = 1000;
+  param->fs_ticks = HZ_TO_TICKS(param->fs_hz);
+
+  // App specific
+  // Chirp signal parameters:
+  param->Tf  = 10000;         // 10 s
+  param->f0 = 0x28F;          // 0.01 Hz
+  param->f1 = fix16_one;      // 2 Hz
+  param->A = 0x8000;          // 0.5 A
+
+  return 0;
+}
+

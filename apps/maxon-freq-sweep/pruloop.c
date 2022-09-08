@@ -31,10 +31,6 @@ fix16_t t = 0;
 fix16_t dt = 0;
 fix16_t k = 0;
 
-const uint32_t Tf_default = 10000;        // 240 s
-const fix16_t f0_default = 0x28F;         // 0.01 Hz
-const fix16_t f1_default = fix16_one;       // 2 Hz
-const fix16_t A_default = 0x8000;         // 0.5 A
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -42,10 +38,10 @@ const fix16_t A_default = 0x8000;         // 0.5 A
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem) {
-  mem->p->Tf = Tf_default;
-  mem->p->f0 = f0_default;
-  mem->p->f1 = f1_default;
-  mem->p->A = A_default;
+  //mem->p->Tf = Tf_default;
+  //mem->p->f0 = f0_default;
+  //mem->p->f1 = f1_default;
+  //mem->p->A = A_default;
 
   encoder = EncoderInit(0x1);
   motor = MaxonMotorInit(6,           // enable pin pru0.6
@@ -55,7 +51,7 @@ void Pru0Init(pru_mem_t* mem) {
                          0x198000,    // torque constant (25.5 mNm/A)
                          0x1760000,   // speed constant (374 rpm/V)
                          0x20000,     // max current (2 A)
-                         0x4173290   // max velocity (10000 rpm ~1047 rad/s)
+                         0x4173290    // max velocity (10000 rpm ~1047 rad/s)
                          );
   sync = SyncInitChan(5);
   SyncOutLow(sync);
