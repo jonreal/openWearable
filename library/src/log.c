@@ -23,7 +23,7 @@
 #include <sys/mman.h>
 #include "pru.h"
 #include "format.h"
-#include "roshelper.h"
+//#include "roshelper.h"
 
 // ---------------------------------------------------------------------------
 // Function: void circBuffUpdate(void)
