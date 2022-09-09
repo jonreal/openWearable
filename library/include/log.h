@@ -18,7 +18,7 @@
 
 #include <stdint.h>
 #include "mem_types.h"
-#include "roshelper.h"
+//#include "roshelper.h"
 
 #define LOGSIZE         (4096 * 4096) * 10
 #define TEMP_BUFF_LEN   1024

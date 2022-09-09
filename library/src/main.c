@@ -49,9 +49,9 @@ int main(int argc, char **argv) {
       case 'v':
         uiflags.debug = 1;
         break;
-      case 'r':
-        uiflags.rospublish = 1;
-        break;
+      //case 'r':
+      //  uiflags.rospublish = 1;
+      //  break;
       case 'u':
         uiflags.udppublish = 1;
         break;

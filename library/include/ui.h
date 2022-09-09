@@ -25,7 +25,7 @@ typedef struct {
   int debug;
   int logging;
   int logfile;
-  int rospublish;
+//  int rospublish;
   int udppublish;
 } ui_flags_t;
 
@@ -36,8 +36,8 @@ typedef struct {
   cpudata_t* cpudata;
   log_t* log;
   udp_t* udp;
-  rospub_t* ros;
-  char rosbuffer[1024];
+//  rospub_t* ros;
+//  char rosbuffer[1024];
 } ui_data_t;
 
 extern int UiLoop(const pru_mem_t* pru_mem);
