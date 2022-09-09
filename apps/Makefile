@@ -94,7 +94,6 @@ clean-template :
 	@echo " $(RM) -r /lib/firmware/am335x-pru0-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-template-fw
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-template-fw
 
-# --- test-pwm
 # ---
 test-pwm : linker install
 clean-test-pwm :
@@ -103,6 +102,16 @@ clean-test-pwm :
 	@echo " $(RM) -r $(TARGET_DIR)/test-pwm"; $(RM) -r $(TARGET_DIR)/test-pwm
 	@echo " $(RM) -r /lib/firmware/am335x-pru0-test-pwm-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-test-pwm-fw
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-test-pwm-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-test-pwm-fw
+
+# ---
+test-maxon : linker install
+clean-test-maxon :
+	@echo " Cleaning test-maxon...";
+	@echo " $(RM) -r ./test-maxon/build"; $(RM) -r ./test-maxon/build
+	@echo " $(RM) -r $(TARGET_DIR)/test-maxon"; $(RM) -r $(TARGET_DIR)/test-maxon
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-test-maxon-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-test-maxon-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-test-maxon-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-test-maxon-fw
+
 
 # ---
 pam-step-response : linker install
