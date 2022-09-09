@@ -30,7 +30,6 @@ typedef struct {
   fix16_t f0;   // start freq.
   fix16_t f1;   // end freq;
   fix16_t A;    // current amplitude
-  fix16_t p0;   // start pressure
 } param_mem_t;
 
 

@@ -161,3 +161,14 @@ int PruLoadParams(const char* file, param_mem_t* param) {
 
   return 0;
 }
+=======
+  // Chirp signal parameters:
+  param->Tf  = 10000;         // 10 s
+  param->f0 = 0x28F;          // 0.01 Hz
+  param->f1 = fix16_one;      // 2 Hz
+  param->A = 0x8000;          // 0.5 A
+
+  return 0;
+}
+
+>>>>>>> origin/master
