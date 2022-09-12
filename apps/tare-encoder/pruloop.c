@@ -73,7 +73,7 @@ void Pru1UpdateControl(const pru_count_t* c,
                        const lut_mem_t* l_,
                        state_t* s_,
                        pru_ctl_t* ctl_) {
-
+  s_->angle = EncoderGetAngle(encoder);
 }
 
 void Pru1Cleanup(void) {

@@ -33,9 +33,11 @@ void FormatSprintParams(const param_mem_t* param, char* buff) {
 void FormatSprintState(const state_t* st, char* buff) {
   sprintf(buff,
           "%u\t"        // timeStamp - uint32_t
+          "%f\t"        // angle fix16_t
           "%u\t"        // cpu var - uint32_t
           "\n",
           st->time,
+          fix16_to_float(st->angle),
           st->cpudata.varcpu
           );
 }

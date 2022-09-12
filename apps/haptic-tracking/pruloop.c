@@ -67,7 +67,8 @@ void Pru0Init(pru_mem_t* mem) {
                          0x198000,    // torque constant (25.5 mNm/A)
                          0x1760000,   // speed constant (374 rpm/V)
                          0x40000,     // max current (4 A)
-                         0x4173290   // max velocity (10000 rpm ~1047 rad/s)
+                         0x4173290,   // max velocity (10000 rpm ~1047 rad/s)
+                         0
                          );
   encoder = EncoderInit(0x1);
   haptic = HapticInit(motor,encoder,
