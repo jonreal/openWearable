@@ -14,6 +14,7 @@ typedef struct {
 // --- State
 typedef struct {
   volatile uint32_t time;
+  fix16_t angle;
   cpudata_t cpudata;
  } state_t;
 
