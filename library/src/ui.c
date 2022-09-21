@@ -95,7 +95,7 @@ int UiInit(pru_mem_t* pru_mem, ui_flags_t flags) {
   CpuInit(uidata.cpudata);
 
   if (uidata.flag.udppublish)
-    uidata.udp = UdpInit();
+    uidata.udp = UdpInit(flags.udphost);
 
   //if (uidata.flag.rospublish)
   //  uidata.ros = RosPubInit();

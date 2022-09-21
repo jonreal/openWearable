@@ -13,24 +13,18 @@
  limitations under the License.
 =============================================================================*/
 
-#ifndef _UDP_
-#define _UDP_
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include "log.h"
+#include "cpuloop.h"
+#include <stdio.h>
 
-#define REMOTE_SERVER_PORT 1500
-#define MAX_PACKET_SIZE 1024
+void CpuInit(cpudata_t* cpudata) {
+  cpudata->cpuvar = 0;
+}
 
-typedef struct {
-  int sd, rc, i;
-  struct sockaddr_in cliAddr, remoteServAddr;
-  struct hostent *h;
-  char buff[MAX_PACKET_SIZE];
-} udp_t;
+void CpuLoop(cpudata_t* cpudata)  {
+  (cpudata->cpuvar)++;
+}
 
-udp_t* UdpInit(const char* myhostname);
-void UdpPublish(const log_t* log, udp_t* udp);
-
-#endif
+void CpuCleanup(void) {
+  
+}

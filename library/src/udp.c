@@ -21,13 +21,14 @@
 #include "format.h"
 
 
-udp_t* UdpInit(void) {
+udp_t* UdpInit(const char* myhostname) {
   udp_t* udp = malloc(sizeof(udp_t));
   udp->buff[0] = '\0';
 
+    //udp->h = gethostbyname("deepthought.local");
+  udp->h = gethostbyname(myhostname);
+
   // get ip
-  udp->h = gethostbyname("deepthought.local");
-  //udp->h = gethostbyname("bioniclab.local");
   if (udp->h == NULL) {
     printf("unknown host\n");
     exit(1);

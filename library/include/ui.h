@@ -27,6 +27,7 @@ typedef struct {
   int logfile;
 //  int rospublish;
   int udppublish;
+  char udphost[64];
 } ui_flags_t;
 
 typedef struct {
