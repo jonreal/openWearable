@@ -94,6 +94,16 @@ clean-template :
 	@echo " $(RM) -r /lib/firmware/am335x-pru0-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-template-fw
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-template-fw
 
+# ---udptest 
+# ---
+udptest : linker install
+clean-udptest :
+	@echo " Cleaning udptest...";
+	@echo " $(RM) -r ./udptest/build"; $(RM) -r ./udptest/build
+	@echo " $(RM) -r $(TARGET_DIR)/udptest"; $(RM) -r $(TARGET_DIR)/udptest
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-udptest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-udptest-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-udptest-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-udptest-fw
+
 # ---
 test-pwm : linker install
 clean-test-pwm :
