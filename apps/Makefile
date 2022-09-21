@@ -84,6 +84,7 @@ APP_SPEC_INC = $(MAKECMDGOALS)/
 					reflex-single clean-reflex-single
 
 
+# -----------------------------------------------------------------------------------------------------------------
 # --- Template
 # ---
 template : linker install
@@ -93,8 +94,18 @@ clean-template :
 	@echo " $(RM) -r $(TARGET_DIR)/template"; $(RM) -r $(TARGET_DIR)/template
 	@echo " $(RM) -r /lib/firmware/am335x-pru0-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-template-fw
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-template-fw
+# -----------------------------------------------------------------------------------------------------------------
 
-# ---udptest 
+# ---
+pam-cycle-test : linker install
+clean-pam-cycle-test :
+	@echo " Cleaning pam-cycle-test...";
+	@echo " $(RM) -r ./pam-cycle-test/build"; $(RM) -r ./pam-cycle-test/build
+	@echo " $(RM) -r $(TARGET_DIR)/pam-cycle-test"; $(RM) -r $(TARGET_DIR)/pam-cycle-test
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-pam-cycle-test-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-pam-cycle-test-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-pam-cycle-test-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-pam-cycle-test-fw
+# -----------------------------------------------------------------------------------------------------------------
+
 # ---
 udptest : linker install
 clean-udptest :
