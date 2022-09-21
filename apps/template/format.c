@@ -54,5 +54,5 @@ void FormatSprintStateHeader(char* buff) {
 }
 
 void FormatSprintPublishState(const state_t* st, char* buff) {
-  FormatSprintPublishState(st,buff);
+  FormatSprintState(st,buff);
 }
