@@ -28,6 +28,7 @@ typedef struct {
   fix16_t Pmin;
   uint32_t Ton;
   uint32_t Toff;
+  uint32_t Tcheck;
 } param_mem_t;
 
 

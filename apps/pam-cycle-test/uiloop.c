@@ -9,17 +9,19 @@ extern volatile sig_atomic_t input_ready;
 void UiPrintMenu(const pru_mem_t* pru_mem) {
   printf(
   "\n\n---------------------------------------------------------------------\n"
-  "Parameters: \t Pmax = %3.2f,\t Pmin = %3.2f,\t Ton = %i,\t  Toff = %i,\t"
+  "Parameters: \t Pmax = %3.2f,\t Pmin = %3.2f,\t Ton = %i,\t Tcheck = %i,\t Toff = %i,\n"
   "Menu: f - Collect trial\n"
   "      a - change Pmax\n"
   "      b - change Pmin\n"
   "      c - change Ton\n"
   "      d - change Toff\n"
+  "      f - change Tcheck\n"
   "      e - exit\n"
   "-----------------------------------------------------------------------\n",
   fix16_to_float(pru_mem->p->Pmax),
   fix16_to_float(pru_mem->p->Pmin),
   pru_mem->p->Ton,
+  pru_mem->p->Tcheck,
   pru_mem->p->Toff);
   fflush(stdout);
 }
@@ -67,12 +69,8 @@ int UiLoop(const pru_mem_t* pru_mem) {
           UiPollForUserInput();
           scanf(" %c", &input_char);
 
-          // Wait for enter to stop collection
-          printf("\t\tPress enter to stop collection...\n");
-          fflush(stdout);
-
           // Data collection loop
-          printf("\t\tStarecase response ongoing...\n");
+          printf("\t\tCycle response ongoing...\n");
           UiStartLog();
           UiSetPruCtlBit(pru_mem, 0);
 
@@ -136,6 +134,20 @@ int UiLoop(const pru_mem_t* pru_mem) {
           UiPrintMenu(pru_mem);
           break;
         }
+
+
+        // ---- change Tcheck -------------------------------------------------
+        case 'g' : {
+          printf("\t\tEnter new Toff (1 = 100ms): ");
+          fflush(stdout);
+
+          // Wait for input.
+          UiPollForUserInput();
+          scanf(" %f", &input_float);
+          pru_mem->p->Tcheck = (uint32_t)((float)input_float);
+          UiPrintMenu(pru_mem);
+          break;
+        }
       }
     }
   }
@@ -143,7 +155,6 @@ int UiLoop(const pru_mem_t* pru_mem) {
 
 
 int PruLoadParams(const char* file, param_mem_t* param) {
-
   // Defaults
   param->fs_hz = 10;
   param->fs_ticks = HZ_TO_TICKS(param->fs_hz);
@@ -153,6 +164,7 @@ int PruLoadParams(const char* file, param_mem_t* param) {
   param->Pmin = 0x500000;
   param->Ton = 50;
   param->Toff = 30;
+  param->Tcheck = 40;
 
   return 0;
 }
