@@ -74,12 +74,12 @@ void Pru0Cleanup(void) {
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
+
   sync = SyncInitChan(4); // pru1.4
+
   i2c1 = I2cInit(2);
   mux = MuxI2cInit(i2c1,0x70,PCA9548);
   reservoir = PamReservoirInit(PressureSensorInit(mux,0,0x28));
-
-  debug_buff[2] = 0xFC;
 
   pam1 = PamInitMuscle(PressureSensorInit(mux,1,0x28),
                         reservoir,
@@ -114,29 +114,24 @@ void Pru1UpdateControl(const pru_count_t* c,
                        pru_ctl_t* ctl_) {
 
   if (PruGetCtlBit(ctl_, 0)) {
-    if (flag == 0) {
-      SyncOutHigh(sync);
-      flag = 1;
+    if (pulsecnt == 0) {
+      pd = fix16_sadd(pd,p_->Pmax);
     }
-    if ((pulsecnt%p_->stepwidth) == 0) {
-      pd = fix16_sadd(pd,p_->dP);
-      if (fix16_ssub(pd,p_->Pmax) > 0) {
-        flag = 0;
-        pd = 0;
-        pulsecnt = 0;
-        PruClearCtlBit(ctl_,0);
-        SyncOutLow(sync);
-      }
-      PamSetPd(pam2,pd);
+    else if (pulsecnt == Ton) {
+      pd = fix16_sadd(pd,0);
     }
     pulsecnt++;
+
+    if (pulsecnt == (Ton + Toff)){
+      pulsecnt = 0;
+    }
   }
-  PamActionSimple(pam2);
+  PamActionSimple(pam1);
   PamActionSimple(pam2);
   PamReservoirUpdate(reservoir);
+  PamUpdate(pam1);
   PamUpdate(pam2);
-  PamUpdate(pam2);
-  s_->pam2_state = PamGetState(pam2);
+  s_->pam1_state = PamGetState(pam1);
   s_->pam2_state = PamGetState(pam2);
   s_->sync = SyncOutState(sync);
 }
