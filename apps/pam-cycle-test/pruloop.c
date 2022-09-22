@@ -31,7 +31,6 @@ pam_t* pam2;
 sync_t* sync;
 
 fix16_t pd = 0;
-uint32_t flag = 0;
 uint32_t pulsecnt = 0;
 
 const uint32_t refractory = 150;
@@ -116,15 +115,24 @@ void Pru1UpdateControl(const pru_count_t* c,
   if (PruGetCtlBit(ctl_, 0)) {
     if (pulsecnt == 0) {
       pd = fix16_sadd(pd,p_->Pmax);
+      PamSetPd(pam2,pd);
     }
-    else if (pulsecnt == Ton) {
-      pd = fix16_sadd(pd,0);
+    else if (pulsecnt == p_->Ton) {
+      pd = 0;
+      PamSetPd(pam2,pd);
     }
     pulsecnt++;
 
-    if (pulsecnt == (Ton + Toff)){
+    if ( ((pulsecnt > p_->Tcheck) && (pulsecnt < p_->Toff))
+        && (s_->pam2_state.pm_raw < p_->Pmin)) {
+      pd = 0;
+      PamSetPd(pam2,pd);
+      PruClearCtlBit(ctl_,0);
+    }
+    if (pulsecnt == (p_->Ton + p_->Toff)){
       pulsecnt = 0;
     }
+
   }
   PamActionSimple(pam1);
   PamActionSimple(pam2);
@@ -134,6 +142,7 @@ void Pru1UpdateControl(const pru_count_t* c,
   s_->pam1_state = PamGetState(pam1);
   s_->pam2_state = PamGetState(pam2);
   s_->sync = SyncOutState(sync);
+
 }
 
 void Pru1Cleanup(void) {
