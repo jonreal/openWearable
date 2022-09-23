@@ -156,15 +156,15 @@ int UiLoop(const pru_mem_t* pru_mem) {
 
 int PruLoadParams(const char* file, param_mem_t* param) {
   // Defaults
-  param->fs_hz = 10;
+  param->fs_hz = 100;
   param->fs_ticks = HZ_TO_TICKS(param->fs_hz);
 
   // App specific
   param->Pmax = 0x780000;
   param->Pmin = 0x500000;
-  param->Ton = 50;
-  param->Toff = 30;
-  param->Tcheck = 40;
+  param->Ton = 1000;
+  param->Toff = 500;
+  param->Tcheck = 700;
 
   return 0;
 }
