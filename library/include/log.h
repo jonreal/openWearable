@@ -20,7 +20,7 @@
 #include "mem_types.h"
 //#include "roshelper.h"
 
-#define LOGSIZE         (4096 * 4096) * 10
+#define LOGSIZE         (4096 * 4096) * 20
 #define TEMP_BUFF_LEN   1024
 #define WRITE_BUFF_LEN  65536
 #define MIN_STATE_REQ   2
