@@ -41,6 +41,7 @@ void FormatSprintState(const state_t* st, char* buff) {
           "%f\t"        // pam2 pd - fix16_t
           "%i\t"        // pam2 u - uint8_t
           "%i\t"        // sync sync - uint8_t
+          "%i\t"        // cyclecount - uint32_t
           "\n",
           st->time,
           fix16_to_float(st->p_res),
@@ -50,7 +51,8 @@ void FormatSprintState(const state_t* st, char* buff) {
           fix16_to_float(st->pam2_state.pm),
           fix16_to_float(st->pam2_state.pd),
           st->pam2_state.u,
-          st->sync
+          st->sync,
+          st->cyclecount
           );
 }
 
@@ -63,8 +65,9 @@ void FormatSprintStateHeader(char* buff) {
           "u1\t"
           "p_m2\t"
           "p_d2\t"
-          "u1\t"
+          "u2\t"
           "sync\t"
+          "cyclecount\t"
           "\n");
 }
 

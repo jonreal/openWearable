@@ -32,6 +32,7 @@ sync_t* sync;
 
 fix16_t pd = 0;
 uint32_t pulsecnt = 0;
+uint32_t cyclecountlocal = 0;
 
 const uint32_t refractory = 1;
 
@@ -74,6 +75,7 @@ void Pru0Cleanup(void) {
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
 
+
   sync = SyncInitChan(4); // pru1.4
 
   i2c1 = I2cInit(2);
@@ -114,6 +116,7 @@ void Pru1UpdateControl(const pru_count_t* c,
 
   if (PruGetCtlBit(ctl_, 0)) {
     if (pulsecnt == 0) {
+      SyncOutHigh(sync);
       pd = p_->Pmax;
       PamSetPd(pam2,pd);
     }
@@ -126,11 +129,15 @@ void Pru1UpdateControl(const pru_count_t* c,
     if ( ((pulsecnt >= p_->Tcheck) && (pulsecnt <= p_->Ton))
         && (s_->pam2_state.pm < p_->Pmin)) {
       pd = 0;
+      cyclecountlocal = 0;
+      pulsecnt = 0;
       PamSetPd(pam2,pd);
       PruClearCtlBit(ctl_,0);
+      SyncOutLow(sync);
     }
     if (pulsecnt == (p_->Ton + p_->Toff)){
       pulsecnt = 0;
+      cyclecountlocal++;
     }
 
   }
@@ -142,6 +149,7 @@ void Pru1UpdateControl(const pru_count_t* c,
   s_->pam1_state = PamGetState(pam1);
   s_->pam2_state = PamGetState(pam2);
   s_->sync = SyncOutState(sync);
+  s_->cyclecount = cyclecountlocal;
 
 }
 

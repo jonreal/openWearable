@@ -15,7 +15,7 @@ void UiPrintMenu(const pru_mem_t* pru_mem) {
   "      b - change Pmin\n"
   "      c - change Ton\n"
   "      d - change Toff\n"
-  "      f - change Tcheck\n"
+  "      g - change Tcheck\n"
   "      e - exit\n"
   "-----------------------------------------------------------------------\n",
   fix16_to_float(pru_mem->p->Pmax),
