@@ -15,6 +15,7 @@
 
 #include "pruloop.h"
 #include "pam.h"
+#include "sync.h"
 #include "filtcoeff.h"
 
 volatile register uint32_t __R30;
@@ -27,6 +28,11 @@ reservoir_t* reservoir;
 pam_t* pam1;
 pam_t* pam2;
 
+sync_t* sync;
+
+fix16_t pd = 0;
+uint32_t flag = 0;
+uint32_t pulsecnt = 0;
 
 const uint32_t refractory = 150;
 
@@ -68,10 +74,12 @@ void Pru0Cleanup(void) {
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
-
+  sync = SyncInitChan(4); // pru1.4
   i2c1 = I2cInit(2);
   mux = MuxI2cInit(i2c1,0x70,PCA9548);
   reservoir = PamReservoirInit(PressureSensorInit(mux,0,0x28));
+
+  debug_buff[2] = 0xFC;
 
   pam1 = PamInitMuscle(PressureSensorInit(mux,1,0x28),
                         reservoir,
@@ -97,10 +105,6 @@ void Pru1UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
-
-  PamReservoirUpdate(reservoir);
-  s_->p_res = PamReservoirGetPressure(reservoir);
-
 }
 
 void Pru1UpdateControl(const pru_count_t* c,
@@ -109,12 +113,32 @@ void Pru1UpdateControl(const pru_count_t* c,
                        state_t* s_,
                        pru_ctl_t* ctl_) {
 
-  PamActionSimple(pam1);
+  if (PruGetCtlBit(ctl_, 0)) {
+    if (flag == 0) {
+      SyncOutHigh(sync);
+      flag = 1;
+    }
+    if ((pulsecnt%p_->stepwidth) == 0) {
+      pd = fix16_sadd(pd,p_->dP);
+      if (fix16_ssub(pd,p_->Pmax) > 0) {
+        flag = 0;
+        pd = 0;
+        pulsecnt = 0;
+        PruClearCtlBit(ctl_,0);
+        SyncOutLow(sync);
+      }
+      PamSetPd(pam2,pd);
+    }
+    pulsecnt++;
+  }
   PamActionSimple(pam2);
-
-  s_->pam1_state = PamGetState(pam1);
+  PamActionSimple(pam2);
+  PamReservoirUpdate(reservoir);
+  PamUpdate(pam2);
+  PamUpdate(pam2);
   s_->pam2_state = PamGetState(pam2);
-
+  s_->pam2_state = PamGetState(pam2);
+  s_->sync = SyncOutState(sync);
 }
 
 void Pru1Cleanup(void) {

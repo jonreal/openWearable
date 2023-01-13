@@ -44,20 +44,22 @@ int main(int argc, char **argv) {
   ui_flags_t uiflags = UiInitFlags();
   char configfile[256] = "/root/openWearable/apps/config/";
   int configFlag = 0;
-  while((c = getopt(argc, argv, "vurc:")) != -1) {
+  while((c = getopt(argc, argv, "vu:rc:")) != -1) {
     switch (c) {
       case 'v':
         uiflags.debug = 1;
         break;
-      case 'r':
-        uiflags.rospublish = 1;
-        break;
+      //case 'r':
+      //  uiflags.rospublish = 1;
+      //  break;
       case 'u':
+        strcat(uiflags.udphost,optarg);
+        printf("\nUDP channel host: %s.\n\n",uiflags.udphost);
         uiflags.udppublish = 1;
         break;
       case 'c':
         strcat(configfile,optarg);
-        printf("\nloading config file %s\n\n", configfile);
+        printf("\nLoading config file: %s.\n\n", configfile);
         configFlag = 1;
         break;
     }

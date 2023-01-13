@@ -43,11 +43,11 @@ void FormatSprintState(const state_t* st, char* buff) {
           "\n",
           st->time,
           fix16_to_float(st->p_res),
-          fix16_to_float(st->pam1_state.p_m),
-          fix16_to_float(st->pam1_state.p_d),
+          fix16_to_float(st->pam1_state.pm),
+          fix16_to_float(st->pam1_state.pd),
           st->pam1_state.u,
-          fix16_to_float(st->pam2_state.p_m),
-          fix16_to_float(st->pam2_state.p_d),
+          fix16_to_float(st->pam2_state.pm),
+          fix16_to_float(st->pam2_state.pd),
           st->pam2_state.u
           );
 }

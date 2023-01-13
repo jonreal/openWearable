@@ -2,27 +2,31 @@
 #define _STATE_
 
 #include "fix16.h"
-
-// packing can be issue -- use 32bit types
-
+#include "pam.h"
 
 // --- cpudata struct
 typedef struct {
   volatile uint32_t varcpu;
 } cpudata_t;
 
-// --- State
+// State
 typedef struct {
   volatile uint32_t time;
-  fix16_t angle;
   cpudata_t cpudata;
- } state_t;
+  volatile fix16_t p_res;
+  volatile pam_state_t pam1_state;
+  volatile pam_state_t pam2_state;
+  volatile uint32_t sync;
+} state_t;
 
-// --- Parameters
+// Parameters
 typedef struct {
   volatile uint32_t debug_buff[10];
   uint32_t fs_hz;
   uint32_t fs_ticks;
+  fix16_t Pmax;
+  uint32_t stepwidth;
+  fix16_t dP;
 } param_mem_t;
 
 

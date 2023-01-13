@@ -9,26 +9,24 @@ extern volatile sig_atomic_t input_ready;
 void UiPrintMenu(const pru_mem_t* pru_mem) {
   printf(
   "\n\n---------------------------------------------------------------------\n"
-  " \t Tf = %3.2f,\t f0 = %3.2f,\t f1 = %3.2f,\t A = %3.2f\n\n"
-  "Menu: f - Start trial\n"
-  "      p - change total time\n"
-  "      o - change initial frequency\n"
-  "      i - change final frequency\n"
-  "      u - change amplitude\n"
+  "Parameters: \t Pmax = %3.2f,\t stepwidth = %i,\t dP = %3.7f\n\n"
+  "Menu: f - Collect trial\n"
+  "      a - change Pmax\n"
+  "      s - change stepwidth\n"
+  "      d - change dP\n"
   "      e - exit\n"
   "-----------------------------------------------------------------------\n",
-  (float)pru_mem->p->Tf/(float)pru_mem->p->fs_hz,
-  fix16_to_float(pru_mem->p->f0),
-  fix16_to_float(pru_mem->p->f1),
-  fix16_to_float(pru_mem->p->A));
+  fix16_to_float(pru_mem->p->Pmax),
+  pru_mem->p->stepwidth,
+  fix16_to_float(pru_mem->p->dP));
   fflush(stdout);
 }
 
 int UiLoop(const pru_mem_t* pru_mem) {
   char input_char = 0;
-  float input_float = 0;
   char input_string[256] = {0};
   char log_file[256] = "datalog/";
+  float input_float = 0;
 
   UiPrintMenu(pru_mem);
   while (1) {
@@ -62,20 +60,20 @@ int UiLoop(const pru_mem_t* pru_mem) {
           UiNewLogFile(log_file);
 
           // Wait for user input to start saving data
-          printf("\t\tPress enter to start trial...\n");
+          printf("\t\tPress enter to start collection...\n");
           fflush(stdout);
           UiPollForUserInput();
           scanf(" %c", &input_char);
 
           // Wait for enter to stop collection
-          printf("\t\tTrial ongoing...\n");
+          printf("\t\tPress enter to stop collection...\n");
           fflush(stdout);
 
           // Data collection loop
+          printf("\t\tStarecase response ongoing...\n");
           UiStartLog();
           UiSetPruCtlBit(pru_mem, 0);
 
-          // Poll for PRU done
           UiPollPruCtlBit(pru_mem, 0, 0);
           UiStopAndSaveLog();
 
@@ -85,57 +83,41 @@ int UiLoop(const pru_mem_t* pru_mem) {
           break;
         }
 
-        // ---- change time -------------------------------------------------
-        case 'p' : {
-          printf("\t\tEnter new total time: ");
+        // ---- change Pmax -------------------------------------------------
+        case 'a' : {
+          printf("\t\tEnter new Pmax: ");
           fflush(stdout);
 
           // Wait for input.
           UiPollForUserInput();
           scanf(" %f", &input_float);
-          pru_mem->p->Tf = (uint32_t)((float)pru_mem->p->fs_hz*input_float);
-          UiSetPruCtlBit(pru_mem,2);
+          pru_mem->p->Pmax = fix16_from_float(input_float);
           UiPrintMenu(pru_mem);
           break;
         }
 
-        // ---- start freq -------------------------------------------------
-        case 'o' : {
-          printf("\t\tEnter new start frequency: ");
+        // ---- change stepwidth -------------------------------------------------
+        case 's' : {
+          printf("\t\tEnter new stepwidth (ms): ");
           fflush(stdout);
 
           // Wait for input.
           UiPollForUserInput();
           scanf(" %f", &input_float);
-          pru_mem->p->f0 = fix16_from_float(input_float);
-          UiSetPruCtlBit(pru_mem,2);
+          pru_mem->p->stepwidth = (uint32_t)((float)input_float);
           UiPrintMenu(pru_mem);
           break;
         }
 
-        // ---- end freq -------------------------------------------------
-        case 'i' : {
-          printf("\t\tEnter new end frequency: ");
+        // ---- change stepwidth -------------------------------------------------
+        case 'd' : {
+          printf("\t\tEnter new dP: ");
           fflush(stdout);
 
           // Wait for input.
           UiPollForUserInput();
           scanf(" %f", &input_float);
-          pru_mem->p->f1 = fix16_from_float(input_float);
-          UiSetPruCtlBit(pru_mem,2);
-          UiPrintMenu(pru_mem);
-          break;
-        }
-
-        // ---- amplitude -------------------------------------------------
-        case 'u' : {
-          printf("\t\tEnter new amplitude: ");
-          fflush(stdout);
-
-          // Wait for input.
-          UiPollForUserInput();
-          scanf(" %f", &input_float);
-          pru_mem->p->A = fix16_from_float(input_float);
+          pru_mem->p->dP = fix16_from_float(input_float);
           UiPrintMenu(pru_mem);
           break;
         }
@@ -144,6 +126,7 @@ int UiLoop(const pru_mem_t* pru_mem) {
   }
 }
 
+
 int PruLoadParams(const char* file, param_mem_t* param) {
 
   // Defaults
@@ -151,10 +134,9 @@ int PruLoadParams(const char* file, param_mem_t* param) {
   param->fs_ticks = HZ_TO_TICKS(param->fs_hz);
 
   // App specific
-  param->Tf = 1000;
-  param->f0 = 0x28F;
-  param->f1 = fix16_one;
-  param->A = 0x8000;
+  param->Pmax = 0x500000;
+  param->stepwidth = 2000;
+  param->dP = 0x50000;
 
   return 0;
 }

@@ -2,6 +2,7 @@
 #include <math.h>
 #include <sys/socket.h>
 #include <fcntl.h>
+#include <assert.h>
 
 #include "rotation_display.h"
 

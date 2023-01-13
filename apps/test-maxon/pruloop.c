@@ -14,21 +14,12 @@
 =============================================================================*/
 
 #include "pruloop.h"
-#include "pam.h"
-#include "filtcoeff.h"
+#include "maxon.h"
 
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 
-// Pam stuff
-i2cmux_t* mux;
-i2c_t* i2c1;
-reservoir_t* reservoir;
-pam_t* pam1;
-pam_t* pam2;
-
-
-const uint32_t refractory = 150;
+motor_t* motor;
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -36,7 +27,16 @@ const uint32_t refractory = 150;
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem) {
-
+  motor = MaxonMotorInit(6,           // enable pin pru0.6
+                         0,           // adc cur ch
+                         1,           // adc vel ch
+                         0x240000,    // gear ratio (31/1)
+                         0x198000,    // torque constant (25.5 mNm/A)
+                         0x1760000,   // speed constant (374 rpm/V)
+                         0x20000,     // max current (2 A)
+                         0x4173290,   // max velocity (10000 rpm ~1047 rad/s)
+                         0            // duty bias
+                         );
 }
 
 void Pru0UpdateState(const pru_count_t* c,
@@ -45,10 +45,8 @@ void Pru0UpdateState(const pru_count_t* c,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
 
-
-
-
-
+  MaxonUpdate(motor);
+  MaxonSetCurrent(motor,p_->motor_current);
 }
 
 void Pru0UpdateControl(const pru_count_t* c,
@@ -56,7 +54,7 @@ void Pru0UpdateControl(const pru_count_t* c,
                        const lut_mem_t* l_,
                        state_t* s_,
                        pru_ctl_t* ctl_){
-
+  MaxonAction(motor);
 }
 
 void Pru0Cleanup(void) {
@@ -68,28 +66,6 @@ void Pru0Cleanup(void) {
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
-
-  i2c1 = I2cInit(2);
-  mux = MuxI2cInit(i2c1,0x70,PCA9548);
-  reservoir = PamReservoirInit(PressureSensorInit(mux,0,0x28));
-
-  pam1 = PamInitMuscle(PressureSensorInit(mux,1,0x28),
-                        reservoir,
-                        0, 1,
-                        0x1F8A034, // 504.6258 ms
-                        0x2FAAD48, // 762.6769 ms
-                        refractory,
-                        FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
-  PamSetPd(pam1,0);
-
-  pam2 = PamInitMuscle(PressureSensorInit(mux,2,0x28),
-                        reservoir,
-                        2, 3,
-                        0x1F96B36, // 505.4188 ms
-                        0x33DD3A4, //829.8267 ms
-                        refractory,
-                        FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
-  PamSetPd(pam2,0);
 }
 
 void Pru1UpdateState(const pru_count_t* c,
@@ -98,9 +74,6 @@ void Pru1UpdateState(const pru_count_t* c,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
 
-  PamReservoirUpdate(reservoir);
-  s_->p_res = PamReservoirGetPressure(reservoir);
-
 }
 
 void Pru1UpdateControl(const pru_count_t* c,
@@ -108,21 +81,8 @@ void Pru1UpdateControl(const pru_count_t* c,
                        const lut_mem_t* l_,
                        state_t* s_,
                        pru_ctl_t* ctl_) {
-
-  PamActionSimple(pam1);
-  PamActionSimple(pam2);
-
-  s_->pam1_state = PamGetState(pam1);
-  s_->pam2_state = PamGetState(pam2);
-
 }
 
 void Pru1Cleanup(void) {
-
-  PamMuscleFree(pam1);
-  PamMuscleFree(pam2);
-  PamReservoirFree(reservoir);
-  MuxI2cFree(mux);
-
 }
 

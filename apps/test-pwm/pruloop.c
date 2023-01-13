@@ -14,21 +14,11 @@
 =============================================================================*/
 
 #include "pruloop.h"
-#include "pam.h"
-#include "filtcoeff.h"
+
+#include "pwmdriver.h"
 
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
-
-// Pam stuff
-i2cmux_t* mux;
-i2c_t* i2c1;
-reservoir_t* reservoir;
-pam_t* pam1;
-pam_t* pam2;
-
-
-const uint32_t refractory = 150;
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -36,7 +26,7 @@ const uint32_t refractory = 150;
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem) {
-
+  pwmInit();
 }
 
 void Pru0UpdateState(const pru_count_t* c,
@@ -45,10 +35,7 @@ void Pru0UpdateState(const pru_count_t* c,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
 
-
-
-
-
+  pwmSetDutyCycle(fix16_from_float(p_->duty));
 }
 
 void Pru0UpdateControl(const pru_count_t* c,
@@ -56,10 +43,10 @@ void Pru0UpdateControl(const pru_count_t* c,
                        const lut_mem_t* l_,
                        state_t* s_,
                        pru_ctl_t* ctl_){
-
 }
 
 void Pru0Cleanup(void) {
+  pwmCleanUp();
 }
 
 // ---------------------------------------------------------------------------
@@ -68,28 +55,6 @@ void Pru0Cleanup(void) {
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
-
-  i2c1 = I2cInit(2);
-  mux = MuxI2cInit(i2c1,0x70,PCA9548);
-  reservoir = PamReservoirInit(PressureSensorInit(mux,0,0x28));
-
-  pam1 = PamInitMuscle(PressureSensorInit(mux,1,0x28),
-                        reservoir,
-                        0, 1,
-                        0x1F8A034, // 504.6258 ms
-                        0x2FAAD48, // 762.6769 ms
-                        refractory,
-                        FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
-  PamSetPd(pam1,0);
-
-  pam2 = PamInitMuscle(PressureSensorInit(mux,2,0x28),
-                        reservoir,
-                        2, 3,
-                        0x1F96B36, // 505.4188 ms
-                        0x33DD3A4, //829.8267 ms
-                        refractory,
-                        FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
-  PamSetPd(pam2,0);
 }
 
 void Pru1UpdateState(const pru_count_t* c,
@@ -98,9 +63,6 @@ void Pru1UpdateState(const pru_count_t* c,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
 
-  PamReservoirUpdate(reservoir);
-  s_->p_res = PamReservoirGetPressure(reservoir);
-
 }
 
 void Pru1UpdateControl(const pru_count_t* c,
@@ -108,21 +70,8 @@ void Pru1UpdateControl(const pru_count_t* c,
                        const lut_mem_t* l_,
                        state_t* s_,
                        pru_ctl_t* ctl_) {
-
-  PamActionSimple(pam1);
-  PamActionSimple(pam2);
-
-  s_->pam1_state = PamGetState(pam1);
-  s_->pam2_state = PamGetState(pam2);
-
 }
 
 void Pru1Cleanup(void) {
-
-  PamMuscleFree(pam1);
-  PamMuscleFree(pam2);
-  PamReservoirFree(reservoir);
-  MuxI2cFree(mux);
-
 }
 

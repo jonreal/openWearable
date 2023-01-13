@@ -8,13 +8,12 @@
 
 // --- cpudata struct
 typedef struct {
-  volatile uint32_t varcpu;
+  volatile uint32_t cpuvar;
 } cpudata_t;
 
 // --- State
 typedef struct {
   volatile uint32_t time;
-  fix16_t angle;
   cpudata_t cpudata;
  } state_t;
 
@@ -23,6 +22,7 @@ typedef struct {
   volatile uint32_t debug_buff[10];
   uint32_t fs_hz;
   uint32_t fs_ticks;
+  volatile fix16_t motor_current;
 } param_mem_t;
 
 

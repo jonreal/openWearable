@@ -13,24 +13,29 @@
  limitations under the License.
 =============================================================================*/
 
-#ifndef _UDP_
-#define _UDP_
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include "log.h"
+#include "cpuloop.h"
+#include <stdio.h>
+#include "rc_i2c.h"
+#include "bno055_arm.h"
 
-#define REMOTE_SERVER_PORT 1500
-#define MAX_PACKET_SIZE 1024
+imu_t* imu1;
+uint32_t frame;
 
-typedef struct {
-  int sd, rc, i;
-  struct sockaddr_in cliAddr, remoteServAddr;
-  struct hostent *h;
-  char buff[MAX_PACKET_SIZE];
-} udp_t;
+void CpuInit(cpudata_t* cpudata) {
+//  frame = 0;
+//  rc_i2c_init(1,0x0);
+//  imu1 = ImuInit(0x29);
+}
 
-udp_t* UdpInit(const char* myhostname);
-void UdpPublish(const log_t* log, udp_t* udp);
+void CpuLoop(cpudata_t* cpudata)  {
+//  if ((frame % 10) == 0)
+//    ImuUpdate(imu1);
+//  cpudata->imu1 = ImuGetEuler(imu1);
+//  cpudata->status = imu1->status;
+//  frame++;
+}
 
-#endif
+void CpuCleanup(void) {
+//  rc_i2c_close(1);
+}

@@ -26,7 +26,7 @@
 #include "pru.h"
 #include "debug.h"
 #include "format.h"
-#include "roshelper.h"
+//#include "roshelper.h"
 
 volatile sig_atomic_t input_ready;
 volatile sig_atomic_t sigexit;
@@ -52,12 +52,12 @@ static void UiTimerCallback(int sig) {
   if (uidata.flag.logging)
     LogWriteStateToFile(uidata.log);
 
-  if (uidata.flag.rospublish) {
-    FormatSprintPublishState(
-      &uidata.log->pru_mem->s->state[uidata.log->cbuff->end % STATE_BUFF_LEN],
-      uidata.rosbuffer);
-    RosPubPublish(uidata.ros, uidata.rosbuffer);
-  }
+  //if (uidata.flag.rospublish) {
+  //  FormatSprintPublishState(
+  //    &uidata.log->pru_mem->s->state[uidata.log->cbuff->end % STATE_BUFF_LEN],
+  //    uidata.rosbuffer);
+  //  RosPubPublish(uidata.ros, uidata.rosbuffer);
+  //}
 
   if (uidata.flag.udppublish)
     UdpPublish(uidata.log, uidata.udp);
@@ -77,7 +77,7 @@ ui_flags_t UiInitFlags(void) {
   f.debug = 0;
   f.logging = 0;
   f.logfile = 0;
-  f.rospublish = 0;
+  //f.rospublish = 0;
   f.udppublish = 0;
   return f;
 }
@@ -88,17 +88,17 @@ int UiInit(pru_mem_t* pru_mem, ui_flags_t flags) {
 
   uidata.flag = flags;
   uidata.log = LogInit(pru_mem);
-  uidata.rosbuffer[0] = '\0';
+  //uidata.rosbuffer[0] = '\0';
   uidata.counter = 0;
   uidata.cpudata = &pru_mem->s->cpudata;
 
   CpuInit(uidata.cpudata);
 
   if (uidata.flag.udppublish)
-    uidata.udp = UdpInit();
+    uidata.udp = UdpInit(flags.udphost);
 
-  if (uidata.flag.rospublish)
-    uidata.ros = RosPubInit();
+  //if (uidata.flag.rospublish)
+  //  uidata.ros = RosPubInit();
 
   // init debug pin
   if (DebugInit() != 0) {
@@ -227,8 +227,8 @@ int UiCleanup(void) {
     return -1;
   }
 //  DebugCleanup();
-  if (uidata.flag.rospublish)
-    RosPubCleanup(uidata.ros);
+  //if (uidata.flag.rospublish)
+  //  RosPubCleanup(uidata.ros);
   LogCleanup(uidata.log);
   CpuCleanup();
   return 0;

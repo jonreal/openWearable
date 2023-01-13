@@ -33,13 +33,9 @@ void FormatSprintParams(const param_mem_t* param, char* buff) {
 void FormatSprintState(const state_t* st, char* buff) {
   sprintf(buff,
           "%u\t"        // timeStamp - uint32_t
-          "%u\t"        // pru0 var - uint32_t
-          "%u\t"        // pru1 var - uint32_t
           "%u\t"        // cpu var - uint32_t
           "\n",
           st->time,
-          st->pru0var,
-          st->pru1var,
           st->cpudata.cpuvar
           );
 }
@@ -47,12 +43,10 @@ void FormatSprintState(const state_t* st, char* buff) {
 void FormatSprintStateHeader(char* buff) {
   sprintf(buff,
           "\n# frame\t"
-          "pru0val\t"
-          "pru1val\t"
           "cpuval\t"
           "\n");
 }
 
 void FormatSprintPublishState(const state_t* st, char* buff) {
-  FormatSprintState(st,buff);
+  FormatSprintPublishState(st,buff);
 }

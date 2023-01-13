@@ -25,8 +25,8 @@
 
 
 typedef struct {
-pressure_sensor_t* sensor;
-volatile fix16_t pressure;
+  pressure_sensor_t* sensor;
+  volatile fix16_t pressure;
 } reservoir_t;
 
 typedef enum {
