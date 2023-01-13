@@ -21,16 +21,16 @@
 #include "format.h"
 
 
-udp_t* UdpInit(void) {
+udp_t* UdpInit(const char* myhostname) {
   udp_t* udp = malloc(sizeof(udp_t));
   udp->buff[0] = '\0';
 
-  // get ip
-  udp->h = gethostbyname("labrat.local");
+  udp->h = gethostbyname(myhostname);
   if (udp->h == NULL) {
     printf("unknown host\n");
     exit(1);
   }
+
   udp->remoteServAddr.sin_family = udp->h->h_addrtype;
   memcpy((char *) &udp->remoteServAddr.sin_addr.s_addr,udp->h->h_addr_list[0],
     udp->h->h_length);
