@@ -16,15 +16,20 @@
 
 #include "cpuloop.h"
 #include <stdio.h>
+#include "rc_i2c.h"
+#include "bno055_arm.h"
+
+imu_t* imu1;
+uint32_t frame;
 
 void CpuInit(cpudata_t* cpudata) {
-  cpudata->cpuvar = 0;
+  cpudata->varcpu = 0;
 }
 
 void CpuLoop(cpudata_t* cpudata)  {
-  (cpudata->cpuvar)++;
+  (cpudata->varcpu)++;
 }
 
 void CpuCleanup(void) {
-  
+
 }
