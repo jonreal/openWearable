@@ -97,6 +97,16 @@ clean-template :
 # -----------------------------------------------------------------------------------------------------------------
 
 # ---
+plotter-example : linker install
+clean-plotter-example :
+	@echo " Cleaning plotter-example...";
+	@echo " $(RM) -r ./plotter-example/build"; $(RM) -r ./plotter-example/build
+	@echo " $(RM) -r $(TARGET_DIR)/plotter-example"; $(RM) -r $(TARGET_DIR)/plotter-example
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-plotter-example-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-plotter-example-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-plotter-example-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-plotter-example-fw
+# -----------------------------------------------------------------------------------------------------------------
+
+# ---
 pam-cycle-test : linker install
 clean-pam-cycle-test :
 	@echo " Cleaning pam-cycle-test...";
