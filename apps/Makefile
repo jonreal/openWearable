@@ -96,6 +96,19 @@ clean-template :
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-template-fw
 # -----------------------------------------------------------------------------------------------------------------
 
+# -----------------------------------------------------------------------------------------------------------------
+# --- sysID-dual-actuators
+# ---
+sysID-dual-actuators : linker install
+clean-sysID-dual-actuators :
+	@echo " Cleaning sysID-dual-actuators...";
+	@echo " $(RM) -r ./sysID-dual-actuators/build"; $(RM) -r ./sysID-dual-actuators/build
+	@echo " $(RM) -r $(TARGET_DIR)/sysID-dual-actuators"; $(RM) -r $(TARGET_DIR)/sysID-dual-actuators
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-sysID-dual-actuators-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-sysID-dual-actuators-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-sysID-dual-actuators-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-sysID-dual-actuators-fw
+# -----------------------------------------------------------------------------------------------------------------
+
+
 # ---
 plotter-example : linker install
 clean-plotter-example :
