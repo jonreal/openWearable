@@ -77,6 +77,8 @@ pam_t* PamInitMuscle(pressure_sensor_t* sens,
 void PamMuscleFree(pam_t* pam);
 void PamUpdate(pam_t* pam);
 void PamActionSimple(pam_t* p);
+void PamActionSimpleXWL(pam_t* p);
+void PamActionSimpleXWR(pam_t* p);
 void PamActionPulse(pam_t* p);
 void PamActionModel(pam_t* p);
 pam_state_t PamGetState(const pam_t* p);
