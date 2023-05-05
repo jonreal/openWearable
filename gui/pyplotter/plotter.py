@@ -13,18 +13,16 @@ serverSock.bind(('', UDP_PORT_NO))
 fcntl.fcntl(serverSock, fcntl.F_SETFL, os.O_NONBLOCK)
 
 
-x = np.linspace(-3.0, 0, 100)
+x = np.linspace(-1, 0, 300)
 y1 = np.multiply(x, 0.0)
 y2 = np.multiply(x, 0.0)
 y3 = np.multiply(x, 0.0)
-y4 = np.multiply(x, 0.0)
 
 fig = plt.figure()
-ax = plt.axes(xlim=(-3.,0), ylim=(0,60))
+ax = plt.axes(xlim=(-10.,0), ylim=(0,60))
 ln1, = ax.plot([], [], lw=2)
 ln2, = ax.plot([], [], lw=2)
 ln3, = ax.plot([], [], lw=2)
-ln4, = ax.plot([], [], lw=2)
 
 ymin = 0
 ymax = 60
@@ -33,11 +31,10 @@ def init():
     ln1.set_data([], [])
     ln2.set_data([], [])
     ln3.set_data([], [])
-    ln4.set_data([], [])
-    return ln1, ln2, ln3, ln4
+    return ln1, ln2, ln3
 
 def animate(i):
-    global y1, y2, y3, y4, x, ax
+    global y1, y2, y3, x, ax
 
     while (1) :
         try :
@@ -45,30 +42,30 @@ def animate(i):
             val = n.decode("utf-8").split('\t')
 
             # Format mesg
-            time = float(val[0])
-            p_res = float(val[1])
-            p_d1 = float(val[2])
-            p_m1 = float(val[3])
-            p_d2 = float(val[4])
-            p_m2 = float(val[5])
+            time = float(val[0])/1000.0
+            v1 = float(val[1])
+            v2 = float(val[2])
+            v3 = float(val[3])
 
             #print(data)
             print(time,'\t',
-                  p_res,'\t',
-                  p_d1,'\t',
-                  p_m1,'\t',
-                  p_d2,'\t',
-                  p_m2,'\t')
+                  v1,'\t',
+                  v1,'\t',
+                  v3,'\t')
 
             # update buffers
-            y1 = np.concatenate([y1[1:],np.array([p_d1])])
-            y2 = np.concatenate([y2[1:],np.array([p_m1])])
-            y3 = np.concatenate([y3[1:],np.array([p_d2])])
-            y4 = np.concatenate([y4[1:],np.array([p_m2])])
+            x = np.concatenate([x[1:],np.array([time])])
+            y1 = np.concatenate([y1[1:],np.array([v1])])
+            y2 = np.concatenate([y2[1:],np.array([v2])])
+            y3 = np.concatenate([y3[1:],np.array([v3])])
 
-            ymin = np.amin(np.concatenate([y1,y2,y3,y4]))
-            ymax = np.amax(np.concatenate([y1,y2,y3,y4]))
+            ymin = np.amin(np.concatenate([y1,y2,y3]))
+            ymax = np.amax(np.concatenate([y1,y2,y3]))
             ax.set_ylim([(ymin - 0.1*(ymax-ymin)),(ymax + 0.1*(ymax-ymin))])
+
+            xmin = np.amin(x);
+            xmax = np.amax(x);
+            ax.set_xlim([xmin,xmax])
 
         except os.error as e:
             if e.errno == errno.EAGAIN :
@@ -79,8 +76,7 @@ def animate(i):
     ln1.set_data(x,y1)
     ln2.set_data(x,y2)
     ln3.set_data(x,y3)
-    ln4.set_data(x,y4)
-    return ln1, ln2, ln3, ln4, ax 
+    return ln1, ln2, ln3, ax 
 
 # ---
 

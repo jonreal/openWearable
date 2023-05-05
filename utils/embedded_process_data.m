@@ -25,7 +25,7 @@ function rtn = embedded_process_data(trialName,varargin)
   lineCnt = 0;
 
   % Check file exists
-  file = ['./',trialName];
+  file = trialName;
   if exist(file,'file') ~= 2
     fprintf('\n\tEmbedded file not found\n');
     rtn = []
