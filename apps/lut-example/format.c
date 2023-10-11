@@ -33,9 +33,11 @@ void FormatSprintParams(const param_mem_t* param, char* buff) {
 void FormatSprintState(const state_t* st, char* buff) {
   sprintf(buff,
           "%u\t"        // timeStamp - uint32_t
+          "%f\t"        // x - fix16_t
           "%f\t"        // pru0 var - fix16_t
           "\n",
           st->time,
+          fix16_to_float(st->x),
           fix16_to_float(st->val)
           );
 }
@@ -43,6 +45,7 @@ void FormatSprintState(const state_t* st, char* buff) {
 void FormatSprintStateHeader(char* buff) {
   sprintf(buff,
           "\n# frame\t"
+          "x\t"
           "val\t"
           "\n");
 }
