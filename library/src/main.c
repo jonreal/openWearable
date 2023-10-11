@@ -43,8 +43,10 @@ int main(int argc, char **argv) {
   int c;
   ui_flags_t uiflags = UiInitFlags();
   char configfile[256] = "/root/openWearable/apps/config/";
+  char lutfile[256] = "/root/openWearable/apps/config/";
   int configFlag = 0;
-  while((c = getopt(argc, argv, "vu:rc:")) != -1) {
+  int lutFlag = 0;
+  while((c = getopt(argc, argv, "vu:rc:l:")) != -1) {
     switch (c) {
       case 'v':
         uiflags.debug = 1;
@@ -61,6 +63,11 @@ int main(int argc, char **argv) {
         strcat(configfile,optarg);
         printf("\nLoading config file: %s.\n\n", configfile);
         configFlag = 1;
+        break;
+      case 'l':
+        strcat(lutfile,optarg);
+        printf("\nLoading LUT file: %s.\n\n", lutfile);
+        lutFlag = 1;
         break;
     }
   }
@@ -83,8 +90,10 @@ int main(int argc, char **argv) {
   buff[0] = '\0';
   FormatSprintParams(pru_mem.p, buff);
   fprintf(stdout,buff);
-  if (PruLoadLut("/root/openWearable/apps/config/sine_1Hz",pru_mem.l) != 0) {
-    printf("\nLookup table file not found!\n");
+  if (lutFlag) {
+    if (PruLoadLut(lutfile,pru_mem.l) != 0) {
+      printf("\nLookup table file not found!\n");
+    }
   }
   if(PruInit(FWSUFFIX) != 0)
     return -1;

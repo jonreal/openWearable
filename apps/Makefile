@@ -97,6 +97,18 @@ clean-template :
 # -----------------------------------------------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------------------------------------------
+# --- lut-example
+# ---
+lut-example : linker install
+clean-lut-example :
+	@echo " Cleaning lut-example...";
+	@echo " $(RM) -r ./lut-example/build"; $(RM) -r ./lut-example/build
+	@echo " $(RM) -r $(TARGET_DIR)/lut-example"; $(RM) -r $(TARGET_DIR)/lut-example
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-lut-example-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-lut-example-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-lut-example-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-lut-example-fw
+# -----------------------------------------------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------------------------------------------
 # --- sysID-dual-actuators
 # ---
 sysID-dual-actuators : linker install
