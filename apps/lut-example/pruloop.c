@@ -14,12 +14,13 @@
 =============================================================================*/
 
 #include "pruloop.h"
+#include "lut.h"
 
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 
 
-uint32_t index;
+fix16_t x;
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -35,10 +36,12 @@ void Pru0UpdateState(const pru_count_t* c,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
 
-  index = s_->time % 1000;
-  s_->val = fix16_sdiv(fix16_from_int((int32_t)l_->lut[index]),
-                       fix16_from_int(1000));
+  x = fix16_sdiv(fix16_from_int(s_->time % 10000),fix16_from_int(10));
+  s_->x = x;
+  s_->val = LutLerp(l_->lut,x);
 
+  //s_->x = fix16_from_int(fix16_to_int(x));
+  //s_->val = fix16_from_int(fix16_to_int(fix16_sadd(x,FIX16_05))); 
 }
 
 void Pru0UpdateControl(const pru_count_t* c,

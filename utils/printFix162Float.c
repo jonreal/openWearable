@@ -1,7 +1,7 @@
 #include<stdio.h>
 #include<string.h>
 #include<stdlib.h>
-#include "../app/include/fix16.h"
+#include "../library/include/fix16.h"
 
 int main(int argc, char **argv)
 {
@@ -17,7 +17,7 @@ int main(int argc, char **argv)
   fix16_t reconvert = fix16_from_float(convert);
 
   printf("Fix16: 0x%X\n"
-         "Floating point: %4.8f\n"
+         "Floating point: %f\n"
          "Fix16: 0x%X\n",
          in, convert, reconvert);
   return 0;
