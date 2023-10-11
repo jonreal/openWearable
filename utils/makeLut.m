@@ -27,7 +27,7 @@ function makeLut(func,varargin)
     xlabel('%','fontsize',20);
 
   writeFlag = 1;
-  file = ['../apps/config/',filename];
+  file = filename;
   if exist(file,'file') == 2
     fprintf('\n\t\tFile already exist');
     usr_input = input(' overwrite? [y/n]','s');
