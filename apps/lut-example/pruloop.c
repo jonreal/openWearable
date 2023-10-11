@@ -39,9 +39,6 @@ void Pru0UpdateState(const pru_count_t* c,
   x = fix16_sdiv(fix16_from_int(s_->time % 10000),fix16_from_int(10));
   s_->x = x;
   s_->val = LutLerp(l_->lut,x);
-
-  //s_->x = fix16_from_int(fix16_to_int(x));
-  //s_->val = fix16_from_int(fix16_to_int(fix16_sadd(x,FIX16_05))); 
 }
 
 void Pru0UpdateControl(const pru_count_t* c,
