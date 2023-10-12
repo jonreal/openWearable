@@ -18,7 +18,7 @@
 // Assume LUT is length 1000, and has been scaled by 1000
 fix16_t LutLerp(const int16_t* lut, fix16_t x) {
  int32_t i0 = fix16_to_int(x);
- int32_t i1 = fix16_to_int(fix16_sadd(x,FIX16_05));
+ int32_t i1 = i0 + 1;
  fix16_t x0 = fix16_from_int(i0);
  fix16_t x1 = fix16_from_int(i1);
 
@@ -26,8 +26,6 @@ fix16_t LutLerp(const int16_t* lut, fix16_t x) {
    return fix16_sdiv(fix16_from_int((int32_t)lut[0]),FIX16_1000);
  else if (x1 > FIX16_999)
    return fix16_sdiv(fix16_from_int((int32_t)lut[999]),FIX16_1000);
- else if (i0 == i1)
-   return fix16_sdiv(fix16_from_int((int32_t)lut[i0]),FIX16_1000);
 
  fix16_t y0 = fix16_sdiv(fix16_from_int((int32_t)lut[i0]),FIX16_1000);
  fix16_t y1 = fix16_sdiv(fix16_from_int((int32_t)lut[i1]),FIX16_1000);
