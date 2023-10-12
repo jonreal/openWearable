@@ -335,8 +335,8 @@ int PruLoadLut(char* file, lut_mem_t* l)
   if(fp != NULL){
     for(int i=0; i<1000; i++){
       fscanf(fp, "%f\n", &value);
-      // Scale signal by 1000 to store as int16_t
-      l->lut[i] = (int16_t)fix16_to_int(fix16_from_float(value * 1000.0));
+      // Scale signal by 100 to store as int16_t
+      l->lut[i] = (int16_t)fix16_to_int(fix16_from_float(value * 100.0));
     }
     fclose(fp);
     return 0;
