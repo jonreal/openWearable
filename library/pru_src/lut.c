@@ -24,7 +24,7 @@ fix16_t LutLerp(const int16_t* lut, fix16_t x) {
 
  if (i0 <= 0)
    return fix16_sdiv(fix16_from_int((int32_t)lut[0]),FIX16_100);
- else if (i1 >= FIX16_999)
+ else if (i1 >= 999)
    return fix16_sdiv(fix16_from_int((int32_t)lut[999]),FIX16_100);
 
  fix16_t y0 = fix16_sdiv(fix16_from_int((int32_t)lut[i0]),FIX16_100);
