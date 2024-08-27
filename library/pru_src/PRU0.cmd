@@ -74,5 +74,10 @@ SECTIONS {
   .fardata  >  PRU_RAM, PAGE 1
 
   .resource_table > PRU_RAM, PAGE 1
+
+  .pru_irq_map (COPY) :
+  {
+     *(.pru_irq_map)
+  }
 }
 

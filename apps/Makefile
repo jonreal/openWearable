@@ -11,16 +11,16 @@ OW_DIR = /root/openWearable
 # C Source Directories
 CSRC_DIR = $(OW_DIR)/library/src
 CINC_DIR = $(OW_DIR)/library/include \
-					 -I/usr/lib/ti/pru-software-support-package/include/am335x \
-					 -I/usr/lib/ti/pru-software-support-package/include
+	-I/usr/lib/ti/pru-software-support-package-v6.3/include/am335x \
+	-I/usr/lib/ti/pru-software-support-package-v6.3/include
 CLIB = -lpthread
 SRC_IGNORE =
 
 # PRU_C Source Directories
 PRU_CSRC_DIR = $(OW_DIR)/library/pru_src
 PRU_CINC_DIR = -I$(OW_DIR)/library/include/ \
-							 -I/usr/lib/ti/pru-software-support-package/include/am335x \
-							 -I/usr/lib/ti/pru-software-support-package/include
+	-I/usr/lib/ti/pru-software-support-package-v6.3/include/am335x \
+	-I/usr/lib/ti/pru-software-support-package-v6.3/include
 PRU_CLIB =
 
 # Build Directories
@@ -38,7 +38,7 @@ BUILD_DIR = $(OW_DIR)/apps/$(MAKECMDGOALS)/build
 
 # Compiler
 CC = gcc
-CFLAGS = -std=gnu99 -Wall -g -O4 -mtune=cortex-a8 -march=armv7-a -D=am335x
+CFLAGS = -std=gnu99 -Wall -g -O4 -mtune=cortex-a8 -march=armv7-a+fp -D=am335x
 LDFLAGS =
 
 # PRU compiler

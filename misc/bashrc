@@ -1,6 +1,6 @@
 # Jonathan Realmuto
 # Promt
-PS1='\[\e]0;\w\a\]\n\[\e[32m\]\u\[\e[30m\]|\[\e[34m\]\h: \[\e[33m\]\w\[\e[31m\]\n\$ \[\e[30m\]'
+PS1='\[\e]0;\w\a\]\n\[\e[32m\]\u\[\e[37m\]|\[\e[34m\]\h: \[\e[33m\]\w\[\e[31m\]\n\$ \[\e[37m\]'
 
 # Path
 PATH=/usr/local/bin:$PATH
@@ -17,6 +17,10 @@ alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
 alias mkdir="mkdir -pv"
+alias vim="nvim"
+
+# PATH
+PATH=/root/openWearable/apps/bin:$PATH
 
 # ROS
-source /opt/ros/kinetic/setup.bash
+# source /opt/ros/kinetic/setup.bash

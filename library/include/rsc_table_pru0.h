@@ -71,77 +71,29 @@
 
 #define PRU_SHARED_DRAM_SIZE  (SZ_8K + SZ_4K)
 
-/*
- * Sizes of the virtqueues (expressed in number of buffers supported,
- * and must be power of 2)
- */
-#define PRU_RPMSG_VQ0_SIZE  2
-#define PRU_RPMSG_VQ1_SIZE  2
-
-/* flip up bits whose indices represent features we support */
-#define RPMSG_PRU_C0_FEATURES 1
-
-/* Definition for unused interrupts */
-#define HOST_UNUSED   255
-
-/* Mapping sysevts to a channel. Each pair contains a sysevt, channel */
-/*struct ch_map pru_intc_map[] = { {17, 1}, {18, 0}, {19, 2}, {20, 3}, {21, 0},
-         {22, 1}, {24, 4}, {25, 5}, {26, 6}, {27, 7},
-             };
-*/
-struct ch_map pru_intc_map[] = { {7,1} };
+#pragma DATA_SECTION(my_irq_rsc, ".pru_irq_map")
+#pragma RETAIN(my_irq_rsc)
+struct pru_irq_rsc my_irq_rsc  = {
+	0,			/* type = 0 */
+	1,			/* number of system events being mapped */
+	{
+		{17, 1, 1},	/* {sysevt, channel, host interrupt} */
+	},
+};
 
 struct my_resource_table {
-  struct resource_table base;
+	struct resource_table base;
+	uint32_t offset[2]; /* Should match 'num' in actual definition */
 
-  uint32_t offset[2]; /* Should match 'num' in actual definition */
-
-  /* rpmsg vdev entry */
-  struct fw_rsc_vdev rpmsg_vdev;
-  struct fw_rsc_vdev_vring rpmsg_vring0;
-  struct fw_rsc_vdev_vring rpmsg_vring1;
-
-  /* intc definition */
-  struct fw_rsc_custom pru_ints;
 };
 
 #pragma DATA_SECTION(am335x_pru_remoteproc_ResourceTable, ".resource_table")
 #pragma RETAIN(am335x_pru_remoteproc_ResourceTable)
 struct my_resource_table am335x_pru_remoteproc_ResourceTable = {
-  1,  /* we're the first version that implements this */
-  2,  /* number of entries in the table */
-  0, 0, /* reserved, must be zero */
-  /* offsets to entries */
-  {
-    offsetof(struct my_resource_table, rpmsg_vdev),
-    offsetof(struct my_resource_table, pru_ints),
-  },
-
-  /* rpmsg vdev entry */
-  {
-    TYPE_VDEV, VIRTIO_ID_RPMSG, 0,
-    RPMSG_PRU_C0_FEATURES, 0, 0, 0, 2, { 0, 0 },
-    /* no config data */
-  },
-  /* the two vrings */
-  /* TODO: What to do with vring da? */
-  { 0, 16, PRU_RPMSG_VQ0_SIZE, 1, 0 },
-  { 0, 16, PRU_RPMSG_VQ1_SIZE, 2, 0 },
-
-  {
-    TYPE_CUSTOM, TYPE_PRU_INTS,
-    sizeof(struct fw_rsc_custom_ints),
-    { /* PRU_INTS version */
-                  0x0000,
-                  /* Channel-to-host mapping, 255 for unused */
-/*                  0, 1, 2, 3, 0, 6, 1, 7, HOST_UNUSED, HOST_UNUSED, */
-                  HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED, HOST_UNUSED,
-                  /* Number of evts being mapped to channels */
-                  (sizeof(pru_intc_map) / sizeof(struct ch_map)),
-                  /* Pointer to the structure containing mapped events */
-                  pru_intc_map,
-                },
-  },
+	1,	/* we're the first version that implements this */
+	0,	/* number of entries in the table */
+	0, 0,	/* reserved, must be zero */
+  0,
 };
 
 #endif /* _RSC_TABLE_AM335X_PRU_H_ */
