@@ -20,25 +20,6 @@
 volatile register uint32_t __R30;
 extern volatile uint32_t *debug_buff;
 
-uint32_t countingL = 0;
-uint32_t countingR = 0;
-uint32_t time_calL = 0;
-uint32_t time_calR = 0;
-uint32_t waittime = 1000;
-fix16_t ten_three = 0x3E80000;
-fix16_t ten_two = 0x640000;
-fix16_t ten_one = 0xA0000;
-fix16_t Rcoe1 = 0x4F8AF; //4.9714285714
-fix16_t Rcoe2 = 0x05D8C; //0.3654285714
-fix16_t coe5_num = 0x5C340; //5.7627
-fix16_t coe4_num = -0x74BB9; //-7.2958
-fix16_t coe3_num = 0x4BDB6; //4.74107
-fix16_t coe2_num = -0x28D88; //-2.55286
-fix16_t coe1_num = 0x20EF9; //2.0585
-fix16_t coe0_num = -0x38119; //-3.5043
-fix16_t Pt_model = 0x690000; //model tank pressure is 105 psi
-fix16_t Pm0_model = 0x00000; //model initial muscle pressure is 0 psi
-
 // ---- static functions -----------------------------------------------------
 static void PamUpdateControl(pam_t* pam) {
   switch (pam->s.u) {
@@ -161,7 +142,7 @@ void PamActionSimple(pam_t* p) {
     case ZERO : {
       p->fsm = ZERO;
       PamSetU(p,-1);
-//      PamSetU(p,-1);
+      PamSetU(p,-1);
       break;
     }
     case INFLATE : {
@@ -194,142 +175,6 @@ void PamActionSimple(pam_t* p) {
   }
   PamUpdateControl(p);
 }
-
-void PamActionSimpleXWL(pam_t* pL) {
-  switch (pL->fsm) {
-    case ZERO : {
-      pL->fsm = ZERO;
-      PamSetU(pL,-1);
-      break;
-    }
-    case INFLATE : {
-      if (countingL == 0) {
-        fix16_t PtL = PamReservoirGetPressure(pL->res);
-	      fix16_t Pm0L = pL->s.pm;
-	      fix16_t Pd_modelL = fix16_mul(fix16_div(fix16_sub(Pt_model,Pm0_model),fix16_sub(PtL,Pm0L)),pL->s.pd);
-	      fix16_t PratioL = fix16_add(fix16_mul(fix16_div(Rcoe1,ten_three),Pd_modelL),Rcoe2);
-	      fix16_t Pd_outputL = fix16_div(fix16_mul(PratioL,Pd_modelL),ten_one);
-      	fix16_t output2L = fix16_mul(Pd_outputL,Pd_outputL);
-	      fix16_t output3L = fix16_mul(Pd_outputL,output2L);
-	      fix16_t output4L = fix16_mul(output2L,output2L);
-	      fix16_t output5L = fix16_mul (output2L,output3L);
-	      fix16_t time5L = fix16_mul(fix16_div(coe5_num,ten_three),output5L);
-      	fix16_t time4L = fix16_mul(fix16_div(coe4_num,ten_two),output4L);
-      	fix16_t time3L = fix16_mul(fix16_div(coe3_num,ten_one),output3L);
-      	fix16_t time2L = fix16_mul(fix16_div(coe2_num,ten_two),output2L);
-      	fix16_t time1L = fix16_mul(fix16_mul(coe1_num,ten_one),Pd_outputL);
-      	fix16_t time0L = fix16_div(coe0_num,ten_one);
-      	fix16_t Adj_timeL = fix16_add(fix16_add(fix16_add(fix16_add(fix16_add(
-                    time5L,time4L),time3L),time2L),time1L),time0L);
-	      time_calL = fix16_to_int(Adj_timeL);
-      }
-      if (fix16_sub(pL->s.pd,pL->s.pm) < 0) {
-	      pL->fsm = REFRACT;
-      	PamSetU(pL,0);
-      } else {
-      	countingL++;
-      	if (countingL < waittime) {
-      	  PamSetU(pL,0) ;
-      	} else if (countingL >= waittime) {
-    	    if (countingL <= (waittime+time_calL)) {
-      	    PamSetU(pL,1);
-    	    } else {
-      	    PamSetU(pL,0);
-  	      }
-    	  }
-      }
-	  break;
-    }
-    case DEFLATE : {
-      if (fix16_sub(fix16_add(pL->s.pd,0x50000),pL->s.pm) > 0) {
-      	pL->fsm = REFRACT;
-	      PamSetU(pL,0);
-      } else {
-      	PamSetU(pL,-1);
-      }
-    break;
-    }
-    case REFRACT : {
-      if (pL->cnt == pL->T_refract) {
-	      pL->fsm = HOLD;
-      	pL->cnt = 0;
-      } else {
-      	pL->cnt++;
-      }
-    break;
-    }
-  }
-PamUpdateControl(pL);
-}
-
-
-void PamActionSimpleXWR(pam_t* pR) {
-  switch (pR->fsm) {
-    case ZERO : {
-      pR->fsm = ZERO;
-      PamSetU(pR,-1);
-      break;
-    }
-    case INFLATE : {
-      if (countingR == 0) {
-        fix16_t Pt = PamReservoirGetPressure(pR->res);
-	      fix16_t Pm0 = pR->s.pm;
-	      fix16_t Pd_model = fix16_mul(fix16_div(fix16_sub(Pt_model,Pm0_model),fix16_sub(Pt,Pm0)),pR->s.pd);
-	      fix16_t Pratio = fix16_add(fix16_mul(fix16_div(Rcoe1,ten_three),Pd_model),Rcoe2);
-	      fix16_t Pd_output = fix16_div(fix16_mul(Pratio,Pd_model),ten_one);
-      	fix16_t output2 = fix16_mul(Pd_output,Pd_output);
-	      fix16_t output3 = fix16_mul(Pd_output,output2);
-	      fix16_t output4 = fix16_mul(output2,output2);
-	      fix16_t output5 = fix16_mul (output2,output3);
-	      fix16_t time5 = fix16_mul(fix16_div(coe5_num,ten_three),output5);
-      	fix16_t time4 = fix16_mul(fix16_div(coe4_num,ten_two),output4);
-      	fix16_t time3 = fix16_mul(fix16_div(coe3_num,ten_one),output3);
-      	fix16_t time2 = fix16_mul(fix16_div(coe2_num,ten_two),output2);
-      	fix16_t time1 = fix16_mul(fix16_mul(coe1_num,ten_one),Pd_output);
-      	fix16_t time0 = fix16_div(coe0_num,ten_one);
-      	fix16_t Adj_timeR = fix16_add(fix16_add(fix16_add(fix16_add(fix16_add(
-                    time5,time4),time3),time2),time1),time0);
-	      time_calR = fix16_to_int(Adj_timeR);
-      }
-      if (fix16_sub(pR->s.pd,pR->s.pm) < 0) {
-	      pR->fsm = REFRACT;
-      	PamSetU(pR,0) ;
-      } else {
-      	countingR++;
-      	if (countingR < waittime) {
-      	  PamSetU(pR,0) ;
-      	} else if (countingR >= waittime) {
-    	    if (countingR <= (waittime+time_calR)) {
-      	    PamSetU(pR,1);
-    	    } else {
-      	    PamSetU(pR,0);
-  	      }
-    	  }
-      }
-	  break;
-    }
-    case DEFLATE : {
-      if (fix16_sub(fix16_add(pR->s.pd,0x50000),pR->s.pm) > 0) {
-      	pR->fsm = REFRACT;
-	      PamSetU(pR,0);
-      } else {
-      	PamSetU(pR,-1);
-      }
-    break;
-    }
-    case REFRACT : {
-      if (pR->cnt == pR->T_refract) {
-	      pR->fsm = HOLD;
-      	pR->cnt = 0;
-      } else {
-      	pR->cnt++;
-      }
-    break;
-    }
-  }
-PamUpdateControl(pR);
-}
-
 
 void PamActionModel(pam_t* p) {
 

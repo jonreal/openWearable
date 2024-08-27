@@ -13,6 +13,8 @@ Plugin 'ProportionalResize'
 Plugin 'junegunn/goyo.vim' 
 Plugin 'ntpeters/vim-better-whitespace' 
 Plugin 'TagHighLight'
+Plugin 'romainl/Apprentice'
+
 
 " The following are examples of different formats supported.
 " Keep Plugin commands between vundle#begin/end.
@@ -37,7 +39,8 @@ filetype plugin indent on    " required
 set modelines=0
 
 " Colorscheme
-" colorscheme pyte
+set background=dark
+colorscheme apprentice
 syntax on
 
 
