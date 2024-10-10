@@ -20,8 +20,10 @@ SRC_IGNORE =
 PRU_CSRC_DIR = $(OW_DIR)/library/pru_src
 PRU_CINC_DIR = -I$(OW_DIR)/library/include/ \
 	-I/usr/lib/ti/pru-software-support-package-v6.3/include/am335x \
-	-I/usr/lib/ti/pru-software-support-package-v6.3/include
-PRU_CLIB =
+	-I/usr/lib/ti/pru-software-support-package-v6.3/include \
+	-I/usr/share/ti/cgt-pru/include
+PRU_CLIB = -l/usr/share/ti/cgt-pru/lib/libc.a
+
 
 # Build Directories
 TARGET_DIR = ./bin
@@ -379,13 +381,13 @@ install : $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
 # Linker PRU0
 $(BUILD_DIR)/$(PRU0_TARGET).elf : $(BUILD_DIR)/$(PRU0_TARGET).po $(PRU_OBJ) $(APP_SPEC_PRU_OBJ)
 	@echo "\n Linking pru0... \n"
-	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=1024 $^ -llibc.a -m $(MAKECMDGOALS)/build/$(PRU0_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU0_TARGET).elf $(PRU_CSRC_DIR)/PRU0.cmd
+	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=1024 $^ $(PRU_CLIB) -m $(MAKECMDGOALS)/build/$(PRU0_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU0_TARGET).elf $(PRU_CSRC_DIR)/PRU0.cmd
 
 
 # Linker PRU1
 $(BUILD_DIR)/$(PRU1_TARGET).elf : $(BUILD_DIR)/$(PRU1_TARGET).po $(PRU_OBJ) $(APP_SPEC_PRU_OBJ)
 	@echo "\n Linking pru1... \n"
-	$(PRU_CC)  $(PRU_CFLAGS) -z --heap_size=1024 $^ -llibc.a -m $(MAKECMDGOALS)/build/$(PRU1_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU1_TARGET).elf $(PRU_CSRC_DIR)/PRU1.cmd
+	$(PRU_CC)  $(PRU_CFLAGS) -z --heap_size=1024 $^ $(PRU_CLIB) -m $(MAKECMDGOALS)/build/$(PRU1_TARGET).map -o $(MAKECMDGOALS)/build/$(PRU1_TARGET).elf $(PRU_CSRC_DIR)/PRU1.cmd
 
 # Build PRU-core
 $(BUILD_DIR)%.po : $(PRU_CSRC_DIR)%.c
