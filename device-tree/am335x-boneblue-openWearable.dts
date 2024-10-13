@@ -9,12 +9,12 @@
 #include <dt-bindings/interrupt-controller/irq.h>
 
 / {
-	model = "TI AM335x BeagleBone Blue OpenWearable";
+	model = "TI AM335x BeagleBone Blue openWearable-v0";
 	compatible = "ti,am335x-bone-blue", "ti,am33xx";
 
 	chosen {
 		stdout-path = &uart0;
-		base_dtb = "am335x-boneblue.dts";
+		base_dtb = "am335x-boneblue-openwearable.dts";
 		base_dtb_timestamp = __TIMESTAMP__;
 	};
 
@@ -141,6 +141,14 @@
 		>;
 		pwm-names = "motor1pwm", "motor2pwm", "motor3pwm", "motor4pwm";
 	};
+
+  two_wire_pru: two_wire_pru {
+      compatible = "ti,pruss-v2";
+      pinctrl-names = "default";
+      pinctrl-0 = <&two_wire_pru_pins>;
+      status = "okay";
+  };
+
 };
 
 &am33xx_pinmux {
@@ -321,7 +329,7 @@
 			AM33XX_PADCONF(AM335X_PIN_MCASP0_ACLKX, PIN_INPUT, MUX_MODE3)		/* (A13) mcasp0_aclkx.spi1_sclk */
 			AM33XX_PADCONF(AM335X_PIN_MCASP0_FSX, PIN_INPUT, MUX_MODE3)		/* (B13) mcasp0_fsx.spi1_d0 */
 			AM33XX_PADCONF(AM335X_PIN_MCASP0_AXR0, PIN_INPUT, MUX_MODE3)		/* (D12) mcasp0_axr0.spi1_d1 */
-			AM33XX_PADCONF(AM335X_PIN_MCASP0_AHCLKR, PIN_INPUT, MUX_MODE3)		/* (C12) mcasp0_ahclkr.spi1_cs0 */
+			/* AM33XX_PADCONF(AM335X_PIN_MCASP0_AHCLKR, PIN_INPUT, MUX_MODE3) */		/* (C12) mcasp0_ahclkr.spi1_cs0 */
 			AM33XX_PADCONF(AM335X_PIN_ECAP0_IN_PWM0_OUT, PIN_INPUT, MUX_MODE2)	/* (C18) ecap0_in_pwm0_out.spi1_cs1 */
 		>;
 	};
@@ -399,7 +407,18 @@
 		>;
 	};
 
+  two_wire_pru_pins: pinmux_two_wire_pru_pins {
+      pinctrl-single,pins = <
+          /* MCASP0_AHCLKR -> GPIO3_17, MUX_MODE5, OUTPUT -> pr1_pru0_pru_r30_3 */
+          AM33XX_PADCONF(AM335X_PIN_MCASP0_AHCLKR, PIN_OUTPUT_PULLDOWN, MUX_MODE5)  /* (C12) Repurposed for PRU as output */
+
+          /* MCASP0_AXR1 -> GPIO3_20, MUX_MODE6, INPUT -> pr1_pru0_pru_r31_6 */
+          AM33XX_PADCONF(AM335X_PIN_MCASP0_AXR1, PIN_INPUT_PULLUP, MUX_MODE6)  /* (D13) Repurposed for PRU as input */
+      >;
+  };
+
 };
+
 
 &dcan1 {
 	pinctrl-names = "default";
@@ -596,10 +615,10 @@
 		"SPI1_SCK", /* A13 */
 		"SPI1_MISO", /* B13 */
 		"SPI1_MOSI", /* D12 */
-		"GPIO3_17", /* C12 */
+		/*"GPIO3_17",*/ /* C12 */
 		"EQEP_0A", /* B12 */
 		"EQEP_0B", /* C13 */
-		"GPIO3_20", /* D13 */
+		/* "GPIO3_20", */ /* D13 */
 		"IMU_INT", /* A14 */
 		"",
 		"",
