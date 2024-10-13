@@ -43,16 +43,7 @@ void Pru0UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
-
-//  __R30 |= (1 << clk);
-//  __delay_cycles(200);
-//  __R30 &= ~(1 << clk);
-//  __delay_cycles(200);
-//
-//  s_->load = (__R31 >> dout) & 1;
-
   s_->load = Hx711Read(loadcell);
-  //debug_buff[6] = 0xF;
 }
 
 void Pru0UpdateControl(const pru_count_t* c,
