@@ -21,14 +21,13 @@
 
 
 hx711_t* Hx711InitLoadCell(
-  uint8_t clk_pin,
-  uint8_t dout_pin,
-  hx711_gain_t gain
+  uint8_t clk_pin, uint8_t dout_pin, hx711_gain_t gain
 ) {
   hx711_t* hx711 = (hx711_t*)malloc(sizeof(hx711_t));
   hx711->clk_pin = clk_pin;
   hx711->dout_pin = dout_pin;
   hx711->gain = gain;
+  hx711->value = 0;
 
   // Set the clock pin low initially
   __R30 &= ~(1 << clk_pin);
@@ -52,7 +51,7 @@ void Hx711Free(hx711_t* hx711) {
 
 
 // Read a 24-bit value from the HX711 using __R30 and __R31 directly
-fix16_t Hx711Read(hx711_t* hx711) {
+int32_t Hx711Read(hx711_t* hx711) {
   uint32_t data = 0;
 
   // If data is not ready return previous value
@@ -87,7 +86,6 @@ fix16_t Hx711Read(hx711_t* hx711) {
   }
 
   // Convert the raw data to fixed-point format and store in hx711->value
-  hx711->value = fix16_from_int((int32_t)data);
-
+  hx711->value = (int32_t) data;
   return hx711->value;
 }

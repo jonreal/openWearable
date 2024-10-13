@@ -31,7 +31,7 @@ typedef struct {
   uint8_t clk_pin;
   uint8_t dout_pin;
   uint8_t gain;
-  fix16_t value;
+  int32_t value;
 } hx711_t;
 
 // Digital input reg. ---------------------------------------------------------
@@ -47,7 +47,6 @@ hx711_t* Hx711InitLoadCell(
   hx711_gain_t gain
 );
 void Hx711Free(hx711_t* hx711);
-void Hx711SetGain(hx711_t* hx711, uint8_t gain);
-fix16_t Hx711Sample(hx711_t* hx711);
+int32_t Hx711Sample(hx711_t* hx711);
 
 #endif

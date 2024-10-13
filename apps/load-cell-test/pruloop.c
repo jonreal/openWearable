@@ -35,7 +35,7 @@ hx711_t* loadcell;
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem) {
-  loadcell = Hx711InitLoadCell(clk, dout, HX711_GAIN_128);
+  loadcell = Hx711InitLoadCell(clk, dout, HX711_GAIN_64);
 }
 
 void Pru0UpdateState(const pru_count_t* c,
