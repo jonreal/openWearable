@@ -97,6 +97,18 @@ clean-template :
 	@echo " $(RM) -r /lib/firmware/am335x-pru0-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-template-fw
 	@echo " $(RM) -r /lib/firmware/am335x-pru1-template-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-template-fw
 # -----------------------------------------------------------------------------------------------------------------
+#
+# -----------------------------------------------------------------------------------------------------------------
+# --- load-cell-test
+# ---
+load-cell-test : linker install
+clean-load-cell-test :
+	@echo " Cleaning load-cell-test...";
+	@echo " $(RM) -r ./load-cell-test/build"; $(RM) -r ./load-cell-test/build
+	@echo " $(RM) -r $(TARGET_DIR)/load-cell-test"; $(RM) -r $(TARGET_DIR)/load-cell-test
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-load-cell-test-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-load-cell-test-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-load-cell-test-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-load-cell-test-fw
+# -----------------------------------------------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------------------------------------------
 # --- lut-example
