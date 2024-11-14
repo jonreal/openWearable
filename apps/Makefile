@@ -99,6 +99,17 @@ clean-template :
 # -----------------------------------------------------------------------------------------------------------------
 #
 # -----------------------------------------------------------------------------------------------------------------
+# --- test-blue-servos
+# ---
+test-blue-servos : linker install
+clean-test-blue-servos :
+	@echo " Cleaning test-blue-servos...";
+	@echo " $(RM) -r ./test-blue-servos/build"; $(RM) -r ./test-blue-servos/build
+	@echo " $(RM) -r $(TARGET_DIR)/test-blue-servos"; $(RM) -r $(TARGET_DIR)/test-blue-servos
+	@echo " $(RM) -r /lib/firmware/am335x-pru0-test-blue-servos-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru0-test-blue-servos-fw
+	@echo " $(RM) -r /lib/firmware/am335x-pru1-test-blue-servos-fw"; $(RM) -r $(RM) -r /lib/firmware/am335x-pru1-test-blue-servos-fw
+# -----------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------------
 # --- load-cell-test
 # ---
 load-cell-test : linker install
