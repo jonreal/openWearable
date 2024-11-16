@@ -142,14 +142,9 @@
 		pwm-names = "motor1pwm", "motor2pwm", "motor3pwm", "motor4pwm";
 	};
 
-  two_wire_pru: two_wire_pru {
-      compatible = "ti,pruss-v2";
-      pinctrl-names = "default";
-      pinctrl-0 = <&two_wire_pru_pins>;
-      status = "okay";
-  };
 
 };
+
 
 &am33xx_pinmux {
 
@@ -419,6 +414,12 @@
 
 };
 
+
+&pruss {
+    pinctrl-names = "default";
+    pinctrl-0 = <&servo_pins>;
+    status = "okay";
+};
 
 &dcan1 {
 	pinctrl-names = "default";
