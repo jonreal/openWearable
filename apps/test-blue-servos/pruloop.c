@@ -18,13 +18,14 @@
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 
-// pr1_pru1_pru_r30_8 - SVO1
-const uint8_t pam1_h_pin = 8;
+// pr1_pru1_pru_r30_8 - SVO3
+const uint8_t srv_pin_1 = 9;
 
 // pr1_pru1_pru_r30_10 - SVO2
-const uint8_t pam1_l_pin = 10;
+const uint8_t srv_pin_2 = 5;
 
-// gpio2[16] - SERVO_EN
+// GP0 Header gpio3_17 -- pr1_pru0_pru_r30_3
+const uint8_t test_pin = 3;
 
 // ---------------------------------------------------------------------------
 // PRU0
@@ -39,6 +40,10 @@ void Pru0UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
+  // Pulse a few pins
+  if ((c->frame % 1000) == 0) {
+    __R30 ^= (1 << test_pin);
+  }
 }
 
 void Pru0UpdateControl(const pru_count_t* c,
@@ -64,11 +69,10 @@ void Pru1UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
-
   // Pulse a few pins
   if ((c->frame % 1000) == 0) {
-    __R30 ^= (1 << pam1_l_pin);
-    __R30 ^= (1 << pam1_h_pin);
+    __R30 ^= (1 << srv_pin_1);
+    __R30 ^= (1 << srv_pin_2);
   }
 }
 
