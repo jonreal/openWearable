@@ -11,25 +11,31 @@ serverSock.bind(('', UDP_PORT_NO))
 fcntl.fcntl(serverSock, fcntl.F_SETFL, os.O_NONBLOCK)
 
 print("\n\nListening for UDP...\n")
-while (1) :
-  while (1) :
-    try :
-        n, add  = serverSock.recvfrom(128)
-        val = n.decode("utf-8").split('\t')
+while True:
+    while True:
+        try:
+            n, add = serverSock.recvfrom(128)
 
-        # Format mesg
-        time = float(val[0])
-        v1 = float(val[1])
-        v2 = float(val[2])
-        v3 = float(val[3])
+            # Remove null bytes and strip whitespace
+            cleaned_data = n.decode("utf-8").replace("\x00", "").strip()
 
-        print(time,'\t',
-              v1,'\t',
-              v2,'\t',
-              v3,'\t')
+            # Split into values
+            val = cleaned_data.split('\t')
 
-    except os.error as e:
-        if e.errno == errno.EAGAIN :
-            break;
-        else :
-            raise e
+            # Ensure at least one element for time
+            time = float(val[0]) if val else 0.0
+
+            # Convert remaining elements to floats, ignoring empty values
+            values = [float(v) for v in val[1:] if v.strip()]
+
+            # Print formatted output
+            print(time, '\t', '\t'.join(map(str, values)))
+
+        except ValueError as e:
+            print("ValueError:", e, "Received:", repr(n))  # Debugging output
+
+        except os.error as e:
+            if e.errno == errno.EAGAIN:
+                break
+            else:
+                raise e
