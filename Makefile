@@ -36,25 +36,18 @@ all: $(APPS)
 # App targets (build each app)
 $(APPS):
 	@echo "Building $@..."
-	$(MAKE) -C apps $@
+	cd apps && $(MAKE) $@
 
 # Clean specified app
 clean-%:
-	@if [ -d apps/$* ]; then \
-		echo "Cleaning $*..."; \
-		$(MAKE) -C apps $*; \
-		$(MAKE) -C apps/$* clean; \
-	else \
-		echo "App $* not found"; \
-	fi
+	@echo "Cleaning $*..."
+	cd apps && $(MAKE) clean-$*
 
 # Clean all apps
 clean-apps:
 	@for app in $(APPS); do \
-		if [ -d apps/$$app ]; then \
-			echo "Cleaning $$app..."; \
-			$(MAKE) -C apps/$$app clean; \
-		fi; \
+		echo "Cleaning $$app..."; \
+		cd apps && $(MAKE) clean-$$app; \
 	done
 
 # Clean everything
