@@ -29,23 +29,32 @@ APPS = template \
       buttontest \
       test-blue-servos
 
-.PHONY: all clean $(APPS) clean-apps library clean-library
+.PHONY: all clean $(APPS) clean-apps library clean-library rebuild-%
 
 all: library $(APPS)
 
-# Library targets
+# Build core libraries (independent of state.h)
 library:
-	@echo "Building library..."
+	@echo "Building core libraries..."
 	$(MAKE) -C library all
 
 clean-library:
 	@echo "Cleaning library..."
 	$(MAKE) -C library clean
 
-# App targets (build only what's specified)
+# App targets (build with their state.h files)
 $(APPS):
 	@echo "Building $@..."
 	$(MAKE) -C apps/$@ all
+
+# Rebuild app with updated library components
+rebuild-%:
+	@if [ -d apps/$* ]; then \
+		echo "Rebuilding $* with fresh libraries..."; \
+		$(MAKE) -C apps/$* rebuild; \
+	else \
+		echo "App $* not found"; \
+	fi
 
 # Clean specified app
 clean-%:
@@ -75,8 +84,9 @@ help:
 	@echo "--------------------------"
 	@echo "Main targets:"
 	@echo "  all         - Build library and all apps"
-	@echo "  library     - Build only the library"
+	@echo "  library     - Build only the core libraries"
 	@echo "  <app-name>  - Build specific app (e.g., 'make template')"
+	@echo "  rebuild-<app> - Rebuild app with fresh libraries"
 	@echo ""
 	@echo "Clean targets:"
 	@echo "  clean       - Clean everything"
