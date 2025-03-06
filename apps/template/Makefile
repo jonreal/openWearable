@@ -50,6 +50,15 @@ STATE_DEPENDENT_OBJ = $(patsubst $(STATE_SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(STATE_D
 rebuild_state_sources:
 	@echo "Ensuring all state-dependent sources are available..."
 	@$(MAKE) -C $(LIB_DIR) all
+	@echo "Verifying state-dependent source files..."
+	@for src in $(STATE_DEPENDENT_SRC); do \
+		if [ ! -f $$src ]; then \
+			echo "ERROR: Missing state-dependent source file: $$src"; \
+			exit 1; \
+		else \
+			echo "Found $$src"; \
+		fi; \
+	done
 
 # Compiler
 CC = gcc
@@ -69,7 +78,9 @@ INSTALLNONEXEC = install -m 644
 # Build targets
 .PHONY: all clean install rebuild rebuild_state_sources
 
-all: rebuild_state_sources $(TARGET_DIR)/$(APP_NAME) $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
+all: rebuild_state_sources build_app
+
+build_app: $(APP_CPU_OBJ) $(STATE_DEPENDENT_OBJ) $(TARGET_DIR)/$(APP_NAME) $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
 
 # Full rebuild including library
 rebuild: rebuild_state_sources all
