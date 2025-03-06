@@ -26,7 +26,8 @@ CPU_OBJ = $(patsubst $(CPU_SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(CPU_INDEPENDENT_SRC))
 CPU_STATE_LIB = libowstate.a
 CPU_STATE_SRC = $(CPU_SRC_DIR)/pru.c \
                 $(CPU_SRC_DIR)/log.c \
-                $(CPU_SRC_DIR)/ui.c
+                $(CPU_SRC_DIR)/ui.c \
+                $(CPU_SRC_DIR)/udp.c
 CPU_STATE_OBJ = # Empty - will be compiled at app level with state.h
 
 # PRU Library - Only include files that don't depend on state.h
