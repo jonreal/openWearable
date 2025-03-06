@@ -10,23 +10,18 @@ OW_DIR = /root/openWearable
 BUILD_DIR = $(APP_NAME)/build
 TARGET_DIR = $(APP_NAME)/bin
 
-# Library Directories
-LIB_DIR = $(OW_DIR)/library
-LIB_TARGET_DIR = $(LIB_DIR)/lib
-
-# C Source Directories
+# Source Directories
 APP_DIR = $(OW_DIR)/apps/$(APP_NAME)
-CORE_SRC_DIR = $(LIB_DIR)/src
-PRU_SRC_DIR = $(LIB_DIR)/pru_src
+CSRC_DIR = $(OW_DIR)/library/src
+PRU_CSRC_DIR = $(OW_DIR)/library/pru_src
 
-# C Include Directories
-CPU_INC_DIR = $(OW_DIR)/library/include \
+# Include Directories
+CINC_DIR = $(OW_DIR)/library/include \
 	-I/usr/lib/ti/pru-software-support-package-v6.3/include/am335x \
 	-I/usr/lib/ti/pru-software-support-package-v6.3/include \
 	-I$(APP_DIR)
 
-# PRU Include Directories
-PRU_INC_DIR = -I$(OW_DIR)/library/include/ \
+PRU_CINC_DIR = -I$(OW_DIR)/library/include/ \
 	-I/usr/lib/ti/pru-software-support-package-v6.3/include/am335x \
 	-I/usr/lib/ti/pru-software-support-package-v6.3/include \
 	-I/usr/share/ti/cgt-pru/include \
@@ -41,43 +36,21 @@ TARGET = main
 PRU0_TARGET = pru0_main
 PRU1_TARGET = pru1_main
 
-# App source files
+# CPU source files (excluding main.c)
+CPU_SRC = $(filter-out $(CSRC_DIR)/$(TARGET).c, $(wildcard $(CSRC_DIR)/*.c))
+CPU_OBJ = $(patsubst $(CSRC_DIR)/%,$(BUILD_DIR)/%,$(CPU_SRC:.c=.o))
+
+# App CPU source files
 APP_CPU_SRC = $(APP_DIR)/format.c $(APP_DIR)/uiloop.c $(APP_DIR)/cpuloop.c
-APP_CPU_OBJ = $(patsubst $(APP_DIR)/%.c,$(BUILD_DIR)/%.o,$(APP_CPU_SRC))
+APP_CPU_OBJ = $(patsubst $(APP_DIR)/%,$(BUILD_DIR)/%,$(APP_CPU_SRC:.c=.o))
+
+# PRU source files (excluding main files)
+PRU_SRC = $(filter-out $(PRU_CSRC_DIR)/$(PRU0_TARGET).c $(PRU_CSRC_DIR)/$(PRU1_TARGET).c, $(wildcard $(PRU_CSRC_DIR)/*.c))
+PRU_OBJ = $(patsubst $(PRU_CSRC_DIR)/%,$(BUILD_DIR)/%,$(PRU_SRC:.c=.po))
 
 # App PRU source files
 APP_PRU_SRC = $(APP_DIR)/pruloop.c
-
-# Core library source files used by this app
-CORE_CPU_SRC = $(CORE_SRC_DIR)/pru.c \
-               $(CORE_SRC_DIR)/log.c \
-               $(CORE_SRC_DIR)/ui.c \
-               $(CORE_SRC_DIR)/udp.c \
-               $(CORE_SRC_DIR)/debug.c \
-               $(CORE_SRC_DIR)/gpio.c \
-               $(CORE_SRC_DIR)/fix16.c \
-               $(CORE_SRC_DIR)/bno055_arm.c \
-               $(CORE_SRC_DIR)/rc_i2c.c
-
-CORE_CPU_OBJ = $(patsubst $(CORE_SRC_DIR)/%.c,$(BUILD_DIR)/core_%.o,$(CORE_CPU_SRC))
-
-# PRU driver source files
-PRU_DRIVER_SRC = $(PRU_SRC_DIR)/adcdriver.c \
-                 $(PRU_SRC_DIR)/spidriver.c \
-                 $(PRU_SRC_DIR)/i2cdriver.c \
-                 $(PRU_SRC_DIR)/hsi2c.c \
-                 $(PRU_SRC_DIR)/pwmdriver.c \
-                 $(PRU_SRC_DIR)/tsc_adc.c \
-                 $(PRU_SRC_DIR)/fix16.c \
-                 $(PRU_SRC_DIR)/fix16_exp.c \
-                 $(PRU_SRC_DIR)/filter.c \
-                 $(PRU_SRC_DIR)/bno055.c \
-                 $(PRU_SRC_DIR)/encoder.c \
-                 $(PRU_SRC_DIR)/halleffect.c \
-                 $(PRU_SRC_DIR)/hscsann150pg2a3.c \
-                 $(PRU_SRC_DIR)/hx711.c \
-                 $(PRU_SRC_DIR)/pca9548a.c \
-                 $(PRU_SRC_DIR)/lut.c
+APP_PRU_OBJ = $(patsubst $(APP_DIR)/%,$(BUILD_DIR)/%,$(APP_PRU_SRC:.c=.po))
 
 # Compiler settings
 CC = gcc
@@ -92,19 +65,11 @@ INSTALLDIR = install -d -m 755
 INSTALLNONEXEC = install -m 644
 
 # Build targets
-.PHONY: all clean install prepare_lib
+.PHONY: all clean install
 
-all: prepare_lib build_app
+all: $(TARGET_DIR)/$(APP_NAME) $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf install
 
-# Main build target for app
-build_app: $(APP_CPU_OBJ) $(CORE_CPU_OBJ) $(TARGET_DIR)/$(APP_NAME) $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
-
-# Ensure library source files are available
-prepare_lib:
-	@echo "Preparing library source files..."
-	@$(MAKE) -C $(LIB_DIR)
-
-# Clean app and library
+# Clean app
 clean:
 	@echo "Cleaning $(APP_NAME)..."
 	@rm -rf $(BUILD_DIR)
@@ -113,40 +78,59 @@ clean:
 	@rm -rf /lib/firmware/am335x-pru1-$(APP_NAME)-fw
 
 # Install firmware
-install: all
+install: $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
 	@echo "Installing PRU firmware..."
 	$(INSTALLDIR) /etc/modprobe.d
 	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU0_TARGET).elf /lib/firmware/am335x-pru0-$(APP_NAME)-fw
 	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU1_TARGET).elf /lib/firmware/am335x-pru1-$(APP_NAME)-fw
 
 # Build main app executable
-$(TARGET_DIR)/$(APP_NAME): $(APP_CPU_OBJ) $(CORE_CPU_OBJ)
-	@echo "Building $(APP_NAME) application..."
+$(TARGET_DIR)/$(APP_NAME): $(CPU_OBJ) $(APP_CPU_OBJ)
+	@echo "Linking cpu ..."
 	@mkdir -p $(TARGET_DIR)
-	$(CC) $(CFLAGS) -I$(CPU_INC_DIR) $^ $(CORE_SRC_DIR)/main.c -o $@ $(CLIB) -DFWSUFFIX=\"$(APP_NAME)\"
+	$(CC) -Wl,-rpath,$(BUILD_DIR) -L$(BUILD_DIR) $(CFLAGS) $^ $(CSRC_DIR)/$(TARGET).c -I$(CINC_DIR) -I$(APP_DIR) -o $@ $(CLIB) -DFWSUFFIX=\"$(APP_NAME)\"
 
 # Build PRU0 firmware
-$(BUILD_DIR)/$(PRU0_TARGET).elf: $(APP_DIR)/pruloop.c
-	@echo "Building PRU0 firmware..."
-	@mkdir -p $(BUILD_DIR)
-	$(PRU_CC) $(PRU_CFLAGS) $(PRU_INC_DIR) $^ $(PRU_DRIVER_SRC) $(PRU_SRC_DIR)/pru0_main.c -z --heap_size=1024 $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU0_TARGET).map -o $@ $(PRU_SRC_DIR)/PRU0.cmd
+$(BUILD_DIR)/$(PRU0_TARGET).elf: $(BUILD_DIR)/$(PRU0_TARGET).po $(PRU_OBJ) $(APP_PRU_OBJ)
+	@echo "Linking pru0..."
+	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=1024 $^ $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU0_TARGET).map -o $@ $(PRU_CSRC_DIR)/PRU0.cmd
 
 # Build PRU1 firmware
-$(BUILD_DIR)/$(PRU1_TARGET).elf: $(APP_DIR)/pruloop.c
-	@echo "Building PRU1 firmware..."
+$(BUILD_DIR)/$(PRU1_TARGET).elf: $(BUILD_DIR)/$(PRU1_TARGET).po $(PRU_OBJ) $(APP_PRU_OBJ)
+	@echo "Linking pru1..."
+	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=1024 $^ $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $@ $(PRU_CSRC_DIR)/PRU1.cmd
+
+# Build CPU objects
+$(BUILD_DIR)/%.o: $(CSRC_DIR)/%.c
+	@echo "Building core dependencies..."
 	@mkdir -p $(BUILD_DIR)
-	$(PRU_CC) $(PRU_CFLAGS) $(PRU_INC_DIR) $^ $(PRU_DRIVER_SRC) $(PRU_SRC_DIR)/pru1_main.c -z --heap_size=1024 $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $@ $(PRU_SRC_DIR)/PRU1.cmd
+	$(CC) -Wl,-rpath,$(BUILD_DIR) -L$(BUILD_DIR) $(CFLAGS) -I$(CINC_DIR) -I$(APP_DIR) -c -o $@ $< $(CLIB)
 
 # Build app CPU objects
 $(BUILD_DIR)/%.o: $(APP_DIR)/%.c
-	@echo "Building app CPU object: $@"
+	@echo "Building app specific dependencies..."
 	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -I$(CPU_INC_DIR) -c -o $@ $<
+	$(CC) $(CFLAGS) -I$(CINC_DIR) -I$(APP_DIR) -c -o $@ $< $(CLIB)
 
-# Build core library CPU objects
-$(BUILD_DIR)/core_%.o: $(CORE_SRC_DIR)/%.c
-	@echo "Building core CPU object: $@"
+# Build PRU main objects
+$(BUILD_DIR)/$(PRU0_TARGET).po: $(PRU_CSRC_DIR)/$(PRU0_TARGET).c
+	@echo "Building pru dependencies..."
 	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -I$(CPU_INC_DIR) -c -o $@ $<
+	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -c -fe $@ $<
 
-# No intermediate PRU object files - direct compilation
+$(BUILD_DIR)/$(PRU1_TARGET).po: $(PRU_CSRC_DIR)/$(PRU1_TARGET).c
+	@echo "Building pru dependencies..."
+	@mkdir -p $(BUILD_DIR)
+	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -c -fe $@ $<
+
+# Build PRU driver objects
+$(BUILD_DIR)/%.po: $(PRU_CSRC_DIR)/%.c
+	@echo "Building pru dependencies..."
+	@mkdir -p $(BUILD_DIR)
+	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -c -fe $@ $<
+
+# Build app PRU objects
+$(BUILD_DIR)/%.po: $(APP_DIR)/%.c
+	@echo "Building app specific pru dependencies..."
+	@mkdir -p $(BUILD_DIR)
+	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -c -fe $@ $<

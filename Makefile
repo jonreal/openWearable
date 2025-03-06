@@ -29,28 +29,20 @@ APPS = template \
       buttontest \
       test-blue-servos
 
-.PHONY: all clean $(APPS) clean-apps prepare_lib clean-lib
+.PHONY: all clean $(APPS) clean-apps
 
-all: prepare_lib $(APPS)
-
-# Prepare library source files
-prepare_lib:
-	@echo "Preparing library source files..."
-	$(MAKE) -C library
-
-clean-lib:
-	@echo "Cleaning library..."
-	$(MAKE) -C library clean
+all: $(APPS)
 
 # App targets (build each app)
 $(APPS):
 	@echo "Building $@..."
-	$(MAKE) -C apps/$@ all
+	$(MAKE) -C apps $@
 
 # Clean specified app
 clean-%:
 	@if [ -d apps/$* ]; then \
 		echo "Cleaning $*..."; \
+		$(MAKE) -C apps $*; \
 		$(MAKE) -C apps/$* clean; \
 	else \
 		echo "App $* not found"; \
@@ -66,7 +58,7 @@ clean-apps:
 	done
 
 # Clean everything
-clean: clean-lib clean-apps
+clean: clean-apps
 	@echo "Cleaned all OpenWearable components"
 
 # Help target
@@ -74,13 +66,11 @@ help:
 	@echo "OpenWearable Build System"
 	@echo "--------------------------"
 	@echo "Main targets:"
-	@echo "  all         - Build library sources and all apps"
-	@echo "  prepare_lib - Prepare library source files"
+	@echo "  all         - Build all apps"
 	@echo "  <app-name>  - Build specific app (e.g., 'make template')"
 	@echo ""
 	@echo "Clean targets:"
 	@echo "  clean       - Clean everything"
-	@echo "  clean-lib   - Clean only library"
 	@echo "  clean-apps  - Clean all apps"
 	@echo "  clean-<app> - Clean specific app (e.g., 'make clean-template')"
 	@echo ""
