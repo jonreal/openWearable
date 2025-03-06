@@ -85,7 +85,9 @@ state_dependent_headers:
 	@mkdir -p $(TARGET_DIR)/include $(TARGET_DIR)/src
 	@cp $(LIB_DIR)/include/mem_types.h $(TARGET_DIR)/include/
 	@cp $(LIB_DIR)/include/pru.h $(TARGET_DIR)/include/
+	@echo "Copying state-dependent sources: $(CPU_STATE_SRC)"
 	@cp $(CPU_STATE_SRC) $(TARGET_DIR)/src/
+	@ls -la $(TARGET_DIR)/src/
 
 install: all
 	@echo "Library installation complete."
