@@ -13,22 +13,27 @@ TARGET_DIR = $(APP_NAME)/bin
 # Library Directories
 LIB_DIR = $(OW_DIR)/library
 LIB_TARGET_DIR = $(LIB_DIR)/lib
-STATE_SRC_DIR = $(LIB_TARGET_DIR)/src
 
 # C Source Directories
 APP_DIR = $(OW_DIR)/apps/$(APP_NAME)
+CORE_SRC_DIR = $(LIB_DIR)/src
+PRU_SRC_DIR = $(LIB_DIR)/pru_src
+
+# C Include Directories
 CPU_INC_DIR = $(OW_DIR)/library/include \
 	-I/usr/lib/ti/pru-software-support-package-v6.3/include/am335x \
 	-I/usr/lib/ti/pru-software-support-package-v6.3/include \
 	-I$(APP_DIR)
-CLIB = -lpthread
 
-# PRU Source Directories
+# PRU Include Directories
 PRU_INC_DIR = -I$(OW_DIR)/library/include/ \
 	-I/usr/lib/ti/pru-software-support-package-v6.3/include/am335x \
 	-I/usr/lib/ti/pru-software-support-package-v6.3/include \
 	-I/usr/share/ti/cgt-pru/include \
 	-I$(APP_DIR)
+
+# Library dependencies
+CLIB = -lpthread -lm
 PRU_CLIB = -l/usr/share/ti/cgt-pru/lib/libc.a
 
 # Targets
@@ -39,36 +44,50 @@ PRU1_TARGET = pru1_main
 # App source files
 APP_CPU_SRC = $(APP_DIR)/format.c $(APP_DIR)/uiloop.c $(APP_DIR)/cpuloop.c
 APP_CPU_OBJ = $(patsubst $(APP_DIR)/%.c,$(BUILD_DIR)/%.o,$(APP_CPU_SRC))
+
+# App PRU source files
 APP_PRU_SRC = $(APP_DIR)/pruloop.c
 APP_PRU_OBJ = $(patsubst $(APP_DIR)/%.c,$(BUILD_DIR)/%.po,$(APP_PRU_SRC))
 
-# State-dependent sources (need app's state.h)
-STATE_DEPENDENT_SRC = $(STATE_SRC_DIR)/pru.c $(STATE_SRC_DIR)/log.c $(STATE_SRC_DIR)/ui.c $(STATE_SRC_DIR)/udp.c
-STATE_DEPENDENT_OBJ = $(patsubst $(STATE_SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(STATE_DEPENDENT_SRC))
+# Core library source files used by this app
+CORE_CPU_SRC = $(CORE_SRC_DIR)/pru.c \
+               $(CORE_SRC_DIR)/log.c \
+               $(CORE_SRC_DIR)/ui.c \
+               $(CORE_SRC_DIR)/udp.c \
+               $(CORE_SRC_DIR)/debug.c \
+               $(CORE_SRC_DIR)/gpio.c \
+               $(CORE_SRC_DIR)/fix16.c \
+               $(CORE_SRC_DIR)/bno055_arm.c \
+               $(CORE_SRC_DIR)/rc_i2c.c
 
-# Rebuild state-dependent sources before compiling
-rebuild_state_sources:
-	@echo "Ensuring all state-dependent sources are available..."
-	@$(MAKE) -C $(LIB_DIR) all
-	@echo "Verifying state-dependent source files..."
-	@for src in $(STATE_DEPENDENT_SRC); do \
-		if [ ! -f $$src ]; then \
-			echo "ERROR: Missing state-dependent source file: $$src"; \
-			exit 1; \
-		else \
-			echo "Found $$src"; \
-		fi; \
-	done
+CORE_CPU_OBJ = $(patsubst $(CORE_SRC_DIR)/%.c,$(BUILD_DIR)/core_%.o,$(CORE_CPU_SRC))
 
-# Compiler
+# PRU driver source files
+PRU_DRIVER_SRC = $(PRU_SRC_DIR)/adcdriver.c \
+                 $(PRU_SRC_DIR)/spidriver.c \
+                 $(PRU_SRC_DIR)/i2cdriver.c \
+                 $(PRU_SRC_DIR)/hsi2c.c \
+                 $(PRU_SRC_DIR)/pwmdriver.c \
+                 $(PRU_SRC_DIR)/tsc_adc.c \
+                 $(PRU_SRC_DIR)/fix16.c \
+                 $(PRU_SRC_DIR)/fix16_exp.c \
+                 $(PRU_SRC_DIR)/filter.c \
+                 $(PRU_SRC_DIR)/bno055.c \
+                 $(PRU_SRC_DIR)/encoder.c \
+                 $(PRU_SRC_DIR)/halleffect.c \
+                 $(PRU_SRC_DIR)/hscsann150pg2a3.c \
+                 $(PRU_SRC_DIR)/hx711.c \
+                 $(PRU_SRC_DIR)/pca9548a.c \
+                 $(PRU_SRC_DIR)/lut.c
+
+PRU_DRIVER_OBJ = $(patsubst $(PRU_SRC_DIR)/%.c,$(BUILD_DIR)/pru_%.po,$(PRU_DRIVER_SRC))
+
+# Compiler settings
 CC = gcc
 CFLAGS = -std=gnu99 -Wall -g -O4 -mtune=cortex-a8 -march=armv7-a+fp -D=am335x
-LDFLAGS = -L$(LIB_TARGET_DIR) -lowcore -lm
 
-# PRU compiler
 PRU_CC = clpru
 PRU_CFLAGS = -q --c99 -v3 --define=am3359d -O4 -D=am335x -D=FIXMATH_NO_CACHE -D=PRU --hardware_mac=on --gen_func_subsections=on
-PRU_LDFLAGS = -L$(LIB_TARGET_DIR) -lowpru
 
 # Install stuff
 INSTALL = install -m 755
@@ -76,45 +95,47 @@ INSTALLDIR = install -d -m 755
 INSTALLNONEXEC = install -m 644
 
 # Build targets
-.PHONY: all clean install rebuild rebuild_state_sources
+.PHONY: all clean install prepare_lib
 
-all: rebuild_state_sources build_app
+all: prepare_lib $(TARGET_DIR)/$(APP_NAME) $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
 
-build_app: $(APP_CPU_OBJ) $(STATE_DEPENDENT_OBJ) $(TARGET_DIR)/$(APP_NAME) $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
+# Ensure library source files are available
+prepare_lib:
+	@echo "Preparing library source files..."
+	@$(MAKE) -C $(LIB_DIR)
 
-# Full rebuild including library
-rebuild: rebuild_state_sources all
+# Clean app and library
+clean:
+	@echo "Cleaning $(APP_NAME)..."
+	@rm -rf $(BUILD_DIR)
+	@rm -rf $(TARGET_DIR)
+	@rm -rf /lib/firmware/am335x-pru0-$(APP_NAME)-fw
+	@rm -rf /lib/firmware/am335x-pru1-$(APP_NAME)-fw
 
+# Install firmware
 install: all
 	@echo "Installing PRU firmware..."
 	$(INSTALLDIR) /etc/modprobe.d
 	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU0_TARGET).elf /lib/firmware/am335x-pru0-$(APP_NAME)-fw
 	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU1_TARGET).elf /lib/firmware/am335x-pru1-$(APP_NAME)-fw
 
-clean:
-	@echo "Cleaning $(APP_NAME)..."
-	$(RM) -r $(BUILD_DIR)
-	$(RM) -r $(TARGET_DIR)
-	$(RM) -r /lib/firmware/am335x-pru0-$(APP_NAME)-fw
-	$(RM) -r /lib/firmware/am335x-pru1-$(APP_NAME)-fw
-
-# Build main application
-$(TARGET_DIR)/$(APP_NAME): $(APP_CPU_OBJ) $(STATE_DEPENDENT_OBJ)
+# Build main app executable
+$(TARGET_DIR)/$(APP_NAME): $(APP_CPU_OBJ) $(CORE_CPU_OBJ)
 	@echo "Building $(APP_NAME) application..."
 	@mkdir -p $(TARGET_DIR)
-	$(CC) $(CFLAGS) -I$(CPU_INC_DIR) $^ $(LIB_DIR)/src/main.c -o $@ $(LDFLAGS) $(CLIB) -DFWSUFFIX=\"$(APP_NAME)\"
+	$(CC) $(CFLAGS) -I$(CPU_INC_DIR) $^ $(CORE_SRC_DIR)/main.c -o $@ $(CLIB) -DFWSUFFIX=\"$(APP_NAME)\"
 
 # Build PRU0 firmware
-$(BUILD_DIR)/$(PRU0_TARGET).elf: $(APP_PRU_OBJ)
+$(BUILD_DIR)/$(PRU0_TARGET).elf: $(APP_PRU_OBJ) $(PRU_DRIVER_OBJ)
 	@echo "Building PRU0 firmware..."
 	@mkdir -p $(BUILD_DIR)
-	$(PRU_CC) $(PRU_CFLAGS) $(PRU_INC_DIR) $(APP_PRU_OBJ) $(LIB_DIR)/pru_src/pru0_main.c -z --heap_size=1024 $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU0_TARGET).map -o $@ $(LIB_DIR)/pru_src/PRU0.cmd $(PRU_LDFLAGS)
+	$(PRU_CC) $(PRU_CFLAGS) $(PRU_INC_DIR) $^ $(PRU_SRC_DIR)/pru0_main.c -z --heap_size=1024 $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU0_TARGET).map -o $@ $(PRU_SRC_DIR)/PRU0.cmd
 
 # Build PRU1 firmware
-$(BUILD_DIR)/$(PRU1_TARGET).elf: $(APP_PRU_OBJ)
+$(BUILD_DIR)/$(PRU1_TARGET).elf: $(APP_PRU_OBJ) $(PRU_DRIVER_OBJ)
 	@echo "Building PRU1 firmware..."
 	@mkdir -p $(BUILD_DIR)
-	$(PRU_CC) $(PRU_CFLAGS) $(PRU_INC_DIR) $(APP_PRU_OBJ) $(LIB_DIR)/pru_src/pru1_main.c -z --heap_size=1024 $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $@ $(LIB_DIR)/pru_src/PRU1.cmd $(PRU_LDFLAGS)
+	$(PRU_CC) $(PRU_CFLAGS) $(PRU_INC_DIR) $^ $(PRU_SRC_DIR)/pru1_main.c -z --heap_size=1024 $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $@ $(PRU_SRC_DIR)/PRU1.cmd
 
 # Build app CPU objects
 $(BUILD_DIR)/%.o: $(APP_DIR)/%.c
@@ -122,9 +143,9 @@ $(BUILD_DIR)/%.o: $(APP_DIR)/%.c
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -I$(CPU_INC_DIR) -c -o $@ $<
 
-# Build state-dependent objects with access to app's state.h
-$(BUILD_DIR)/%.o: $(STATE_SRC_DIR)/%.c
-	@echo "Building state-dependent object: $@"
+# Build core library CPU objects
+$(BUILD_DIR)/core_%.o: $(CORE_SRC_DIR)/%.c
+	@echo "Building core CPU object: $@"
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -I$(CPU_INC_DIR) -c -o $@ $<
 
@@ -134,4 +155,8 @@ $(BUILD_DIR)/%.po: $(APP_DIR)/%.c
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_INC_DIR) -c -fe $@ $<
 
-# Removed build_library target (replaced by rebuild_state_sources)
+# Build PRU driver objects
+$(BUILD_DIR)/pru_%.po: $(PRU_SRC_DIR)/%.c
+	@echo "Building PRU driver object: $@"
+	@mkdir -p $(BUILD_DIR)
+	$(PRU_CC) $(PRU_CFLAGS) $(PRU_INC_DIR) -c -fe $@ $<
