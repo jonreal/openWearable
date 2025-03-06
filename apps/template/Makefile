@@ -46,6 +46,11 @@ APP_PRU_OBJ = $(patsubst $(APP_DIR)/%.c,$(BUILD_DIR)/%.po,$(APP_PRU_SRC))
 STATE_DEPENDENT_SRC = $(STATE_SRC_DIR)/pru.c $(STATE_SRC_DIR)/log.c $(STATE_SRC_DIR)/ui.c $(STATE_SRC_DIR)/udp.c
 STATE_DEPENDENT_OBJ = $(patsubst $(STATE_SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(STATE_DEPENDENT_SRC))
 
+# Rebuild state-dependent sources before compiling
+rebuild_state_sources:
+	@echo "Ensuring all state-dependent sources are available..."
+	@$(MAKE) -C $(LIB_DIR) clean state_dependent_headers
+
 # Compiler
 CC = gcc
 CFLAGS = -std=gnu99 -Wall -g -O4 -mtune=cortex-a8 -march=armv7-a+fp -D=am335x
@@ -62,9 +67,9 @@ INSTALLDIR = install -d -m 755
 INSTALLNONEXEC = install -m 644
 
 # Build targets
-.PHONY: all clean install rebuild
+.PHONY: all clean install rebuild rebuild_state_sources
 
-all: $(TARGET_DIR)/$(APP_NAME) $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
+all: rebuild_state_sources $(TARGET_DIR)/$(APP_NAME) $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
 
 # Full rebuild including library
 rebuild: build_library all
