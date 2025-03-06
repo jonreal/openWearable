@@ -47,7 +47,6 @@ APP_CPU_OBJ = $(patsubst $(APP_DIR)/%.c,$(BUILD_DIR)/%.o,$(APP_CPU_SRC))
 
 # App PRU source files
 APP_PRU_SRC = $(APP_DIR)/pruloop.c
-APP_PRU_OBJ = $(patsubst $(APP_DIR)/%.c,$(BUILD_DIR)/%.po,$(APP_PRU_SRC))
 
 # Core library source files used by this app
 CORE_CPU_SRC = $(CORE_SRC_DIR)/pru.c \
@@ -80,8 +79,6 @@ PRU_DRIVER_SRC = $(PRU_SRC_DIR)/adcdriver.c \
                  $(PRU_SRC_DIR)/pca9548a.c \
                  $(PRU_SRC_DIR)/lut.c
 
-PRU_DRIVER_OBJ = $(patsubst $(PRU_SRC_DIR)/%.c,$(BUILD_DIR)/pru_%.po,$(PRU_DRIVER_SRC))
-
 # Compiler settings
 CC = gcc
 CFLAGS = -std=gnu99 -Wall -g -O4 -mtune=cortex-a8 -march=armv7-a+fp -D=am335x
@@ -97,7 +94,10 @@ INSTALLNONEXEC = install -m 644
 # Build targets
 .PHONY: all clean install prepare_lib
 
-all: prepare_lib $(TARGET_DIR)/$(APP_NAME) $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
+all: prepare_lib build_app
+
+# Main build target for app
+build_app: $(APP_CPU_OBJ) $(CORE_CPU_OBJ) $(TARGET_DIR)/$(APP_NAME) $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
 
 # Ensure library source files are available
 prepare_lib:
@@ -126,16 +126,16 @@ $(TARGET_DIR)/$(APP_NAME): $(APP_CPU_OBJ) $(CORE_CPU_OBJ)
 	$(CC) $(CFLAGS) -I$(CPU_INC_DIR) $^ $(CORE_SRC_DIR)/main.c -o $@ $(CLIB) -DFWSUFFIX=\"$(APP_NAME)\"
 
 # Build PRU0 firmware
-$(BUILD_DIR)/$(PRU0_TARGET).elf: $(APP_PRU_OBJ) $(PRU_DRIVER_OBJ)
+$(BUILD_DIR)/$(PRU0_TARGET).elf: $(APP_DIR)/pruloop.c
 	@echo "Building PRU0 firmware..."
 	@mkdir -p $(BUILD_DIR)
-	$(PRU_CC) $(PRU_CFLAGS) $(PRU_INC_DIR) $^ $(PRU_SRC_DIR)/pru0_main.c -z --heap_size=1024 $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU0_TARGET).map -o $@ $(PRU_SRC_DIR)/PRU0.cmd
+	$(PRU_CC) $(PRU_CFLAGS) $(PRU_INC_DIR) $^ $(PRU_DRIVER_SRC) $(PRU_SRC_DIR)/pru0_main.c -z --heap_size=1024 $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU0_TARGET).map -o $@ $(PRU_SRC_DIR)/PRU0.cmd
 
 # Build PRU1 firmware
-$(BUILD_DIR)/$(PRU1_TARGET).elf: $(APP_PRU_OBJ) $(PRU_DRIVER_OBJ)
+$(BUILD_DIR)/$(PRU1_TARGET).elf: $(APP_DIR)/pruloop.c
 	@echo "Building PRU1 firmware..."
 	@mkdir -p $(BUILD_DIR)
-	$(PRU_CC) $(PRU_CFLAGS) $(PRU_INC_DIR) $^ $(PRU_SRC_DIR)/pru1_main.c -z --heap_size=1024 $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $@ $(PRU_SRC_DIR)/PRU1.cmd
+	$(PRU_CC) $(PRU_CFLAGS) $(PRU_INC_DIR) $^ $(PRU_DRIVER_SRC) $(PRU_SRC_DIR)/pru1_main.c -z --heap_size=1024 $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $@ $(PRU_SRC_DIR)/PRU1.cmd
 
 # Build app CPU objects
 $(BUILD_DIR)/%.o: $(APP_DIR)/%.c
@@ -149,14 +149,4 @@ $(BUILD_DIR)/core_%.o: $(CORE_SRC_DIR)/%.c
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -I$(CPU_INC_DIR) -c -o $@ $<
 
-# Build app PRU objects
-$(BUILD_DIR)/%.po: $(APP_DIR)/%.c
-	@echo "Building app PRU object: $@"
-	@mkdir -p $(BUILD_DIR)
-	$(PRU_CC) $(PRU_CFLAGS) $(PRU_INC_DIR) -c -fe $@ $<
-
-# Build PRU driver objects
-$(BUILD_DIR)/pru_%.po: $(PRU_SRC_DIR)/%.c
-	@echo "Building PRU driver object: $@"
-	@mkdir -p $(BUILD_DIR)
-	$(PRU_CC) $(PRU_CFLAGS) $(PRU_INC_DIR) -c -fe $@ $<
+# No intermediate PRU object files - direct compilation
