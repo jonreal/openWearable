@@ -49,7 +49,7 @@ STATE_DEPENDENT_OBJ = $(patsubst $(STATE_SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(STATE_D
 # Rebuild state-dependent sources before compiling
 rebuild_state_sources:
 	@echo "Ensuring all state-dependent sources are available..."
-	@$(MAKE) -C $(LIB_DIR) clean state_dependent_headers
+	@$(MAKE) -C $(LIB_DIR) all
 
 # Compiler
 CC = gcc
@@ -72,7 +72,7 @@ INSTALLNONEXEC = install -m 644
 all: rebuild_state_sources $(TARGET_DIR)/$(APP_NAME) $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
 
 # Full rebuild including library
-rebuild: build_library all
+rebuild: rebuild_state_sources all
 
 install: all
 	@echo "Installing PRU firmware..."
@@ -88,19 +88,19 @@ clean:
 	$(RM) -r /lib/firmware/am335x-pru1-$(APP_NAME)-fw
 
 # Build main application
-$(TARGET_DIR)/$(APP_NAME): $(APP_CPU_OBJ) $(STATE_DEPENDENT_OBJ) | build_library
+$(TARGET_DIR)/$(APP_NAME): $(APP_CPU_OBJ) $(STATE_DEPENDENT_OBJ)
 	@echo "Building $(APP_NAME) application..."
 	@mkdir -p $(TARGET_DIR)
 	$(CC) $(CFLAGS) -I$(CPU_INC_DIR) $^ $(LIB_DIR)/src/main.c -o $@ $(LDFLAGS) $(CLIB) -DFWSUFFIX=\"$(APP_NAME)\"
 
 # Build PRU0 firmware
-$(BUILD_DIR)/$(PRU0_TARGET).elf: $(APP_PRU_OBJ) | build_library
+$(BUILD_DIR)/$(PRU0_TARGET).elf: $(APP_PRU_OBJ)
 	@echo "Building PRU0 firmware..."
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_INC_DIR) $(APP_PRU_OBJ) $(LIB_DIR)/pru_src/pru0_main.c -z --heap_size=1024 $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU0_TARGET).map -o $@ $(LIB_DIR)/pru_src/PRU0.cmd $(PRU_LDFLAGS)
 
 # Build PRU1 firmware
-$(BUILD_DIR)/$(PRU1_TARGET).elf: $(APP_PRU_OBJ) | build_library
+$(BUILD_DIR)/$(PRU1_TARGET).elf: $(APP_PRU_OBJ)
 	@echo "Building PRU1 firmware..."
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_INC_DIR) $(APP_PRU_OBJ) $(LIB_DIR)/pru_src/pru1_main.c -z --heap_size=1024 $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $@ $(LIB_DIR)/pru_src/PRU1.cmd $(PRU_LDFLAGS)
@@ -123,7 +123,4 @@ $(BUILD_DIR)/%.po: $(APP_DIR)/%.c
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_INC_DIR) -c -fe $@ $<
 
-# Ensure library is built before app
-build_library:
-	@echo "Building libraries..."
-	$(MAKE) -C $(LIB_DIR)
+# Removed build_library target (replaced by rebuild_state_sources)
