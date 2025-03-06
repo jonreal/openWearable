@@ -43,7 +43,7 @@ APP_PRU_SRC = $(APP_DIR)/pruloop.c
 APP_PRU_OBJ = $(patsubst $(APP_DIR)/%.c,$(BUILD_DIR)/%.po,$(APP_PRU_SRC))
 
 # State-dependent sources (need app's state.h)
-STATE_DEPENDENT_SRC = $(STATE_SRC_DIR)/pru.c $(STATE_SRC_DIR)/log.c $(STATE_SRC_DIR)/ui.c
+STATE_DEPENDENT_SRC = $(STATE_SRC_DIR)/pru.c $(STATE_SRC_DIR)/log.c $(STATE_SRC_DIR)/ui.c $(STATE_SRC_DIR)/udp.c
 STATE_DEPENDENT_OBJ = $(patsubst $(STATE_SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(STATE_DEPENDENT_SRC))
 
 # Compiler
