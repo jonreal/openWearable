@@ -39,26 +39,26 @@ ARFLAGS = rcs
 all: prepare_build libowpru
 
 prepare_build:
-	@echo " Creating build directories..."
+	@echo "\n Creating build directories..."
 	@mkdir -p $(BUILD_DIR) $(TARGET_DIR)
 
 # Build libowpru.a - PRU drivers library
 libowpru: $(LIBOWPRU)
 
 $(LIBOWPRU): $(PRU_OBJ)
-	@echo " Building libowpru.a..."
+	@echo "\n Building libowpru.a..."
 	@mkdir -p $(TARGET_DIR)
 	$(AR) $(ARFLAGS) $@ $^
 
 # Build PRU objects
 $(BUILD_DIR)/%.po: $(LIB_DIR)/pru_src/%.c
-	@echo " Building PRU object: $@..."
+	@echo "\n Building PRU object: $@..."
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -c -fe $@ $<
 
 # Clean
 clean:
-	@echo " Cleaning PRU library build..."
+	@echo "\n Cleaning PRU library build..."
 	@rm -rf $(BUILD_DIR) $(TARGET_DIR)
 
 # Helper for debugging
