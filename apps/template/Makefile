@@ -13,7 +13,6 @@ TARGET_DIR = ./bin
 # Library Directories
 LIB_DIR = $(OW_DIR)/library
 LIBOWPRU = $(LIB_DIR)/lib/libowpru.a
-LIBOWCORE = $(LIB_DIR)/lib/libowcore.a
 
 # Source Directories
 CSRC_DIR = $(OW_DIR)/library/src
@@ -40,7 +39,9 @@ PRU_CINC_DIR = -I$(OW_DIR)/library/include/ \
 CLIB = -lpthread -lm
 PRU_CLIB = -l/usr/share/ti/cgt-pru/lib/libc.a
 
-# CPU-specific files (we'll use libowcore.a instead of directly compiling CPU source files)
+# CPU source files (excluding main.c)
+CPU_SRC = $(filter-out $(CSRC_DIR)/$(TARGET).c, $(wildcard $(CSRC_DIR)/*.c))
+CPU_OBJ = $(patsubst $(CSRC_DIR)/%,$(BUILD_DIR)/%,$(CPU_SRC:.c=.o))
 
 # App specific CPU source files
 APP_CPU_SRC = format.c uiloop.c cpuloop.c
@@ -74,11 +75,6 @@ check_libs:
 		echo " Please build PRU library first with 'make' in $(LIB_DIR) directory."; \
 		exit 1; \
 	fi
-	@if [ ! -f $(LIBOWCORE) ]; then \
-		echo " ERROR: $(LIBOWCORE) not found."; \
-		echo " Please build CPU library first with 'make' in $(LIB_DIR) directory."; \
-		exit 1; \
-	fi
 
 # Clean app
 clean:
@@ -96,10 +92,10 @@ install: $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
 	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU1_TARGET).elf /lib/firmware/am335x-pru1-$(APP_NAME)-fw
 
 # Build main app executable
-$(TARGET_DIR)/$(APP_NAME): $(APP_CPU_OBJ)
+$(TARGET_DIR)/$(APP_NAME): $(CPU_OBJ) $(APP_CPU_OBJ)
 	@echo " Linking cpu ..."
 	@mkdir -p $(TARGET_DIR)
-	$(CC) -Wl,-rpath,$(BUILD_DIR) -L$(BUILD_DIR) -L$(TARGET_DIR) $(CFLAGS) $^ $(CSRC_DIR)/$(TARGET).c -I$(CINC_DIR) -o $@ $(CLIB) -lm -lowcore -DFWSUFFIX=\"$(APP_NAME)\"
+	$(CC) -Wl,-rpath,$(BUILD_DIR) -L$(BUILD_DIR) $(CFLAGS) $^ $(CSRC_DIR)/$(TARGET).c -I$(CINC_DIR) -o $@ $(CLIB) -lm -DFWSUFFIX=\"$(APP_NAME)\"
 
 # Build PRU0 firmware
 $(BUILD_DIR)/$(PRU0_TARGET).elf: $(BUILD_DIR)/$(PRU0_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU)
@@ -111,7 +107,11 @@ $(BUILD_DIR)/$(PRU1_TARGET).elf: $(BUILD_DIR)/$(PRU1_TARGET).po $(APP_PRU_OBJ) $
 	@echo " Linking pru1..."
 	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=1024 $(BUILD_DIR)/$(PRU1_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU) $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $@ $(PRU_CSRC_DIR)/PRU1.cmd
 
-# (We no longer compile CPU objects directly, they come from libowcore.a)
+# Build CPU objects
+$(BUILD_DIR)/%.o: $(CSRC_DIR)/%.c
+	@echo " Building core dependencies..."
+	@mkdir -p $(BUILD_DIR)
+	$(CC) -Wl,-rpath,$(BUILD_DIR) -L$(BUILD_DIR) $(CFLAGS) -I$(CINC_DIR) -c -o $@ $< $(CLIB)
 
 # Build app CPU objects
 $(BUILD_DIR)/%.o: %.c
@@ -142,7 +142,8 @@ debug:
 	@echo " BUILD_DIR = $(BUILD_DIR)"
 	@echo " TARGET_DIR = $(TARGET_DIR)"
 	@echo " LIBOWPRU = $(LIBOWPRU)"
-	@echo " LIBOWCORE = $(LIBOWCORE)"
+	@echo " CPU_SRC = $(CPU_SRC)"
+	@echo " CPU_OBJ = $(CPU_OBJ)"
 	@echo " APP_CPU_SRC = $(APP_CPU_SRC)"
 	@echo " APP_CPU_OBJ = $(APP_CPU_OBJ)"
 	@echo " APP_PRU_SRC = $(APP_PRU_SRC)"
