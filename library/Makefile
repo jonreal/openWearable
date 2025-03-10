@@ -36,30 +36,36 @@ ARFLAGS = rcs
 # Main targets
 .PHONY: all clean libowpru
 
+# Colors
+RED=\033[1;31m
+C1=\033[2;90m
+C2=\033[2;34m
+RESET=\033[0m
+
 all: prepare_build libowpru
 
 prepare_build:
-	@echo "\n Creating build directories..."
+	@echo "$(C2) \n Creating build directories... $(RESET)"
 	@mkdir -p $(BUILD_DIR) $(TARGET_DIR)
 
 # Build libowpru.a - PRU drivers library
 libowpru: $(LIBOWPRU)
 
 $(LIBOWPRU): $(PRU_OBJ)
-	@echo "\n Building libowpru.a..."
+	@echo "$(C2) \n Building libowpru.a... $(RESET)"
 	@mkdir -p $(TARGET_DIR)
 	$(AR) $(ARFLAGS) $@ $^
 
 # Build PRU objects
 $(BUILD_DIR)/%.po: $(LIB_DIR)/pru_src/%.c
-	@echo "\n Building PRU object: $@..."
+	@echo "$(C2) \n Building PRU object: $@... $(RESET)"
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -c -fe $@ $<
 
 # Clean
 clean:
-	@echo "\n Cleaning library build..."
-	@rm -rf $(BUILD_DIR) $(TARGET_DIR)
+	@echo "$(C1) \n Cleaning library build... $(RESET)"
+	@echo "$(C1) $(RM) -r $(BUILD_DIR) $(TARGET_DIR) $(RESET)"; $(RM) -r $(BUILD_DIR) $(TARGET_DIR)
 
 # Helper for debugging
 debug:

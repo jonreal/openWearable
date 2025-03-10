@@ -1,4 +1,11 @@
 # Template App Makefile
+#
+
+# Colors
+RED=\033[2;31m
+C1=\033[2;32m
+C2=\033[2;34m
+RESET=\033[0m
 
 # App name
 APP_NAME = template
@@ -71,80 +78,79 @@ all: check_libs $(TARGET_DIR)/$(APP_NAME) $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUIL
 # Check if required libraries exist
 check_libs:
 	@if [ ! -f $(LIBOWPRU) ]; then \
-		echo " ERROR: $(LIBOWPRU) not found."; \
-		echo " Please build PRU library first with 'make' in $(LIB_DIR) directory."; \
+		echo "$(RED) \n ERROR: $(LIBOWPRU) not found. $(RESET)"; \
+		echo "$(C1) \n Please build PRU library first with 'make' in $(LIB_DIR) directory. $(RESET)"; \
 		exit 1; \
 	fi
 
 # Clean app
 clean:
-	@echo " Cleaning $(APP_NAME)..."
-	@echo " $(RM) -r ./build"; $(RM) -r ./build
-	@echo " $(RM) -r $(TARGET_DIR)"; $(RM) -r $(TARGET_DIR)
-	@echo " $(RM) -r /lib/firmware/am335x-pru0-$(APP_NAME)-fw"; $(RM) -r /lib/firmware/am335x-pru0-$(APP_NAME)-fw
-	@echo " $(RM) -r /lib/firmware/am335x-pru1-$(APP_NAME)-fw"; $(RM) -r /lib/firmware/am335x-pru1-$(APP_NAME)-fw
+	@echo "$(C1) \n Cleaning $(APP_NAME)... $(RESET)"
+	@echo "$(C2) $(RM) -r ./build $(RESET)"; $(RM) -r ./build
+	@echo "$(C2) $(RM) -r $(TARGET_DIR) $(RESET)"; $(RM) -r $(TARGET_DIR)
+	@echo "$(C2) $(RM) -r /lib/firmware/am335x-pru0-$(APP_NAME)-fw $(RESET)"; $(RM) -r /lib/firmware/am335x-pru0-$(APP_NAME)-fw
+	@echo "$(C2) $(RM) -r /lib/firmware/am335x-pru1-$(APP_NAME)-fw $(RESET)"; $(RM) -r /lib/firmware/am335x-pru1-$(APP_NAME)-fw
 
 # Install firmware
 install: $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
-	@echo " Installing PRU firmware..."
-	$(INSTALLDIR) /etc/modprobe.d
+	@echo "$(C1) \n Installing PRU firmware... $(RESET)"
 	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU0_TARGET).elf /lib/firmware/am335x-pru0-$(APP_NAME)-fw
 	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU1_TARGET).elf /lib/firmware/am335x-pru1-$(APP_NAME)-fw
 
 # Build main app executable
 $(TARGET_DIR)/$(APP_NAME): $(CPU_OBJ) $(APP_CPU_OBJ)
-	@echo " Linking cpu ..."
+	@echo "$(C1) \n Linking cpu... $(RESET)"
 	@mkdir -p $(TARGET_DIR)
 	$(CC) -Wl,-rpath,$(BUILD_DIR) -L$(BUILD_DIR) $(CFLAGS) $^ $(CSRC_DIR)/$(TARGET).c -I$(CINC_DIR) -o $@ $(CLIB) -lm -DFWSUFFIX=\"$(APP_NAME)\"
 
 # Build PRU0 firmware
 $(BUILD_DIR)/$(PRU0_TARGET).elf: $(BUILD_DIR)/$(PRU0_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU)
-	@echo " Linking pru0..."
-	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=1024 $(BUILD_DIR)/$(PRU0_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU) $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU0_TARGET).map -o $@ $(PRU_CSRC_DIR)/PRU0.cmd
+	@echo "$(C1) \n Linking pru0... $(RESET)"
+	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=1024 $(BUILD_DIR)/$(PRU0_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU) $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU0_TARGET).map -o $@ ./PRU0.cmd
 
 # Build PRU1 firmware
 $(BUILD_DIR)/$(PRU1_TARGET).elf: $(BUILD_DIR)/$(PRU1_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU)
-	@echo " Linking pru1..."
-	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=1024 $(BUILD_DIR)/$(PRU1_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU) $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $@ $(PRU_CSRC_DIR)/PRU1.cmd
+	@echo "$(C1) \n Linking pru1... $(RESET)"
+	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=1024 $(BUILD_DIR)/$(PRU1_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU) $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $@ ./PRU1.cmd
 
 # Build CPU objects
 $(BUILD_DIR)/%.o: $(CSRC_DIR)/%.c
-	@echo " Building core dependencies..."
+	@echo "$(C1) \n Building core dependencies... $(RESET)"
 	@mkdir -p $(BUILD_DIR)
 	$(CC) -Wl,-rpath,$(BUILD_DIR) -L$(BUILD_DIR) $(CFLAGS) -I$(CINC_DIR) -c -o $@ $< $(CLIB)
 
 # Build app CPU objects
 $(BUILD_DIR)/%.o: %.c
-	@echo " Building app specific dependencies..."
+	@echo "$(C1) \n Building app specific dependencies... $(RESET)"
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -I$(CINC_DIR) -c -o $@ $< $(CLIB)
 
 # Build PRU main objects
 $(BUILD_DIR)/$(PRU0_TARGET).po: $(PRU_CSRC_DIR)/$(PRU0_TARGET).c
-	@echo " Building pru dependencies..."
+	@echo "$(C1) \n Building pru dependencies... $(RESET)"
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -c -fe $@ $<
 
 $(BUILD_DIR)/$(PRU1_TARGET).po: $(PRU_CSRC_DIR)/$(PRU1_TARGET).c
-	@echo " Building pru dependencies..."
+	@echo "$(C1) \n Building pru dependencies... $(RESET)"
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -c -fe $@ $<
 
 # Build app PRU objects
 $(BUILD_DIR)/%.po: %.c
-	@echo " Building app specific pru dependencies..."
+	@echo "$(C1) \n Building app specific pru dependencies... $(RESET)"
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -c -fe $@ $<
 
 # Helper for debugging
 debug:
-	@echo " APP_NAME = $(APP_NAME)"
-	@echo " BUILD_DIR = $(BUILD_DIR)"
-	@echo " TARGET_DIR = $(TARGET_DIR)"
-	@echo " LIBOWPRU = $(LIBOWPRU)"
-	@echo " CPU_SRC = $(CPU_SRC)"
-	@echo " CPU_OBJ = $(CPU_OBJ)"
-	@echo " APP_CPU_SRC = $(APP_CPU_SRC)"
-	@echo " APP_CPU_OBJ = $(APP_CPU_OBJ)"
-	@echo " APP_PRU_SRC = $(APP_PRU_SRC)"
-	@echo " APP_PRU_OBJ = $(APP_PRU_OBJ)"
+	@echo "$(C1) APP_NAME = $(APP_NAME) $(RESET)"
+	@echo "$(C1) BUILD_DIR = $(BUILD_DIR) $(RESET)"
+	@echo "$(C1) TARGET_DIR = $(TARGET_DIR) $(RESET)"
+	@echo "$(C1) LIBOWPRU = $(LIBOWPRU) $(RESET)"
+	@echo "$(C1) CPU_SRC = $(CPU_SRC) $(RESET)"
+	@echo "$(C1) CPU_OBJ = $(CPU_OBJ) $(RESET)"
+	@echo "$(C1) APP_CPU_SRC = $(APP_CPU_SRC) $(RESET)"
+	@echo "$(C1) APP_CPU_OBJ = $(APP_CPU_OBJ) $(RESET)"
+	@echo "$(C1) APP_PRU_SRC = $(APP_PRU_SRC) $(RESET)"
+	@echo "$(C1) APP_PRU_OBJ = $(APP_PRU_OBJ) $(RESET)"
