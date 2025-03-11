@@ -47,7 +47,8 @@ int main(int argc, char **argv) {
   int configFlag = 0;
   int lutFlag = 0;
   int nodmaFlag = 0;
-  while((c = getopt(argc, argv, "vu:rc:l:d")) != -1) {
+  int statsFlag = 0;
+  while((c = getopt(argc, argv, "vu:rc:l:ds")) != -1) {
     switch (c) {
       case 'v':
         uiflags.debug = 1;
@@ -73,6 +74,10 @@ int main(int argc, char **argv) {
       case 'd':
         nodmaFlag = 1;
         printf("\nDMA transfers disabled.\n\n");
+        break;
+      case 's':
+        statsFlag = 1;
+        printf("\nPerformance statistics enabled.\n\n");
         break;
     }
   }
@@ -104,8 +109,9 @@ int main(int argc, char **argv) {
     return -1;
 
   UiWelcome();
-  // Set nodmaFlag in the UI flags structure
+  // Set flags in the UI flags structure
   uiflags.nodma = nodmaFlag;
+  uiflags.show_stats = statsFlag;
   if (UiInit(&pru_mem,uiflags) != 0) {
     printf("Tui init failed.\n");
     return -1;

@@ -442,6 +442,9 @@ log_t* LogInit(const pru_mem_t* pru_mem) {
   log->dma_ctx = init_dma();
   log->use_dma = (log->dma_ctx != NULL && log->dma_ctx->initialized);
   
+  // Initialize stats flag
+  log->show_stats = 0;  // Don't show stats by default
+  
   if (log->use_dma) {
     printf("DMA logging enabled\n");
   } else {
@@ -616,18 +619,20 @@ void LogWriteStateToFile(log_t* log) {
       double avg_format_ms = format_time_ms_total / (double)report_count;
       double avg_write_ms = write_time_ms_total / (double)report_count;
       
-      // Print throughput statistics
-      printf("[LOG] Throughput: %.2f kbps current | %.2f kbps avg | %.2f MB total", 
-             current_kbps, avg_kbps, total_bytes / (1024.0 * 1024.0));
-      
-      // Print DMA statistics if enabled
-      if (log->use_dma) {
-        printf(" | DMA: %d transfers, %d errors", dma_transfers, dma_errors);
+      // Print throughput statistics if show_stats is enabled
+      if (log->show_stats) {
+        printf("[LOG] Throughput: %.2f kbps current | %.2f kbps avg | %.2f MB total", 
+               current_kbps, avg_kbps, total_bytes / (1024.0 * 1024.0));
+        
+        // Print DMA statistics if enabled
+        if (log->use_dma) {
+          printf(" | DMA: %d transfers, %d errors", dma_transfers, dma_errors);
+        }
+        
+        // Print operation timing
+        printf(" | Format: %.3f ms, Write: %.3f ms", avg_format_ms, avg_write_ms);
+        printf("\n");
       }
-      
-      // Print operation timing
-      printf(" | Format: %.3f ms, Write: %.3f ms", avg_format_ms, avg_write_ms);
-      printf("\n");
       
       // Reset timer and counters
       last_time = curr_time;

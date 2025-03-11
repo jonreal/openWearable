@@ -29,6 +29,7 @@ typedef struct {
   int udppublish;
   char udphost[64];
   int nodma;        // Flag to disable DMA transfers
+  int show_stats;   // Flag to show performance statistics
 } ui_flags_t;
 
 typedef struct {

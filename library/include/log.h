@@ -45,6 +45,7 @@ typedef struct{
   const pru_mem_t* pru_mem;
   dma_context_t* dma_ctx;    // DMA context
   int use_dma;               // Flag to enable/disable DMA
+  int show_stats;            // Flag to show performance statistics
 } log_t;
 
 circbuff_t* LogNewCircBuff(void);
