@@ -79,6 +79,7 @@ ui_flags_t UiInitFlags(void) {
   f.logfile = 0;
   //f.rospublish = 0;
   f.udppublish = 0;
+  f.nodma = 0;       // DMA enabled by default
   return f;
 }
 
@@ -91,6 +92,12 @@ int UiInit(pru_mem_t* pru_mem, ui_flags_t flags) {
   //uidata.rosbuffer[0] = '\0';
   uidata.counter = 0;
   uidata.cpudata = &pru_mem->s->cpudata;
+  
+  // Set the use_dma flag in the log structure based on the nodma flag
+  if (uidata.log && uidata.flag.nodma) {
+    printf("DMA disabled by command line flag\n");
+    uidata.log->use_dma = 0;
+  }
 
   CpuInit(uidata.cpudata);
 
@@ -178,7 +185,7 @@ void UiWelcome(void) {
          "-----------------------------\n"
          " Welcome to openWearable v0.1\n"
          "-----------------------------\n");
-  printf("\n\nPress enter to start\n\n");
+  printf("\nPress enter to start\n\n");
   getchar();
 }
 

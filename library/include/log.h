@@ -32,6 +32,9 @@ typedef struct{
   char temp_buff[TEMP_BUFF_LEN];
 } circbuff_t;
 
+// Forward declaration for DMA context
+typedef struct dma_context dma_context_t;
+
 // Log File Struct
 typedef struct{
   uint32_t fd;
@@ -40,6 +43,8 @@ typedef struct{
   char write_buff[WRITE_BUFF_LEN];
   circbuff_t* cbuff;
   const pru_mem_t* pru_mem;
+  dma_context_t* dma_ctx;    // DMA context
+  int use_dma;               // Flag to enable/disable DMA
 } log_t;
 
 circbuff_t* LogNewCircBuff(void);
