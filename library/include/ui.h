@@ -28,6 +28,7 @@ typedef struct {
 //  int rospublish;
   int udppublish;
   char udphost[64];
+  int nodma;        // Flag to disable DMA transfers
 } ui_flags_t;
 
 typedef struct {

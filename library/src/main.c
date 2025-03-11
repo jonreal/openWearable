@@ -46,7 +46,8 @@ int main(int argc, char **argv) {
   char lutfile[256] = "/root/openWearable/apps/config/";
   int configFlag = 0;
   int lutFlag = 0;
-  while((c = getopt(argc, argv, "vu:rc:l:")) != -1) {
+  int nodmaFlag = 0;
+  while((c = getopt(argc, argv, "vu:rc:l:d")) != -1) {
     switch (c) {
       case 'v':
         uiflags.debug = 1;
@@ -68,6 +69,10 @@ int main(int argc, char **argv) {
         strcat(lutfile,optarg);
         printf("\nLoading LUT file: %s.\n\n", lutfile);
         lutFlag = 1;
+        break;
+      case 'd':
+        nodmaFlag = 1;
+        printf("\nDMA transfers disabled.\n\n");
         break;
     }
   }
@@ -99,6 +104,8 @@ int main(int argc, char **argv) {
     return -1;
 
   UiWelcome();
+  // Set nodmaFlag in the UI flags structure
+  uiflags.nodma = nodmaFlag;
   if (UiInit(&pru_mem,uiflags) != 0) {
     printf("Tui init failed.\n");
     return -1;
