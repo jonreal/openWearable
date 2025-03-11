@@ -80,6 +80,7 @@ ui_flags_t UiInitFlags(void) {
   //f.rospublish = 0;
   f.udppublish = 0;
   f.nodma = 0;       // DMA enabled by default
+  f.show_stats = 0;  // Stats hidden by default
   return f;
 }
 
@@ -97,6 +98,11 @@ int UiInit(pru_mem_t* pru_mem, ui_flags_t flags) {
   if (uidata.log && uidata.flag.nodma) {
     printf("DMA disabled by command line flag\n");
     uidata.log->use_dma = 0;
+  }
+  
+  // Set the show_stats flag in the log structure
+  if (uidata.log) {
+    uidata.log->show_stats = uidata.flag.show_stats;
   }
 
   CpuInit(uidata.cpudata);
