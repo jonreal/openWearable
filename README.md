@@ -39,12 +39,12 @@ Current applications include:
 
 3. Build an application:
    ```
-   cd ../apps && make template
+   cd ../apps/template && make
    ```
 
 4. Run the application:
    ```
-   template/bin/template
+   ./bin/template
    ```
 
 ### Device Tree Setup
@@ -128,9 +128,8 @@ cd my_new_app
 ```
 
 ### Build Commands
-- Build: `make [app-name]`
-- Clean: `make clean-[app-name]`
-- ROS integration: `make [app-name].withros`
+- First build the library: `cd library && make`
+- Then build the app: `cd apps/[app-name] && make`
 
 ## Recent Enhancements
 
