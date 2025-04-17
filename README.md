@@ -153,7 +153,11 @@ cd my_new_app
 - **imutest**: Test IMU sensors and data processing
 - **reflex**: Demonstrate reflex control algorithms
 
-## Publications
+## Publications Using openWearable
+
+### Soft Wearable Robots for Pediatric Movement Disorders
+- Realmuto J, Sanger TD. "Assisting Forearm Function in Children With Movement Disorders via A Soft Wearable Robot With Equilibrium-Point Control." Frontiers in Robotics and AI, 2022; 9:877041. doi:10.3389/frobt.2022.877041.
+- Repository branch: [equilibrium-point-study](https://github.com/jonreal/openWearable/tree/equilibrium-point-study)
 
 ### Powered Ankle-Foot Prostheses
 - Realmuto, J. "Towards Personalized Powered Ankle-Foot Prostheses." Dissertation, 2018.
