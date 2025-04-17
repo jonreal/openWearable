@@ -96,6 +96,17 @@ The device tree configures BeagleBone hardware resources for openWearable. Follo
    sudo reboot
    ```
 
+## Network Setup
+To connect to the BeagleBone to Wi-Fi, follow these steps:
+   ```
+   iwctl
+
+    [iwctl]# station wlan0 scan
+    [iwctl]# station wlan0 get-networks
+    [iwctl]# station wlan0 connect <SSID>
+
+   ```
+
 ## Project Structure
 
 - `apps/` - Application examples and templates
@@ -167,10 +178,3 @@ cd my_new_app
 - Sie A, Realmuto J, Rombokas E. "A Lower Limb Prosthesis Haptic Feedback System for Stair Descent." ASME Design of Medical Devices Conference, 2017. doi:10.1115/DMD2017-3409.
 - Repository branch: [hapticFeedback](https://github.com/jonreal/openWearable/tree/hapticFeedback)
 
-## Contributing
-
-We welcome contributions to the openWearable project. Please see our [coding guidelines](CLAUDE.md) for details on code style and project requirements.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
