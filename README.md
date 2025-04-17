@@ -20,8 +20,8 @@ Current applications include:
 - Actuators (PAMs, motors, etc.)
 
 ### Software Dependencies
-- Debian Linux 9 (Stretch) or later
-- Linux Kernel 4.14+ with PREEMPT RT patches
+- Recommended OS: Debian Linux 12.x (Bookworm) or later
+- Kernel: 5.10.168-ti-r72
 - PRU Code Generation Tools
 
 ### Installation
