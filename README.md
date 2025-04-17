@@ -49,23 +49,52 @@ Current applications include:
 
 ### Device Tree Setup
 
-For BeagleBone Black:
-```
-cd device-tree
-cp am335x-boneblack-openWearable.dts /opt/source/dtb-4.14-ti/src/arm/
-cd /opt/source/dtb-4.14-ti
-make
-cp /opt/source/dtb-4.14-ti/src/arm/am335x-boneblack-openWearable.dtb /boot/dtbs/4.14.108-ti-r104/
-```
+The device tree configures BeagleBone hardware resources for openWearable. Follow these steps:
 
-For BeagleBone Blue:
-```
-cd device-tree
-cp am335x-boneblue-openWearable.dts /opt/source/dtb-4.14-ti/src/arm/
-cd /opt/source/dtb-4.14-ti
-make
-cp /opt/source/dtb-4.14-ti/src/arm/am335x-boneblue-openWearable.dtb /boot/dtbs/4.14.108-ti-r104/
-```
+1. Clone the BeagleBoard-DeviceTrees repository:
+   ```
+   git clone https://github.com/beagleboard/BeagleBoard-DeviceTrees.git ~/BeagleBoard-DeviceTrees
+   ```
+
+2. Create a symbolic link to your device tree file:
+
+   For BeagleBone Black:
+   ```
+   cd device-tree
+   ln -s $PWD/am335x-boneblack-openWearable.dts ~/BeagleBoard-DeviceTrees/src/arm/
+   ```
+
+   For BeagleBone Blue:
+   ```
+   cd device-tree
+   ln -s $PWD/am335x-boneblue-openWearable.dts ~/BeagleBoard-DeviceTrees/src/arm/
+   ```
+
+3. Compile and install the device tree:
+   ```
+   cd ~/BeagleBoard-DeviceTrees
+   make install_arm
+   ```
+
+4. The compiled device tree files will be installed to `/boot/dtbs/<kernel>/`
+   (e.g., `/boot/dtbs/5.10.168-ti-r72/`)
+
+5. Edit `/boot/uEnv.txt` to enable the overlay:
+   ```
+   sudo nano /boot/uEnv.txt
+   ```
+   
+   Add or modify the following line:
+   ```
+   dtb=am335x-boneblack-openWearable.dtb   # For BeagleBone Black
+   # OR
+   dtb=am335x-boneblue-openWearable.dtb    # For BeagleBone Blue
+   ```
+
+6. Reboot the BeagleBone:
+   ```
+   sudo reboot
+   ```
 
 ## Project Structure
 
