@@ -19,11 +19,10 @@
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 
-
-// GP0 Header gpio3_17
+// boneblack, P8.44, MODE5, pr1_pru1_pru_r30_3
 const uint8_t clk = 3;
 
-// GP0 Header gpio3_20
+// boneblack, P8.39, MODE6, pr1_pru1_pru_r31_6
 const uint8_t dout = 6;
 
 hx711_t* loadcell;
@@ -35,7 +34,6 @@ hx711_t* loadcell;
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem) {
-  loadcell = Hx711InitLoadCell(clk, dout, HX711_GAIN_64);
 }
 
 void Pru0UpdateState(const pru_count_t* c,
@@ -43,7 +41,6 @@ void Pru0UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
-  s_->load = Hx711Read(loadcell);
 }
 
 void Pru0UpdateControl(const pru_count_t* c,
@@ -62,6 +59,7 @@ void Pru0Cleanup(void) {
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
+  loadcell = Hx711InitLoadCell(clk, dout, HX711_GAIN_64);
 }
 
 void Pru1UpdateState(const pru_count_t* c,
@@ -69,6 +67,7 @@ void Pru1UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
+  s_->load = Hx711Read(loadcell);
 }
 
 void Pru1UpdateControl(const pru_count_t* c,
@@ -76,7 +75,6 @@ void Pru1UpdateControl(const pru_count_t* c,
                        const lut_mem_t* l_,
                        state_t* s_,
                        pru_ctl_t* ctl_) {
-  debug_buff[1] = 0xA;
 }
 
 void Pru1Cleanup(void) {
