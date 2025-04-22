@@ -15,7 +15,7 @@ OW_DIR = /root/openWearable
 
 # Build Directories
 BUILD_DIR = ./build
-TARGET_DIR = ./bin
+TARGET_DIR = /root/openWearable/apps/bin
 
 # Library Directories
 LIB_DIR = $(OW_DIR)/library
