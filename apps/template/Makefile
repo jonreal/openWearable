@@ -1,5 +1,4 @@
 # Template App Makefile
-#
 
 # Colors
 RED=\033[2;31m
@@ -10,8 +9,15 @@ RESET=\033[0m
 # App name
 APP_NAME = template
 
+# Architecture
+ARCH = am335x
+
 # openWearable path
 OW_DIR = /root/openWearable
+
+# TI pru software support package
+PSSP_DIR = /root/pru-software-support-package
+CGT_DIR = /usr/share/ti/cgt-pru
 
 # Build Directories
 BUILD_DIR = ./build
@@ -32,19 +38,19 @@ PRU1_TARGET = pru1_main
 
 # Include Directories
 CINC_DIR = $(OW_DIR)/library/include \
-	-I/usr/lib/ti/pru-software-support-package-v6.3/include/am335x \
-	-I/usr/lib/ti/pru-software-support-package-v6.3/include \
+	-I$(PSSP_DIR)/include/$(ARCH) \
+	-I$(PSSP_DIR)/include \
 	-I./
 
 PRU_CINC_DIR = -I$(OW_DIR)/library/include/ \
-	-I/usr/lib/ti/pru-software-support-package-v6.3/include/am335x \
-	-I/usr/lib/ti/pru-software-support-package-v6.3/include \
-	-I/usr/share/ti/cgt-pru/include \
+	-I$(PSSP_DIR)/include/$(ARCH) \
+	-I$(PSSP_DIR)/include \
+	-I$(CGT_DIR)/include \
 	-I./
 
 # Library dependencies
 CLIB = -lpthread -lm
-PRU_CLIB = -l/usr/share/ti/cgt-pru/lib/libc.a
+PRU_CLIB = -l$(CGT_DIR)/lib/libc.a
 
 # CPU source files (excluding main.c)
 CPU_SRC = $(filter-out $(CSRC_DIR)/$(TARGET).c, $(wildcard $(CSRC_DIR)/*.c))
@@ -60,10 +66,15 @@ APP_PRU_OBJ = $(patsubst %.c,$(BUILD_DIR)/%.po,$(APP_PRU_SRC))
 
 # Compiler settings
 CC = gcc
-CFLAGS = -std=gnu99 -Wall -g -O4 -mtune=cortex-a8 -march=armv7-a+fp -D=am335x
+CFLAGS = \
+	-std=gnu99 -Wall -g -O4 -mtune=cortex-a8 -march=armv7-a+fp \
+	-D$(shell echo $(ARCH) | tr a-z A-Z)
 
 PRU_CC = clpru
-PRU_CFLAGS = -q --c99 -v3 --define=am3359d -O4 -D=am335x -D=FIXMATH_NO_CACHE -D=PRU --hardware_mac=on --gen_func_subsections=on
+PRU_CFLAGS = \
+	-q --c99 -v3 -O4 \
+	-D$(shell echo $(ARCH) | tr a-z A-Z) -DFIXMATH_NO_CACHE -DPRU\
+	--hardware_mac=on --gen_func_subsections=on
 
 # Install stuff
 INSTALL = install -m 755
@@ -88,14 +99,14 @@ clean:
 	@echo "$(C1) \n Cleaning $(APP_NAME)... $(RESET)"
 	@echo "$(C2) $(RM) -r ./build $(RESET)"; $(RM) -r ./build
 	@echo "$(C2) $(RM) -r $(TARGET_DIR) $(RESET)"; $(RM) -r $(TARGET_DIR)
-	@echo "$(C2) $(RM) -r /lib/firmware/am335x-pru0-$(APP_NAME)-fw $(RESET)"; $(RM) -r /lib/firmware/am335x-pru0-$(APP_NAME)-fw
-	@echo "$(C2) $(RM) -r /lib/firmware/am335x-pru1-$(APP_NAME)-fw $(RESET)"; $(RM) -r /lib/firmware/am335x-pru1-$(APP_NAME)-fw
+	@echo "$(C2) $(RM) -r /lib/firmware/$(ARCH)-pru0-$(APP_NAME)-fw $(RESET)"; $(RM) -r /lib/firmware/$(ARCH)-pru0-$(APP_NAME)-fw
+	@echo "$(C2) $(RM) -r /lib/firmware/$(ARCH)-pru1-$(APP_NAME)-fw $(RESET)"; $(RM) -r /lib/firmware/$(ARCH)-pru1-$(APP_NAME)-fw
 
 # Install firmware
 install: $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
 	@echo "$(C1) \n Installing PRU firmware... $(RESET)"
-	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU0_TARGET).elf /lib/firmware/am335x-pru0-$(APP_NAME)-fw
-	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU1_TARGET).elf /lib/firmware/am335x-pru1-$(APP_NAME)-fw
+	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU0_TARGET).elf /lib/firmware/$(ARCH)-pru0-$(APP_NAME)-fw
+	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU1_TARGET).elf /lib/firmware/$(ARCH)-pru1-$(APP_NAME)-fw
 
 # Build main app executable
 $(TARGET_DIR)/$(APP_NAME): $(CPU_OBJ) $(APP_CPU_OBJ)
