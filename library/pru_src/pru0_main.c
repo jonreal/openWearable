@@ -46,14 +46,19 @@ void clearTimerFlag(void);
 void clearIepInterrupt(void);
 
 // Constant Table
-volatile far pruIntc CT_INTC
-  __attribute__((cregister("PRU_INTC", far), peripheral));
+volatile far pruIntc
+  CT_INTC __attribute__((cregister("PRU_INTC", far), peripheral));
 
-volatile pruCfg CT_CFG
-  __attribute__((cregister("PRU_CFG", near), peripheral));
+volatile pruCfg
+  CT_CFG __attribute__((cregister("PRU_CFG", near), peripheral));
 
-volatile far pruIep CT_IEP
-  __attribute__((cregister("PRU_IEP", near), peripheral));
+volatile far pruIep
+  CT_IEP __attribute__((cregister("PRU_IEP", near), peripheral));
+
+// Pointers to start of shared memory sections defined in .cmd
+extern far char __PRU_PARAM;
+extern far char __PRU_LUTAB;
+extern far char __PRU_SHAREDMEM;
 
 // Main ----------------------------------------------------------------------
 int main(void) {
@@ -81,11 +86,13 @@ int main(void) {
     mem.s->state[counter.index].time = counter.frame;
 
     // Estimate
-    Pru0UpdateState(&counter,
-                    mem.p,
-                    mem.l,
-                    &mem.s->state[counter.index],
-                    &mem.s->pru_ctl);
+    Pru0UpdateState(
+      &counter,
+      mem.p,
+      mem.l,
+      &mem.s->state[counter.index],
+      &mem.s->pru_ctl
+    );
 
     // Wait for pru1 to be done
     mem.s->pru_ctl.bit.pru0_done = 1;
@@ -95,11 +102,13 @@ int main(void) {
     mem.s->pru_ctl.bit.pru1_done = 0;
 
     // Control
-    Pru0UpdateControl(&counter,
-                      mem.p,
-                      mem.l,
-                      &mem.s->state[counter.index],
-                      &mem.s->pru_ctl);
+    Pru0UpdateControl(
+      &counter,
+      mem.p,
+      mem.l,
+      &mem.s->state[counter.index],
+      &mem.s->pru_ctl
+    );
 
     // Copy cpudata to state
     mem.s->state[counter.index].cpudata = mem.s->cpudata;
@@ -163,18 +172,15 @@ void cleanup(void) {
   Pru0Cleanup();
 }
 void memInit(pru_mem_t* mem) {
+
   // Memory map for shared memory
-  void* ptr = (void*) PRU_L_SHARED_DRAM;
-  mem->s = (shared_mem_t*) ptr;
+  mem->s = (shared_mem_t*) &__PRU_SHAREDMEM;
 
   // Memory map for parameters (pru0 DRAM)
-  ptr = (void*) PRU_DRAM;
-  mem->p = (param_mem_t*) ptr;
+  mem->p = (param_mem_t*) &__PRU_PARAM;
 
   // Memory map for feedforward lookup table (pru1 DRAM)
-  ptr = (void*) PRU_OTHER_DRAM;
-  mem->l = (lut_mem_t*) ptr;
-//  mem->l = (lut_mem_t*) NULL;
+  mem->l = (lut_mem_t*) &__PRU_LUTAB;
 
   // Point global debug buffer
   debug_buff = &(mem->p->debug_buff[0]);

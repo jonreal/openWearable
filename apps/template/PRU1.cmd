@@ -76,3 +76,7 @@ SECTIONS {
   .resource_table > PRU_RAM, PAGE 1
 }
 
+/* Declare global symbols for C */
+__PRU_PARAM     = 0x00002000;
+__PRU_LUTAB     = 0x00000000;
+__PRU_SHAREDMEM = 0x00010000;

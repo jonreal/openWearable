@@ -31,18 +31,13 @@
  */
 
 
-#ifndef _RSC_TABLE_AM335X_PRU_H_
-#define _RSC_TABLE_AM335X_PRU_H_
+#ifndef _RSC_TABLE_PRU0_H_
+#define _RSC_TABLE_PRU0_H_
 
 #include <stddef.h>
 #include <rsc_types.h>
 #include "pru.h"
 #include "pru_virtio_ids.h"
-
-/* PRU Local Offsets */
-#define PRU_DRAM            (0x00000000)
-#define PRU_OTHER_DRAM      (0x00002000)
-#define PRU_L_SHARED_DRAM   (0x00010000)
 
 #pragma DATA_SECTION(my_irq_rsc, ".pru_irq_map")
 #pragma RETAIN(my_irq_rsc)
@@ -69,4 +64,4 @@ struct my_resource_table resourceTable = {
   0,
 };
 
-#endif /* _RSC_TABLE_AM335X_PRU_H_ */
+#endif /* _RSC_TABLE_PRU0_H_ */
