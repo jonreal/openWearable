@@ -30,14 +30,6 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- *  ======== rsc_table_am335x_pru.h ========
- *
- *  Define the resource table entries for all PRU cores. This will be
- *  incorporated into corresponding base images, and used by the remoteproc
- *  on the host-side to allocated/reserve resources.
- *
- */
 
 #ifndef _RSC_TABLE_AM335X_PRU_H_
 #define _RSC_TABLE_AM335X_PRU_H_
@@ -47,29 +39,10 @@
 #include "pru.h"
 #include "pru_virtio_ids.h"
 
-#define PRU_INTC    (PRU_GLOBAL_BASE + 0x00020000)
-#define PRU0_DEBUG    (PRU_GLOBAL_BASE + 0x00022400)
-#define PRU1_DEBUG    (PRU_GLOBAL_BASE + 0x00024400)
-#define PRU_CFG     (PRU_GLOBAL_BASE + 0x00026000)
-#define PRU_UART0   (PRU_GLOBAL_BASE + 0x00028000)
-#define PRU_IEP     (PRU_GLOBAL_BASE + 0x0002E000)
-#define PRU_ECAP0   (PRU_GLOBAL_BASE + 0x00030000)
-#define PRU0_IRAM   (PRU_GLOBAL_BASE + 0x00034000)
-#define PRU1_IRAM   (PRU_GLOBAL_BASE + 0x00038000)
-
 /* PRU Local Offsets */
 #define PRU_DRAM            (0x00000000)
 #define PRU_OTHER_DRAM      (0x00002000)
 #define PRU_L_SHARED_DRAM   (0x00010000)
-
-/* Sizes */
-#define PRU0_IRAM_SIZE    (SZ_8K)
-#define PRU1_IRAM_SIZE    (SZ_8K)
-
-#define PRU0_DRAM_SIZE    (SZ_8K)
-#define PRU1_DRAM_SIZE    (SZ_8K)
-
-#define PRU_SHARED_DRAM_SIZE  (SZ_8K + SZ_4K)
 
 #pragma DATA_SECTION(my_irq_rsc, ".pru_irq_map")
 #pragma RETAIN(my_irq_rsc)
@@ -87,9 +60,9 @@ struct my_resource_table {
 
 };
 
-#pragma DATA_SECTION(am335x_pru_remoteproc_ResourceTable, ".resource_table")
-#pragma RETAIN(am335x_pru_remoteproc_ResourceTable)
-struct my_resource_table am335x_pru_remoteproc_ResourceTable = {
+#pragma DATA_SECTION(resourceTable, ".resource_table")
+#pragma RETAIN(resourceTable)
+struct my_resource_table resourceTable = {
 	1,	/* we're the first version that implements this */
 	0,	/* number of entries in the table */
 	0, 0,	/* reserved, must be zero */
