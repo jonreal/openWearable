@@ -44,6 +44,11 @@ volatile far pruIntc CT_INTC
 volatile pruCfg CT_CFG
   __attribute__((cregister("PRU_CFG", near), peripheral));
 
+// Pointers to start of shared memory defined in .cmd
+extern far char __PRU_PARAM;
+extern far char __PRU_LUTAB;
+extern far char __PRU_SHAREDMEM;
+
 // Main ----------------------------------------------------------------------
 int main(void) {
   pru_count_t counter = {0, 0};
@@ -65,11 +70,13 @@ int main(void) {
     debugPinHigh();
 
     // Estimate
-    Pru1UpdateState(&counter,
-                    mem.p,
-                    mem.l,
-                    &mem.s->state[counter.index],
-                    &mem.s->pru_ctl);
+    Pru1UpdateState(
+      &counter,
+      mem.p,
+      mem.l,
+      &mem.s->state[counter.index],
+      &mem.s->pru_ctl
+    );
 
     // Wait for pru0 to be done
     debugPinLow();
@@ -78,11 +85,13 @@ int main(void) {
     mem.s->pru_ctl.bit.pru0_done = 0;
 
     // Control
-    Pru1UpdateControl(&counter,
-                      mem.p,
-                      mem.l,
-                      &mem.s->state[counter.index],
-                      &mem.s->pru_ctl);
+    Pru1UpdateControl(
+      &counter,
+      mem.p,
+      mem.l,
+      &mem.s->state[counter.index],
+      &mem.s->pru_ctl
+    );
 
     // Post bookkeeping
     mem.s->pru_ctl.bit.pru1_done = 1;
@@ -140,17 +149,13 @@ void debugPinLow(void) {
 
 void memInit(pru_mem_t* mem) {
   // Memory map for shared memory
-  void* ptr = (void*) PRU_L_SHARED_DRAM;
-  mem->s = (shared_mem_t*) ptr;
+  mem->s = (shared_mem_t*) &__PRU_SHAREDMEM;
 
-  // Memory map for parameters (pru0 DRAM)
-  ptr = (void*) PRU_OTHER_DRAM;
-  mem->p = (param_mem_t*) ptr;
+  // Memory map for parameters
+  mem->p = (param_mem_t*) &__PRU_PARAM;
 
-  // Memory map for feedforward lookup table (pru1 DRAM)
-  ptr = (void*) PRU_DRAM;
-  mem->l = (lut_mem_t*) ptr;
-//  mem->l = (lut_mem_t*) NULL;
+  // Memory map for feedforward lookup table
+  mem->l = (lut_mem_t*) &__PRU_LUTAB;
 
   // Point global debug buffer
   debug_buff = &(mem->p->debug_buff[0]);
