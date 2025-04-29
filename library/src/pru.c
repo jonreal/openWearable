@@ -21,6 +21,19 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/types.h>
+#include <dirent.h>
+
+// remote proc nodes
+const char* pru0_0 = "b034000.pru";
+const char* pru0_1 = "b038000.pru";
+const char* pru1_0 = "b134000.pru";
+const char* pru1_1 = "b138000.pru";
+
+// MAIN Domain address
+const unsigned int pru_icssg0_ram_slave_ram = 0x30010000;
+
+static char pru0_path[256] = {0};
+static char pru1_path[256] = {0};
 
 // ---------------------------------------------------------------------------
 // Function: int PruMemMap(pru_mem_t)
@@ -31,42 +44,94 @@
 // Outputs:   returns 0 on success
 // ---------------------------------------------------------------------------
 int PruMemMap(pru_mem_t* pru_mem) {
+
   int fd = open("/dev/mem", O_RDWR | O_SYNC);
-
-  // Memory Map for param (pru0 DRAM)
-  void* ptr = mmap(0, sizeof(param_mem_t),
-                   PROT_READ | PROT_WRITE, MAP_SHARED, fd, PRU0_DRAM);
-  if (ptr == MAP_FAILED) {
-    printf ("ERROR: could not map memory.\n\n");
-    return 1;
+ 
+  void* base = mmap(
+    NULL, 0x10000,
+    PROT_READ | PROT_WRITE, MAP_SHARED, fd,
+    pru_icssg0_ram_slave_ram
+  );
+  if (base == MAP_FAILED) {
+    printf("ERROR: mmap shared RAM\n");
+    close(fd);
+    return -1;
   }
-  pru_mem->p = (param_mem_t*) ptr;
+  //printf("Adress: %p\n", base);
+  //volatile uint32_t *word = (volatile uint32_t *)base;
+  //uint32_t val = word[0];          /* ← if firewall closed this SIGBUSes */
+  //printf("first word = 0x%08x\n", val);
 
-  // Memory Map for lookup table (pru1 DRAM)
-  ptr = mmap(0, sizeof(lut_mem_t),
-             PROT_READ | PROT_WRITE, MAP_SHARED, fd, PRU1_DRAM);
-  if (ptr == MAP_FAILED) {
-    printf ("ERROR: could not map memory.\n\n");
-    return 1;
-  }
-  pru_mem->l = (lut_mem_t *) ptr;
+  pru_mem->s = (shared_mem_t*) ((uint8_t*)base + OFFSET_SHARED);
+  pru_mem->p = (param_mem_t*)  ((uint8_t*)base + OFFSET_PARAM);
+  pru_mem->l = (lut_mem_t*)    ((uint8_t*)base + OFFSET_LUT);
 
-  // Memory Map for state (shared DRAM)
-  ptr = mmap(0, sizeof(shared_mem_t),
-             PROT_READ | PROT_WRITE, MAP_SHARED, fd, PRU_SHARED_DRAM);
-  if (ptr == MAP_FAILED) {
-    printf ("ERROR: could not map memory.\n\n");
-    return 1;
-  }
-  pru_mem->s = (shared_mem_t *) ptr;
+  //// Shared memory
+  //void* ptr = mmap(
+  //  0, PAGE_ALIGN(sizeof(shared_mem_t)),
+  //  PROT_READ | PROT_WRITE, MAP_SHARED, fd, PRU_ADDR(OFFSET_SHARED)
+  //);
+  //if (ptr == MAP_FAILED) {
+  //  printf ("ERROR: could not map memory SHARED.\n\n");
+  //  return 1;
+  //}
+  //pru_mem->s = (shared_mem_t *) ptr;
+
+  //printf("shared mem mapped\n");
+
+  //// Memory Map for PARAM
+  //ptr = mmap(
+  //  0, PAGE_ALIGN(sizeof(param_mem_t)),
+  //  PROT_READ | PROT_WRITE, MAP_SHARED, fd, PRU_ADDR(OFFSET_PARAM)
+  //);
+  //if (ptr == MAP_FAILED) {
+  //  printf ("ERROR: could not map memory PARAM.\n\n");
+  //  return 1;
+  //}
+  //pru_mem->p = (param_mem_t*) ptr;
+
+  //printf("param mapped\n");
+
+  //// Memory Map for LUT
+  //ptr = mmap(
+  //  0, PAGE_ALIGN(sizeof(lut_mem_t)),
+  //  PROT_READ | PROT_WRITE, MAP_SHARED, fd, PRU_ADDR(OFFSET_LUT)
+  //);
+  //if (ptr == MAP_FAILED) {
+  //  printf ("ERROR: could not map memory LUT.\n\n");
+  //  return 1;
+  //}
+  //pru_mem->l = (lut_mem_t *) ptr;
+
+  //printf("lut mapped\n");
+
   close(fd);
 
+  printf("pru_mem->s = %p\n", pru_mem->s);
+  printf("pru_mem->p = %p\n", pru_mem->p);
+  printf("pru_mem->l = %p\n", pru_mem->l);
+
+  printf("sizeof(shared_mem_t) = %lu\n", sizeof(shared_mem_t));
+  printf("sizeof(param_mem_t) = %lu\n", sizeof(param_mem_t));
+  printf("sizeof(lut)= %i\n", sizeof(lut_mem_t));
+  printf("sizeof(state_t) = %lu\n", sizeof(state_t));
+  printf("sizeof(cpudata_t) = %lu\n", sizeof(cpudata_t));
+
   // Zero State
-  for (int i=0; i<STATE_BUFF_LEN; i++)
+  for (int i=0; i<STATE_BUFF_LEN; i++) {
+    printf("%i\n", i);
+    printf("%i\n", pru_mem->s->state[i]);
+    printf("%p\n", &(pru_mem->s->state[i]));
     memset(&(pru_mem->s->state[i]), 0, sizeof(state_t));
+  }
+
+  printf("zeroed state\n");
+
   for (int i=0; i<10; i++){
     pru_mem->p->debug_buff[i] = 0;
   }
+
+  printf("zeroed debug buffer\n");
 
   PruCtlReset(&pru_mem->s->pru_ctl);
 
@@ -83,8 +148,11 @@ int PruWriteFirmware(char* suffix) {
 
   // PRU0
   memset(buf, 0, sizeof(buf));
-  snprintf(buf, sizeof(buf), "am335x-pru0-%s-fw", suffix);
-  int fd = open(PRU0_FW, O_WRONLY);
+  //snprintf(buf, sizeof(buf), "am335x-pru0-%s-fw", suffix);
+  snprintf(buf, sizeof(buf), "am64x-pru0-%s-fw", suffix);
+  char fw_path0[256] = {0};
+  snprintf(fw_path0, sizeof(fw_path0), "%s/firmware", pru0_path);
+  int fd = open(fw_path0, O_WRONLY);
   if (fd == -1) {
     printf("pru0 - failed to open firmware location");
     return -1;
@@ -98,8 +166,11 @@ int PruWriteFirmware(char* suffix) {
 
   // PRU1
   memset(buf, 0, sizeof(buf));
-  snprintf(buf, sizeof(buf), "am335x-pru1-%s-fw", suffix);
-  fd = open(PRU1_FW, O_WRONLY);
+  //snprintf(buf, sizeof(buf), "am335x-pru1-%s-fw", suffix);
+  snprintf(buf, sizeof(buf), "am64x-pru1-%s-fw", suffix);
+  char fw_path1[256] = {0};
+  snprintf(fw_path1, sizeof(fw_path1), "%s/firmware", pru1_path);
+  fd = open(fw_path1, O_WRONLY);
   if (fd == -1) {
     printf("pru1 - failed to open firmware location");
     return -1;
@@ -122,7 +193,17 @@ int PruWriteFirmware(char* suffix) {
 // ---------------------------------------------------------------------------
 int PruInit(char* suffix){
   int rtn;
-  char buf[64];
+  char buf[64] = {0};
+
+  if (PruFindPath(pru0_path, sizeof(pru0_path), pru0_0) == -1) {
+    printf("cannot find pru target\n");
+    return -1;
+  }
+
+  if (PruFindPath(pru1_path, sizeof(pru1_path), pru0_1) == -1) {
+    printf("cannot find pru target\n");
+    return -1;
+  }
 
   if (PruRestart() == -1) {
     printf("restart pru failed.\n");
@@ -135,7 +216,9 @@ int PruInit(char* suffix){
   }
 
   // PRU0
-  int fd = open(PRU0_STATE, O_RDWR);
+  char state_path0[256] = {0};
+  snprintf(state_path0, sizeof(state_path0), "%s/state", pru0_path);
+  int fd = open(state_path0, O_RDWR);
   if (fd == -1) {
     printf("pru0 - failed to open remoteproc driver");
     return -1;
@@ -150,7 +233,10 @@ int PruInit(char* suffix){
   }
 
   // PRU1
-  fd = open(PRU1_STATE, O_RDWR);
+  char state_path1[256] = {0};
+  snprintf(state_path1, sizeof(state_path1), "%s/state", pru1_path);
+  printf("%s\n",state_path1);
+  fd = open(state_path1, O_RDWR);
   if (fd == -1) {
     printf("pru1 - failed to open remoteproc driver");
     return -1;
@@ -178,7 +264,9 @@ int PruRestart(void) {
   char buf[64];
 
   // PRU0
-  int fd = open(PRU0_STATE, O_RDWR);
+  char state_path0[256] = {0};
+  snprintf(state_path0, sizeof(state_path0), "%s/state", pru0_path);
+  int fd = open(state_path0, O_RDWR);
   if (fd == -1) {
     printf("pru0 - failed to open remoteproc driver");
     return -1;
@@ -203,7 +291,9 @@ int PruRestart(void) {
   }
 
   // PRU1
-  fd = open(PRU1_STATE, O_RDWR);
+  char state_path1[256] = {0};
+  snprintf(state_path1, sizeof(state_path1), "%s/state", pru1_path);
+  fd = open(state_path1, O_RDWR);
   if (fd == -1) {
     printf("pru1 - failed to open remoteproc driver");
     return -1;
@@ -343,4 +433,45 @@ int PruLoadLut(char* file, lut_mem_t* l)
   }
   printf("File not found\n");
   return -1;
+}
+
+int PruFindPath(char* path, size_t len, const char* target) {
+  struct dirent* entry;
+  DIR *dp = opendir("/sys/class/remoteproc");
+  if (dp == NULL) {
+    perror("opendir failed");
+    return -1;
+  }
+  while ((entry = readdir(dp))) {
+    if (strncmp(entry->d_name, "remoteproc", 10) == 0) {
+        char name_path[256] = {0};
+        snprintf(
+          name_path, sizeof(name_path),
+          "/sys/class/remoteproc/%s/name", entry->d_name
+        );
+
+        FILE *fp = fopen(name_path, "r");
+        if (!fp) continue;
+
+        char name[64] = {0};
+        if (fgets(name, sizeof(name), fp)) {
+          if (strstr(name, target)) {
+            snprintf(
+              path, len,
+              "/sys/class/remoteproc/%s", entry->d_name
+            );
+            printf("\nPru core target match: %s", name);
+            printf("path: %s.\n\n", path);
+          }
+        }
+        fclose(fp);
+    }
+  }
+  closedir(dp);
+
+  if (path[0] == '\0') {
+      fprintf(stderr, "Failed to find remoteproc paths\n");
+      return -1;
+  }
+  return 0;
 }

@@ -82,10 +82,18 @@ int main(int argc, char **argv) {
     }
   }
 
-  if (PruMemMap(&pru_mem) != 0) {
-    printf("pru_mem_init() failed.");
+  if(PruInit(FWSUFFIX) != 0) {
+    printf("PruInit() failed.");
     return -1;
   }
+  printf("Pru initialized.\n");
+
+  if (PruMemMap(&pru_mem) != 0) {
+    printf("PruMemMap() failed.");
+    return -1;
+  }
+  printf("Pru memory mapped.\n");
+
   if (configFlag) {
     if (PruLoadParams(configfile, pru_mem.p) != 0) {
       printf("\nParameter file not found!\n");
@@ -105,10 +113,9 @@ int main(int argc, char **argv) {
       printf("\nLookup table file not found!\n");
     }
   }
-  if(PruInit(FWSUFFIX) != 0)
-    return -1;
 
   UiWelcome();
+
   // Set flags in the UI flags structure
   uiflags.nodma = nodmaFlag;
   uiflags.show_stats = statsFlag;

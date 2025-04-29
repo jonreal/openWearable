@@ -38,16 +38,20 @@ void debugPinHigh(void);
 void debugPinLow(void);
 
 // Constant Table
-volatile far pruIntc CT_INTC
+volatile far intc CT_INTC
   __attribute__((cregister("PRU_INTC", far), peripheral));
 
-volatile pruCfg CT_CFG
+volatile cfg CT_CFG
   __attribute__((cregister("PRU_CFG", near), peripheral));
 
-// Pointers to start of shared memory defined in .cmd
-extern far char __PRU_PARAM;
-extern far char __PRU_LUTAB;
-extern far char __PRU_SHAREDMEM;
+
+// Pointers to start of shared memory sections defined in .cmd
+volatile unsigned int* shared_mem_start
+  __attribute__((cregister("PRU_SHAREDMEM", far)));
+volatile unsigned int* param_mem_start
+  __attribute__((cregister("PRU_PARAM", far)));
+volatile unsigned int* lut_mem_start
+  __attribute__((cregister("PRU_LUTAB", far)));
 
 // Main ----------------------------------------------------------------------
 int main(void) {
@@ -63,8 +67,12 @@ int main(void) {
   // Control Loop
   while (mem.s->pru_ctl.bit.shdw_enable) {
 
+    // am335x
     // Poll of IEP timer interrupt
-    while ((CT_INTC.SECR0 & (1 << 7)) == 0);
+    //while ((CT_INTC.SECR0 & (1 << 7)) == 0);
+
+    //am64x
+    while ((CT_INTC.RAW_STATUS_REG0 & (1 << 7)) == 0);
 
     // Pre bookkeeping
     debugPinHigh();
@@ -96,7 +104,7 @@ int main(void) {
     // Post bookkeeping
     mem.s->pru_ctl.bit.pru1_done = 1;
     updateCounters(&counter);
-    while (CT_INTC.SECR0 & (1 << 7));
+    while(CT_INTC.RAW_STATUS_REG0 & (1 << 7));
     debugPinLow();
   }
   debugPinLow();
@@ -108,10 +116,10 @@ int main(void) {
 // ----------------------------------------------------------------------------
 void initialize(pru_mem_t* mem) {
   // Clear SYSCFG[STANDBY_INIT] to enable OCP master port
-  CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
+  //CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
 
   // Pin Mux
-  CT_CFG.GPCFG0 = 0;
+  // CT_CFG.GPCFG0 = 0;
 
   // Memory
   memInit(mem);
@@ -148,14 +156,15 @@ void debugPinLow(void) {
 }
 
 void memInit(pru_mem_t* mem) {
+
   // Memory map for shared memory
-  mem->s = (shared_mem_t*) &__PRU_SHAREDMEM;
+  mem->s = (shared_mem_t*) (shared_mem_start);
 
   // Memory map for parameters
-  mem->p = (param_mem_t*) &__PRU_PARAM;
+  mem->p = (param_mem_t*) (param_mem_start);
 
-  // Memory map for feedforward lookup table
-  mem->l = (lut_mem_t*) &__PRU_LUTAB;
+  // Memory map for LUT
+  mem->l = (lut_mem_t*) (lut_mem_start);
 
   // Point global debug buffer
   debug_buff = &(mem->p->debug_buff[0]);
