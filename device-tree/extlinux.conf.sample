@@ -1,0 +1,25 @@
+menu title BeagleBone AI-64 eMMC (extlinux.conf) (swap enabled)
+
+timeout 50
+
+default eMMC (default)
+
+label copy eMMC to microSD
+    kernel /Image
+    append root=/dev/mmcblk0p3 ro rootfstype=ext4 rootwait net.ifnames=0 init=/usr/sbin/init-beagle-flasher
+    fdtdir /
+    initrd /initrd.img
+
+label eMMC (debug)
+    kernel /Image
+    append console=ttyS2,115200n8 earlycon=ns16550a,mmio32,0x02800000 root=/dev/mmcblk0p3 ro rootfstype=ext4 rootwait net.ifnames=0
+    fdtdir /
+    #initrd /initrd.img
+
+label eMMC (default)
+    kernel /Image
+    append root=/dev/mmcblk0p3 ro rootfstype=ext4 resume=/dev/mmcblk0p2 rootwait net.ifnames=0 quiet
+    fdtdir /
+    fdt /ti/k3-j721e-boneai64-openWearable.dtb
+    #fdtoverlays /overlays/<file>.dtbo
+    #initrd /initrd.img

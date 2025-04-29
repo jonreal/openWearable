@@ -10,7 +10,7 @@ RESET=\033[0m
 APP_NAME = template
 
 # Architecture
-ARCH = am335x
+ARCH = am64x
 
 # openWearable path
 OW_DIR = /root/openWearable
@@ -66,9 +66,15 @@ APP_PRU_OBJ = $(patsubst %.c,$(BUILD_DIR)/%.po,$(APP_PRU_SRC))
 
 # Compiler settings
 CC = gcc
+ifeq ($(ARCH),am335x)
 CFLAGS = \
 	-std=gnu99 -Wall -g -O4 -mtune=cortex-a8 -march=armv7-a+fp \
 	-D$(shell echo $(ARCH) | tr a-z A-Z)
+else ifeq($(ARCH),am64x)
+CFLAGS = \
+	-std=gnu99 -Wall -g -O4 -mtune=cortex-a53 -march=armv8-a \
+	-D$(shell echo $(ARCH) | tr a-z A-Z)
+endif
 
 PRU_CC = clpru
 PRU_CFLAGS = \
@@ -117,12 +123,12 @@ $(TARGET_DIR)/$(APP_NAME): $(CPU_OBJ) $(APP_CPU_OBJ)
 # Build PRU0 firmware
 $(BUILD_DIR)/$(PRU0_TARGET).elf: $(BUILD_DIR)/$(PRU0_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU)
 	@echo "$(C1) \n Linking pru0... $(RESET)"
-	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=1024 $(BUILD_DIR)/$(PRU0_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU) $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU0_TARGET).map -o $@ ./PRU0.cmd
+	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=1024 $(BUILD_DIR)/$(PRU0_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU) $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU0_TARGET).map -o $@ ./PRU0_$(ARCH).cmd
 
 # Build PRU1 firmware
 $(BUILD_DIR)/$(PRU1_TARGET).elf: $(BUILD_DIR)/$(PRU1_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU)
 	@echo "$(C1) \n Linking pru1... $(RESET)"
-	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=1024 $(BUILD_DIR)/$(PRU1_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU) $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $@ ./PRU1.cmd
+	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=1024 $(BUILD_DIR)/$(PRU1_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU) $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $@ ./PRU1_$(ARCH).cmd
 
 # Build CPU objects
 $(BUILD_DIR)/%.o: $(CSRC_DIR)/%.c
