@@ -157,16 +157,19 @@ void debugPinLow(void) {
 
 void memInit(pru_mem_t* mem) {
 
-  // Memory map for shared memory
-  mem->s = (shared_mem_t*) (shared_mem_start);
+  volatile uint32_t *raw_ptr = (volatile uint32_t *)shared_mem_start;
+  *raw_ptr = 0xDEADBEEF;
 
-  // Memory map for parameters
-  mem->p = (param_mem_t*) (param_mem_start);
+  //// Memory map for shared memory
+  //mem->s = (shared_mem_t*) (shared_mem_start);
 
-  // Memory map for LUT
-  mem->l = (lut_mem_t*) (lut_mem_start);
+  //// Memory map for parameters
+  //mem->p = (param_mem_t*) (param_mem_start);
 
-  // Point global debug buffer
-  debug_buff = &(mem->p->debug_buff[0]);
+  //// Memory map for LUT
+  //mem->l = (lut_mem_t*) (lut_mem_start);
+
+  //// Point global debug buffer
+  //debug_buff = &(mem->p->debug_buff[0]);
 }
 

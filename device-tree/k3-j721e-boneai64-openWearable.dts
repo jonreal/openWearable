@@ -52,22 +52,15 @@
 			no-map;
 		};
 
-    //pru_shared_mem: pru-shared-mem@301000 {
+    //icssg0_ram_slv_ram: icssg0_ram_slv_ram@80010000 {
     //    compatible = "shared-dma-pool";
-    //    reg = <0x00 0x30010000 0x00 0x00010000>; // 64 KB
+    //    reg = <0x00 0x80010000 0x00 0x10000>;  /* 64 KiB, just after first 64KB */
     //    no-map;
     //};
 
     //icssg0_ram_slv_ram: icssg0_ram_slv_ram@30010000 {
     //        compatible = "shared-dma-pool";
     //        reg = <0x00 0x30010000 0x00 0x10000>;  /* 64 KiB */
-    //        no-map;
-    //};
-
-    //icssg0_shrdram: icssg0_shrdram@30010000 {
-    //        compatible = "shared-dma-pool";
-    //        reg = <0x0 0x30010000 0x0 0x10000>; /* 64 KiB */
-    //        no-map;
     //};
 
 
@@ -1017,10 +1010,39 @@
 			<&c71_0_memory_region>;
 };
 
+//&icssg0 {
+//  status = "okay";
+//  pru0_0 {
+//    reg = <0x34000 0x3000>,
+//          <0x22000 0x100>,
+//          <0x22400 0x100>,
+//          <0x10000 0x10000>;
+//    reg-names = "iram", "control", "debug", "sharedram";
+//  };
+//};
 
-&icssg0 {
-        status = "okay";
-};
-&pru0_0 { status = "okay"; ti,auto-boot; };
-&pru0_1 { status = "okay"; ti,auto-boot; };
+//&icssg0 {
+//  status = "okay";
+//  pru0_0 {
+//    reg = <0x34000 0x3000>,
+//          <0x22000 0x100>,
+//          <0x22400 0x100>;
+//    reg-names = "iram", "ctrl", "debug";
+//  };
+//};
+
+//&icssg0 {
+//    status = "okay";
+//
+//    memory-region = <&icssg0_dram0>, <&icssg0_dram1>, <&icssg0_ram_slv_ram>;
+//
+//    icssg0_dram0: dram0@0 {
+//        reg = <0x0 0x2000>;
+//    };
+//    icssg0_dram1: dram1@2000 {
+//        reg = <0x2000 0x2000>;
+//    };
+//};
+
+
 

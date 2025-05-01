@@ -85,6 +85,8 @@ ui_flags_t UiInitFlags(void) {
 }
 
 int UiInit(pru_mem_t* pru_mem, ui_flags_t flags) {
+
+  return 0;
   sigexit = 0;
   signal(SIGINT, sigintHandler);
 
