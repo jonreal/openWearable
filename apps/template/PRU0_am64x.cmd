@@ -75,9 +75,13 @@ SECTIONS {
   .farbss   >  PRU_RAM, PAGE 1
   .fardata  >  PRU_RAM, PAGE 1
 
+
 	/* Ensure resource_table section is aligned on 8-byte address for
 	   ARMv8 (64-bit) kernel */
 	.resource_table : ALIGN (8) >  PRU_RAM, PAGE 1
+
+
+  .creg.PRU_SHAREDMEM (NOLOAD) : {} > PRU_SHAREDMEM, PAGE 2
 
   .pru_irq_map (COPY) :
   {

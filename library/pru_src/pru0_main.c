@@ -63,13 +63,6 @@ void clearIepInterrupt(void);
     __attribute__((cregister("PRU_IEP0", near), peripheral));
 #endif
 
-// Pointers to start of shared memory sections defined in .cmd
-volatile unsigned int* shared_mem_start
-  __attribute__((cregister("PRU_SHAREDMEM", far)));
-volatile unsigned int* param_mem_start
-  __attribute__((cregister("PRU_PARAM", far)));
-volatile unsigned int* lut_mem_start
-  __attribute__((cregister("PRU_LUTAB", far)));
 
 // Main ----------------------------------------------------------------------
 int main(void) {
@@ -209,17 +202,39 @@ void cleanup(void) {
 }
 void memInit(pru_mem_t* mem) {
 
-  // Memory map for shared memory
-  mem->s = (shared_mem_t*) (shared_mem_start);
+  //*shared = 0xAAAAAAAFA;
+  //volatile uint32_t* shared = (volatile uint32_t*) (shared_mem_start);
+  //uintptr_t base = 0x00010000;
+  //uintptr_t param_ram_offset = 0xE000;
+  //uintptr_t lut_ram_offset = 0xF000;
 
-  // Memory map for parameters
-  mem->p = (param_mem_t*) (param_mem_start);
+  mem->s = (shared_mem_t*) sharedram_base;
+  mem->s->state[0].time = 0xDEADDEAD;
 
-  // Memory map for LUT
-  mem->l = (lut_mem_t*) (lut_mem_start);
+  volatile uint32_t*
+      param_mem = (volatile uint32_t*) (sharedram_base + param_ram_offset);
+  param_mem[0] = 0xAFAF;
 
-  // Point global debug buffer
-  debug_buff = &(mem->p->debug_buff[0]);
+  //mem->l = (lut_mem_t*) (base + lut_ram_offset);
+
+  //debug_buff = &(mem->p->debug_buff[0]);
+  //debug_buff[0] = 0xF0F;
+
+  //// Memory map for parameters
+  //mem->p = (param_mem_t*) (param_mem_start);
+
+  //// Memory map for LUT
+  //mem->l = (lut_mem_t*) (lut_mem_start);
+
+  //// Point global debug buffer
+  //debug_buff = &(mem->p->debug_buff[0]);
+
+  //// TEST
+  //mem->s->state[0].time = 0xDEADBEAF;
+  //debug_buff[9] = 0xFAEBDAED;
+  //debug_buff[0] = 0xFAEBDAED;
+  //debug_buff[5] = 0xFAEBDAED;
+
 }
 
 void updateCounters(pru_count_t* c) {

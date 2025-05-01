@@ -27,4 +27,12 @@ typedef struct {
 } param_mem_t;
 
 
+// -- Shared Memory layout -- must match .cmd files
+static const uintptr_t global_sharedram_base = 0x0b010000;
+static const uintptr_t sharedram_base = 0x00010000;
+
+static const uintptr_t state_ram_offset = 0x0;
+static const uintptr_t param_ram_offset = 0xE000;
+static const uintptr_t lut_ram_offset = 0xF000;
+
 #endif

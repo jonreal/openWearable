@@ -70,7 +70,7 @@ ifeq ($(ARCH),am335x)
 CFLAGS = \
 	-std=gnu99 -Wall -g -O4 -mtune=cortex-a8 -march=armv7-a+fp \
 	-D$(shell echo $(ARCH) | tr a-z A-Z)
-else ifeq($(ARCH),am64x)
+else
 CFLAGS = \
 	-std=gnu99 -Wall -g -O4 -mtune=cortex-a53 -march=armv8-a \
 	-D$(shell echo $(ARCH) | tr a-z A-Z)

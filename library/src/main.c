@@ -116,6 +116,8 @@ int main(int argc, char **argv) {
 
   UiWelcome();
 
+  return
+
   // Set flags in the UI flags structure
   uiflags.nodma = nodmaFlag;
   uiflags.show_stats = statsFlag;

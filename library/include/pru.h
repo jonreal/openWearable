@@ -8,9 +8,6 @@
 
 #define PRU_SHARED_RAM_BASE 0x30010000
 #define PRU_SHARED_RAM_SIZE 0x00010000
-#define OFFSET_SHARED         (0x00000000)
-#define OFFSET_PARAM          (0x0000E000)
-#define OFFSET_LUT            (0x0000F000)
 
 
 int PruMemMap(pru_mem_t* pru_mem);
