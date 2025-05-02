@@ -1,1 +1,1 @@
-## ADD Details
+This board controls pneumatic valves using a TCA9548A I2C multiplexer and two ULN2803A driver ICs. It supports up to 8 I2C channels and 16 outputs. Logic runs at 3.3V, while VCC supplies power to the valves (e.g., 7V). Use any I2C-capable microcontroller to select channels and drive outputs through the ULN2803A.
