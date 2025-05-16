@@ -59,9 +59,6 @@ int PruMemMap(pru_mem_t* pru_mem) {
   //  memset(&(pru_mem->s->state[i]), 0, sizeof(state_t));
   //}
 
-  for (uint32_t i=0; i<10; i++){
-    pru_mem->p->debug_buff[i] = 0;
-  }
 
   PruCtlReset(&pru_mem->s->pru_ctl);
 
@@ -71,14 +68,12 @@ int PruMemMap(pru_mem_t* pru_mem) {
   return 0;
 }
 
-
 int PruWriteFirmware(char* suffix) {
   int rtn;
   char buf[64];
 
   // PRU0
   memset(buf, 0, sizeof(buf));
-  //snprintf(buf, sizeof(buf), "am335x-pru0-%s-fw", suffix);
   snprintf(buf, sizeof(buf), "am64x-pru0-%s-fw", suffix);
   char rp_pru0_0_fw[256] = {0};
   snprintf(rp_pru0_0_fw, sizeof(rp_pru0_0_fw), "%s/firmware", rp_pru0_0);
@@ -96,7 +91,6 @@ int PruWriteFirmware(char* suffix) {
 
   // PRU1
   memset(buf, 0, sizeof(buf));
-  //snprintf(buf, sizeof(buf), "am335x-pru1-%s-fw", suffix);
   snprintf(buf, sizeof(buf), "am64x-pru1-%s-fw", suffix);
   char rp_pru0_1_fw[256] = {0};
   snprintf(rp_pru0_1_fw, sizeof(rp_pru0_1_fw), "%s/firmware", rp_pru0_1);
@@ -155,7 +149,6 @@ int PruInit(char* suffix){
   // PRU1
   char rp_pru0_1_state[256] = {0};
   snprintf(rp_pru0_1_state, sizeof(rp_pru0_1_state), "%s/state", rp_pru0_1);
-  printf("%s\n",rp_pru0_1_state);
   fd = open(rp_pru0_1_state, O_RDWR);
   if (fd == -1) {
     printf("pru1 - failed to open remoteproc driver");

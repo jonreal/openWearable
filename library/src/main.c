@@ -82,17 +82,22 @@ int main(int argc, char **argv) {
     }
   }
 
+
   if(PruInit(FWSUFFIX) != 0) {
     printf("PruInit() failed.");
     return -1;
   }
-  printf("Pru initialized.\n");
+  printf("PRUs initialized.\n");
+
 
   if (PruMemMap(&pru_mem) != 0) {
     printf("PruMemMap() failed.");
     return -1;
   }
   printf("Pru memory mapped.\n");
+
+
+  PruPrintDebugBuffer(pru_mem.p->debug_buff);
 
   if (configFlag) {
     if (PruLoadParams(configfile, pru_mem.p) != 0) {
@@ -114,9 +119,9 @@ int main(int argc, char **argv) {
     }
   }
 
+  PruPrintDebugBuffer(pru_mem.p->debug_buff);
   UiWelcome();
 
-  return
 
   // Set flags in the UI flags structure
   uiflags.nodma = nodmaFlag;
@@ -126,10 +131,16 @@ int main(int argc, char **argv) {
     return -1;
   }
 
+  printf("Trying to enable Pru\n");
   if (uiflags.debug) {
+
+    printf("Here\n");
     PruEnable(1, &pru_mem.s->pru_ctl);
+    printf("Pru Enabled\n");
     signal(SIGINT, sigintHandler);
+    printf("SigINT\n");
     circbuff_t* cb = LogNewCircBuff();
+    printf("Buff\n");
     while (!doneFlag) {
       LogDebugWriteState(pru_mem.s, cb, buff);
     }

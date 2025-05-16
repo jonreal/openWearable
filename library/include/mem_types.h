@@ -31,13 +31,13 @@
 
 // Flow control
 typedef union {
-  volatile uint16_t reg;
+  volatile uint32_t reg;
   volatile struct {
     unsigned enable : 1;            // bit 0 (set by ARM and shadowed)
     unsigned pru0_done : 1;         // bit 1 (set by pru0, read/reset by pru1)
     unsigned pru1_done : 1;         // bit 2 (set by pru1, read/reset by pru0)
     unsigned shdw_enable : 1;       // bit 3 (shawdow reg. for enable)
-    unsigned utility : 12;          // 12 bits for user defined things
+    unsigned utility : 28;          // 28 bits for user defined things
  } bit;
 } pru_ctl_t;
 

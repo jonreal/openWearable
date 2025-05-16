@@ -64,6 +64,9 @@ APP_CPU_OBJ = $(patsubst %.c,$(BUILD_DIR)/%.o,$(APP_CPU_SRC))
 APP_PRU_SRC = pruloop.c
 APP_PRU_OBJ = $(patsubst %.c,$(BUILD_DIR)/%.po,$(APP_PRU_SRC))
 
+# Main object (for main.c)
+MAIN_OBJ = $(BUILD_DIR)/$(TARGET).o
+
 # Compiler settings
 CC = gcc
 ifeq ($(ARCH),am335x)
@@ -114,11 +117,17 @@ install: $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
 	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU0_TARGET).elf /lib/firmware/$(ARCH)-pru0-$(APP_NAME)-fw
 	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU1_TARGET).elf /lib/firmware/$(ARCH)-pru1-$(APP_NAME)-fw
 
-# Build main app executable
-$(TARGET_DIR)/$(APP_NAME): $(CPU_OBJ) $(APP_CPU_OBJ)
+# Link arm main app executable
+$(TARGET_DIR)/$(APP_NAME): $(CPU_OBJ) $(APP_CPU_OBJ) $(MAIN_OBJ)
 	@echo "$(C1) \n Linking cpu... $(RESET)"
 	@mkdir -p $(TARGET_DIR)
-	$(CC) -Wl,-rpath,$(BUILD_DIR) -L$(BUILD_DIR) $(CFLAGS) $^ $(CSRC_DIR)/$(TARGET).c -I$(CINC_DIR) -o $@ $(CLIB) -lm -DFWSUFFIX=\"$(APP_NAME)\"
+	$(CC) -Wl,-rpath,$(BUILD_DIR) -L$(BUILD_DIR) $(CFLAGS) $^ -o $@ $(CLIB) -lm -DFWSUFFIX=\"$(APP_NAME)\"
+
+# Build rule for main.c
+$(BUILD_DIR)/$(TARGET).o: $(CSRC_DIR)/$(TARGET).c
+	@echo "$(C1) \n Building main... $(RESET)"
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -I$(CINC_DIR) -c -o $@ $< $(CLIB) -DFWSUFFIX=\"$(APP_NAME)\"
 
 # Build PRU0 firmware
 $(BUILD_DIR)/$(PRU0_TARGET).elf: $(BUILD_DIR)/$(PRU0_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU)
