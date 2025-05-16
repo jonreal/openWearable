@@ -45,7 +45,7 @@ struct pru_irq_rsc my_irq_rsc  = {
 	0,			/* type = 0 */
 	1,			/* number of system events being mapped */
 	{
-		{17, 1, 1},	/* {sysevt, channel, host interrupt} */
+		{7, 2, 1},	/* {sysevt, channel, host interrupt} */
 	},
 };
 

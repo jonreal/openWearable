@@ -37,21 +37,23 @@ void updateCounters(pru_count_t* c);
 void debugPinHigh(void);
 void debugPinLow(void);
 
-// Constant Table
-volatile far intc CT_INTC
-  __attribute__((cregister("PRU_INTC", far), peripheral));
-
-volatile cfg CT_CFG
-  __attribute__((cregister("PRU_CFG", near), peripheral));
-
-
-// Pointers to start of shared memory sections defined in .cmd
-volatile unsigned int* shared_mem_start
-  __attribute__((cregister("PRU_SHAREDMEM", far)));
-volatile unsigned int* param_mem_start
-  __attribute__((cregister("PRU_PARAM", far)));
-volatile unsigned int* lut_mem_start
-  __attribute__((cregister("PRU_LUTAB", far)));
+#if AM335x
+  volatile far pruIntc CT_INTC
+    __attribute__((cregister("PRU_INTC", far), peripheral));
+  volatile pruCfg CT_CFG
+    __attribute__((cregister("PRU_CFG", near), peripheral));
+  volatile far pruIep CT_IEP
+    __attribute__((cregister("PRU_IEP", near), peripheral));
+  volatile __far ctrl CT_PRU0_CTRL
+    __attribute__((cregister("PRU0_CTRL", near), peripheral));
+#else
+  volatile far intc CT_INTC
+    __attribute__((cregister("PRU_INTC", far), peripheral));
+  volatile cfg CT_CFG
+    __attribute__((cregister("PRU_CFG", near), peripheral));
+  volatile far iep CT_IEP0
+    __attribute__((cregister("PRU_IEP0", near), peripheral));
+#endif
 
 // Main ----------------------------------------------------------------------
 int main(void) {
@@ -60,6 +62,7 @@ int main(void) {
 
   initialize(&mem);
 
+
   // wait till enabled
   while (mem.s->pru_ctl.bit.shdw_enable == 0);
   debugPinLow();
@@ -67,12 +70,8 @@ int main(void) {
   // Control Loop
   while (mem.s->pru_ctl.bit.shdw_enable) {
 
-    // am335x
-    // Poll of IEP timer interrupt
-    //while ((CT_INTC.SECR0 & (1 << 7)) == 0);
-
-    //am64x
-    while ((CT_INTC.RAW_STATUS_REG0 & (1 << 7)) == 0);
+    // Poll for IEP timer
+    while ((CT_IEP0.cmp_status_reg & 0x1) == 0);
 
     // Pre bookkeeping
     debugPinHigh();
@@ -88,9 +87,13 @@ int main(void) {
 
     // Wait for pru0 to be done
     debugPinLow();
+
+
     while (!(mem.s->pru_ctl.bit.pru0_done));
+
     debugPinHigh();
     mem.s->pru_ctl.bit.pru0_done = 0;
+
 
     // Control
     Pru1UpdateControl(
@@ -101,10 +104,12 @@ int main(void) {
       &mem.s->pru_ctl
     );
 
+
     // Post bookkeeping
     mem.s->pru_ctl.bit.pru1_done = 1;
-    updateCounters(&counter);
-    while(CT_INTC.RAW_STATUS_REG0 & (1 << 7));
+    //updateCounters(&counter);
+
+   // while(CT_INTC.RAW_STATUS_REG0 & (1 << 7));
     debugPinLow();
   }
   debugPinLow();
@@ -156,20 +161,9 @@ void debugPinLow(void) {
 }
 
 void memInit(pru_mem_t* mem) {
-
-  volatile uint32_t *raw_ptr = (volatile uint32_t *)shared_mem_start;
-  *raw_ptr = 0xDEADBEEF;
-
-  //// Memory map for shared memory
-  //mem->s = (shared_mem_t*) (shared_mem_start);
-
-  //// Memory map for parameters
-  //mem->p = (param_mem_t*) (param_mem_start);
-
-  //// Memory map for LUT
-  //mem->l = (lut_mem_t*) (lut_mem_start);
-
-  //// Point global debug buffer
-  //debug_buff = &(mem->p->debug_buff[0]);
+  mem->s = (shared_mem_t*) sharedram_base;
+  mem->p = (param_mem_t*) (sharedram_base + param_ram_offset);
+  mem->l = (lut_mem_t*) (sharedram_base + lut_ram_offset);
+  debug_buff = &(mem->p->debug_buff[0]);
 }
 

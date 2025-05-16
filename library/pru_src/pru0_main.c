@@ -73,21 +73,32 @@ int main(void) {
 
   initialize(&mem);
 
+  debug_buff[0] = CT_INTC.RAW_STATUS_REG1;
+  debug_buff[1] = CT_IEP0.cmp_status_reg;
+
   // wait till enabled
   while (mem.s->pru_ctl.bit.enable == 0);
   mem.s->pru_ctl.bit.shdw_enable = mem.s->pru_ctl.bit.enable;
   clearIepInterrupt();
   startTimer();
 
+
+  debug_buff[2] = CT_INTC.RAW_STATUS_REG1;
+  debug_buff[3] = CT_IEP0.cmp_status_reg;
+
+
+
+
   // Control Loop
   while (mem.s->pru_ctl.bit.shdw_enable) {
 
-    // Poll for IEP timer interrupt
-    // am335x
-    //while ((CT_INTC.SECR0 & (1 << 7)) == 0);
+    // Poll for IEP timer
+    while ((CT_IEP0.cmp_status_reg & 0x1) == 0);
 
-    //am64x
-    while ((CT_INTC.RAW_STATUS_REG0 & (1 << 7)) == 0);
+    debug_buff[4] = CT_INTC.RAW_STATUS_REG1;
+    debug_buff[5] = CT_IEP0.cmp_status_reg;
+
+    //while ((CT_INTC.RAW_STATUS_REG0 & (1 << 7)) == 0);
 
     // Pre bookkeeping
     clearTimerFlag();
@@ -137,13 +148,6 @@ int main(void) {
 
 // ----------------------------------------------------------------------------
 void initialize(pru_mem_t* mem) {
-  // Clear SYSCFG[STANDBY_INIT] to enable OCP master port
-  // am335x
-  //CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
-//  CT_INTC.STATUS_CLR_INDEX_REG_bit.STATUS_CLR_INDEX = 21;
-
-  // PRU CTRL: CTR_EN = 0x1 - enable cycle counter
-  //HWREG(PRU_CTRL_BASE) |= (1 << 3);
 
   // set PRU0 GP MUX to default (all muxed to PRU)
   CT_CFG.gpcfg0_reg_bit.pr1_pru0_gp_mux_sel = 0;
@@ -158,7 +162,7 @@ void initialize(pru_mem_t* mem) {
   CT_PRU0_CTRL.CONTROL_bit.PDSP_ENABLE = 1;
 
   // Optional: Enable cycle counter for performance monitoring
-  CT_PRU0_CTRL.CONTROL_bit.COUNTER_ENABLE = 1;
+  CT_PRU0_CTRL.CONTROL_bit.COUNTER_ENABLE = 0;
 
   memInit(mem);
 
@@ -172,26 +176,23 @@ void initialize(pru_mem_t* mem) {
   __R31 = 0x0;
 
   // drivers
-  AdcInit();
-  spiInit();
+  //AdcInit();
+  //spiInit();
 
   // user defined inits
   Pru0Init(mem);
+
 }
 
 void cleanup(void) {
   // Clear all interrupts
   clearIepInterrupt();
 
-  // am335x
-  //CT_INTC.SECR0 = 0xFFFFFFFF;
-  //CT_INTC.SECR1 = 0xFFFFFFFF;
-
   // am64x
   CT_INTC.STATUS_CLR_INDEX_REG_bit.STATUS_CLR_INDEX = 7;
 
   // drivers
-  AdcCleanup();
+//  AdcCleanup();
 
   // clear gpio
   __R30 = 0x0;
@@ -201,40 +202,18 @@ void cleanup(void) {
   Pru0Cleanup();
 }
 void memInit(pru_mem_t* mem) {
-
-  //*shared = 0xAAAAAAAFA;
-  //volatile uint32_t* shared = (volatile uint32_t*) (shared_mem_start);
-  //uintptr_t base = 0x00010000;
-  //uintptr_t param_ram_offset = 0xE000;
-  //uintptr_t lut_ram_offset = 0xF000;
-
   mem->s = (shared_mem_t*) sharedram_base;
-  mem->s->state[0].time = 0xDEADDEAD;
+  mem->p = (param_mem_t*) (sharedram_base + param_ram_offset);
+  mem->l = (lut_mem_t*) (sharedram_base + lut_ram_offset);
+  debug_buff = &(mem->p->debug_buff[0]);
 
-  volatile uint32_t*
-      param_mem = (volatile uint32_t*) (sharedram_base + param_ram_offset);
-  param_mem[0] = 0xAFAF;
+  // Clear clt bits
+  mem->s->pru_ctl.reg = 0;
 
-  //mem->l = (lut_mem_t*) (base + lut_ram_offset);
-
-  //debug_buff = &(mem->p->debug_buff[0]);
-  //debug_buff[0] = 0xF0F;
-
-  //// Memory map for parameters
-  //mem->p = (param_mem_t*) (param_mem_start);
-
-  //// Memory map for LUT
-  //mem->l = (lut_mem_t*) (lut_mem_start);
-
-  //// Point global debug buffer
-  //debug_buff = &(mem->p->debug_buff[0]);
-
-  //// TEST
-  //mem->s->state[0].time = 0xDEADBEAF;
-  //debug_buff[9] = 0xFAEBDAED;
-  //debug_buff[0] = 0xFAEBDAED;
-  //debug_buff[5] = 0xFAEBDAED;
-
+  // Zero debug buffer
+  for (uint32_t i = 0; i<10; i++){
+    debug_buff[i] = 0x0;
+  }
 }
 
 void updateCounters(pru_count_t* c) {
@@ -252,33 +231,6 @@ void debugPinLow(void) {
 }
 
 void iepTimerInit(uint32_t freq_counts) {
-  //am355x
-  // Enable ocp_clk
-  //CT_CFG.IEPCLK_bit.OCP_EN = 1;
-
-  //// Disable counter
-  //CT_IEP.TMR_GLB_CFG_bit.CNT_EN = 0;
-
-  //// Reset Count register
-  //CT_IEP.TMR_CNT = 0x0;
-
-  //// Clear overflow status register
-  //CT_IEP.TMR_GLB_STS_bit.CNT_OVF = 0x1;
-
-  //// Set compare value
-  //CT_IEP.TMR_CMP0 = (freq_counts-1);
-
-  //// Clear compare status
-  //CT_IEP.TMR_CMP_STS_bit.CMP_HIT = 0xFF;
-
-  //// Disable compensation
-  //CT_IEP.TMR_COMPEN_bit.COMPEN_CNT = 0x0;
-
-  //// Enable CMP0 and reset on event
-  //CT_IEP.TMR_CMP_CFG_bit.CMP0_RST_CNT_EN = 1;
-  //CT_IEP.TMR_CMP_CFG_bit.CMP_EN = 1;
-
-  //am64x
   // Disable counter
   CT_IEP0.global_cfg_reg_bit.cnt_enable = 0;
 
@@ -287,7 +239,7 @@ void iepTimerInit(uint32_t freq_counts) {
   CT_IEP0.count_reg1 = 0x0;
 
   // Clear overflow status reg
-  CT_IEP0.global_status_reg_bit.cnt_ovf = 1;
+  CT_IEP0.global_status_reg_bit.cnt_ovf = 0;
 
   // Set compare value
   CT_IEP0.cmp0_reg0 = freq_counts - 1;
@@ -299,7 +251,7 @@ void iepTimerInit(uint32_t freq_counts) {
   CT_IEP0.compen_reg_bit.compen_cnt = 0x0;
 
   // Enable cmp0 and reset on event
-  CT_IEP0.cmp_cfg_reg_bit.cmp0_rst_cnt_en = 0;
+  CT_IEP0.cmp_cfg_reg_bit.cmp0_rst_cnt_en = 1;
   CT_IEP0.cmp_cfg_reg_bit.cmp_en = 1;
 }
 
@@ -338,9 +290,11 @@ void iepInterruptInit(void) {
   __R31 = 0x00000000;
 
   // Map event 7 to channel 2
+  //pr0_iep_tim_cap_cmp_pend PRU_ICSSG0 IEP0
+
   CT_INTC.CH_MAP_REG1_bit.CH_MAP_7 = 1;
 
-  // Map Channel 2 to host 2
+  // Map Channel 1 to host 1
   CT_INTC.HINT_MAP_REG0_bit.HINT_MAP_1 = 1;
 
   // Enable event 7
@@ -355,22 +309,27 @@ void iepInterruptInit(void) {
 }
 
 void startTimer(void) {
-  // am335x
-  //CT_IEP.TMR_GLB_CFG = 0x11;
-  //am64x
-  CT_IEP0.global_cfg_reg = 0x11;
+  CT_IEP0.global_cfg_reg_bit.cnt_enable = 1;
+  CT_IEP0.global_cfg_reg_bit.default_inc = 1;
 }
 
 void clearTimerFlag(void) {
   // am335x
   //CT_IEP.TMR_CMP_STS_bit.CMP_HIT = 0xFF;
   // am64x
-  CT_IEP0.cmp_status_reg_bit.cmp_status = 0xFF;
+  //CT_IEP0.cmp_status_reg_bit.cmp_status = 0xFF;
+  CT_IEP0.cmp_status_reg = 0x1;
 }
 
 void clearIepInterrupt(void) {
     //CT_INTC.SECR0 = (1<<7);
     //__R31 = 0x00000000;
+
+    // Clear the IEP timer compare status first
+    CT_IEP0.cmp_status_reg = 0x1;
+
+    // Add a small delay (important!)
+    __delay_cycles(4);
     CT_INTC.STATUS_CLR_INDEX_REG_bit.STATUS_CLR_INDEX = 7;
     __R31 = 0x00000000;
 }
