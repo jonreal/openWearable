@@ -7,7 +7,7 @@ C2=\033[2;34m
 RESET=\033[0m
 
 # App name
-APP_NAME = template
+APP_NAME = test-sf4100
 
 # Architecture
 ARCH = am335x
