@@ -24,7 +24,7 @@ typedef struct {
   i2c_t* i2c;
   uint8_t address;
   uint32_t decimation;
-  int32_t counter;
+  uint32_t counter;
   int32_t bits;
   fix16_t value;
 } massflow_sensor_t;
