@@ -20,6 +20,7 @@
 
 const uint8_t read_cmd = 0xF1;
 const uint8_t soft_reset_cmd = 0xFE;
+const uint32_t nDelayCycles = 100;
 
 massflow_sensor_t* MassflowSensorInit(
   i2c_t* i2c, uint8_t address, uint8_t decimation) {
@@ -27,12 +28,11 @@ massflow_sensor_t* MassflowSensorInit(
   self->i2c = i2c;
   self->address = address;
   self->decimation = decimation;
-  self->counter = -1; // start count at -1 to signal first sample
+  self->counter = 0;
   self->value = 0;
   self->bits = 0;
   I2cTxByteNoReg(self->i2c, self->address, soft_reset_cmd);
-  __delay_cycles(1000);
-
+  __delay_cycles(nDelayCycles);
   return self;
 }
 
@@ -52,21 +52,18 @@ fix16_t MassflowSensorSample(massflow_sensor_t* self) {
   //self->bits = (buffer[0] << 8) | buffer[1];
   //self->value = fix16_smul(fix16_from_int(self->bits), bits2lpm);
 
-  // if first sample, issue read
-  if (self->counter == -1) {
-    self->counter = 0;
+  if (self->counter == 0) {
     I2cTxByteNoReg(self->i2c, self->address, read_cmd);
-    __delay_cycles(1000);
+    __delay_cycles(nDelayCycles);
   }
-  self->counter++;
-  if (self->counter >= self->decimation) {
-    // Read ready data
+  if (self->counter >= self->decimation/2) {
     I2cRxBurstNoReg(self->i2c, self->address, 2, buffer);
     self->bits = (buffer[0] << 8) | buffer[1];
     self->value = fix16_smul(fix16_from_int(self->bits), bits2lpm);
-    __delay_cycles(1000);
-    // Issue next read command
-    I2cTxByteNoReg(self->i2c, self->address, read_cmd);
+    __delay_cycles(nDelayCycles);
+  }
+  self->counter++;
+  if (self->counter >= self->decimation) {
     self->counter = 0;
   }
   return self->value;
