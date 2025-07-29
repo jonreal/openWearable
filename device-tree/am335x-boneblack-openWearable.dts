@@ -61,6 +61,15 @@
 			AM33XX_PADCONF(AM335X_PIN_GPMC_A2, PIN_OUTPUT_PULLDOWN, MUX_MODE6)	/* P9_14: gpmc_a2.ehrpwm1a */
     >;
   };
+
+  spi1_pins: spi1-pins {
+    pinctrl-single,pins = <
+      P9_28(PIN_OUTPUT_PULLUP | MUX_MODE3)  /* P9.28 - spi1_cs0,  MODE3 | OUTPUT_PULLUP */
+      P9_29(PIN_INPUT_PULLUP | MUX_MODE3)   /* P9.29 - spi1_d0, MODE3 | INPUT_PULLUP */
+      P9_30(PIN_OUTPUT_PULLUP | MUX_MODE3)  /* P9.30 - spi1_d1, MODE3 | OUTPUT_PULLUP */
+      P9_31(PIN_INPUT_PULLUP | MUX_MODE3)   /* P9.31 - spi1_sclk, MODE3 | INPUT_PULLUP */
+    >;
+  };
 };
 
 
@@ -74,12 +83,23 @@
 	status = "okay";
 };
 
+
 &ehrpwm1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pwm_pins>;
 	status = "okay";
 };
 
+&spi1 {
+  pinctrl-names = "default";
+  pinctrl-0 = <&spi1_pins>;
+  status = "okay";
+    spidev@0 {
+      spi-max-frequency = <24000000>;
+      reg = <0>;
+      compatible = "spidev";
+    };
+};
 
 
 
