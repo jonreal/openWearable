@@ -17,6 +17,20 @@
 		base_dtb_timestamp = __TIMESTAMP__;
 	};
 
+  openwearable {
+    compatible = "openwearable";
+    status = "okay";
+
+    pinctrl-names = "default";
+    pinctrl-0 = <&pwm2_pins>;
+
+    pwms = <&ehrpwm2 0 500000 0>; // <controller channel period_ns polarity>
+    pwm-names = "openwearable";
+
+    pwm-frequency = <9250>;
+    pwm-duty-cycle = <50>;
+  };
+
 };
 
 &cpu0_opp_table {
@@ -56,9 +70,15 @@
 		>;
 	};
 
-  pwm_pins: pwm-pins {
-		pinctrl-single,pins = <
-			AM33XX_PADCONF(AM335X_PIN_GPMC_A2, PIN_OUTPUT_PULLDOWN, MUX_MODE6)	/* P9_14: gpmc_a2.ehrpwm1a */
+//  pwm1_pins: pwm1-pins {
+//		pinctrl-single,pins = <
+//			AM33XX_PADCONF(AM335X_PIN_GPMC_A2, PIN_OUTPUT_PULLDOWN, MUX_MODE6)	/* P9_14: gpmc_a2.ehrpwm1a */
+//    >;
+//  };
+
+  pwm2_pins: pwm2-pins {
+    pinctrl-single,pins = <
+      P8_19(PIN_OUTPUT_PULLDOWN | MUX_MODE4) /*ehrpwm2A */
     >;
   };
 
@@ -79,15 +99,25 @@
     status = "okay";
 };
 
-&epwmss1 {
-	status = "okay";
+//&epwmss1 {
+//	status = "okay";
+//};
+//
+//
+//&ehrpwm1 {
+//	pinctrl-names = "default";
+//	pinctrl-0 = <&pwm1_pins>;
+//	status = "okay";
+//};
+
+&epwmss2 {
+  status = "okay";
 };
 
-
-&ehrpwm1 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pwm_pins>;
-	status = "okay";
+&ehrpwm2 {
+  pinctrl-names = "default";
+  pinctrl-0 = <&pwm2_pins>;
+  status = "okay";
 };
 
 &spi1 {

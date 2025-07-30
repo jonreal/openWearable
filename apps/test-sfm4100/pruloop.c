@@ -58,7 +58,7 @@ void Pru0Cleanup(void) {
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
 
-  massflow_sensor = MassflowSensorInit(I2cInit(2), 0x3, 1);
+  massflow_sensor = MassflowSensorInit(I2cInit(2), 0x3, 2);
 
 }
 
