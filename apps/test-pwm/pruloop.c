@@ -35,7 +35,7 @@ void Pru0UpdateState(const pru_count_t* c,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
 
-  pwmSetDutyCycle(fix16_from_float(p_->duty));
+  pwmSetDutyCycle(p_->duty);
 }
 
 void Pru0UpdateControl(const pru_count_t* c,
