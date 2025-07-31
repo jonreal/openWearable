@@ -55,13 +55,16 @@ void Pru0UpdateState(const pru_count_t* c,
   //spiForceBeginXfer();
 
   __R30 &= ~(1 << cs_pin);
-  __delay_cycles(10);
-  rx[0] = spiXfer(0, cmd);
-  for (int i=1; i<10; i++) {
-    __delay_cycles(500);
-    rx[i] = spiXfer(0, 0x00);
-  };
-  __delay_cycles(10);
+
+  //rx[0] = spiXfer(0, cmd);
+  //for (int i=1; i<10; i++) {
+  //  rx[i] = spiXfer(0, 0x00);
+  //};
+
+  uint32_t tx[10] = {cmd, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+  spiMultiWordXfer(tx, rx, 10);
+
   __R30 |= (1 << cs_pin);
   //spiForceEndXfer();
 

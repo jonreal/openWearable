@@ -25,6 +25,7 @@ void spiCleanUp(void);
 uint32_t spiXfer(uint8_t channel, uint32_t tx);
 void spiForceBeginXfer(void);
 void spiForceEndXfer(void);
+void spiMultiWordXfer(uint32_t* tx, uint32_t* rx, uint32_t len);
 
 
 #endif
