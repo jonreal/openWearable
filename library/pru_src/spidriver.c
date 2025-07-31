@@ -19,6 +19,13 @@
 #include "hw_types.h"
 #include "spidriver.h"
 
+#define MCSPI_BASE           0x481A0000
+#define MCSPI_CH0CONF        (MCSPI_BASE + 0x12C)
+#define MCSPI_CH0CTRL        (MCSPI_BASE + 0x134)
+#define MCSPI_TX0            (MCSPI_BASE + 0x138)
+#define MCSPI_RX0            (MCSPI_BASE + 0x13C)
+#define MCSPI_CH0STAT        (MCSPI_BASE + 0x130)
+
 void spiInit(void)
 {
 
@@ -155,4 +162,15 @@ void spiForceBeginXfer() {
 void spiForceEndXfer() {
   HWREG(SOC_SPI_1_REGS + 0x12C) &= ~(1 << 20);
   __delay_cycles(10);
+}
+
+void spiMultiWordXfer(uint32_t* tx, uint32_t* rx, uint32_t len) {
+    for (int i = 0; i < len; ++i) {
+      while (!(HWREG(MCSPI_CH0STAT) & (1 << 1))) {} // TXS
+      HWREG(MCSPI_TX0) = tx[i];
+
+      while (!(HWREG(MCSPI_CH0STAT) & (1 << 0))) {} // RXS
+      rx[i] = HWREG(MCSPI_RX0);
+    }
+
 }
