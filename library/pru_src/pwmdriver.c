@@ -20,7 +20,8 @@
 #include "pwmdriver.h"
 
 //static const uint16_t pwm_prd = 250;  // 200 kHz
-static const uint16_t pwm_prd = 500;  // 100 kHz
+static const uint16_t pwm_prd = 250;  // 5 MHz
+//static const uint16_t pwm_prd = 20;  // 5 MHz
 
 void pwmInit(void)
 {
