@@ -33,10 +33,12 @@ extern volatile uint32_t *debug_buff;
 // Prototypes -----------------------------------------------------------------
 //uint16_t viconSync(void);
 sync_t* SyncInitChan(uint8_t pin_);
-void SyncFreeChan(sync_t* syncChan);
-void SyncOutHigh(sync_t* syncChan);
-void SyncOutLow(sync_t* syncChan);
-uint8_t SyncOutState(const sync_t* sync_ch);
+void SyncFreeChan(sync_t* sync);
+void SyncOutHigh(sync_t* sync);
+void SyncOutLow(sync_t* sync);
+void SyncInUpdate(sync_t* sync);
+uint32_t SyncGetState(const sync_t* sync);
+
 
 #endif
 
