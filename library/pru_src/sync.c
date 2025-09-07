@@ -16,38 +16,38 @@
 #include "sync.h"
 #include <stdlib.h>
 
-//// Sync pin goes high
-//uint16_t viconSync(void)
-//{
-//  if( (__R31 & (1 << SYNC_PIN)) == (1 << SYNC_PIN)){
-//    return 1;
-//  }
-//  return 0;
-//}
-
 sync_t* SyncInitChan(uint8_t pin_) {
-  sync_t* sync_ch = malloc(sizeof(sync_t));
-  sync_ch->pin = pin_;
-  sync_ch->state = 0;
-  return sync_ch;
+  sync_t* sync = malloc(sizeof(sync_t));
+  sync->pin = pin_;
+  sync->state = 0;
+  return sync;
 }
 
-void SyncFreeChan(sync_t* sync_ch){
-  free(sync_ch);
+void SyncFreeChan(sync_t* sync){
+  free(sync);
 }
 
-void SyncOutHigh(sync_t* sync_ch) {
-  sync_ch->state = 1;
-  __R30 |= (1 << sync_ch->pin);
+void SyncOutHigh(sync_t* sync) {
+  sync->state = 1;
+  __R30 |= (1 << sync->pin);
 }
 
-void SyncOutLow(sync_t* sync_ch) {
-  sync_ch->state = 0;
-  __R30 &= ~(1 << sync_ch->pin);
+void SyncOutLow(sync_t* sync) {
+  sync->state = 0;
+  __R30 &= ~(1 << sync->pin);
 }
 
-uint8_t SyncOutState(const sync_t* sync_ch) {
-  return sync_ch->state;
+void SyncInUpdate(sync_t* sync) {
+  if( (__R31 & (1 << sync->pin)) == (1 << sync->pin)){
+    sync->state = 1;
+  } else {
+    sync->state = 0;
+  }
+}
+
+
+uint32_t SyncGetState(const sync_t* sync) {
+  return sync->state;
 }
 
 

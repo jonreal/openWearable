@@ -51,7 +51,7 @@ void Hx711Free(hx711_t* hx711) {
 
 
 // Read a 24-bit value from the HX711 using __R30 and __R31 directly
-int32_t Hx711Read(hx711_t* hx711) {
+int32_t Hx711Sample(hx711_t* hx711) {
   uint32_t data = 0;
 
   // If data is not ready return previous value
