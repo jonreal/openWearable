@@ -41,6 +41,7 @@ void FormatSprintState(const state_t* st, char* buff) {
           "%d\t"        // load_r - int32_t
           "%d\t"        // load_l - int32_t
           "%u\t"        // sync - uint32_t
+          "%u\t"        // status - uint32_t
           "\n",
           st->time,
           fix16_to_float(st->p_res),
@@ -50,7 +51,8 @@ void FormatSprintState(const state_t* st, char* buff) {
           st->pam_state.u,
           st->load_r,
           st->load_l,
-          st->sync_state
+          st->sync_state,
+          st->status
           );
 }
 
@@ -65,6 +67,7 @@ void FormatSprintStateHeader(char* buff) {
           "load_r\t"
           "load_l\t"
           "sync\t"
+          "status\t"
           "\n");
 }
 

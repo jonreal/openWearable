@@ -35,8 +35,10 @@ hx711_t* loadcell_l;
 // Sync In
 sync_t* sync;
 
+uint32_t flag = 0;
+uint32_t cyclecnt = 0;
 
-const uint32_t refractory = 1;
+const uint32_t refractory = 150;
 
 
 // ---------------------------------------------------------------------------
@@ -103,7 +105,6 @@ void Pru1Init(pru_mem_t* mem) {
   // Sync In
   // In: P8.42, MODE6, pr1_pru1_pru_r31_5 */
   sync = SyncInitChan(5);
-
 }
 
 void Pru1UpdateState(const pru_count_t* c,
@@ -111,6 +112,27 @@ void Pru1UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
+
+  if (PruGetCtlBit(ctl_, 0)) {
+    if (cyclecnt < p_->Tdelay) {                    // PRE
+      s_->status = 0;
+    } else if (cyclecnt < p_->Ttrial) {             // ACTIVE
+      PamSetPd(pam, p_->Ptarget);
+      s_->status = 1;
+    } else {                                        // POST
+      PamSetPd(pam, 0);
+      PruClearCtlBit(ctl_, 0);
+      s_->status = 0;
+      cyclecnt = 0;
+      return;                                       // no extra +1 tick
+    }
+    cyclecnt++;
+  } else {
+    s_->status = 0;
+    cyclecnt = 0;
+  }
+
+
 
   PamReservoirUpdate(reservoir);
   s_->p_res = PamReservoirGetPressure(reservoir);
