@@ -21,6 +21,7 @@ typedef struct {
   volatile int32_t load_r;
   volatile int32_t load_l;
   volatile uint32_t sync_state;
+  volatile uint32_t status;
  } state_t;
 
 // --- Parameters
@@ -28,6 +29,9 @@ typedef struct {
   volatile uint32_t debug_buff[10];
   uint32_t fs_hz;
   uint32_t fs_ticks;
+  fix16_t Ptarget;
+  uint32_t Tdelay;
+  uint32_t Ttrial;
 } param_mem_t;
 
 
