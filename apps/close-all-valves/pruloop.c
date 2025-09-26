@@ -26,7 +26,6 @@ volatile register uint32_t __R31;
 void Pru0Init(pru_mem_t* mem) {
 
   __R30 = 0;
-
 }
 
 void Pru0UpdateState(const pru_count_t* c,
@@ -34,8 +33,6 @@ void Pru0UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
-
-
 }
 
 void Pru0UpdateControl(const pru_count_t* c,
@@ -43,7 +40,6 @@ void Pru0UpdateControl(const pru_count_t* c,
                        const lut_mem_t* l_,
                        state_t* s_,
                        pru_ctl_t* ctl_){
-
 }
 
 void Pru0Cleanup(void) {
@@ -63,6 +59,7 @@ void Pru1UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
+
 }
 
 void Pru1UpdateControl(const pru_count_t* c,
@@ -70,7 +67,7 @@ void Pru1UpdateControl(const pru_count_t* c,
                        const lut_mem_t* l_,
                        state_t* s_,
                        pru_ctl_t* ctl_) {
-
+  debug_buff[1] = 0xA;
 }
 
 void Pru1Cleanup(void) {

@@ -120,6 +120,11 @@ int main(void) {
     debugPinLow();
  }
   debugPinLow();
+
+  // ensure nothing hangs
+  mem.s->pru_ctl.bit.pru0_done = 0;
+  mem.s->pru_ctl.bit.pru1_done = 0;
+
   cleanup();
   __halt();
   return 0;
