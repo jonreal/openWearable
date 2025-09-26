@@ -124,16 +124,17 @@ int main(int argc, char **argv) {
     while (!doneFlag) {
       LogDebugWriteState(pru_mem.s, cb, buff);
     }
-    PruPrintDebugBuffer(pru_mem.p->debug_buff);
     PruEnable(0, &pru_mem.s->pru_ctl);
-    PruRestart();
+    usleep(10000);
+    PruPrintDebugBuffer(pru_mem.p->debug_buff);
   } else {
     PruEnable(1, &pru_mem.s->pru_ctl);
     if ((UiLoop(&pru_mem) == 1) | (doneFlag)){
       PruEnable(0, &pru_mem.s->pru_ctl);
-      PruRestart();
     }
   }
+  usleep(10000);
   UiCleanup();
+  PruRestart();
   return 0;
 }
