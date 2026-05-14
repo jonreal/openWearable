@@ -34,9 +34,11 @@ void FormatSprintState(const state_t* st, char* buff) {
   sprintf(buff,
           "%u\t"        // timeStamp - uint32_t
           "%f\t"        // pressure - fix16
+          "%u\t"        // sync - uint32_t
           "\n",
           st->time,
-          fix16_to_float(st->pressure)
+          fix16_to_float(st->pressure),
+          st->sync_state
           );
 }
 
@@ -44,6 +46,7 @@ void FormatSprintStateHeader(char* buff) {
   sprintf(buff,
           "\n# frame\t"
           "pressure\t"
+          "sync\t"
           "\n");
 }
 
