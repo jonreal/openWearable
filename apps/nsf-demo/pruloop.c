@@ -30,8 +30,8 @@ pam_t* pam2;
 reflex_t* reflex;
 
 // Not connected, only sensor
-pam_t* pam3;
-pam_t* pam4;
+//pam_t* pam3;
+//pam_t* pam4;
 
 // DC blocking filter
 const fix16_t b_dcblck[2] = {fix16_one, -fix16_one};
@@ -77,14 +77,14 @@ void Pru1Init(pru_mem_t* mem) {
   i2c = I2cInit(2);
   mux = MuxI2cInit(i2c,0x70,PCA9548);
 
-  // Ch. 8, 8-1 = 7
+  //// Ch. 8, 8-1 = 7
   reservoir = PamReservoirInit(PressureSensorInit(mux,7,0x28));
 
 
-  // pam1
-  // sensor on mux ch. 6, 6 - 1 = 5
-  // out: P8.45, MODE5, pr1_pru1_pru_r30_0
-  // in: 8.46, MODE5, pr1_pru1_pru_r30_1
+  //// pam1
+  //// sensor on mux ch. 6, 6 - 1 = 5
+  //// out: P8.45, MODE5, pr1_pru1_pru_r30_0
+  //// in: 8.46, MODE5, pr1_pru1_pru_r30_1
   pam1 = PamInitMuscle(PressureSensorInit(mux,5,0x28),
                         reservoir,
                         0, 1,
@@ -92,10 +92,10 @@ void Pru1Init(pru_mem_t* mem) {
                         FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
   PamSetPd(pam1,0);
 
-  // pam2
-  // sensor on mux ch. 5, 5 - 1 = 4
-  // out: P8.43, MODE5, pr1_pru1_pru_r30_2
-  // in: 8.44, MODE5, pr1_pru1_pru_r30_3
+  //// pam2
+  //// sensor on mux ch. 5, 5 - 1 = 4
+  //// out: P8.43, MODE5, pr1_pru1_pru_r30_2
+  //// in: 8.44, MODE5, pr1_pru1_pru_r30_3
   pam2 = PamInitMuscle(PressureSensorInit(mux,4,0x28),
                         reservoir,
                         2, 3,
@@ -107,27 +107,27 @@ void Pru1Init(pru_mem_t* mem) {
                       FiltIirInit(1, b_dcblck, a_dcblck));
 
 
-  // pam3
-  // sensor on mux ch. 4, 4 - 1 = 3
-  // out: NC
-  // in: NC
-  pam3 = PamInitMuscle(PressureSensorInit(mux,3,0x28),
-                        reservoir,
-                        4, 5,
-                        refractory,
-                        FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
-  PamSetPd(pam3,0);
+  //// pam3
+  //// sensor on mux ch. 4, 4 - 1 = 3
+  //// out: NC
+  //// in: NC
+  //pam3 = PamInitMuscle(PressureSensorInit(mux,3,0x28),
+  //                      reservoir,
+  //                      4, 5,
+  //                      refractory,
+  //                      FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
+  //PamSetPd(pam3,0);
 
-  // pam4
-  // sensor on mux ch. 3, 3 - 1 = 2
-  // out: NC
-  // in: NC
-  pam4 = PamInitMuscle(PressureSensorInit(mux,2,0x28),
-                        reservoir,
-                        6, 7,
-                        refractory,
-                        FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
-  PamSetPd(pam4,0);
+  //// pam4
+  //// sensor on mux ch. 3, 3 - 1 = 2
+  //// out: NC
+  //// in: NC
+  //pam4 = PamInitMuscle(PressureSensorInit(mux,2,0x28),
+  //                      reservoir,
+  //                      6, 7,
+  //                      refractory,
+  //                      FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
+  //PamSetPd(pam4,0);
 
 }
 
@@ -141,8 +141,8 @@ void Pru1UpdateState(const pru_count_t* c,
 
   PamUpdate(pam1);
   PamUpdate(pam2);
-  PamUpdate(pam3);
-  PamUpdate(pam4);
+  //PamUpdate(pam3);
+  //PamUpdate(pam4);
 
 }
 
@@ -166,8 +166,8 @@ void Pru1UpdateControl(const pru_count_t* c,
   s_->p_res = PamReservoirGetPressure(reservoir);
   s_->pam1_state = PamGetState(pam1);
   s_->pam2_state = PamGetState(pam2);
-  s_->pam3_state = PamGetState(pam3);
-  s_->pam4_state = PamGetState(pam4);
+  //s_->pam3_state = PamGetState(pam3);
+  //s_->pam4_state = PamGetState(pam4);
   s_->triggersignal = reflex->triggersignal;
 
 }
