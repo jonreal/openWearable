@@ -11,3 +11,4 @@ types_matlab.taghl
 *.app/*
 moc_*
 **/rotation_display.app/*
+**/library/lib
