@@ -22,6 +22,10 @@ as remoteproc `64800000.dsp` / `j7-c71_0`). Two questions: **how do we build for
 > PC, infer on the board); hand-kernels are a fallback. And on the hand-kernel path you'd
 > *likely never touch the MMA* (the C7x core's ~80 GFLOP/s FP is plenty), which removes its
 > hardest part.
+>
+> **DECISION (locked):** C7x = **TIDL only** (no bare-metal). The **A72 drives it from C**
+> (ONNX-RT or DLR C API) and publishes the result into the control plane. C66x preprocessing
+> = bare-metal *optional*. Buffer map & full dataflow: **`INFERENCE-DATAFLOW.md`**.
 
 ---
 

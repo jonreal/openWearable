@@ -144,9 +144,15 @@ concurrency gets.
   **✅ Phase 0 finding:** all target cores (R5F0, C7X0, C66X0, PRU0/1) are already
   `offline` — the kernel does *not* auto-boot them — so there is nothing to "take over";
   only the reserved MCU R5F0 is running. See `BOARD-TRUTH.md`.
-- **Build model:** C only. PRU/A72/R5F build **natively on the board**; **C7x/C66x must be
-  cross-built on an x86_64 Linux host** (their `cl7x`/`cl6x` compilers have no arm64 build)
-  and the ELF copied to the board — see `C7X-GETTING-STARTED.md`.
+- **Build model:** C only. PRU/A72/R5F build **natively on the board**. The **C7x is not
+  built at all — it's TIDL** (model compiled on an x86 host with `edgeai-tidl-tools`, run by
+  the prebuilt on-board runtime). The **optional bare-metal C66x** is cross-built on an x86
+  host (`cl6x`, no arm64 build). See `C7X-GETTING-STARTED.md` / `INFERENCE-DATAFLOW.md`.
+- **C7x usage → TIDL only (no bare-metal).** Driven via the **A72 as producer-proxy** (not a
+  bare-metal mesh peer); A72 inference code stays **C** (ONNX-RT or DLR C API). *Consequence
+  for the milestone-1 template:* the C7x has **no bare-metal heartbeat firmware** — it's
+  represented by the A72 (a trivial TIDL inference published to the control plane), while
+  PRU/R5F (+ optional C66x) are the true bare-metal peers.
 - **Toolchains (one compiler per core type):**
   - PRU → `clpru` (`ti-cgt-pru`) — already present.
   - A72 → `gcc` (aarch64) — already present; targets **`cortex-a72`** (done).
