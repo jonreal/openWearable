@@ -31,8 +31,8 @@ ls /proc/device-tree/                  # sanity: this is a k3/j721e tree
 ```
 **Record in BOARD-TRUTH.md:** model string, kernel version, image tag.
 
-> Sanity note: this confirms TDA4VM/J721E (A72 cores), justifying the `cortex-a72`
-> compiler flag and the `am64x`-naming cleanup deferred to Phase 5.
+> Sanity note: this confirms TDA4VM/J721E (A72 cores) — the `cortex-a72` compiler flag and
+> the `j721e` build naming are in place; only the `am64x` branch rename is deferred.
 
 ---
 

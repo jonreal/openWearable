@@ -148,8 +148,7 @@ concurrency gets.
   core's firmware is compiled on the AI-64 itself (same native pattern as `clpru`).
 - **Toolchains (one compiler per core type):**
   - PRU → `clpru` (`ti-cgt-pru`) — already present.
-  - A72 → `gcc` (aarch64) — already present; **must target `cortex-a72`** (fix
-    `-mtune=cortex-a53`).
+  - A72 → `gcc` (aarch64) — already present; targets **`cortex-a72`** (done).
   - R5F → **`tiarmclang`** (`ti-cgt-armllvm`) recommended; `arm-none-eabi-gcc` viable.
   - C7x → **`cl7x`** (`ti-cgt-c7000`).
   - C66x → **`cl6x`** (`ti-cgt-c6000`).
@@ -187,7 +186,7 @@ concurrency gets.
 | 2     | Generalized ARM remoteproc loader  | `PHASE-2.md` (TBD) | not yet written |
 | 3     | Bring up cores one type at a time (R5F → C66x → C7x) | `PHASE-3.md` (TBD) | not yet written |
 | 4     | Unison handshake (the acceptance test) | `PHASE-4.md` (TBD) | not yet written |
-| 5     | Cleanup, naming fixes, docs        | `PHASE-5.md` (TBD) | not yet written |
+| 5     | Cleanup, naming fixes, docs        | `PHASE-5.md` (TBD) | **partly done** — build naming (firmware/define/.cmd/A72) → `j721e`; branch rename deferred |
 
 Phases 0 and 1 are fully specified now. Phases 2–5 are scoped here and will be written in
 detail once Phase 0 returns real board numbers (some of Phase 2+ depends on them).

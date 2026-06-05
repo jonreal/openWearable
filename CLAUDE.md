@@ -15,11 +15,12 @@ this platform over, e.g., an NVIDIA Jetson).
 | `master`  | BeagleBone Black / Blue | TI **AM335x** (1× Cortex-A8 + 2× PRU) | Stable. Keep alive — do not break.       |
 | `am64x`   | **BeagleBone AI-64**    | TI **TDA4VM / J721E**                  | **Active development** — heterogeneous compute. |
 
-> ⚠️ The branch is named `am64x` and parts of the code/Makefiles still say `am64x` or
-> `cortex-a53`, but the **real target on this branch is the TDA4VM (J721E)** on the
-> BeagleBone AI-64, whose application cores are **Cortex-A72**. This naming is a known
-> wart slated for cleanup. The remoteproc paths `j7-pru0_0` / `j7-pru0_1` in `pru.c`
-> are actually *correct* for this SoC; it's the `am64x` labels that are wrong.
+> ⚠️ The branch is named `am64x`, but its **real target is the TDA4VM (J721E)** on the
+> BeagleBone AI-64 (application cores are **Cortex-A72**). The build naming is now honest:
+> the firmware, the `-D` define, and the `.cmd` files are `j721e`, and the template builds
+> `-mtune=cortex-a72`. The remaining `am64x` names are *intentional* — the **branch name**
+> (rename deferred) and **`PSSP_ARCH = am64x`** (the PRU/ICSSG headers, which J721E shares).
+> The remoteproc paths `j7-pru0_0` / `j7-pru0_1` in `pru.c` are correct for this SoC.
 
 ## The architecture pattern (shared by both branches)
 
@@ -94,6 +95,6 @@ detailed execution plan:
   explicit writeback (producer) / invalidate (consumer) at hand-off.
 - Memory offsets are duplicated across `memmap.h` / `state.h`, each core's linker
   `.cmd`, the device-tree carveout, and the ARM `mmap` — **always change them together.**
-- A-cores on this board are **Cortex-A72** (not A53/A8). Fix any `-mtune=cortex-a53`.
+- A-cores on this board are **Cortex-A72** (not A53/A8); the template builds `-mtune=cortex-a72`.
 - **Never repurpose MCU R5F core0** — it runs the device-manager/TIFS firmware that the
   whole system depends on.

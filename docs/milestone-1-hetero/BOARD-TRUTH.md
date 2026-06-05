@@ -30,8 +30,8 @@ over"; we just write firmware + start, exactly like the PRUs today.**
 | R5F0    | remoteproc1 | `5c00000.r5f`  | `j7-main-r5f0_0`    | offline    | `j7-main-r5f0_0-fw`    |
 | C7X0    | remoteproc5 | `64800000.dsp` | `j7-c71_0`          | offline    | `j7-c71_0-fw`          |
 | C66X0   | remoteproc3 | `4d80800000.dsp`| `j7-c66_0`         | offline    | `j7-c66_0-fw`          |
-| PRU0    | remoteproc6 | `b034000.pru`  | `j7-pru0_0`         | offline    | `am64x-pru0-template-fw` |
-| PRU1    | remoteproc9 | `b038000.pru`  | `j7-pru0_1`         | offline    | `am64x-pru1-template-fw` |
+| PRU0    | remoteproc6 | `b034000.pru`  | `j7-pru0_0`         | offline    | `j721e-pru0-template-fw` |
+| PRU1    | remoteproc9 | `b038000.pru`  | `j7-pru0_1`         | offline    | `j721e-pru1-template-fw` |
 
 ### Reserved — DO NOT TOUCH
 - **remoteproc0 `41000000.r5f`** — state **`attached`** (the only running core). This is the
@@ -48,7 +48,8 @@ over"; we just write firmware + start, exactly like the PRUs today.**
   `pru1_0/1_1` (`b134000`/`b138000`), `rtu1_*`, `txpru1_*` — all offline.
 
 > The current `template` uses `j7-pru0_0` (remoteproc6) + `j7-pru0_1` (remoteproc9) =
-> ICSSG0's two PRUs. Their firmware fields still read `am64x-…-fw` → naming wart, Phase 5.
+> ICSSG0's two PRUs. Firmware is now named `j721e-…-fw` (build-naming fix done); the branch
+> is still named `am64x` by choice (rename deferred).
 
 ---
 
