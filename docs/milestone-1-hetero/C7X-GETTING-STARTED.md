@@ -75,10 +75,28 @@ How the BeagleBone AI-64 is designed to use the C7x — **no `cl7x`, no hand-wri
 
 So the board runs the C7x out of the box; the PC is only a one-time model-build tool.
 
-**Caveats for a transformer:** TIDL grew up CNN-first, so **attention / layernorm / softmax
-op coverage is version-dependent** (recent J721E SDK / TIDL added transformer support — verify
-for our model; unsupported ops fall back to C7x-scalar or the A72). A72→C7x dispatch adds
-latency — fine for *async* inference (our design), irrelevant to the >kHz loop (PRU/R5F).
+**Transformer support (assessed — the gating risk).** TIDL *does* support transformer blocks
+on the C7x+MMA now (SDK 10.x+, C7x/MMA firmware ≥ `10_01_04_00`). Per
+`edgeai-tidl-tools/docs/vision_transformers.md`, these are **supported with no functional
+limitation**: **Attention MatMul, Softmax, LayerNorm, GELU, FFN, attention reshape/movement**
+(plus vision-only bits: patch embedding/merging, SWIN window-shift). Constraints:
+- ONNX models only; compile with **ORT optimization level = `ORT_DISABLE_ALL`**.
+- **Softmax** must be along the **width (lowest)/height** axis; **LayerNorm** along **width
+  (lowest)** — so tensor layout must put those reductions on the right axis.
+- **INT8 quantization can lose accuracy** on some transformers (e.g. SWIN) → run FP, or
+  calibrate carefully. (For a lightweight EMG model, FP on the C7x core is likely fine.)
+
+**The real caveat for us:** TIDL's transformer support is **validated on *vision* models**
+(timm → ONNX: DeiT, SWIN, DETR, Segformer). Our **1-D EMG sequence transformer is off the
+validated path.** The primitives are architecture-agnostic, so it *should* map **if** we
+(a) build the model from those supported ops, (b) respect the Softmax/LayerNorm axis
+constraints, (c) export clean ONNX (opset 14 + `onnxsim`), and (d) **check the compile's
+C7x-vs-Arm offload report** so big chunks don't fall back to the A72. Our advantage: we
+*control* the architecture, so we can make it TIDL-friendly **by construction**. (A72→C7x
+dispatch latency is irrelevant to the >kHz loop — inference is an async satellite.)
+
+**Empirical gate (do before committing to the C7x):** build a tiny EMG transformer → ONNX →
+`edgeai-tidl-tools` compile (`ORT_DISABLE_ALL`) → inspect the offloaded-subgraph report.
 
 > Note: this board's current (rcn-ee Debian *Minimal*) image does **not** ship the edge-AI
 > stack or `cl7x` — only `ti-pru-cgt`. The TIDL runtime/tools come from TI's **Edge AI SDK**
