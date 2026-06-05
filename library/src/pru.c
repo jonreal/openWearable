@@ -55,9 +55,22 @@ int PruMemMap(pru_mem_t* pru_mem) {
   close(fd);
 
   // Zero State
-  //for (uint32_t i=0; i<STATE_BUFF_LEN; i++) {
-  //  memset(&(pru_mem->s->state[i]), 0, sizeof(state_t));
+  //for (uint32_t i = 0; i < STATE_BUFF_LEN; i++) {
+  //  uint8_t *iq = (uint8_t*)&(pru_mem->s->state[i]);
+  //  for (uint32_t j = 0; j < sizeof(state_t); j++) {
+  //    iq[j] = 0;
+  //  }
   //}
+  // Zero debug buffer
+  //for (int i=0; i<10; i++){
+  //  pru_mem->p->debug_buff[i] = 0;
+  //}
+
+  //pru_mem->p->debug_buff[0] = 0;
+  //pru_mem->p->debug_buff[1] = 0;
+  //pru_mem->p->debug_buff[2] = 0;
+  //pru_mem->p->debug_buff[3] = 0;
+
 
 
   PruCtlReset(&pru_mem->s->pru_ctl);

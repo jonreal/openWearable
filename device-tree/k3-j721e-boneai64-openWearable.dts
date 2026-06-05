@@ -52,18 +52,6 @@
 			no-map;
 		};
 
-    //icssg0_ram_slv_ram: icssg0_ram_slv_ram@80010000 {
-    //    compatible = "shared-dma-pool";
-    //    reg = <0x00 0x80010000 0x00 0x10000>;  /* 64 KiB, just after first 64KB */
-    //    no-map;
-    //};
-
-    //icssg0_ram_slv_ram: icssg0_ram_slv_ram@30010000 {
-    //        compatible = "shared-dma-pool";
-    //        reg = <0x00 0x30010000 0x00 0x10000>;  /* 64 KiB */
-    //};
-
-
 		mcu_r5fss0_core0_dma_memory_region: r5f-dma-memory@a0000000 {
 			compatible = "shared-dma-pool";
 			reg = <0x00 0xa0000000 0x00 0x100000>;
@@ -458,6 +446,11 @@
 			J721E_IOPAD(0x5c, PIN_INPUT, 7) /* (AG23) PRG1_PRU1_GPO1.GPIO0_22 */
 		>;
 	};
+
+
+  // OpenWearable
+
+
 };
 
 &wkup_pmx0 {

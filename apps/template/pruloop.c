@@ -33,7 +33,10 @@ void Pru0UpdateState(const pru_count_t* c,
                      const lut_mem_t* l_,
                      state_t* s_,
                      pru_ctl_t* ctl_) {
-  s_->pru0var++;
+  //s_->pru0var++;
+  debug_buff[1]++;
+
+  s_->pru0var = debug_buff[1];
 }
 
 void Pru0UpdateControl(const pru_count_t* c,
@@ -65,7 +68,7 @@ void Pru1UpdateState(const pru_count_t* c,
     __R30 ^= (1 << 0);
     __R30 ^= (1 << 1);
   }
-  s_->pru1var = 0;
+  s_->pru1var++;
 }
 
 void Pru1UpdateControl(const pru_count_t* c,

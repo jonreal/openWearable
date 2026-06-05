@@ -45,24 +45,12 @@ void startTimer(void);
 void clearTimerFlag(void);
 void clearIepInterrupt(void);
 
-#if AM335x
-  volatile far pruIntc CT_INTC
-    __attribute__((cregister("PRU_INTC", far), peripheral));
-  volatile pruCfg CT_CFG
-    __attribute__((cregister("PRU_CFG", near), peripheral));
-  volatile far pruIep CT_IEP
-    __attribute__((cregister("PRU_IEP", near), peripheral));
-  volatile __far ctrl CT_PRU0_CTRL
-    __attribute__((cregister("PRU0_CTRL", near), peripheral));
-#else
-  volatile far intc CT_INTC
-    __attribute__((cregister("PRU_INTC", far), peripheral));
-  volatile cfg CT_CFG
-    __attribute__((cregister("PRU_CFG", near), peripheral));
-  volatile far iep CT_IEP0
-    __attribute__((cregister("PRU_IEP0", near), peripheral));
-#endif
-
+volatile far intc CT_INTC
+  __attribute__((cregister("PRU_INTC", far), peripheral));
+volatile cfg CT_CFG
+  __attribute__((cregister("PRU_CFG", near), peripheral));
+volatile far iep CT_IEP0
+  __attribute__((cregister("PRU_IEP0", near), peripheral));
 
 // Main ----------------------------------------------------------------------
 int main(void) {
@@ -74,7 +62,7 @@ int main(void) {
   // wait till enabled
   while (mem.s->pru_ctl.bit.enable == 0);
   mem.s->pru_ctl.bit.shdw_enable = mem.s->pru_ctl.bit.enable;
-  //clearIepInterrupt();
+  clearIepInterrupt();
 
   startTimer();
 
@@ -82,7 +70,9 @@ int main(void) {
   while (mem.s->pru_ctl.bit.shdw_enable) {
 
     // Poll for interrupt
-    while ((CT_INTC.RAW_STATUS_REG0 & (1 << 7)) == 0);
+    //while ((CT_INTC.RAW_STATUS_REG0 & (1 << 7)) == 0);
+
+    while ((CT_IEP0.cmp_status_reg & 0x1) == 0);
 
     // Pre bookkeeping
     clearTimerFlag();
@@ -123,6 +113,8 @@ int main(void) {
     updateCounters(&counter);
     clearIepInterrupt();
     debugPinLow();
+
+    debug_buff[0]++;
  }
   debugPinLow();
   cleanup();
@@ -172,9 +164,6 @@ void cleanup(void) {
   // Clear all interrupts
   clearIepInterrupt();
 
-  // am64x
-  CT_INTC.STATUS_CLR_INDEX_REG_bit.STATUS_CLR_INDEX = 7;
-
   // drivers
 //  AdcCleanup();
 
@@ -194,10 +183,19 @@ void memInit(pru_mem_t* mem) {
   // Clear clt bits
   mem->s->pru_ctl.reg = 0;
 
-  // Zero debug buffer
-  for (uint32_t i = 0; i<10; i++){
-    debug_buff[i] = 0x0;
+  // Zero State
+  for (uint32_t i=0; i<STATE_BUFF_LEN; i++) {
+    uint8_t *iq = (uint8_t*)&(mem->s->state[i]);
+    for (uint32_t j = 0; j < sizeof(state_t); j++) {
+      iq[j] = 0;
+    }
   }
+
+  // Zero debug buffer
+  for (int i=0; i<10; i++){
+      debug_buff[i] = 0;
+  }
+
 }
 
 void updateCounters(pru_count_t* c) {
@@ -238,8 +236,6 @@ void iepTimerInit(uint32_t freq_counts) {
   // Enable cmp0 and reset on event
   CT_IEP0.cmp_cfg_reg_bit.cmp0_rst_cnt_en = 1;
   CT_IEP0.cmp_cfg_reg_bit.cmp_en = 1;
-
-
 }
 
 void iepInterruptInit(void) {
@@ -253,10 +249,6 @@ void iepInterruptInit(void) {
 
   // Clear any interrupts
   CT_INTC.ENABLE_CLR_REG0 = 0xFFFFFFFF;
-  CT_INTC.ENABLE_CLR_REG1 = 0xFFFFFFFF;
-  CT_INTC.ENABLE_CLR_REG2 = 0xFFFFFFFF;
-  CT_INTC.ENABLE_CLR_REG3 = 0xFFFFFFFF;
-  CT_INTC.ENABLE_CLR_REG4 = 0xFFFFFFFF;
 
   CT_INTC.STATUS_CLR_INDEX_REG = 7;
 
@@ -277,7 +269,7 @@ void startTimer(void) {
 }
 
 void clearTimerFlag(void) {
-  CT_IEP0.cmp_status_reg = 0xFF;
+  CT_IEP0.cmp_status_reg = 0x1;
 }
 
 void clearIepInterrupt(void) {

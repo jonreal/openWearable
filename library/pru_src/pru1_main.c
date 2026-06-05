@@ -73,6 +73,8 @@ int main(void) {
     // Poll for IEP timer
     while ((CT_IEP0.cmp_status_reg & 0x1) == 0);
 
+   // while ((CT_INTC.RAW_STATUS_REG0 & (1 << 7)) == 0);
+
     // Pre bookkeeping
     debugPinHigh();
 
@@ -107,7 +109,7 @@ int main(void) {
 
     // Post bookkeeping
     mem.s->pru_ctl.bit.pru1_done = 1;
-    //updateCounters(&counter);
+    updateCounters(&counter);
 
    // while(CT_INTC.RAW_STATUS_REG0 & (1 << 7));
     debugPinLow();
