@@ -87,7 +87,7 @@ int PruWriteFirmware(char* suffix) {
 
   // PRU0
   memset(buf, 0, sizeof(buf));
-  snprintf(buf, sizeof(buf), "am64x-pru0-%s-fw", suffix);
+  snprintf(buf, sizeof(buf), "j721e-pru0-%s-fw", suffix);
   char rp_pru0_0_fw[256] = {0};
   snprintf(rp_pru0_0_fw, sizeof(rp_pru0_0_fw), "%s/firmware", rp_pru0_0);
   int fd = open(rp_pru0_0_fw, O_WRONLY);
@@ -104,7 +104,7 @@ int PruWriteFirmware(char* suffix) {
 
   // PRU1
   memset(buf, 0, sizeof(buf));
-  snprintf(buf, sizeof(buf), "am64x-pru1-%s-fw", suffix);
+  snprintf(buf, sizeof(buf), "j721e-pru1-%s-fw", suffix);
   char rp_pru0_1_fw[256] = {0};
   snprintf(rp_pru0_1_fw, sizeof(rp_pru0_1_fw), "%s/firmware", rp_pru0_1);
   fd = open(rp_pru0_1_fw, O_WRONLY);

@@ -9,8 +9,17 @@ RESET=\033[0m
 # App name
 APP_NAME = template
 
-# Architecture
-ARCH = am64x
+# Platform identity: drives the firmware name, the -D<ARCH> define, and PRUx_<ARCH>.cmd
+ARCH = j721e
+
+# PSSP ICSSG header dir. The PRU subsystem (ICSSG) is shared across K3 devices; in this
+# PSSP version the complete header set lives under am64x/ (j721e/ is incomplete), so the
+# j721e build uses the am64x headers. Other archs use their own dir.
+ifeq ($(ARCH),j721e)
+PSSP_ARCH = am64x
+else
+PSSP_ARCH = $(ARCH)
+endif
 
 # openWearable path
 OW_DIR = /root/openWearable
@@ -39,13 +48,13 @@ PRU1_TARGET = pru1_main
 # Include Directories
 CINC_DIR = $(OW_DIR)/library/common/include \
 	-I$(OW_DIR)/library/a72/include \
-	-I$(PSSP_DIR)/include/$(ARCH) \
+	-I$(PSSP_DIR)/include/$(PSSP_ARCH) \
 	-I$(PSSP_DIR)/include \
 	-I./
 
 PRU_CINC_DIR = -I$(OW_DIR)/library/common/include \
 	-I$(OW_DIR)/library/pru/include \
-	-I$(PSSP_DIR)/include/$(ARCH) \
+	-I$(PSSP_DIR)/include/$(PSSP_ARCH) \
 	-I$(PSSP_DIR)/include \
 	-I$(CGT_DIR)/include \
 	-I./
@@ -77,7 +86,7 @@ CFLAGS = \
 	-D$(shell echo $(ARCH) | tr a-z A-Z)
 else
 CFLAGS = \
-	-std=gnu99 -Wall -g -O4 -mtune=cortex-a53 -march=armv8-a \
+	-std=gnu99 -Wall -g -O4 -mtune=cortex-a72 -march=armv8-a \
 	-D$(shell echo $(ARCH) | tr a-z A-Z)
 endif
 
