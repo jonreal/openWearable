@@ -71,13 +71,14 @@ over"; we just write firmware + start, exactly like the PRUs today.**
 **⚠️ This is the critical-path prerequisite for Phase 3 — today the board can only build
 PRU + A72 code.**
 
-- ✅ **Build host DECIDED: native on the board, in C — no cross-compiling, no C++.** All
-  firmware (PRU/R5F/C7x/C66x) is built on the AI-64 itself, the same native pattern as the
-  already-installed `clpru` (`/usr/bin/clpru`, via `apt ti-pru-cgt-v2.3`).
-- ⬜ **Remaining task:** install the **native arm64** TI CGTs `cl7x` (C7000), `cl6x`
-  (C6000), `tiarmclang` (Arm), plus a J721E SDK (MCU+ SDK is the lightest) for the
-  R5F/C7x/C66x **resource tables + startup**. Find apt packages or TI native-arm64
-  installers; record exact names in `../SETUP.md` §B.1 once resolved.
+- ✅ **Build host (revised — see `C7X-GETTING-STARTED.md`):** PRU + A72 + R5F build
+  **natively on the board** (`clpru`, `gcc`, `gcc-arm-none-eabi` — all native arm64).
+  **C7x/C66x do NOT:** `cl7x`/`cl6x` ship only as x86_64 Linux/Windows installers (no
+  aarch64 build — confirmed on TI's download page), so **DSP firmware is cross-built on an
+  x86_64 Linux host and the ELF copied to `/lib/firmware/`.**
+- ⬜ **Remaining task:** (board) `apt install gcc-arm-none-eabi` for the R5F; (x86_64 host)
+  install `cl7x` (C7000 CGT 5.0.0.LTS) + the J721E MCU+ SDK for C7x startup, resource
+  tables, and MMALIB/TIDL. `cl6x` + C66x later.
 
 ---
 
@@ -142,11 +143,11 @@ this exact procedure.
 ## Phase 0 status summary
 - ✅ Done: 0.1 identity, 0.2/0.3 remoteproc map + v1 instances, 0.6 memory map, 0.7 dtb
   build/deploy procedure, 0.8 regression.
-- ⬜ **Only remaining task (GATES Phase 3):** install native-arm64 `cl7x`/`cl6x`/`tiarmclang`
-  + a J721E SDK (resource tables/startup). Build host is decided (see below).
+- ⬜ **Only remaining task (GATES Phase 3):** R5F → `apt gcc-arm-none-eabi` (board); C7x →
+  `cl7x` + J721E MCU+ SDK on an **x86_64 Linux host** (no arm64 `cl7x`/`cl6x`; see below).
 
 ### Decisions resolved by these findings
-- **Build host → native on the board, C only, no cross-compiling.**
+- **Build host → native (board) for PRU/A72/R5F; x86_64 Linux host for C7x/C66x** (no arm64 `cl7x`/`cl6x`).
 - **Take-over vs coexist → resolved:** target cores are `offline`; no take-over needed.
 - **Control-plane location → DDR `no-map` for v1** (`0xac000000`), MSMC deferred.
 - **v1 R5F instance → `5c00000.r5f` (remoteproc1)**; lockstep mode (split-mode = future DT).

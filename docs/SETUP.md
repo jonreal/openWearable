@@ -6,8 +6,9 @@ supported targets:
 - **BeagleBone Black / Blue** — TI **AM335x** — branch `master`.
 - **BeagleBone AI-64** — TI **TDA4VM / J721E** — branch `am64x`.
 
-All firmware is compiled **natively on the board, in C** — each core simply uses its own
-native compiler; nothing is cross-compiled from a separate host.
+Firmware is written in C. PRU, A72, and R5F build **natively on the board**; the **C7x/C66x
+DSPs are cross-built on an x86_64 Linux host** (their TI compilers have no arm64 build) and
+the ELF copied to the board — see Part B.
 
 ---
 
@@ -67,24 +68,28 @@ apt install ti-pru-cgt-v2.3          # PRU C compiler (clpru)
       ~/pru-software-support-package
   ```
 
-### B.2 R5F, C7x, C66x compilers (BeagleBone AI-64 only)
-The AI-64 heterogeneous build adds firmware for the R5F, C7x, and C66x cores. Install each
-core's **native arm64** compiler on the board:
+### B.2 R5F, C7x, C66x compilers (BeagleBone AI-64)
+The AI-64 heterogeneous build adds firmware for the R5F, C7x, and C66x cores — but not all
+of their compilers run natively on the board:
 
-- **R5F** (Cortex-R5F, 32-bit bare-metal):
+- **R5F** (Cortex-R5F, 32-bit bare-metal) — **native on the board**:
   ```bash
   apt install gcc-arm-none-eabi          # provides arm-none-eabi-gcc
   ```
-  (Alternatively, TI's `tiarmclang`, which ships with the MCU+ SDK below.)
+  (Alternatively TI's `tiarmclang` — but that is an x86_64-host tool, see below.)
 
-- **C7x** → TI **C7000** Code Generation Tools (`cl7x`).
-- **C66x** → TI **C6000** Code Generation Tools (`cl6x`).
-  Download the native arm64 Linux CGT installers from TI's
-  [Code Generation Tools](https://www.ti.com/tool/download/ARM-CGT) page and run them
-  (they install under `/opt/ti` or `/usr/share/ti`).
+- **C7x / C66x DSPs** — **built on an x86_64 Linux host, not the board.** TI's `cl7x`
+  (C7000) and `cl6x` (C6000) ship **only** as x86_64 Linux / Windows installers — there is
+  no aarch64 build. Build the DSP firmware on an x86_64 Linux machine (PC, VM, or container)
+  and copy the resulting ELF into the board's `/lib/firmware/`; remoteproc loads it like any
+  other firmware. On that x86_64 host, install:
+  - **C7000 CGT** (`cl7x`) — <https://www.ti.com/tool/C7000-CGT> (5.0.0.LTS current).
+  - **C6000 CGT** (`cl6x`) — for C66x, when needed.
+  - **TI J721E MCU+ SDK** — device startup, linker command files, the remoteproc **resource
+    table**, plus **MMALIB** / **TIDL** for the MMA.
 
-- **TI J721E MCU+ SDK** — provides the device startup code and the remoteproc **resource
-  tables** the R5F/C7x/C66x firmware images link against.
+See [milestone-1-hetero/C7X-GETTING-STARTED.md](milestone-1-hetero/C7X-GETTING-STARTED.md)
+for the C7x toolchain + programming-model details.
 
 ---
 

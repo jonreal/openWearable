@@ -144,8 +144,9 @@ concurrency gets.
   **✅ Phase 0 finding:** all target cores (R5F0, C7X0, C66X0, PRU0/1) are already
   `offline` — the kernel does *not* auto-boot them — so there is nothing to "take over";
   only the reserved MCU R5F0 is running. See `BOARD-TRUTH.md`.
-- **Build model:** **native on-board builds, C only — no cross-compiling, no C++.** Every
-  core's firmware is compiled on the AI-64 itself (same native pattern as `clpru`).
+- **Build model:** C only. PRU/A72/R5F build **natively on the board**; **C7x/C66x must be
+  cross-built on an x86_64 Linux host** (their `cl7x`/`cl6x` compilers have no arm64 build)
+  and the ELF copied to the board — see `C7X-GETTING-STARTED.md`.
 - **Toolchains (one compiler per core type):**
   - PRU → `clpru` (`ti-cgt-pru`) — already present.
   - A72 → `gcc` (aarch64) — already present; targets **`cortex-a72`** (done).
@@ -200,7 +201,7 @@ detail once Phase 0 returns real board numbers (some of Phase 2+ depends on them
   ~8 MB) deferred as a latency optimization.
 - ✅ `.dts` → `.dtb` build-and-deploy procedure — captured (`make install_arm64` →
   `/boot/firmware/ti/` → `extlinux.conf`; see `BOARD-TRUTH.md` §0.7 and `../SETUP.md` §C.2).
-- ✅ Build host — native on the board, **C only, no cross-compiling**.
+- ✅ Build host — native (board) for PRU/A72/R5F; **C7x/C66x cross-built on an x86_64 Linux host** (no arm64 `cl7x`/`cl6x`). See `C7X-GETTING-STARTED.md`.
 - ⚠️ **GATING (only item left):** `cl7x` / `cl6x` / `tiarmclang` are **not installed**, and
   no J721E SDK is present (only `cgt-pru`) — so there are no R5F/C7x/C66x resource
   tables/startup yet. Must install the **native arm64** CGTs + an SDK. This blocks Phase 3.
