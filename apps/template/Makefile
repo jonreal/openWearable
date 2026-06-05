@@ -25,11 +25,11 @@ TARGET_DIR = /root/openWearable/apps/bin
 
 # Library Directories
 LIB_DIR = $(OW_DIR)/library
-LIBOWPRU = $(LIB_DIR)/lib/libowpru.a
+LIBOWPRU = $(LIB_DIR)/lib/libow_pru.a
 
 # Source Directories
-CSRC_DIR = $(OW_DIR)/library/src
-PRU_CSRC_DIR = $(OW_DIR)/library/pru_src
+CSRC_DIR = $(OW_DIR)/library/a72/src
+PRU_CSRC_DIR = $(OW_DIR)/library/pru/src
 
 # Main targets
 TARGET = main
@@ -37,12 +37,14 @@ PRU0_TARGET = pru0_main
 PRU1_TARGET = pru1_main
 
 # Include Directories
-CINC_DIR = $(OW_DIR)/library/include \
+CINC_DIR = $(OW_DIR)/library/common/include \
+	-I$(OW_DIR)/library/a72/include \
 	-I$(PSSP_DIR)/include/$(ARCH) \
 	-I$(PSSP_DIR)/include \
 	-I./
 
-PRU_CINC_DIR = -I$(OW_DIR)/library/include/ \
+PRU_CINC_DIR = -I$(OW_DIR)/library/common/include \
+	-I$(OW_DIR)/library/pru/include \
 	-I$(PSSP_DIR)/include/$(ARCH) \
 	-I$(PSSP_DIR)/include \
 	-I$(CGT_DIR)/include \
