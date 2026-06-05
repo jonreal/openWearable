@@ -4,11 +4,23 @@ Research notes to get us started on the C7x (the deep-learning core on the TDA4V
 as remoteproc `64800000.dsp` / `j7-c71_0`). Two questions: **how do we build for it**, and
 **how do we program it (with and without the MMA)**. Sources at the bottom.
 
-> **Bottom line up front:** the C7x is the hardest core to bring up — its compiler is
-> **x86_64-host only** (no native arm64, so it breaks our "build on the board" rule), it
-> needs the TI SDK's startup + resource tables, and it has a genuinely new programming
-> model (VLIW + streaming engine + MMA). But it's tractable with the right sequencing, and
-> for a *lightweight* EMG transformer **you likely never touch the MMA** — which removes the
+> **Bottom line up front — there are TWO ways to use the C7x, with very different effort:**
+>
+> - **TIDL / edge-AI (the intended path):** run a neural net on the C7x+MMA via the on-board
+>   ONNX / TFLite / NeoAI-DLR runtime + the TIDL delegate. **Inference runs on the board out
+>   of the box** (the C7x firmware is *prebuilt and shipped*); you only need an **x86 PC to
+>   *compile* the model once** (`edgeai-tidl-tools` — TI states model compile can't run on the
+>   SoC, only inference). **No `cl7x`, no hand-written C7x code.** This is how the board is
+>   designed to be used, and it answers "why ship the board" — the C7x is fully usable for AI
+>   out of the box; the PC is a one-time model-build tool (same pattern as Coral's
+>   `edgetpu_compiler`, Hailo's compiler, Jetson's TensorRT engine build).
+> - **Custom `cl7x` C kernels (advanced / fallback):** hand-write C7x code. `cl7x` is
+>   **x86_64-host only** (no arm64 build) + needs the TI SDK startup/resource-tables + a new
+>   programming model (VLIW + streaming engine + MMA). Only needed if TIDL can't run the model.
+>
+> For our lightweight EMG transformer: the **TIDL path is the accessible one** (compile on a
+> PC, infer on the board); hand-kernels are a fallback. And on the hand-kernel path you'd
+> *likely never touch the MMA* (the C7x core's ~80 GFLOP/s FP is plenty), which removes its
 > hardest part.
 
 ---
@@ -48,7 +60,31 @@ possible but slow/fragile — not recommended.)
 
 ---
 
-## 2. The programming model (mental map)
+## 2. The TIDL / edge-AI path — using the C7x *without* `cl7x` (the intended way)
+
+How the BeagleBone AI-64 is designed to use the C7x — **no `cl7x`, no hand-written C7x code**:
+
+1. **(x86 PC, once per model)** Compile/import the trained model (PyTorch → ONNX) with TI's
+   **`edgeai-tidl-tools`** → "model artifacts" (quantization + TIDL subgraph). TI is explicit:
+   **model compilation cannot run on the SoC — only inference can**, so this step needs an
+   x86 Linux PC. The board's runtime version must match the tools version used to compile.
+2. **(board)** Copy the artifacts over; run inference with **ONNX Runtime / TFLite / NeoAI-DLR
+   + the TIDL delegate** (`libtidl_*_delegate.so`), which offloads the network to the **C7x +
+   MMA** (~30× vs the A72 CPU). The C7x firmware for this is **prebuilt and shipped** — nothing
+   to build on the board.
+
+So the board runs the C7x out of the box; the PC is only a one-time model-build tool.
+
+**Caveats for a transformer:** TIDL grew up CNN-first, so **attention / layernorm / softmax
+op coverage is version-dependent** (recent J721E SDK / TIDL added transformer support — verify
+for our model; unsupported ops fall back to C7x-scalar or the A72). A72→C7x dispatch adds
+latency — fine for *async* inference (our design), irrelevant to the >kHz loop (PRU/R5F).
+
+> Note: this board's current (rcn-ee Debian *Minimal*) image does **not** ship the edge-AI
+> stack or `cl7x` — only `ti-pru-cgt`. The TIDL runtime/tools come from TI's **Edge AI SDK**
+> (full image) and **`edgeai-tidl-tools`** (x86 host); install per that flow.
+
+## 3. The programming model (mental map) — for the `cl7x` / custom-kernel path
 
 The C7x is a **VLIW scalar + vector DSP** (the TDA4VM part is a C71x @ ~1 GHz, ~80 GFLOP/s
 FP / ~256 GOPS), with a bolt-on **MMA** for dense matrix multiply (~8 TOPS INT8). Three
@@ -83,7 +119,7 @@ MMA only if the model grows enough to need the 8 TOPS.
 
 ---
 
-## 3. Reading list (start here, in order)
+## 4. Reading list — for the custom `cl7x` path (start here, in order)
 - **SPRUIV4** — *C7000 C/C++ Optimization Guide*. The practical programming guide
   (architecture, streaming engine, vectorization, worked examples). **Read first.**
 - **SPRUIG8** — *C7000 Optimizing C/C++ Compiler User's Guide* (`cl7x` usage; intrinsics incl.
@@ -100,16 +136,17 @@ MMA only if the model grows enough to need the 8 TOPS.
 
 ---
 
-## 4. Recommended sequence (de-risked)
+## 5. Recommended sequence (de-risked)
 1. **Prove the pipeline on the A72 first.** Run the EMG transformer on Linux (ONNXRuntime CPU
    or small hand C / NEON). Validates EMG → features → inference → control end-to-end and
    gives a real FLOP/latency budget — **no C7x toolchain needed.** This may even be the *v1
    inference home*, with the C7x as a deliberate later offload (the async-satellite design
    means inference rate is decoupled from the >kHz control loop either way).
-2. **Stand up the x86_64 build host** (cl7x + J721E MCU+ SDK). Build TI's C7x `hello_world`,
-   add/borrow a resource table, copy the ELF to the board, load via remoteproc, confirm it
-   runs and can exchange data with the A72. This is "C7x hello-world" — de-risks toolchain +
-   boot independently of the NN.
+2. **C7x via TIDL (the intended path).** Compile the ONNX model on an x86 PC with
+   `edgeai-tidl-tools`, copy artifacts to the board, run inference via ONNX Runtime + TIDL on
+   the C7x+MMA. First verify the TIDL version's transformer-op coverage. (Only if TIDL falls
+   short → the custom path: stand up the x86 `cl7x` + MCU+ SDK host, build a C7x `hello_world`
+   with a resource table, load via remoteproc, then hand-port the forward pass.)
 3. **Port the forward pass to the C7x**, FP first (C7x core, vectorized, MMALIB matmul where
    it helps). Quantize to INT8 + adopt the MMA *only if* the FLOP budget demands it.
 
