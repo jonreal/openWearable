@@ -191,7 +191,7 @@ concurrency gets.
 | 0     | Board ground-truth & toolchains    | `PHASE-0.md` → `BOARD-TRUTH.md` | **in progress** — inventory/memory/regression ✅; toolchain install + dtb-procedure capture still open |
 | 1     | Unified two-plane memory model     | `PHASE-1.md`     | planned (addresses now known: ctrl `0xac000000`, data `0xac100000`) |
 | 2     | Generalized ARM remoteproc loader  | `PHASE-2.md` (TBD) | not yet written |
-| 3     | Bring up cores one type at a time (R5F → C66x → C7x) | `PHASE-3.md` (TBD) | not yet written |
+| 3     | Bring up cores: R5F/C66x (bare-metal) + **C7x via TIDL** | `PHASE-3-C7X-BUILD.md` (C7x ✅) · `PHASE-3.md` R5F (TBD) | C7x build-from-source plan written → **SDK 10.1 (transformer-ready)**; build host = x86 box (board too small) |
 | 4     | Unison handshake (the acceptance test) | `PHASE-4.md` (TBD) | not yet written |
 | 5     | Cleanup, naming fixes, docs        | `PHASE-5.md` (TBD) | **partly done** — build naming (firmware/define/.cmd/A72) → `j721e`; branch rename deferred |
 
