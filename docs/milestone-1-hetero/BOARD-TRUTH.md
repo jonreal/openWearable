@@ -73,12 +73,13 @@ PRU + A72 code.**
 
 - ✅ **Build host (revised — see `C7X-GETTING-STARTED.md`):** PRU + A72 + R5F build
   **natively on the board** (`clpru`, `gcc`, `gcc-arm-none-eabi` — all native arm64).
-  **C7x/C66x do NOT:** `cl7x`/`cl6x` ship only as x86_64 Linux/Windows installers (no
-  aarch64 build — confirmed on TI's download page), so **DSP firmware is cross-built on an
-  x86_64 Linux host and the ELF copied to `/lib/firmware/`.**
-- ⬜ **Remaining task:** (board) `apt install gcc-arm-none-eabi` for the R5F; (x86_64 host)
-  install `cl7x` (C7000 CGT 5.0.0.LTS) + the J721E MCU+ SDK for C7x startup, resource
-  tables, and MMALIB/TIDL. `cl6x` + C66x later.
+  **C7x → TIDL** (no `cl7x`, no bare-metal): model compiled on an x86 host, run on the board
+  by a self-installed aarch64 runtime + 10.x C7x firmware. **C66x (optional)** → bare-metal
+  `cl6x`, x86-built (no arm64 build), ELF copied to `/lib/firmware/`.
+- ⬜ **Remaining task:** (board) `apt install gcc-arm-none-eabi` for the R5F; **C7x → self-install
+  the TIDL 10.x stack** (no turnkey edge-AI image; x86 model-compile host + aarch64
+  `onnxruntime_tidl` runtime + 10.x C7x firmware — see `C7X-GETTING-STARTED.md` §6). Optional
+  bare-metal C66x via `cl6x` (x86), later.
 
 ---
 
@@ -143,11 +144,13 @@ this exact procedure.
 ## Phase 0 status summary
 - ✅ Done: 0.1 identity, 0.2/0.3 remoteproc map + v1 instances, 0.6 memory map, 0.7 dtb
   build/deploy procedure, 0.8 regression.
-- ⬜ **Only remaining task (GATES Phase 3):** R5F → `apt gcc-arm-none-eabi` (board); C7x →
-  `cl7x` + J721E MCU+ SDK on an **x86_64 Linux host** (no arm64 `cl7x`/`cl6x`; see below).
+- ⬜ **Only remaining task (GATES Phase 3):** R5F → `apt gcc-arm-none-eabi` (board); **C7x →
+  self-install the TIDL 10.x stack** (x86 compile host + aarch64 runtime + 10.x firmware; no
+  turnkey image — see `C7X-GETTING-STARTED.md` §6). Optional C66x bare-metal via `cl6x` (x86).
 
 ### Decisions resolved by these findings
-- **Build host → native (board) for PRU/A72/R5F; x86_64 Linux host for C7x/C66x** (no arm64 `cl7x`/`cl6x`).
+- **Build host → native (board) for PRU/A72/R5F. C7x = TIDL** (model compiled on x86, run on
+  board via self-installed aarch64 runtime + 10.x firmware). C66x (optional) = `cl6x` on x86.
 - **Take-over vs coexist → resolved:** target cores are `offline`; no take-over needed.
 - **Control-plane location → DDR `no-map` for v1** (`0xac000000`), MSMC deferred.
 - **v1 R5F instance → `5c00000.r5f` (remoteproc1)**; lockstep mode (split-mode = future DT).

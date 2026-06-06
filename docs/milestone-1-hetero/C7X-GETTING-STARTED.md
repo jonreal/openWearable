@@ -179,6 +179,46 @@ only the C7x build step lives elsewhere.
 
 ---
 
+## 6. Getting the TIDL stack onto the board — the self-install path (no turnkey image)
+
+Verified (June 2026): **there is no current turnkey edge-AI image.** The only image that ever
+bundled the TIDL stack is the stale **`bbai64-…-debian-11.6-xfce-edgeai-…-2023-02-16`**
+(Bullseye, SDK ~8.x → TIDL 8.x → **no transformer support**). Current AI-64 images
+(Bookworm/Trixie `xfce` and `base`) ship **no edge-AI at all** — `edgeai` was *un-bundled*
+after Bullseye. So transformer-capable C7x (TIDL ≥ 10.x) must be **installed/built ourselves**,
+and we'll do it on the **current openWearable image** (keeps the RT work intact) rather than
+adopt the stale Bullseye image.
+
+### Version anchor — everything must sit on ONE TIDL/SDK line
+Choose a **TIDL 10.x** release with transformer support + **C7x/MMA firmware ≥ `10_01_04_00`**.
+The board is currently SDK **9.02** (`ti-psdk-firmware-09.02.00.05`, `j7-c71_0-fw.tisdk`), so its
+C7x firmware must be **upgraded to the chosen 10.x**. Four things must match:
+**C7x firmware ↔ `tidl_tools` ↔ `onnxruntime_tidl` runtime ↔ compiled artifacts**
+(ref: `edgeai-tidl-tools/docs/sdk_version_compatibility_table.md`).
+
+### What to acquire
+**x86_64 Linux host (model compilation):**
+- `edgeai-tidl-tools` @ the chosen 10.x tag → `source scripts/setup/setup.sh` (pulls x86
+  `tidl_tools` + OSRT + `cl7x`). Used to compile ONNX → TIDL artifacts.
+
+**Board / aarch64 (inference runtime):**
+- `onnxruntime_tidl-*-cp310-cp310-linux_aarch64.whl` (TI fork, adds `TIDLExecutionProvider`)
+  + target `tidl_tools` libs (`libtidl_*`) — from TI's
+  `tidl-tools/<REL>/OSRT_TOOLS/ARM_LINUX/` (+ `TIDL_TOOLS/J721E/`), **or** build via
+  `TexasInstruments-Sandbox/edgeai-osrt-libs-build` (aarch64 Debian / TDA4VM). Needs a
+  **Python 3.10** venv (cp310 wheels). Set `TIDL_TOOLS_PATH`.
+- **C7x firmware** upgraded to the chosen 10.x (replaces `j7-c71_0-fw.tisdk`).
+
+### Flow once installed
+Train (PyTorch) → ONNX → compile on x86 → copy artifacts to board → `onnxruntime_tidl` + TIDL
+EP runs it on C7x+MMA → A72 publishes intent into the control plane (`INFERENCE-DATAFLOW.md`).
+
+### Risks to watch
+- **Firmware ↔ kernel ↔ runtime coupling** — the 10.x C7x firmware must load under the board's
+  kernel (6.12) via remoteproc and match the runtime's IPC version. Main integration risk.
+- **Version drift** — any mismatch among the four pinned components ⇒ compile/inference fails.
+- The C7x is an **async satellite** — if this stack misbehaves, control (PRU/R5F) is unaffected.
+
 ## Sources
 - C7000-CGT download (host installers): https://www.ti.com/tool/download/C7000-CGT/5.0.0.LTS
 - C7000 CGT product page: https://www.ti.com/tool/C7000-CGT
