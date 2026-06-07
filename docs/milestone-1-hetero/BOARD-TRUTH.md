@@ -156,3 +156,23 @@ this exact procedure.
 - **v1 R5F instance → `5c00000.r5f` (remoteproc1)**; lockstep mode (split-mode = future DT).
 - **DTB deploy → `make install_arm64` in `/root/BeagleBoard-DeviceTrees` → `/boot/firmware/ti/`
   → `extlinux.conf`.**
+
+---
+
+## 0.9 C7x TIDL runtime + firmware (2026-06-07) — ✅ runtime / ⚠️ firmware gate
+
+Full build/install procedure: `../SETUP.md` Part F. Engineering status + plan: `PHASE-3-C7X-BUILD.md`.
+
+- ✅ **A72 TIDL runtime** built from source on the board (SD card for space; gotcha:
+  `CMAKE_POLICY_VERSION_MINIMUM=3.5`) and installed to **`~/tidl`** (lib + Python 3.11 venv + cp311
+  `onnxruntime_tidl` wheel + `setenv.sh`). All **PSDK 10.01.00.04**. Verified:
+  `get_available_providers()` → `['TIDLExecutionProvider','TIDLCompilationProvider','CPUExecutionProvider']`.
+- ✅ **C7x firmware found** (standalone, no SDK image): `git.ti.com/cgit/processor-sdk/psdk_fw`, tag
+  **`10.01.00.04`**, `j721e/vision_apps_eaik/vx_app_rtos_linux_c7x_1.out` (12,574,864 B, C7x ELF 0x91).
+  Staged at `/mnt/build/fw/`. **Not yet installed to `/lib/firmware/` or booted.**
+- 🔴 **Gate — DTB carveout mismatch.** The 10.1 firmware loads at `0xb2100000` (+ needs `0xac000000`,
+  `0xb0000000`); the stock DTB only reserves `c71-memory@a8100000` (where the **9.02** firmware loaded,
+  entry `0xa8e00000`). `ipc-memories@aa000000` already matches the firmware's IPC vrings. TI moved the
+  J721E DSP memory map between SDK 9 and 10 → the C7x cannot boot until the DTB `reserved-memory` is
+  updated to the 10.1 layout + reboot. Device-tree change only (kernel/Debian untouched; reversible via
+  `extlinux.conf`). Folds into the Phase 1.4 `ow_ctrl`/`ow_data` carveout work.
