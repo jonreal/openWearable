@@ -33,6 +33,10 @@ over"; we just write firmware + start, exactly like the PRUs today.**
 | PRU0    | remoteproc6 | `b034000.pru`  | `j7-pru0_0`         | offline    | `j721e-pru0-template-fw` |
 | PRU1    | remoteproc9 | `b038000.pru`  | `j7-pru0_1`         | offline    | `j721e-pru1-template-fw` |
 
+> Update (2026-06-09): the table is the **stock** baseline. In the deployed `openWearable-tidl`
+> config, **C7X0 (remoteproc5) now auto-boots** our 10.1 TIDL firmware (`j7-c71_0-fw` symlink +
+> `-tidl.dts` carveouts) — `state=running`. See §0.9. The rest remain offline as shown.
+
 ### Reserved — DO NOT TOUCH
 - **remoteproc0 `41000000.r5f`** — state **`attached`** (the only running core). This is the
   **MCU R5F running the Device Manager / TIFS**. Never repurpose.
@@ -159,7 +163,7 @@ this exact procedure.
 
 ---
 
-## 0.9 C7x TIDL runtime + firmware (2026-06-07) — ✅ runtime / ⚠️ firmware gate
+## 0.9 C7x TIDL runtime + firmware (2026-06-09) — ✅ runtime / ✅ firmware booting
 
 Full build/install procedure: `../SETUP.md` Part F. Engineering status + plan: `PHASE-3-C7X-BUILD.md`.
 
@@ -167,12 +171,16 @@ Full build/install procedure: `../SETUP.md` Part F. Engineering status + plan: `
   `CMAKE_POLICY_VERSION_MINIMUM=3.5`) and installed to **`~/tidl`** (lib + Python 3.11 venv + cp311
   `onnxruntime_tidl` wheel + `setenv.sh`). All **PSDK 10.01.00.04**. Verified:
   `get_available_providers()` → `['TIDLExecutionProvider','TIDLCompilationProvider','CPUExecutionProvider']`.
-- ✅ **C7x firmware found** (standalone, no SDK image): `git.ti.com/cgit/processor-sdk/psdk_fw`, tag
-  **`10.01.00.04`**, `j721e/vision_apps_eaik/vx_app_rtos_linux_c7x_1.out` (12,574,864 B, C7x ELF 0x91).
-  Staged at `/mnt/build/fw/`. **Not yet installed to `/lib/firmware/` or booted.**
-- 🔴 **Gate — DTB carveout mismatch.** The 10.1 firmware loads at `0xb2100000` (+ needs `0xac000000`,
-  `0xb0000000`); the stock DTB only reserves `c71-memory@a8100000` (where the **9.02** firmware loaded,
-  entry `0xa8e00000`). `ipc-memories@aa000000` already matches the firmware's IPC vrings. TI moved the
-  J721E DSP memory map between SDK 9 and 10 → the C7x cannot boot until the DTB `reserved-memory` is
-  updated to the 10.1 layout + reboot. Device-tree change only (kernel/Debian untouched; reversible via
-  `extlinux.conf`). Folds into the Phase 1.4 `ow_ctrl`/`ow_data` carveout work.
+- ✅ **C7x firmware installed + booting** (standalone, no SDK image): `git.ti.com/cgit/processor-sdk/psdk_fw`,
+  tag **`10.01.00.04`**, `j721e/vision_apps_eaik/vx_app_rtos_linux_c7x_1.out` (12,574,864 B, C7x ELF 0x91).
+  Now at `/lib/firmware/` with `j7-c71_0-fw` → it; `remoteproc5` **`state=running`**, `virtio1` rpmsg
+  online (name-service handshake), stable. Auto-loads on reboot (symlink persists; `.tisdk` = fallback).
+- ✅ **Gate CLOSED — DTB carveouts ported.** The 10.1 firmware loads at `0xb2100000` (+ `0xac000000`,
+  `0xb0000000`, `0xb8000000`, high-DDR scratch/heap), which the stock DTB left as Linux RAM. Fixed in
+  **`device-tree/k3-j721e-boneai64-openWearable-tidl.dts`** (grew `ipc-memories` 28→32 MB, added TI's
+  full vision_apps `reserved-memory` map, repointed `&c71_0` A8→B2); built/deployed/rebooted. dmesg:
+  all 10 regions `nomap`, no overlap; rproc bound to `c71-dma-memory@b2000000`. Device-tree change only
+  (kernel/Debian untouched; reversible via `extlinux.conf`). Annotated source map:
+  `j721e-visionapps-reserved-memory.dts`.
+- ⬜ **Next:** per-model artifacts → on-board TIDL inference (`TIDLExecutionProvider`), confirm C7x+MMA
+  offload. See `PHASE-3-C7X-BUILD.md` road ahead.

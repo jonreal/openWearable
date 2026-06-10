@@ -244,9 +244,25 @@ cat /sys/class/remoteproc/remoteproc5/firmware     # -> j7-c71_0-fw (the name re
 ln -sf vx_app_rtos_linux_c7x_1.out.10.01.00.04 /lib/firmware/j7-c71_0-fw   # the stock ".tisdk" suffix keeps cores offline; this enables it
 ```
 
-> ⚠️ **Not bootable yet — device-tree carveout mismatch.** The 10.1 firmware is statically linked to
-> load at `0xb2100000` (and needs `0xac000000`, `0xb0000000`); the stock DTB only reserves
-> `c71-memory@a8100000` — TI moved the J721E DSP memory map between SDK 9 and 10. Booting the C7x
-> needs the DTB `reserved-memory` updated to the 10.1 layout (Part C build/deploy flow) + a reboot.
-> Until then `echo start > /sys/class/remoteproc/remoteproc5/state` fails in remoteproc. This is a
-> **device-tree change only** — kernel/Debian untouched, reversible via `extlinux.conf`.
+> **Requires the TIDL device tree.** The 10.1 firmware is statically linked to load at `0xb2100000`
+> (and needs `0xac000000`, `0xb0000000`, `0xb8000000`, …); the stock DTB only reserves
+> `c71-memory@a8100000` — TI moved the J721E DSP memory map between SDK 9 and 10, so the stock DTB
+> cannot boot it. Use **`device-tree/k3-j721e-boneai64-openWearable-tidl.dts`**, which ports TI's full
+> vision_apps `reserved-memory` map; build + select it per **Part C** and reboot. Device-tree change
+> only — kernel/Debian untouched, reversible via `extlinux.conf` (the `eMMC (debug)` label boots the
+> stock DTB as a recovery net).
+
+Boot the C7x (no reboot needed once the TIDL device tree is live):
+```bash
+echo start > /sys/class/remoteproc/remoteproc5/state
+cat /sys/class/remoteproc/remoteproc5/state     # -> running
+dmesg | grep remoteproc5 | tail                 # "Booting fw image j7-c71_0-fw, size 12574864" ... "is now up"
+ls /sys/bus/rpmsg/devices | grep virtio1        # virtio1.rpmsg_ns / .rpmsg_ctrl = firmware alive (name-service handshake)
+```
+- The `/lib/firmware/j7-c71_0-fw` symlink persists on eMMC, so the C7x **auto-loads on reboot**. To
+  disable: `rm /lib/firmware/j7-c71_0-fw` (stock `.tisdk` stays as fallback).
+- Benign on this stack: `dmesg` logs `unsupported resource 65538` (a TI *vendor* resource the stock
+  Debian remoteproc skips) and there is **no** `remoteproc5/trace0` — vision_apps firmware logs to the
+  `rtos-log@ac000000` carveout (read by TI userspace), not the mainline trace resource.
+
+> Verified booting **2026-06-09** on `boneai64-0`: `state=running`, stable, `virtio1` rpmsg online.

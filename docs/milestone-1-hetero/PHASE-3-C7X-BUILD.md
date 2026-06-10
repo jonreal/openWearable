@@ -4,12 +4,14 @@ Goal: a working **C7x + MMA** inference path on the **openWearable Debian image*
 at **SDK 10.1** — the transformer-capable version we ultimately need. Reproducible build/install
 steps for humans live in `../SETUP.md` Part F; this file is the engineering status + plan.
 
-## Status (2026-06-07)
+## Status (2026-06-09)
 - ✅ **A72 TIDL runtime built from source + installed** → `~/tidl` on the board. `TIDLExecutionProvider`
   verified live.
-- ✅ **C7x firmware found, verified, staged** (10.01.00.04) → `/mnt/build/fw/`. **Not installed/booted.**
-- 🔴 **Gate: device-tree carveout mismatch** blocks the C7x boot — a DTB update + reboot is required.
-- ⬜ Per-model artifacts (compile a net) + on-board inference — not started.
+- ✅ **C7x firmware installed + booted** (10.01.00.04). `/lib/firmware/j7-c71_0-fw` → the binary;
+  `remoteproc5` `state=running`, `virtio1` rpmsg online. Stable, no crash/recovery.
+- ✅ **DTB carveout gate CLOSED.** `device-tree/k3-j721e-boneai64-openWearable-tidl.dts` ports TI's full
+  vision_apps `reserved-memory` map; built, deployed, rebooted — all 10 regions reserved cleanly.
+- ⬜ Per-model artifacts (compile a net) + on-board inference — **next**, not started.
 
 ## What we actually did (supersedes the original "build on the x86 box / QEMU" plan)
 Built the runtime **natively on the board**, using an SD card for space (the eMMC + 3.6 GB RAM can't
@@ -44,30 +46,32 @@ the per-model artifacts, **not** the firmware.
   by suffixing firmware `.tisdk`; enable by symlinking `j7-c71_0-fw` → the firmware. Stock 9.02
   firmware stays as `j7-c71_0-fw.tisdk` (fallback).
 
-## 🔴 The gate: DTB `reserved-memory` must match the 10.1 J721E map
-Static ELF inspection of the 10.1 firmware vs the board's live DTB carveouts:
+## ✅ The gate (CLOSED): DTB `reserved-memory` now matches the 10.1 J721E map
+Static ELF inspection of the 10.1 firmware vs the board's *stock* DTB carveouts had been:
 
-| Firmware (10.1) load region | Board DTB carveout | match? |
+| Firmware (10.1) load region | Stock DTB carveout | match? |
 |---|---|---|
 | `0xb2100000`–`~0xb2ec0000` (code/data + `.resource_table`) | `c71-memory@a8100000` | ❌ wrong address |
-| `0xaa000000` (IPC vrings) | `ipc-memories@aa000000` (28 MB) | ✅ |
+| `0xaa000000` (IPC vrings) | `ipc-memories@aa000000` (28 MB) | ⚠️ too small (needs 32 MB) |
 | `0xac000000`, `0xac040000`, `0xb0000000` (log / tiovx / file) | — | ❌ unreserved |
 
 The 9.02 firmware loaded *inside* `c71-memory@a8100000` (entry `0xa8e00000` ✓). The 10.1 firmware is
-hard-linked to `0xb2100000`, which is **general Linux RAM** on this board, not a `no-map` carveout —
-so remoteproc refuses it.
+hard-linked to `0xb2100000`, which was **general Linux RAM** on the stock board — so remoteproc refused it.
 
-**Fix:** port TI's 10.1 J721E `reserved-memory` carveouts into
-`device-tree/k3-j721e-boneai64-openWearable.dts`, rebuild + deploy (SETUP Part C), reboot. This is a
-**device-tree change only** — kernel/Debian untouched, reversible via `extlinux.conf`, and (per the
-project lead) inherently kernel-independent. It folds into the Milestone-1 memory-model pass that
-adds `ow_ctrl`/`ow_data` in the same DTS.
+**Fix (done):** `device-tree/k3-j721e-boneai64-openWearable-tidl.dts` — a byte-copy of the board DTS
+with only the C7x carveouts changed: grew `ipc-memories` 28→32 MB, added TI's full vision_apps map
+(`rtos-log`, `tiovx-obj-desc` 63.75 MB, `app-fileio`, `tiovx-log-rt`, `c71` dma@b2000000 + mem@b2100000
+95 MB, `ddr-shared` 512 MB, high-DDR `c7x-scratch` 368 MB + `c7x-heap` 256 MB), and repointed `&c71_0`
+A8→B2. Old A8 c71 nodes kept (orphaned); R5F/C66x heaps + inter-core eth omitted. Built/deployed via
+SETUP Part C, rebooted. dmesg confirms all 10 regions `nomap non-reusable`, no overlap; the rproc
+driver bound to `c71-dma-memory@b2000000`. Annotated reference map:
+`j721e-visionapps-reserved-memory.dts`. **Device-tree change only** — kernel/Debian untouched,
+reversible via `extlinux.conf`.
 
 ## Road ahead
-1. **DTB carveouts (next):** get TI's 10.1 J721E `reserved-memory` map (matching kernel DTS), port
-   into our DTS, rebuild/reboot, then `echo start > /sys/class/remoteproc/remoteproc5/state` and read
-   the remoteproc log to confirm the C7x boots.
-2. **Artifacts (B3):** compile resnet18 (then our EMG net) → `.bin`. Try on-target via
+1. ~~**DTB carveouts**~~ ✅ **DONE (2026-06-09)** — `-tidl.dts` deployed, C7x boots (`state=running`,
+   `virtio1` rpmsg online). See SETUP Part F.4 for the boot/verify steps.
+2. **Artifacts (B3, next):** compile resnet18 (then our EMG net) → `.bin`. Try on-target via
    `TIDLCompilationProvider` first; fall back to `edgeai-tidl-tools` on an x86 box.
 3. **Inference (B4):** run on the C7x; confirm the offload report puts the net on C7x+MMA.
 4. **Mesh integration:** wire into the two-plane memory model (`INFERENCE-DATAFLOW.md`) — A72 publishes
@@ -76,5 +80,8 @@ adds `ow_ctrl`/`ow_data` in the same DTS.
 ## Artifacts on the board (this save point)
 - Runtime install: `~/tidl/` (`lib/` + `venv/` + `setenv.sh`).
 - Build tree (SD): `/mnt/build/edgeai-osrt-libs-build/workarea/`; deps `~/debian12.5-deps/`.
-- C7x firmware (SD): `/mnt/build/fw/vx_app_rtos_linux_c7x_1.out.10.01.00.04`
-  (sha256 `d8dc6d98df30769b70d00a195556386e78a369c014c9bf9d022eb236935a5e31`).
+- C7x firmware: **installed** at `/lib/firmware/vx_app_rtos_linux_c7x_1.out.10.01.00.04` with
+  `/lib/firmware/j7-c71_0-fw` → it (auto-loads on reboot). Staging copy still on SD at
+  `/mnt/build/fw/...` (sha256 `d8dc6d98df30769b70d00a195556386e78a369c014c9bf9d022eb236935a5e31`).
+- Device tree: `device-tree/k3-j721e-boneai64-openWearable-tidl.dts`, selected in
+  `/boot/firmware/extlinux/extlinux.conf` (`eMMC (default)` label).

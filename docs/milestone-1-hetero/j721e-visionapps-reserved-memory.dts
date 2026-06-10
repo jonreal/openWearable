@@ -1,0 +1,142 @@
+/*
+ * REFERENCE ONLY — not built, not included. Study copy for the C7x carveout decision.
+ *
+ * TI vision_apps / edgeai DDR memory map for J721E (TDA4VM), PSDK 10.01.00.04.
+ * Faithfully reconstructed from TI's authoritative header
+ *   libti-vision-apps-j721e_10.1.0  ->  usr/include/processor_sdk/vision_apps/platform/j721e/rtos/app_mem_map.h
+ * This is the map the C7x firmware (vx_app_rtos_linux_c7x_1.out @10.01.00.04) is statically linked against.
+ *
+ * Cells: reserved-memory uses #address-cells=<2> #size-cells=<2>, so each reg is
+ *   <hi_addr lo_addr  hi_size lo_size>.  High DDR (paddr 0x8_xxxx_xxxx) uses hi=0x08.
+ * High-DDR mapping (from the header):  C7x vaddr 0x1_0000_0000  ==  paddr 0x8_8000_0000.
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ ADDRESS-MAP OVERVIEW (low DDR, 32-bit reachable)                              │
+ * ├───────────────┬──────────┬───────────────────────────────────────────────────┤
+ * │ 0xA0000000    │  1+15 MB │ MCU1_0  (mcu_r5fss0 core0)   IPC + code/data        │
+ * │ 0xA1000000    │  1+15 MB │ MCU1_1  (mcu_r5fss0 core1)                          │
+ * │ 0xA2000000    │  1+31 MB │ MCU2_0  (main_r5fss0 core0)                         │
+ * │ 0xA4000000    │  1+31 MB │ MCU2_1  (main_r5fss0 core1)                         │
+ * │ 0xA6000000    │  1+15 MB │ MCU3_0  (main_r5fss1 core0)                         │
+ * │ 0xA7000000    │  1+15 MB │ MCU3_1  (main_r5fss1 core1)                         │
+ * │ 0xA8000000    │  1+15 MB │ C66x    (IPC@A8000000, C66x_1 data@A8100000)        │
+ * │ 0xA9000000    │  1+15 MB │ C66x    (IPC@A9000000, C66x_2 data@A9100000)        │
+ * │ 0xAA000000    │   32 MB  │ IPC VRINGs (all cores)            *** non-cached *** │
+ * │ 0xAC000000    │  256 KB  │ remote-core log                  *** non-cached *** │
+ * │ 0xAC040000    │ 63.75 MB │ TIOVX object descriptors (OpenVX) *** non-cached *** │
+ * │ 0xB0000000    │   4 MB   │ remote-core file I/O                                │
+ * │ 0xB0400000    │   28 MB  │ TIOVX runtime log                *** non-cached *** │
+ * │ 0xB2000000    │   1 MB   │ ===> C7x_1 DMA/IPC                                  │
+ * │ 0xB2100000    │   95 MB  │ ===> C7x_1 code+data (firmware LOADs here)          │
+ * │ 0xB8000000    │  512 MB  │ DDR shared buffers (inter-core / TIDL tensors)      │
+ * │ 0xD8000000..  │ ~144 MB  │ per-core local heaps + VISS + C66x scratch          │
+ * │ 0xE4000000    │  8+24 MB │ inter-core ethernet desc + data                     │
+ * ├───────────────┴──────────┴───────────────────────────────────────────────────┤
+ * │ HIGH DDR (paddr, via C7x MMU vaddr 0x1_0000_0000 -> paddr 0x8_8000_0000)       │
+ * │ 0x8_80000000  │  368 MB  │ ===> C7x_1 scratch                                  │
+ * │ 0x8_97000000  │  256 MB  │ ===> C7x_1 local heap                               │
+ * └───────────────┴──────────┴───────────────────────────────────────────────────┘
+ *
+ * "===>" marks the regions OUR C7x-only bring-up needs (see the C7X-ONLY SUBSET note
+ * at the bottom). Everything else is here so you can see the full reorg vs our current
+ * board map (which is the *basic IPC* map: main-R5F at A2-A5, C66x at A6-A7, C71 at A8).
+ */
+
+/ {
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		/* ---------- MCU / main R5F cores (IPC + code/data) ---------- */
+		mcu1_0_dma:  r5f-dma-memory@a0000000 { compatible="shared-dma-pool"; reg=<0x00 0xa0000000 0x00 0x00100000>; no-map; }; /*  1 MB */
+		mcu1_0_mem:  r5f-memory@a0100000     { compatible="shared-dma-pool"; reg=<0x00 0xa0100000 0x00 0x00f00000>; no-map; }; /* 15 MB */
+		mcu1_1_dma:  r5f-dma-memory@a1000000 { compatible="shared-dma-pool"; reg=<0x00 0xa1000000 0x00 0x00100000>; no-map; };
+		mcu1_1_mem:  r5f-memory@a1100000     { compatible="shared-dma-pool"; reg=<0x00 0xa1100000 0x00 0x00f00000>; no-map; };
+		mcu2_0_dma:  r5f-dma-memory@a2000000 { compatible="shared-dma-pool"; reg=<0x00 0xa2000000 0x00 0x00100000>; no-map; };
+		mcu2_0_mem:  r5f-memory@a2100000     { compatible="shared-dma-pool"; reg=<0x00 0xa2100000 0x00 0x01f00000>; no-map; }; /* 31 MB (was 15) */
+		mcu2_1_dma:  r5f-dma-memory@a4000000 { compatible="shared-dma-pool"; reg=<0x00 0xa4000000 0x00 0x00100000>; no-map; };
+		mcu2_1_mem:  r5f-memory@a4100000     { compatible="shared-dma-pool"; reg=<0x00 0xa4100000 0x00 0x01f00000>; no-map; }; /* 31 MB */
+		mcu3_0_dma:  r5f-dma-memory@a6000000 { compatible="shared-dma-pool"; reg=<0x00 0xa6000000 0x00 0x00100000>; no-map; };
+		mcu3_0_mem:  r5f-memory@a6100000     { compatible="shared-dma-pool"; reg=<0x00 0xa6100000 0x00 0x00f00000>; no-map; };
+		mcu3_1_dma:  r5f-dma-memory@a7000000 { compatible="shared-dma-pool"; reg=<0x00 0xa7000000 0x00 0x00100000>; no-map; };
+		mcu3_1_mem:  r5f-memory@a7100000     { compatible="shared-dma-pool"; reg=<0x00 0xa7100000 0x00 0x00f00000>; no-map; };
+
+		/* ---------- C66x DSPs ---------- */
+		c66_1_dma:   c66-dma-memory@a8000000 { compatible="shared-dma-pool"; reg=<0x00 0xa8000000 0x00 0x00100000>; no-map; };
+		c66_1_mem:   c66-memory@a8100000     { compatible="shared-dma-pool"; reg=<0x00 0xa8100000 0x00 0x00f00000>; no-map; };
+		c66_2_dma:   c66-dma-memory@a9000000 { compatible="shared-dma-pool"; reg=<0x00 0xa9000000 0x00 0x00100000>; no-map; };
+		c66_2_mem:   c66-memory@a9100000     { compatible="shared-dma-pool"; reg=<0x00 0xa9100000 0x00 0x00f00000>; no-map; };
+
+		/* ---------- shared / framework regions (mmap'd by tivision_apps on A72) ---------- */
+		rtos_ipc_memory:    ipc-memories@aa000000   { reg=<0x00 0xaa000000 0x00 0x02000000>; no-map; }; /* 32 MB  IPC vrings  (non-cached) */
+		rtos_log_mem:       rtos-log@ac000000        { reg=<0x00 0xac000000 0x00 0x00040000>; no-map; }; /* 256 KB remote-core log */
+		tiovx_obj_desc_mem: tiovx-obj-desc@ac040000  { reg=<0x00 0xac040000 0x00 0x03fc0000>; no-map; }; /* 63.75 MB OpenVX obj desc (non-cached) */
+		app_fileio_mem:     app-fileio@b0000000      { reg=<0x00 0xb0000000 0x00 0x00400000>; no-map; }; /* 4 MB */
+		tiovx_log_rt_mem:   tiovx-log-rt@b0400000    { reg=<0x00 0xb0400000 0x00 0x01c00000>; no-map; }; /* 28 MB runtime log (non-cached) */
+
+		/* ---------- C7x_1 : THE ONE WE NEED ---------- */
+		c71_0_dma:  c71-dma-memory@b2000000  { compatible="shared-dma-pool"; reg=<0x00 0xb2000000 0x00 0x00100000>; no-map; }; /*  1 MB DMA/IPC   */
+		c71_0_mem:  c71-memory@b2100000      { compatible="shared-dma-pool"; reg=<0x00 0xb2100000 0x00 0x05f00000>; no-map; }; /* 95 MB code+data */
+
+		/* ---------- big shared buffer pool (TIDL tensors / OpenVX graph buffers) ---------- */
+		ddr_shared_mem: ddr-shared@b8000000  { compatible="shared-dma-pool"; reg=<0x00 0xb8000000 0x00 0x20000000>; no-map; }; /* 512 MB (cached) */
+
+		/* ---------- per-core local heaps + VISS + C66x scratch (only if running those cores) ---------- */
+		mcu1_0_heap: ddr-heap@d8000000 { reg=<0x00 0xd8000000 0x00 0x00800000>; no-map; }; /* 8 MB  */
+		mcu1_1_heap: ddr-heap@d8800000 { reg=<0x00 0xd8800000 0x00 0x00800000>; no-map; };
+		mcu2_0_heap: ddr-heap@d9000000 { reg=<0x00 0xd9000000 0x00 0x00f00000>; no-map; }; /* 15 MB */
+		mcu2_0_viss: viss-cfg@d9f00000 { reg=<0x00 0xd9f00000 0x00 0x00100000>; no-map; }; /* 1 MB write-through */
+		mcu2_1_heap: ddr-heap@da000000 { reg=<0x00 0xda000000 0x00 0x01000000>; no-map; }; /* 16 MB */
+		mcu3_0_heap: ddr-heap@db000000 { reg=<0x00 0xdb000000 0x00 0x00800000>; no-map; };
+		mcu3_1_heap: ddr-heap@db800000 { reg=<0x00 0xdb800000 0x00 0x00800000>; no-map; };
+		c66_1_heap:  ddr-heap@dc000000 { reg=<0x00 0xdc000000 0x00 0x01000000>; no-map; }; /* 16 MB */
+		c66_1_scr:   ddr-scratch@dd000000 { reg=<0x00 0xdd000000 0x00 0x03000000>; no-map; }; /* 48 MB */
+		c66_2_heap:  ddr-heap@e0000000 { reg=<0x00 0xe0000000 0x00 0x01000000>; no-map; };
+		c66_2_scr:   ddr-scratch@e1000000 { reg=<0x00 0xe1000000 0x00 0x03000000>; no-map; };
+
+		/* ---------- inter-core ethernet (only if used) ---------- */
+		icve_desc: intercore-eth-desc@e4000000 { reg=<0x00 0xe4000000 0x00 0x00800000>; no-map; }; /*  8 MB non-cached */
+		icve_data: intercore-eth-data@e4800000 { reg=<0x00 0xe4800000 0x00 0x01800000>; no-map; }; /* 24 MB non-cached */
+
+		/* ---------- HIGH DDR : C7x scratch + heap (paddr) — NEEDED for TIDL inference ---------- */
+		c7x_1_scratch: c7x-scratch@880000000 { reg=<0x08 0x80000000 0x00 0x17000000>; no-map; }; /* 368 MB */
+		c7x_1_heap:    c7x-heap@897000000     { reg=<0x08 0x97000000 0x00 0x10000000>; no-map; }; /* 256 MB */
+	};
+};
+
+/* The C7x rproc node only references its own DMA + code/data carveouts;
+ * the shared/framework regions above are reserved (no-map) and mmap'd by name/addr by
+ * the A72 tivision_apps runtime, not listed in memory-region. */
+&c71_0 {
+	memory-region = <&c71_0_dma>, <&c71_0_mem>;
+};
+
+/* ============================================================================
+ * C7X-ONLY SUBSET — what we actually need to add for *our* bring-up
+ * ----------------------------------------------------------------------------
+ * We run only the C7x (+ PRUs, which use separate ICSSG/SRAM, untouched here).
+ * We do NOT run the R5F/C66x, so their carveouts (A0-AA, D8-E6) are optional.
+ *
+ *   MUST (boot the firmware to heartbeat):
+ *     - rtos_ipc_memory  @ 0xAA000000  32 MB   (grow our existing ipc-memories 28->32)
+ *     - rtos_log_mem     @ 0xAC000000  256 KB
+ *     - tiovx_obj_desc   @ 0xAC040000  63.75 MB
+ *     - c71_0_dma        @ 0xB2000000  1 MB
+ *     - c71_0_mem        @ 0xB2100000  95 MB
+ *   ALSO for inference (TIDL graph + tensors):
+ *     - app_fileio       @ 0xB0000000  4 MB
+ *     - tiovx_log_rt     @ 0xB0400000  28 MB
+ *     - ddr_shared_mem   @ 0xB8000000  512 MB
+ *     - c7x_1_scratch    @ 0x8_80000000 368 MB
+ *     - c7x_1_heap       @ 0x8_97000000 256 MB
+ *
+ *   Low-DDR cost of the inference subset: ~0xAA000000..0xB8000000 + 512 MB shared ≈ 720 MB.
+ *   High-DDR cost: 624 MB (in the high 2 GB, board has 0x8_80000000..0x8_FFFFFFFF).
+ *   Leaves Linux ~2.5-3 GB of the 4 GB.  The 512 MB shared pool is the big swing item —
+ *   it can likely be shrunk for a small EMG net (it's sized for camera/vision pipelines).
+ *
+ * vs CURRENT BOARD MAP (basic IPC): main-R5F A2-A5, C66x A6-A7, C71 A8000000/A8100000(15MB),
+ *   ipc AA000000(28MB). The C7x carveout must move A8 -> B2 and grow 15 -> 95 MB; A8 is now
+ *   C66x in this map (so the old c71-memory@a8100000 is not just wrong-sized, it's the wrong core).
+ * ============================================================================ */
