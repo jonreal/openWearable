@@ -190,7 +190,7 @@
 		 *   MUST (boot firmware to heartbeat): rtos-log, tiovx-obj-desc,
 		 *        c71_0_dma_tidl, c71_0_tidl  (+ the 32 MB ipc above)
 		 *   ALSO for inference (TIDL graph/tensors): app-fileio, tiovx-log-rt,
-		 *        ddr-shared, c7x_1_scratch (high DDR), c7x_1_heap (high DDR)
+		 *        vision_apps_shared-memories (dma-heap), c7x_1_scratch + c7x_1_heap (high DDR)
 		 *
 		 * Per-core R5F/C66x heaps (0xd8.. -> 0xe6..) and inter-core ethernet are
 		 * intentionally OMITTED — we do not run those cores under vision_apps.
@@ -234,13 +234,19 @@
 			no-map;
 		};
 
-		/* big shared buffer pool: TIDL tensors / OpenVX graph buffers (cached).
-		 * Largest single item; sized for camera/vision — likely shrinkable for a
-		 * small EMG net once the pipeline is proven. */
-		ddr_shared_memory_region: ddr-shared@b8000000 {
-			compatible = "shared-dma-pool";
-			reg = <0x00 0xb8000000 0x00 0x20000000>;	/* 512 MB */
-			no-map;
+		/* big shared buffer pool: TIDL tensors / OpenVX graph buffers.
+		 * TIDL: exposed as a DMA-HEAP (not a shared-dma-pool) — the vision_apps
+		 * runtime allocates its shared buffers from
+		 *   /dev/dma_heap/carveout_vision_apps_shared-memories
+		 * The heap name is "carveout_" + this node's NAME, so the node MUST be named
+		 * exactly "vision_apps_shared-memories" with NO @unit-address (an @addr would
+		 * get appended to the heap name and the runtime wouldn't find it).
+		 * dma-heap-carveout memory must be mappable, so there is NO no-map here.
+		 * Binding verified against TI k3-am62a7-sk.dtb (edgeai_shared-memories).
+		 * 512 MB; shrinkable later for a small EMG net. */
+		vision_apps_shared_memories: vision_apps_shared-memories {
+			compatible = "dma-heap-carveout";
+			reg = <0x00 0xb8000000 0x00 0x20000000>;	/* 512 MB, mappable */
 		};
 
 		/* HIGH DDR (second 2 GB bank). C7x MMU vaddr 0x1_00000000 -> paddr
