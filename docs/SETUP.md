@@ -175,7 +175,7 @@ pieces**, built/obtained in three different places — keep them straight or you
 |---|---|---|
 | **A72 runtime libs + Python wheel** (`onnxruntime_tidl`, `libtidl_onnxrt_EP.so`, `libvx_tidl_rt.so`) | A72 / Linux | built from source — F.1–F.3 |
 | **C7x firmware** (`vx_app_rtos_linux_c7x_1.out`) | the C7x core, loaded by remoteproc | prebuilt download — F.4 |
-| **Per-model artifacts** (`*.bin`) | loaded *into* the C7x firmware at runtime | compiled with `edgeai-tidl-tools` — not covered here |
+| **Per-model artifacts** (`*.bin`) | loaded *into* the C7x firmware at runtime | compiled with `edgeai-tidl-tools` on an x86 host — see `milestone-1-hetero/TIDL-COMPILE-HOST.md` |
 
 remoteproc handles the transport, but it still has to load the **firmware** onto the C7x — that
 firmware *is* the TIDL inference engine; the A72 libs are useless without it. The firmware is

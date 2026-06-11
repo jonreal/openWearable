@@ -2,16 +2,19 @@
 
 Goal: a working **C7x + MMA** inference path on the **openWearable Debian image** (no SDK reflash),
 at **SDK 10.1** — the transformer-capable version we ultimately need. Reproducible build/install
-steps for humans live in `../SETUP.md` Part F; this file is the engineering status + plan.
+steps for humans: board runtime + firmware in `../SETUP.md` Part F; **x86 model-artifact compile in
+`TIDL-COMPILE-HOST.md`**. This file is the engineering status + plan.
 
-## Status (2026-06-09)
+## Status (2026-06-11)
 - ✅ **A72 TIDL runtime built from source + installed** → `~/tidl` on the board. `TIDLExecutionProvider`
   verified live.
 - ✅ **C7x firmware installed + booted** (10.01.00.04). `/lib/firmware/j7-c71_0-fw` → the binary;
   `remoteproc5` `state=running`, `virtio1` rpmsg online. Stable, no crash/recovery.
 - ✅ **DTB carveout gate CLOSED.** `device-tree/k3-j721e-boneai64-openWearable-tidl.dts` ports TI's full
   vision_apps `reserved-memory` map; built, deployed, rebooted — all 10 regions reserved cleanly.
-- ⬜ Per-model artifacts (compile a net) + on-board inference — **next**, not started.
+- 🟡 **Per-model artifacts: x86 compile PROVEN** (2026-06-11) — resnet18 → **52/52 nodes on C7x**,
+  "Subgraph Compiled Successfully", on the `sophon` x86 host. Full recipe + gotchas in
+  `TIDL-COMPILE-HOST.md`. ⬜ On-board inference run (load artifacts via `~/tidl`) — **next**.
 
 ## What we actually did (supersedes the original "build on the x86 box / QEMU" plan)
 Built the runtime **natively on the board**, using an SD card for space (the eMMC + 3.6 GB RAM can't
@@ -71,9 +74,10 @@ reversible via `extlinux.conf`.
 ## Road ahead
 1. ~~**DTB carveouts**~~ ✅ **DONE (2026-06-09)** — `-tidl.dts` deployed, C7x boots (`state=running`,
    `virtio1` rpmsg online). See SETUP Part F.4 for the boot/verify steps.
-2. **Artifacts (B3, next):** compile resnet18 (then our EMG net) → `.bin`. Try on-target via
-   `TIDLCompilationProvider` first; fall back to `edgeai-tidl-tools` on an x86 box.
-3. **Inference (B4):** run on the C7x; confirm the offload report puts the net on C7x+MMA.
+2. ~~**Artifacts (B3)**~~ ✅ **x86 compile DONE (2026-06-11)** — `edgeai-tidl-tools` on `sophon`,
+   resnet18 → 52/52 on C7x. Recipe in `TIDL-COMPILE-HOST.md`. (Same flow will compile the EMG net.)
+3. **Inference (B4, next):** copy `subgraph_0_tidl_*.bin` to the board, run via `~/tidl` with
+   `TIDLExecutionProvider`; confirm the on-device offload report puts the net on C7x+MMA.
 4. **Mesh integration:** wire into the two-plane memory model (`INFERENCE-DATAFLOW.md`) — A72 publishes
    `intent` into the non-cached control plane for the PRU/R5F loop.
 
