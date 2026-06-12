@@ -1097,8 +1097,13 @@
 
 &main_r5fss0_core0 {
 	mboxes = <&mailbox0_cluster1 &mbox_main_r5fss0_core0>;
+	/* TIDL: the 10.1 vision_apps mcu2_0 firmware places its IRQ stacks in a
+	 * PT_LOAD segment at 0xa3ffec00 (+0x1400) — top of the core1 region. The
+	 * loader must be able to translate (zero) it, so core1's mem region is
+	 * appended. Cluster is lockstep, core1 never probes: no double-claim. */
 	memory-region = <&main_r5fss0_core0_dma_memory_region>,
-			<&main_r5fss0_core0_memory_region>;
+			<&main_r5fss0_core0_memory_region>,
+			<&main_r5fss0_core1_memory_region>;
 };
 
 &main_r5fss0_core1 {
@@ -1109,8 +1114,11 @@
 
 &main_r5fss1_core0 {
 	mboxes = <&mailbox0_cluster2 &mbox_main_r5fss1_core0>;
+	/* TIDL: same as r5fss0_core0 — mcu2_1 firmware IRQ stacks live at
+	 * 0xa5ffec00 (+0x1400), inside the core1 region. */
 	memory-region = <&main_r5fss1_core0_dma_memory_region>,
-			<&main_r5fss1_core0_memory_region>;
+			<&main_r5fss1_core0_memory_region>,
+			<&main_r5fss1_core1_memory_region>;
 };
 
 &main_r5fss1_core1 {
