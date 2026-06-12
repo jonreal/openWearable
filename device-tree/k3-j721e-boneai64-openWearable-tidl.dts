@@ -149,22 +149,36 @@
 		};
 
 		/*
-		 * TIDL NOTE: these two A8 C7x carveouts are the *basic-IPC* map, where the
-		 * stock 9.02 firmware loaded. The 10.1 vision_apps C7x firmware loads at
-		 * 0xb2100000 instead, so &c71_0 below is repointed to the new c71_0_*_tidl
-		 * regions. These A8 nodes are now UNREFERENCED (orphaned) — retained per
-		 * "keep everything possible"; safe to delete once B2 boot is confirmed.
-		 * (In the full vision_apps map 0xa8100000 is C66x_1, not C7x.)
+		 * TIDL NOTE: in the *basic-IPC* map these two A8 carveouts were the C7x's
+		 * (stock 9.02 firmware). In the 10.1 vision_apps map the C7x lives at
+		 * 0xb2x (see c71_0_*_tidl below) and 0xa8x belongs to **c6x_1** — verified
+		 * against the 10.01.00.04 vx_app_rtos_linux_c6x_1.out ELF (resource_table
+		 * at 0xa8100000). Relabelled c71_0_* -> c66_0_tidl_* and now referenced by
+		 * &c66_0 below. The old a6/a7 c66 pairs are kept (orphaned) as rollback.
 		 */
-		c71_0_dma_memory_region: c71-dma-memory@a8000000 {
+		c66_0_tidl_dma_memory_region: c66-dma-memory@a8000000 {
 			compatible = "shared-dma-pool";
 			reg = <0x00 0xa8000000 0x00 0x100000>;
 			no-map;
 		};
 
-		c71_0_memory_region: c71-memory@a8100000 {
+		c66_0_tidl_memory_region: c66-memory@a8100000 {
 			compatible = "shared-dma-pool";
 			reg = <0x00 0xa8100000 0x00 0xf00000>;
+			no-map;
+		};
+
+		/* c6x_2 in the 10.1 vision_apps map (vx_app_rtos_linux_c6x_2.out links
+		 * at 0xa9100000). This 16 MB was previously free Linux RAM. */
+		c66_1_tidl_dma_memory_region: c66-dma-memory@a9000000 {
+			compatible = "shared-dma-pool";
+			reg = <0x00 0xa9000000 0x00 0x100000>;
+			no-map;
+		};
+
+		c66_1_tidl_memory_region: c66-memory@a9100000 {
+			compatible = "shared-dma-pool";
+			reg = <0x00 0xa9100000 0x00 0xf00000>;
 			no-map;
 		};
 
@@ -192,8 +206,11 @@
 		 *   ALSO for inference (TIDL graph/tensors): app-fileio, tiovx-log-rt,
 		 *        vision_apps_shared-memories (dma-heap), c7x_1_scratch + c7x_1_heap (high DDR)
 		 *
-		 * Per-core R5F/C66x heaps (0xd8.. -> 0xe6..) and inter-core ethernet are
-		 * intentionally OMITTED — we do not run those cores under vision_apps.
+		 * UPDATE (full fleet): the 10.1 C7x firmware never comes up alone — it
+		 * waits for IPC sync with its vision_apps siblings (mcu2_0, mcu2_1,
+		 * c6x_1, c6x_2). So those cores now run too, and their per-core DDR
+		 * heaps (0xd9.. -> 0xe4.., NOBITS runtime regions from the firmware
+		 * ELFs) are reserved below. Inter-core ethernet remains omitted.
 		 * ===================================================================== */
 
 		/* remote-core trace log (mmap'd by the A72 tivision_apps runtime) */
@@ -247,6 +264,31 @@
 		vision_apps_shared_memories: vision_apps_shared-memories {
 			compatible = "dma-heap-carveout";
 			reg = <0x00 0xb8000000 0x00 0x20000000>;	/* 512 MB, mappable */
+		};
+
+		/* Per-core DDR heaps for the vision_apps fleet (10.01.00.04 firmware
+		 * ELF ground truth: .bss:ddr_local_mem / ddr_scratch_mem /
+		 * ddr_cache_wt_mem). NOBITS — never loaded by remoteproc, used at
+		 * runtime by each core directly, so plain no-map reservations (not
+		 * attached to any rproc node). Keeps Linux off them. */
+		mcu2_0_ddr_local: mcu2-0-ddr-local@d9000000 {
+			reg = <0x00 0xd9000000 0x00 0x01000000>;	/* 15 MB local + 1 MB cache-wt */
+			no-map;
+		};
+
+		mcu2_1_ddr_local: mcu2-1-ddr-local@da000000 {
+			reg = <0x00 0xda000000 0x00 0x01000000>;	/* 16 MB */
+			no-map;
+		};
+
+		c6x_1_ddr_heap: c6x-1-ddr-heap@dc000000 {
+			reg = <0x00 0xdc000000 0x00 0x04000000>;	/* 16 MB local + 48 MB scratch */
+			no-map;
+		};
+
+		c6x_2_ddr_heap: c6x-2-ddr-heap@e0000000 {
+			reg = <0x00 0xe0000000 0x00 0x04000000>;	/* 16 MB local + 48 MB scratch */
+			no-map;
 		};
 
 		/* HIGH DDR (second 2 GB bank). C7x MMU vaddr 0x1_00000000 -> paddr
@@ -1080,15 +1122,19 @@
 &c66_0 {
 	status = "okay";
 	mboxes = <&mailbox0_cluster3 &mbox_c66_0>;
-	memory-region = <&c66_0_dma_memory_region>,
-			<&c66_0_memory_region>;
+	/* TIDL: repointed A6 -> A8 to match the 10.1 vision_apps c6x_1 firmware
+	 * load address (was <&c66_0_dma_memory_region>, <&c66_0_memory_region>). */
+	memory-region = <&c66_0_tidl_dma_memory_region>,
+			<&c66_0_tidl_memory_region>;
 };
 
 &c66_1 {
 	status = "okay";
 	mboxes = <&mailbox0_cluster3 &mbox_c66_1>;
-	memory-region = <&c66_1_dma_memory_region>,
-			<&c66_1_memory_region>;
+	/* TIDL: repointed A7 -> A9 to match the 10.1 vision_apps c6x_2 firmware
+	 * load address (was <&c66_1_dma_memory_region>, <&c66_1_memory_region>). */
+	memory-region = <&c66_1_tidl_dma_memory_region>,
+			<&c66_1_tidl_memory_region>;
 };
 
 &c71_0 {
