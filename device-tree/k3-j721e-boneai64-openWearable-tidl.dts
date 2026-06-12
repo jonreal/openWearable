@@ -1100,6 +1100,14 @@
 			<&c71_0_tidl_memory_region>;
 };
 
+/* SA2UL (saul-crypto) oopses the 6.12.57-ti-arm64-r64 kernel: iwd's AF_ALG
+ * hash teardown hits sa_sha_cra_exit -> dma_unmap on a bad address, killing
+ * iwd (and wifi) on boot. Disable the HW crypto offload; the A72's ARMv8
+ * crypto instructions take over. Nothing in openWearable uses SA2UL. */
+&main_crypto {
+	status = "disabled";
+};
+
 //&icssg0 {
 //  status = "okay";
 //  pru0_0 {
