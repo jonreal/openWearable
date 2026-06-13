@@ -1162,6 +1162,28 @@
 	status = "disabled";
 };
 
+/* DSP-core RTOS tick timers: keep Linux's omap_timer (PWM) driver off them so
+ * the TI Device Manager (TIFS) can grant them to the DSP firmware. The stock
+ * Beagle DT binds omap_timer to the ENTIRE main DMTimer bank
+ * (timer@2400000..24f0000); the A72 thereby owning these timers is what stalls
+ * the vision_apps DSP firmware at FreeRTOS scheduler start: TimerP_create() asks
+ * DM for an already-A72-owned timer and the C7x hangs in the B005->D000 window
+ * (breadcrumb-confirmed for the C7x).
+ *
+ * Mapping per ti/osal soc/j721e (TimerP_default.c, CSL_TIMER0_CFG_BASE=0x2400000,
+ * +0x10000 per instance; OSAL_FREERTOS_OS_TIMER_ID_*):
+ *   main_timer0 @0x2400000 = DM Timer 0 -> C66x_1 (c6x_1) tick
+ *   main_timer1 @0x2410000 = DM Timer 1 -> C66x_2 (c6x_2) tick
+ *   main_timer2 @0x2420000 = DM Timer 2 -> C7x_1  (c71_0) tick   [confirmed hang point]
+ * The C7x firmware waits on the c6x_1/c6x_2 fleet, so all three DSP timers must be
+ * freed together. The R5F (mcu2_0/2_1) ticks use MCU-domain DM timers 12/13 (a
+ * different bank) and already work, so they are left alone. The A72 keeps
+ * arch_sys_counter for timekeeping and needs none of these. This mirrors TI's
+ * EVM device tree, which reserves the DSP timers from Linux. */
+&main_timer0 { status = "reserved"; };
+&main_timer1 { status = "reserved"; };
+&main_timer2 { status = "reserved"; };
+
 //&icssg0 {
 //  status = "okay";
 //  pru0_0 {
