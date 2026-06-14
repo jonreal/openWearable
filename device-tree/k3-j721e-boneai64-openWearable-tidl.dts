@@ -82,21 +82,14 @@
 			no-map;
 		};
 
+		/* OW: merged a2100000..a4000000 (31 MB) into ONE contiguous region. The
+		 * heavy 10.1 vision_apps mcu2_0 fw has a ~17 MB .bss @0xa2104000 that must
+		 * live in a SINGLE carveout (remoteproc maps one carveout per PT_LOAD
+		 * segment); the old 15M+1M-gap+15M layout failed with "bad phdr". Cluster
+		 * is lockstep -> core1 never probes, so its separate regions are absorbed. */
 		main_r5fss0_core0_memory_region: r5f-memory@a2100000 {
 			compatible = "shared-dma-pool";
-			reg = <0x00 0xa2100000 0x00 0xf00000>;
-			no-map;
-		};
-
-		main_r5fss0_core1_dma_memory_region: r5f-dma-memory@a3000000 {
-			compatible = "shared-dma-pool";
-			reg = <0x00 0xa3000000 0x00 0x100000>;
-			no-map;
-		};
-
-		main_r5fss0_core1_memory_region: r5f-memory@a3100000 {
-			compatible = "shared-dma-pool";
-			reg = <0x00 0xa3100000 0x00 0xf00000>;
+			reg = <0x00 0xa2100000 0x00 0x1f00000>;
 			no-map;
 		};
 
@@ -1095,36 +1088,53 @@
 			<&mcu_r5fss0_core1_memory_region>;
 };
 
+/* OW: run the main_r5fss0 cluster in SPLIT mode (dtsi default is lockstep=1).
+ * The vision_apps fleet uses BOTH cores of this cluster as independent CPUs:
+ * core0 = mcu2_0 (5c00000), core1 = mcu2_1 (5d00000). In lockstep, core1 never
+ * registers a remoteproc, so the A72 vision_apps runtime can't find "5d00000.r5f"
+ * (its hard-coded handle for mcu2_1) and mcu2_1's firmware ended up mis-loaded on
+ * the wrong cluster (main_r5fss1 / 5e00000), where its Sciclient host context
+ * (BUILD_MCU2_1 -> MAIN_0_R5_NONSEC_1) drove the wrong secure-proxy threads, so
+ * the DM never answered, mcu2_1 hung at appSciclientInit, and the cpu-sync fleet
+ * barrier stalled (resnet timed out). Split mode puts mcu2_1 back on its native
+ * core 5d00000, whose secure-proxy threads match its host context. */
+&main_r5fss0 {
+	ti,cluster-mode = <0>;	/* 0 = split, 1 = lockstep */
+};
+
 &main_r5fss0_core0 {
 	mboxes = <&mailbox0_cluster1 &mbox_main_r5fss0_core0>;
-	/* TIDL: the 10.1 vision_apps mcu2_0 firmware places its IRQ stacks in a
-	 * PT_LOAD segment at 0xa3ffec00 (+0x1400) — top of the core1 region. The
-	 * loader must be able to translate (zero) it, so core1's mem region is
-	 * appended. Cluster is lockstep, core1 never probes: no double-claim. */
+	/* mcu2_0: load spans a2100000..a3ffffff (.bss ~17 MB + IRQ-stack PT_LOAD at
+	 * 0xa3ffec00, readelf-confirmed), so it needs the full 31 MB merged a2100000
+	 * region. core1 now probes independently (split mode) and lives at a4/a5 — no
+	 * overlap. */
 	memory-region = <&main_r5fss0_core0_dma_memory_region>,
-			<&main_r5fss0_core0_memory_region>,
-			<&main_r5fss0_core1_memory_region>;
+			<&main_r5fss0_core0_memory_region>;
 };
 
 &main_r5fss0_core1 {
+	/* mcu2_1. mailbox already correct (cluster1 / core1). In split mode this core
+	 * (5d00000) runs the BUILD_MCU2_1 firmware (vx_app_rtos_linux_mcu2_1.out),
+	 * which LOADs at a4100000..a444ffff with its IRQ-stack PT_LOAD at 0xa5ffec00
+	 * and ipc_vring at 0xaa000000 (readelf-confirmed). Those load addresses are
+	 * the regions historically labelled main_r5fss1_core0/core1 (a4/a5) — reused
+	 * here because the firmware's link map is fixed and independent of which
+	 * physical core runs it. main_r5fss1 is disabled below so nothing else claims
+	 * a4/a5. Board side: symlink j7-main-r5f0_1-fw -> vx_app_rtos_linux_mcu2_1.out. */
 	mboxes = <&mailbox0_cluster1 &mbox_main_r5fss0_core1>;
-	memory-region = <&main_r5fss0_core1_dma_memory_region>,
-			<&main_r5fss0_core1_memory_region>;
-};
-
-&main_r5fss1_core0 {
-	mboxes = <&mailbox0_cluster2 &mbox_main_r5fss1_core0>;
-	/* TIDL: same as r5fss0_core0 — mcu2_1 firmware IRQ stacks live at
-	 * 0xa5ffec00 (+0x1400), inside the core1 region. */
 	memory-region = <&main_r5fss1_core0_dma_memory_region>,
 			<&main_r5fss1_core0_memory_region>,
 			<&main_r5fss1_core1_memory_region>;
 };
 
-&main_r5fss1_core1 {
-	mboxes = <&mailbox0_cluster2 &mbox_main_r5fss1_core1>;
-	memory-region = <&main_r5fss1_core1_dma_memory_region>,
-			<&main_r5fss1_core1_memory_region>;
+/* OW: main_r5fss1 (mcu3_0/mcu3_1, cores 5e00000/5f00000) is NOT part of the
+ * vision_apps fleet (mpu1_0 + mcu2_0 + mcu2_1 + c6x_1 + c6x_2 + c7x_1). mcu2_1's
+ * firmware was previously mis-loaded onto 5e00000 here; now that mcu2_1 runs on
+ * its native 5d00000 (above), disable this whole cluster so it doesn't probe and
+ * can't dual-claim the a4/a5 carveouts mcu2_1 needs. The a4/a5 reserved-memory
+ * regions stay reserved and are referenced by main_r5fss0_core1 above. */
+&main_r5fss1 {
+	status = "disabled";
 };
 
 &c66_0 {
