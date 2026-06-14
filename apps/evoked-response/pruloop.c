@@ -70,8 +70,8 @@ void Pru1Init(pru_mem_t* mem) {
   pressure_sensor = PressureSensorInit(mux,5,0x28);
 
   // Sync Out ---- NEED TO CHANGE TO PROPER PIN
-  // In: P8.42, MODE6, pr1_pru1_pru_r31_5 */
-  sync = SyncInitChan(5);
+  // Out: P8.44, MODE5, pr1_pru1_pru_r30_3 */
+  sync = SyncInitChan(0);
 
 }
 
