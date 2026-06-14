@@ -16,5 +16,5 @@ Each core dir holds `include/` and `src/`. Linker command (`.cmd`) files live wi
 each **app**, not here — memory layouts are app-specific.
 
 The library Makefile builds the per-core archives; apps add their per-core
-`*loop.c` hooks and link only what they use. See `docs/milestone-1-hetero/` for the
-heterogeneous-compute plan this layout is built for.
+`*loop.c` hooks and link only what they use. See `docs/C7X-TIDL.md` for the C7x bring-up
+this layout is built toward.

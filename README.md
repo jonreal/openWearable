@@ -38,8 +38,8 @@ the Linux side loads the real-time firmware via remoteproc. Full detail:
 
 - **[CLAUDE.md](CLAUDE.md)** — architecture overview, build/deploy workflow, conventions.
 - **[library/README.md](library/README.md)** — the per-core library layout.
-- **[docs/milestone-1-hetero/](docs/milestone-1-hetero/)** — the heterogeneous-compute
-  design (two-plane memory model, RT-island/async-satellite synchronization, phased plan).
+- **[docs/C7X-TIDL.md](docs/C7X-TIDL.md)** — the C7x + MMA deep-learning bring-up
+  (vision_apps firmware fleet, TIDL runtime, on-device inference).
 
 ## Project structure
 

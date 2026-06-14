@@ -83,13 +83,13 @@ of their compilers run natively on the board:
   no aarch64 build. Build the DSP firmware on an x86_64 Linux machine (PC, VM, or container)
   and copy the resulting ELF into the board's `/lib/firmware/`; remoteproc loads it like any
   other firmware. On that x86_64 host, install:
-  - **C7000 CGT** (`cl7x`) — <https://www.ti.com/tool/C7000-CGT> (5.0.0.LTS current).
+  - **C7000 CGT** (`cl7x`) — <https://www.ti.com/tool/C7000-CGT>.
   - **C6000 CGT** (`cl6x`) — for C66x, when needed.
-  - **TI J721E MCU+ SDK** — device startup, linker command files, the remoteproc **resource
-    table**, plus **MMALIB** / **TIDL** for the MMA.
+  - **TI J721E MCU+ / PSDK-RTOS SDK** — device startup, linker command files, the remoteproc
+    **resource table**, plus **MMALIB** / **TIDL** for the MMA.
 
-See [milestone-1-hetero/C7X-GETTING-STARTED.md](milestone-1-hetero/C7X-GETTING-STARTED.md)
-for the C7x toolchain + programming-model details.
+The full C7x deep-learning (TIDL / vision_apps) bring-up — runtime libs, the firmware fleet,
+model compile, and the on-device proof — is its own guide: **[C7X-TIDL.md](C7X-TIDL.md)**.
 
 ---
 
@@ -125,6 +125,10 @@ cd ~/BeagleBoard-DeviceTrees && make install_arm64
   fdt /ti/k3-j721e-boneai64-openWearable.dtb
   ```
 - `reboot`.
+
+> **For the C7x/TIDL path**, use the `…-openWearable-tidl.dts` variant instead — it ports TI's
+> full vision_apps `reserved-memory` map (the stock DTB can't boot the 10.1 DSP firmware). See
+> [C7X-TIDL.md](C7X-TIDL.md) §2.
 
 ### C.3 Verify the device tree is live
 ```bash
@@ -168,101 +172,10 @@ nvim ~/.vimrc      # then run :PluginInstall
 
 ## Part F — C7x deep-learning runtime (TIDL) — BeagleBone AI-64 only
 
-The C7x+MMA accelerator runs neural nets through TI's **TIDL** stack. It is **three separate
-pieces**, built/obtained in three different places — keep them straight or you will chase ghosts:
+The C7x + MMA accelerator runs neural nets through TI's **TIDL** stack (three pieces: the A72
+runtime libs, the vision_apps firmware fleet, and per-model artifacts). The full reproducible
+bring-up — build the runtime, build + deploy the firmware fleet via the
+[`third_party/ti`](../third_party/ti/) patch-overlay, compile a model, and run the resnet18
+proof — is its own guide:
 
-| Piece | Runs on | Source |
-|---|---|---|
-| **A72 runtime libs + Python wheel** (`onnxruntime_tidl`, `libtidl_onnxrt_EP.so`, `libvx_tidl_rt.so`) | A72 / Linux | built from source — F.1–F.3 |
-| **C7x firmware** (`vx_app_rtos_linux_c7x_1.out`) | the C7x core, loaded by remoteproc | prebuilt download — F.4 |
-| **Per-model artifacts** (`*.bin`) | loaded *into* the C7x firmware at runtime | compiled with `edgeai-tidl-tools` on an x86 host — see `milestone-1-hetero/TIDL-COMPILE-HOST.md` |
-
-remoteproc handles the transport, but it still has to load the **firmware** onto the C7x — that
-firmware *is* the TIDL inference engine; the A72 libs are useless without it. The firmware is
-model-agnostic; the per-model `.bin` is loaded at runtime (like a TensorRT engine). Everything is
-pinned to **PSDK 10.01.00.04** (debian12.5) — **the firmware and the A72 libs must be the same
-version.**
-
-### F.1 Build storage (the build needs ~15 GB + link RAM; the eMMC has neither)
-Use an SD card:
-```bash
-lsblk                                  # identify the SD — NOT mmcblk0 (= eMMC)!
-mkfs.ext4 /dev/mmcblk1 && mkdir -p /mnt/build && mount /dev/mmcblk1 /mnt/build
-fallocate -l 6G /mnt/build/swap && chmod 600 /mnt/build/swap && mkswap /mnt/build/swap && swapon /mnt/build/swap
-mkdir -p /mnt/build/docker             # point Docker at the SD: "data-root":"/mnt/build/docker"
-#   in /etc/docker/daemon.json, then:  systemctl restart docker
-```
-
-### F.2 Build the A72 runtime libs (from source, Docker)
-```bash
-cd /mnt/build && git clone https://github.com/TexasInstruments-Sandbox/edgeai-osrt-libs-build
-cd edgeai-osrt-libs-build              # config.yaml `main` == PSDK 10.01.00.0x
-BASE_IMAGE=debian:12.5 ./docker_build.sh
-BASE_IMAGE=debian:12.5 ./docker_run.sh # enter the container, then:
-export CMAKE_POLICY_VERSION_MINIMUM=3.5   # ⚠️ CRITICAL — see note
-./build_all.sh                         # downloads deps + builds the libs (~7–8 h on the board)
-```
-> ⚠️ **The one gotcha that will stop you cold:** onnxruntime 1.15 vendors an old `date` lib whose
-> `cmake_minimum_required` is rejected by the container's CMake 4.x ("Compatibility with CMake < 3.5
-> has been removed"). Export `CMAKE_POLICY_VERSION_MINIMUM=3.5` **before** building, or the configure
-> step dies in ~16 s.
-
-Outputs (on the SD, under `…/edgeai-osrt-libs-build/workarea/` and `~/debian12.5-deps/`):
-- `onnxruntime_tidl-1.15.0-cp311-cp311-linux_aarch64.whl`  (cp311 = the board's native Python 3.11)
-- `arm-tidl-j721e_10.1.0-…tar.gz` → `libvx_tidl_rt.so.1.0`, `libtidl_onnxrt_EP.so.1.0`, `libtidl_tfl_delegate.so.1.0`
-- `libti-vision-apps-j721e_10.1.0-debian12.5.deb` → `libtivision_apps.so.10.1.0`
-
-### F.3 Install the runtime to `~/tidl`
-```bash
-mkdir -p ~/tidl/lib                     # the 4 .so libs above, each with its bare `.so` symlink:
-#   libvx_tidl_rt.so -> .so.1.0   libtidl_onnxrt_EP.so -> .so.1.0
-#   libtidl_tfl_delegate.so -> .so.1.0   libtivision_apps.so -> .so.10.1.0
-python3 -m venv ~/tidl/venv && source ~/tidl/venv/bin/activate
-pip install <…>/onnxruntime_tidl-1.15.0-cp311-cp311-linux_aarch64.whl numpy pillow pyyaml
-cat > ~/tidl/setenv.sh <<'EOF'
-export TIDL_HOME=$HOME/tidl
-export LD_LIBRARY_PATH=$TIDL_HOME/lib:${LD_LIBRARY_PATH}
-export TIDL_TOOLS_PATH=$TIDL_HOME/lib
-source $TIDL_HOME/venv/bin/activate
-EOF
-```
-**Verify:**
-```bash
-source ~/tidl/setenv.sh
-python -c "import onnxruntime as o; print(o.get_available_providers())"
-# -> ['TIDLExecutionProvider', 'TIDLCompilationProvider', 'CPUExecutionProvider']
-```
-
-### F.4 C7x firmware (prebuilt — must match the libs at 10.01.00.04)
-The firmware remoteproc loads onto the C7x is **not** produced by the build above. Download just the
-binary from TI's firmware git (no SDK image needed):
-```bash
-wget -O /lib/firmware/vx_app_rtos_linux_c7x_1.out.10.01.00.04 \
-  "https://git.ti.com/cgit/processor-sdk/psdk_fw/plain/j721e/vision_apps_eaik/vx_app_rtos_linux_c7x_1.out?h=10.01.00.04"
-# 12,574,864 bytes, C7x ELF (machine 0x91). C66x firmware is in the same dir (vx_app_rtos_linux_c6x_1.out).
-cat /sys/class/remoteproc/remoteproc5/firmware     # -> j7-c71_0-fw (the name remoteproc asks for)
-ln -sf vx_app_rtos_linux_c7x_1.out.10.01.00.04 /lib/firmware/j7-c71_0-fw   # the stock ".tisdk" suffix keeps cores offline; this enables it
-```
-
-> **Requires the TIDL device tree.** The 10.1 firmware is statically linked to load at `0xb2100000`
-> (and needs `0xac000000`, `0xb0000000`, `0xb8000000`, …); the stock DTB only reserves
-> `c71-memory@a8100000` — TI moved the J721E DSP memory map between SDK 9 and 10, so the stock DTB
-> cannot boot it. Use **`device-tree/k3-j721e-boneai64-openWearable-tidl.dts`**, which ports TI's full
-> vision_apps `reserved-memory` map; build + select it per **Part C** and reboot. Device-tree change
-> only — kernel/Debian untouched, reversible via `extlinux.conf` (the `eMMC (debug)` label boots the
-> stock DTB as a recovery net).
-
-Boot the C7x (no reboot needed once the TIDL device tree is live):
-```bash
-echo start > /sys/class/remoteproc/remoteproc5/state
-cat /sys/class/remoteproc/remoteproc5/state     # -> running
-dmesg | grep remoteproc5 | tail                 # "Booting fw image j7-c71_0-fw, size 12574864" ... "is now up"
-ls /sys/bus/rpmsg/devices | grep virtio1        # virtio1.rpmsg_ns / .rpmsg_ctrl = firmware alive (name-service handshake)
-```
-- The `/lib/firmware/j7-c71_0-fw` symlink persists on eMMC, so the C7x **auto-loads on reboot**. To
-  disable: `rm /lib/firmware/j7-c71_0-fw` (stock `.tisdk` stays as fallback).
-- Benign on this stack: `dmesg` logs `unsupported resource 65538` (a TI *vendor* resource the stock
-  Debian remoteproc skips) and there is **no** `remoteproc5/trace0` — vision_apps firmware logs to the
-  `rtos-log@ac000000` carveout (read by TI userspace), not the mainline trace resource.
-
-> Verified booting **2026-06-09** on `boneai64-0`: `state=running`, stable, `virtio1` rpmsg online.
+➡️ **[C7X-TIDL.md](C7X-TIDL.md)**

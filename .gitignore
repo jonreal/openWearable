@@ -12,3 +12,13 @@ types_matlab.taghl
 moc_*
 **/rotation_display.app/*
 **/library/lib
+
+# Internal-only, local working files (todo / planning / build journals / board+host
+# specifics). Lives inside the repo dir for convenience but is NEVER published. Public
+# docs go in docs/ ; the audience split is intentional — see docs/README.md.
+notes/
+
+# TI SDK patch-overlay: the *recipe* (MANIFEST, patches/, build scripts) is tracked under
+# third_party/ti/ ; the multi-GB TI source checkouts and build outputs are not.
+third_party/ti/src/
+third_party/ti/out/

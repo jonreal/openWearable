@@ -54,9 +54,14 @@ name → start).
 ## Build & deploy
 
 Development is on a laptop (this repo); **building and running happen on the board over
-ssh** (sources live at `/root/openWearable`). Board: **`root@boneai64-0.local`** (key auth
-is set up — no password needed). See `docs/milestone-1-hetero/BOARD-TRUTH.md` for the live
-hardware inventory.
+ssh** (sources live at `/root/openWearable`).
+
+**Repo docs split (for whoever — human or AI — is driving this repo):** `docs/` = public,
+reproducible setup manuals, written for someone with *their own* board (no personal
+hostnames/paths). `notes/` = internal planning, todo, build journals, and the live
+board/host inventory — **git-ignored, never published** (so external clones won't have it).
+`third_party/ti/` = the TI SDK **patch-overlay** (pinned manifest + patches + build driver)
+that reproduces the C7x/vision_apps firmware without vendoring TI's multi-GB source.
 1. `cd library && make` → builds `libowpru.a` (+ Linux objects).
 2. `cd apps/<app> && make` → builds the A-core binary (`gcc`) + PRU ELFs (`clpru`),
    installs firmware to `/lib/firmware/`, binary to `apps/bin/`.
@@ -82,9 +87,9 @@ First real app will be an **EMG pipeline running a lightweight, offline-trained
 unified two-plane memory model, (2) a generalized multi-core remoteproc loader, and
 (3) minimal heartbeat firmware per core. No NN yet — this is the scaffold.
 
-📋 **Before working on this initiative, read `docs/milestone-1-hetero/`** — it holds the
-*locked* architecture decisions (memory-coherence model, synchronization model) and the
-detailed execution plan:
+📋 **Before working on this initiative, read `notes/milestone-1-hetero/`** (local working
+notes, not in the public tree) — it holds the *locked* architecture decisions
+(memory-coherence model, synchronization model) and the detailed execution plan:
 - `00-OVERVIEW.md` — locked decisions, core inventory, acceptance test, phase roadmap.
 - `PHASE-0.md` — board ground-truth + toolchain setup (extremely detailed).
 - `PHASE-1.md` — unified memory model (extremely detailed).
