@@ -82,10 +82,24 @@ int UiLoop(const pru_mem_t* pru_mem) {
   }
 }
 
+// Loads this app's parameters into the shared param region. With no config
+// file (file == NULL) the defaults below are used. A config file's first token
+// is the sample rate in Hz; the rest of that line is a free-form comment
+// (e.g. "1000  // Freq."). Defaults are written first, so a missing value in
+// the file simply leaves fs_hz at its default (and never a zero -> div-by-0).
 int PruLoadParams(const char* file, param_mem_t* param) {
 
   // Defaults
   param->fs_hz = 1000;
+
+  if (file != NULL) {
+    FILE* fp = fopen(file, "r");
+    if (fp == NULL)
+      return -1;
+    fscanf(fp, "%u%*[^\n]\n", &param->fs_hz);
+    fclose(fp);
+  }
+
   param->fs_ticks = HZ_TO_TICKS(param->fs_hz);
 
   return 0;

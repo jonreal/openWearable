@@ -277,26 +277,6 @@ void PruSprintMalloc(const pru_mem_t* pru_mem, char* buff) {
 }
 
 // ----------------------------------------------------------------------------
-// Functions: void PruLoadParams(char* file)
-//
-// This function loads parameters from file.
-//
-// Input:   path to file
-//
-// TODO: Use strcmp for parameter inputs
-// ------------------------------------------------------------------------- */
-//int PruLoadParams(const char* file, param_mem_t* param) {
-//  FILE* fp = fopen(file, "r");
-//  if (fp != NULL) {
-//    fscanf(fp, "%u%*[^\n]\n", &param->fs_hz);
-//    fclose(fp);
-//    param->fs_ticks = HZ_TO_TICKS(param->fs_hz);
-//    return 0;
-//  }
-//  return -1;
-//}
-//
-// ----------------------------------------------------------------------------
 // Function: void PruEnable(int en, pru_ctl_t* ctl)
 //
 //  This function sets the enbable bit in the flow bit feild to 1 (enable).
