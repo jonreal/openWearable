@@ -94,12 +94,10 @@ int UiInit(pru_mem_t* pru_mem, ui_flags_t flags) {
   uidata.counter = 0;
   uidata.cpudata = &pru_mem->s->cpudata;
   
-  // Set the use_dma flag in the log structure based on the nodma flag
-  if (uidata.log && uidata.flag.nodma) {
-    printf("DMA disabled by command line flag\n");
-    uidata.log->use_dma = 0;
-  }
-  
+  // The -d / nodma flag is now a no-op for logging: the ring-buffer + writer-
+  // thread logger writes with write(), so it does not use the EDMA fast-path.
+  (void) uidata.flag.nodma;
+
   // Set the show_stats flag in the log structure
   if (uidata.log) {
     uidata.log->show_stats = uidata.flag.show_stats;

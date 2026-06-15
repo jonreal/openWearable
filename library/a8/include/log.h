@@ -17,33 +17,52 @@
 #define _LOG_
 
 #include <stdint.h>
+#include <stddef.h>
+#include <pthread.h>
+#include <semaphore.h>
 #include "mem_types.h"
-#include "dma.h"
-//#include "roshelper.h"
 
-#define LOGSIZE         (4096 * 4096) * 20
 #define TEMP_BUFF_LEN   1024
-#define WRITE_BUFF_LEN  65536
+#define WRITE_BUFF_LEN  65536                  // producer staging buffer
 #define MIN_STATE_REQ   2
+#define LOG_RING_CAP    (4u * 1024u * 1024u)   // RAM ring, power of two (~4 MB)
 
-// Circular Buffer Struct
+// Circular Buffer Struct (mirrors the PRU state-ring index)
 typedef struct{
   uint32_t start;
   uint32_t end;
   char temp_buff[TEMP_BUFF_LEN];
 } circbuff_t;
 
+// SPSC byte ring: producer = real-time timer callback, consumer = writer
+// thread. head/tail are monotonic byte counters (never wrapped); the buffer
+// index is pos & (cap-1), so cap must be a power of two.
+typedef struct {
+  uint8_t* buf;
+  size_t   cap;
+  volatile size_t head;     // bytes produced (producer-owned)
+  volatile size_t tail;     // bytes consumed (consumer-owned)
+} ringbuf_t;
+
 // Log File Struct
 typedef struct{
-  uint32_t fd;
-  uint32_t location;
-  char* addr;
-  char write_buff[WRITE_BUFF_LEN];
+  int fd;
   circbuff_t* cbuff;
+  char write_buff[WRITE_BUFF_LEN];   // producer packs records here, then pushes
   const pru_mem_t* pru_mem;
-  dma_context_t* dma_ctx;    // DMA context
-  int use_dma;               // Flag to enable/disable DMA
-  int show_stats;            // Flag to show performance statistics
+
+  // Disk is decoupled from the real-time path: the timer callback only packs
+  // records into 'ring'; a writer thread drains the ring to the file with
+  // write(). If disk can't keep up the ring fills and records are dropped
+  // (counted) rather than stalling the control loop. Unbounded run length.
+  ringbuf_t ring;
+  pthread_t writer;
+  sem_t     wake;                    // producer posts; writer waits
+  volatile int running;             // writer-thread run flag
+  volatile uint64_t dropped;        // records dropped (ring full = disk too slow)
+  volatile uint64_t total_bytes;    // record bytes handed to the ring
+
+  int show_stats;                    // -s: print throughput/drops
 } log_t;
 
 circbuff_t* LogNewCircBuff(void);
@@ -54,10 +73,5 @@ int LogNewFile(log_t* log, char* file);
 void LogWriteStateToFile(log_t* log);
 int LogSaveFile(log_t* log);
 void LogCleanup(log_t* log);
-
-
-
-//void LogWriteStateToFileAndPublish(log_t* log);
-
 
 #endif /* _LOG_ */

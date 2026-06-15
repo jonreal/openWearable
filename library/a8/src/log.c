@@ -22,20 +22,71 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <stdint.h>
-#include <errno.h>
-#include <sys/ioctl.h>
-#include <malloc.h>
 #include "pru.h"
 #include "format.h"
-#include "dma.h"
 
-// The DMA backend (AM335x EDMA3) lives in dma.c, behind the dma.h interface,
-// so this logger stays board-agnostic.
+// Logging is split across two contexts:
+//   producer - the real-time SIGALRM timer callback (UiTimerCallback). It must
+//              never block, so it only packs records and pushes them into a RAM
+//              ring (lock-free, async-signal-safe ops only).
+//   consumer - a writer thread that drains the ring to the file with write().
+// This keeps disk/SD latency off the control loop and makes run length
+// unbounded (no preallocated mmap, no mlock of the whole file).
 
 // ---------------------------------------------------------------------------
-// Function: void circBuffUpdate(void)
+//  SPSC ring buffer (single producer / single consumer, lock-free)
+// ---------------------------------------------------------------------------
+
+// Producer: copy 'len' bytes in. Returns 0 on success, -1 if full (caller drops).
+static int RingPush(ringbuf_t* r, const void* data, size_t len) {
+  size_t head = r->head;                                   // producer owns head
+  size_t tail = __atomic_load_n(&r->tail, __ATOMIC_ACQUIRE);
+  if (r->cap - (head - tail) < len)
+    return -1;                                             // not enough room
+  size_t off = head & (r->cap - 1);
+  size_t first = (len < r->cap - off) ? len : (r->cap - off);
+  memcpy(r->buf + off, data, first);
+  if (len > first)
+    memcpy(r->buf, (const uint8_t*) data + first, len - first);  // wrap
+  __atomic_store_n(&r->head, head + len, __ATOMIC_RELEASE);
+  return 0;
+}
+
+// Consumer: drain everything currently available to the file descriptor.
+static void RingDrain(ringbuf_t* r, int fd) {
+  for (;;) {
+    size_t tail = r->tail;                                 // consumer owns tail
+    size_t head = __atomic_load_n(&r->head, __ATOMIC_ACQUIRE);
+    size_t avail = head - tail;
+    if (avail == 0)
+      break;
+    size_t off = tail & (r->cap - 1);
+    size_t chunk = (avail < r->cap - off) ? avail : (r->cap - off);  // contiguous
+    ssize_t w = write(fd, r->buf + off, chunk);
+    if (w <= 0)
+      break;                                               // write error; retry next wake
+    __atomic_store_n(&r->tail, tail + (size_t) w, __ATOMIC_RELEASE);
+  }
+}
+
+// Writer thread: wait for data, drain it, repeat until shutdown.
+static void* LogWriter(void* arg) {
+  log_t* log = (log_t*) arg;
+  while (1) {
+    sem_wait(&log->wake);
+    RingDrain(&log->ring, log->fd);
+    if (!log->running) {
+      RingDrain(&log->ring, log->fd);                      // final flush
+      break;
+    }
+  }
+  return NULL;
+}
+
+// ---------------------------------------------------------------------------
+// Function: void LogCircBuffUpdate(log_t* log)
 //
-//  This function initializes the circular buffer.
+//  Mirror the PRU state-ring write index into our local circular buffer.
 // ---------------------------------------------------------------------------
 void LogCircBuffUpdate(log_t* log) {
   if (log->cbuff->end != log->pru_mem->s->cbuff_index)
@@ -43,25 +94,17 @@ void LogCircBuffUpdate(log_t* log) {
 }
 
 // ---------------------------------------------------------------------------
+// Function: circbuff_t* LogNewCircBuff(void)
 //
-// Function Definitions
-//
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// Function: void circBuffInit(void)
-//
-//  This function initializes a circular buffer.
+//  Allocate and initialize a circular buffer.
 // ---------------------------------------------------------------------------
 circbuff_t* LogNewCircBuff(void) {
   circbuff_t* cb = malloc(sizeof(circbuff_t));
   cb->start = 0;
   cb->end = 0;
-  memset(cb->temp_buff,0, TEMP_BUFF_LEN);
+  memset(cb->temp_buff, 0, TEMP_BUFF_LEN);
   return cb;
 }
-
-
 
 void LogDebugWriteState(const shared_mem_t* sm, circbuff_t* cb, char* buff) {
     if (cb->start != sm->state[0].time){
@@ -73,273 +116,171 @@ void LogDebugWriteState(const shared_mem_t* sm, circbuff_t* cb, char* buff) {
 }
 
 // ----------------------------------------------------------------------------
-//  Functions: int LogInit(const pru_mem_t pru_mem)
+//  Function: log_t* LogInit(const pru_mem_t* pru_mem)
 //
-//  This function creates a log file.
-//
-//  TODO: check if file exists.
+//  Allocate the logger and its RAM ring. The writer thread is started per file
+//  (LogNewFile), not here.
 //  ------------------------------------------------------------------------- */
 log_t* LogInit(const pru_mem_t* pru_mem) {
-  // Create new datalog struct
   log_t* log = malloc(sizeof(log_t));
   log->pru_mem = pru_mem;
-  log->fd = 0;
-  log->location = 0;
-  log->addr = NULL;
+  log->fd = -1;
   log->cbuff = LogNewCircBuff();
   memset(log->write_buff, 0, WRITE_BUFF_LEN);
-  
-  // Initialize DMA backend (dma.c); falls back to memcpy if unavailable.
-  log->dma_ctx = DmaInit(WRITE_BUFF_LEN);
-  log->use_dma = DmaInitialized(log->dma_ctx);
-  
-  // Initialize stats flag
-  log->show_stats = 0;  // Don't show stats by default
-  
-  if (log->use_dma) {
-    printf("DMA logging enabled\n");
-  } else {
-    printf("DMA initialization failed or not available, using standard memcpy\n");
+
+  log->ring.buf = malloc(LOG_RING_CAP);
+  log->ring.cap = LOG_RING_CAP;
+  log->ring.head = 0;
+  log->ring.tail = 0;
+  if (log->ring.buf) {
+    memset(log->ring.buf, 0, LOG_RING_CAP);  // pre-fault the pages (resident)
+    mlock(log->ring.buf, LOG_RING_CAP);      // pin the (small) ring, not the file
   }
-  
+
+  log->running = 0;
+  log->dropped = 0;
+  log->total_bytes = 0;
+  log->show_stats = 0;
+  sem_init(&log->wake, 0, 0);
+
   return log;
 }
 
-
 int LogNewFile(log_t* log, char* file) {
-
-  // Open file, stretch and write blank
-  log->fd = open(file, O_RDWR | O_CREAT | O_TRUNC, 0666);
-  if (lseek(log->fd, LOGSIZE, SEEK_SET) == -1){
-    close(log->fd);
-    printf("Error stretching file.\n");
-    return -1;
-  }
-  if (write(log->fd, "", 1) == -1){
-    close(log->fd);
-    printf("Error writing blank at end of file.\n");
+  log->fd = open(file, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+  if (log->fd < 0) {
+    printf("Error opening log file %s\n", file);
     return -1;
   }
 
-  // memory map file
-  log->addr = mmap(0, LOGSIZE,
-                   PROT_WRITE,
-                   MAP_SHARED | MAP_POPULATE,
-                   log->fd, 0);
-  if (log->addr == MAP_FAILED) {
-    printf("mmap failed");
-    close(log->fd);
-    return -1;
-  }
-
-  mlock(log->addr, LOGSIZE);
-
-  // ---- ASCII header, terminated by a "#DATA" line --------------------------
-  // Everything up to and including "#DATA\n" is human-readable metadata; a
-  // host-side decoder parses #fields/#record_bytes here, then reads the raw
-  // fixed-size binary records that follow. Each chunk is built in write_buff
-  // and memcpy'd to the mmap'd file, advancing log->location.
+  // ASCII header (written directly, before the writer thread starts): magic,
+  // metadata, schema, then a "#DATA" sentinel. Raw binary records follow.
+  char hdr[4096];
+  char tmp[1024];
   int len = 0;
-  char time_str[1024];
+  len += sprintf(hdr + len, "#openWearable-log v1\n");
 
-  // magic / version
-  len = sprintf(log->write_buff, "#openWearable-log v1\n");
-  memcpy(log->addr + log->location, log->write_buff, len);
-  log->location += len;
-
-  // date + sample rate
   time_t now = time(NULL);
   struct tm* t = localtime(&now);
+  char time_str[256];
   strftime(time_str, sizeof(time_str), "%d-%b-%Y %X", t);
-  len = sprintf(log->write_buff, "#date: %s\n#fs_hz: %u\n",
-                time_str, log->pru_mem->p->fs_hz);
-  memcpy(log->addr + log->location, log->write_buff, len);
-  log->location += len;
+  len += sprintf(hdr + len, "#date: %s\n#fs_hz: %u\n", time_str, log->pru_mem->p->fs_hz);
 
-  // memory allocation (informational comment lines)
-  log->write_buff[0] = '\0';
-  PruSprintMalloc(log->pru_mem, log->write_buff);
-  len = strlen(log->write_buff);
-  memcpy(log->addr + log->location, log->write_buff, len);
-  log->location += len;
+  tmp[0] = '\0';
+  PruSprintMalloc(log->pru_mem, tmp);          // informational #comment lines
+  len += sprintf(hdr + len, "%s", tmp);
 
-  // schema: #fields / #record_bytes (per-app, from format.c)
-  log->write_buff[0] = '\0';
-  FormatLogSchema(log->write_buff);
-  len = strlen(log->write_buff);
-  memcpy(log->addr + log->location, log->write_buff, len);
-  log->location += len;
+  tmp[0] = '\0';
+  FormatLogSchema(tmp);                         // #fields / #record_bytes
+  len += sprintf(hdr + len, "%s", tmp);
 
-  // start-of-binary-data sentinel
-  len = sprintf(log->write_buff, "#DATA\n");
-  memcpy(log->addr + log->location, log->write_buff, len);
-  log->location += len;
+  len += sprintf(hdr + len, "#DATA\n");
+  if (write(log->fd, hdr, len) != len)
+    printf("Warning: short header write\n");
 
-  log->write_buff[0] = '\0';
+  // Reset ring and start the writer thread.
+  log->ring.head = 0;
+  log->ring.tail = 0;
+  log->dropped = 0;
+  log->total_bytes = 0;
+  log->running = 1;
+  if (pthread_create(&log->writer, NULL, LogWriter, log) != 0) {
+    printf("Error starting log writer thread\n");
+    log->running = 0;
+    close(log->fd);
+    log->fd = -1;
+    return -1;
+  }
   return 0;
 }
 
+// Producer side - runs in the real-time timer callback. Packs the available
+// PRU states into write_buff and pushes the block into the ring (non-blocking).
 void LogWriteStateToFile(log_t* log) {
-  static struct timespec last_time;
-  static struct timespec curr_time;
-  static struct timespec format_time_start, format_time_end;
-  static struct timespec write_time_start, write_time_end;
-  static uint64_t total_bytes = 0;
-  static int first_call = 1;
-  static double total_seconds = 0.0;
-  static int dma_transfers = 0;
-  static int dma_errors = 0;
-  static double format_time_ms_total = 0.0;
-  static double write_time_ms_total = 0.0;
-  static int report_count = 0;
-  
-  // Initialize timer on first call
-  if (first_call) {
-    clock_gettime(CLOCK_MONOTONIC, &last_time);
-    first_call = 0;
+  static struct timespec t0, tlast;
+  static int started = 0;
+
+  if (!started) {
+    clock_gettime(CLOCK_MONOTONIC, &t0);
+    tlast = t0;
+    started = 1;
   }
-  
-  log->write_buff[0] = '\0';
+
   int size =
     ((STATE_BUFF_LEN + log->cbuff->end - log->cbuff->start) % STATE_BUFF_LEN);
 
   if (size > MIN_STATE_REQ) {
-    // Pack the available states as fixed-size binary records straight into
-    // write_buff (pointer-advance, no strcat). Never overflow the buffer — any
-    // remainder is picked up on the next flush.
     int recbytes = FormatLogRecordBytes();
-    if (size * recbytes > WRITE_BUFF_LEN)
-      size = WRITE_BUFF_LEN / recbytes;
-
-    // Measure packing time
-    clock_gettime(CLOCK_MONOTONIC, &format_time_start);
+    if ((size_t)(size * recbytes) > WRITE_BUFF_LEN)
+      size = WRITE_BUFF_LEN / recbytes;           // never overflow staging buf
 
     uint8_t* wp = (uint8_t*) log->write_buff;
-    for(int i=log->cbuff->start; i<log->cbuff->start+size; i++){
+    for (int i = log->cbuff->start; i < log->cbuff->start + size; i++) {
       FormatLogRecord(&log->pru_mem->s->state[i % STATE_BUFF_LEN], wp);
       wp += recbytes;
     }
-
-    clock_gettime(CLOCK_MONOTONIC, &format_time_end);
-    double format_ms = ((format_time_end.tv_sec - format_time_start.tv_sec) * 1000.0) + 
-                      ((format_time_end.tv_nsec - format_time_start.tv_nsec) / 1000000.0);
-    format_time_ms_total += format_ms;
-
     log->cbuff->start = (log->cbuff->start + size) % STATE_BUFF_LEN;
 
-    // Write to file (raw binary record block)
-    int len = size * recbytes;
-
-    // Measure write time
-    clock_gettime(CLOCK_MONOTONIC, &write_time_start);
-    
-    // Always use memcpy for the first few transfers to establish baseline
-    static int transfer_count = 0;
-    
-    if (transfer_count < 100) {
-        // Start with memcpy for the first 100 transfers
-        memcpy(log->addr + log->location, log->write_buff, len);
-        transfer_count++;
-    } else if (log->use_dma && DmaInitialized(log->dma_ctx)) {
-        // After establishing baseline, try DMA
-        dma_transfers++;
-        if (DmaTransfer(log->dma_ctx, log->write_buff, log->addr + log->location, len) < 0) {
-            // Fall back to memcpy if DMA transfer fails
-            memcpy(log->addr + log->location, log->write_buff, len);
-            dma_errors++;
-            
-            // If we get too many consecutive errors, disable DMA
-            if (dma_errors > 20 && dma_errors == dma_transfers) {
-                printf("Too many DMA errors, disabling DMA\n");
-                log->use_dma = 0;
-            }
-        }
+    size_t len = (size_t)(size * recbytes);
+    if (RingPush(&log->ring, log->write_buff, len) == 0) {
+      log->total_bytes += len;
+      sem_post(&log->wake);                       // async-signal-safe wake
     } else {
-        memcpy(log->addr + log->location, log->write_buff, len);
+      log->dropped += size;                       // ring full: disk too slow
     }
-    
-    clock_gettime(CLOCK_MONOTONIC, &write_time_end);
-    double write_ms = ((write_time_end.tv_sec - write_time_start.tv_sec) * 1000.0) + 
-                     ((write_time_end.tv_nsec - write_time_start.tv_nsec) / 1000000.0);
-    write_time_ms_total += write_ms;
-    
-    log->location += len;
-    
-    // Update statistics
-    total_bytes += len;
-    report_count++;
-    
-    // Calculate throughput (every ~1 second to avoid flooding terminal)
-    clock_gettime(CLOCK_MONOTONIC, &curr_time);
-    double elapsed = (curr_time.tv_sec - last_time.tv_sec) + 
-                    (curr_time.tv_nsec - last_time.tv_nsec) / 1.0e9;
-    
-    total_seconds += elapsed;
-    
-    if (elapsed >= 1.0) {
-      double current_kbps = (len * 8.0) / (elapsed * 1024.0);
-      double avg_kbps = (total_bytes * 8.0) / (total_seconds * 1024.0);
-      
-      // Calculate average operation times
-      double avg_format_ms = format_time_ms_total / (double)report_count;
-      double avg_write_ms = write_time_ms_total / (double)report_count;
-      
-      // Print throughput statistics if show_stats is enabled
-      if (log->show_stats) {
-        printf("[LOG] Throughput: %.2f kbps current | %.2f kbps avg | %.2f MB total", 
-               current_kbps, avg_kbps, total_bytes / (1024.0 * 1024.0));
-        
-        // Print DMA statistics if enabled
-        if (log->use_dma) {
-          printf(" | DMA: %d transfers, %d errors", dma_transfers, dma_errors);
-        }
-        
-        // Print operation timing
-        printf(" | Format: %.3f ms, Write: %.3f ms", avg_format_ms, avg_write_ms);
-        printf("\n");
+
+    // Periodic throughput/drop report (-s). printf in a signal handler isn't
+    // strictly async-signal-safe, but it is diagnostic-only, as before.
+    if (log->show_stats) {
+      struct timespec now;
+      clock_gettime(CLOCK_MONOTONIC, &now);
+      double since = (now.tv_sec - tlast.tv_sec) + (now.tv_nsec - tlast.tv_nsec) / 1e9;
+      if (since >= 1.0) {
+        double total = (now.tv_sec - t0.tv_sec) + (now.tv_nsec - t0.tv_nsec) / 1e9;
+        double avg_kbps = (log->total_bytes * 8.0) / (total * 1024.0);
+        size_t ring_used = log->ring.head - log->ring.tail;
+        printf("[LOG] %.2f kbps avg | %.2f MB | dropped %llu rec | ring %zu/%zu KB\n",
+               avg_kbps, log->total_bytes / (1024.0 * 1024.0),
+               (unsigned long long) log->dropped,
+               ring_used / 1024, log->ring.cap / 1024);
+        tlast = now;
       }
-      
-      // Reset timer and counters
-      last_time = curr_time;
-      format_time_ms_total = 0.0;
-      write_time_ms_total = 0.0;
-      report_count = 0;
     }
   }
 }
 
+// Stop logging: tell the writer to drain + exit, then close the file.
+// By the time this is called the producer (timer callback) has stopped pushing
+// (UiStopAndSaveLog clears the logging flag first), so no records race in.
 int LogSaveFile(log_t* log) {
+  if (log->fd < 0)
+    return 0;
 
-  munlock(log->addr, LOGSIZE);
-  // Unmap and truncate file
-  if (munmap(log->addr, LOGSIZE) == -1){
-    close(log->fd);
-    printf("unmap failed\n");
-    return -1;
-  }
-  if (ftruncate(log->fd, log->location) == -1){
-    close(log->fd);
-    printf("Error truncating file.\n");
-    return -1;
-  }
+  log->running = 0;
+  sem_post(&log->wake);                  // wake writer to do its final drain
+  pthread_join(log->writer, NULL);
+
+  fsync(log->fd);
   close(log->fd);
-  log->fd = 0;
-  log->location = 0;
-  log->addr = NULL;
-  memset(log->cbuff->temp_buff,0, TEMP_BUFF_LEN);
-  memset(log->write_buff, 0, WRITE_BUFF_LEN);
+  log->fd = -1;
+
+  if (log->dropped)
+    printf("Log closed: %llu records dropped (disk could not keep up)\n",
+           (unsigned long long) log->dropped);
   return 0;
 }
 
 void LogCleanup(log_t* log) {
-  // Release the DMA backend (NULL-safe; clean up even if use_dma was disabled
-  // at runtime after transfer errors).
-  if (log->dma_ctx) {
-    DmaCleanup(log->dma_ctx);
-    log->dma_ctx = NULL;
-  }
+  if (!log)
+    return;
+  if (log->fd >= 0)
+    LogSaveFile(log);                    // stop thread + close if still open
 
+  if (log->ring.buf) {
+    munlock(log->ring.buf, log->ring.cap);
+    free(log->ring.buf);
+  }
+  sem_destroy(&log->wake);
+  free(log->cbuff);
   free(log);
 }
-
-
