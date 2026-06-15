@@ -18,6 +18,7 @@
 
 #include <stdint.h>
 #include "mem_types.h"
+#include "dma.h"
 //#include "roshelper.h"
 
 #define LOGSIZE         (4096 * 4096) * 20
@@ -31,9 +32,6 @@ typedef struct{
   uint32_t end;
   char temp_buff[TEMP_BUFF_LEN];
 } circbuff_t;
-
-// Forward declaration for DMA context
-typedef struct dma_context dma_context_t;
 
 // Log File Struct
 typedef struct{
