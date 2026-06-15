@@ -22,6 +22,11 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 
+// Board remoteproc nodes (see pru.h). Keeping these here as the single
+// board-specific knob lets the remoteproc logic below stay SoC-agnostic.
+const char* rp_pru0 = RP_PRU0_PATH;
+const char* rp_pru1 = RP_PRU1_PATH;
+
 // ---------------------------------------------------------------------------
 // Function: int PruMemMap(pru_mem_t)
 //
@@ -80,11 +85,13 @@ int PruMemMap(pru_mem_t* pru_mem) {
 int PruWriteFirmware(char* suffix) {
   int rtn;
   char buf[64];
+  char path[256];
 
   // PRU0
   memset(buf, 0, sizeof(buf));
-  snprintf(buf, sizeof(buf), "am335x-pru0-%s-fw", suffix);
-  int fd = open(PRU0_FW, O_WRONLY);
+  snprintf(buf, sizeof(buf), "%s-pru0-%s-fw", PRU_FW_PREFIX, suffix);
+  snprintf(path, sizeof(path), "%s/firmware", rp_pru0);
+  int fd = open(path, O_WRONLY);
   if (fd == -1) {
     printf("pru0 - failed to open firmware location");
     return -1;
@@ -98,8 +105,9 @@ int PruWriteFirmware(char* suffix) {
 
   // PRU1
   memset(buf, 0, sizeof(buf));
-  snprintf(buf, sizeof(buf), "am335x-pru1-%s-fw", suffix);
-  fd = open(PRU1_FW, O_WRONLY);
+  snprintf(buf, sizeof(buf), "%s-pru1-%s-fw", PRU_FW_PREFIX, suffix);
+  snprintf(path, sizeof(path), "%s/firmware", rp_pru1);
+  fd = open(path, O_WRONLY);
   if (fd == -1) {
     printf("pru1 - failed to open firmware location");
     return -1;
@@ -114,6 +122,35 @@ int PruWriteFirmware(char* suffix) {
 }
 
 // ---------------------------------------------------------------------------
+// Function: int PruWaitRunning(const char* rp_path)
+//
+//  Polls a remoteproc's "state" until it reports "running" (bounded ~1 s).
+//  The PRU boot after a "start" write is asynchronous; on a cold run the
+//  firmware load takes tens of ms, during which the PRU's memInit() zeroes
+//  pru_ctl and would clobber an enable bit the A-core set too early. Waiting for
+//  "running" here closes that race so memInit() completes before PruEnable().
+//
+// Outputs:   0 once running, -1 on timeout/error
+// ---------------------------------------------------------------------------
+static int PruWaitRunning(const char* rp_path) {
+  char state_path[256] = {0};
+  snprintf(state_path, sizeof(state_path), "%s/state", rp_path);
+  char buf[64];
+  for (int i = 0; i < 100; i++) {        // 100 * 10 ms = ~1 s ceiling
+    int fd = open(state_path, O_RDONLY);
+    if (fd == -1)
+      return -1;
+    memset(buf, 0, sizeof(buf));
+    int rtn = read(fd, buf, sizeof(buf) - 1);
+    close(fd);
+    if (rtn > 0 && strcmp(buf, "running\n") == 0)
+      return 0;
+    usleep(10000);                       // 10 ms between polls
+  }
+  return -1;
+}
+
+// ---------------------------------------------------------------------------
 // Function: int PruInit(void)
 //
 //  This function restarts and loads pru firmware (rproc).
@@ -122,7 +159,8 @@ int PruWriteFirmware(char* suffix) {
 // ---------------------------------------------------------------------------
 int PruInit(char* suffix){
   int rtn;
-  char buf[64];
+  char buf[64] = {0};
+  char path[256];
 
   if (PruRestart() == -1) {
     printf("restart pru failed.\n");
@@ -135,7 +173,8 @@ int PruInit(char* suffix){
   }
 
   // PRU0
-  int fd = open(PRU0_STATE, O_RDWR);
+  snprintf(path, sizeof(path), "%s/state", rp_pru0);
+  int fd = open(path, O_RDWR);
   if (fd == -1) {
     printf("pru0 - failed to open remoteproc driver");
     return -1;
@@ -150,7 +189,8 @@ int PruInit(char* suffix){
   }
 
   // PRU1
-  fd = open(PRU1_STATE, O_RDWR);
+  snprintf(path, sizeof(path), "%s/state", rp_pru1);
+  fd = open(path, O_RDWR);
   if (fd == -1) {
     printf("pru1 - failed to open remoteproc driver");
     return -1;
@@ -161,6 +201,17 @@ int PruInit(char* suffix){
   if (rtn == -1) {
     printf("pru1 - failed to start");
     printf(buf);
+    return -1;
+  }
+
+  // Wait for both cores to actually reach "running" before returning, so the
+  // PRU's memInit() (which zeroes pru_ctl) finishes before the A-core enables.
+  if (PruWaitRunning(rp_pru0) == -1) {
+    printf("pru0 - did not reach running state\n");
+    return -1;
+  }
+  if (PruWaitRunning(rp_pru1) == -1) {
+    printf("pru1 - did not reach running state\n");
     return -1;
   }
   return 0;
@@ -176,9 +227,11 @@ int PruInit(char* suffix){
 int PruRestart(void) {
   int rtn;
   char buf[64];
+  char path[256];
 
   // PRU0
-  int fd = open(PRU0_STATE, O_RDWR);
+  snprintf(path, sizeof(path), "%s/state", rp_pru0);
+  int fd = open(path, O_RDWR);
   if (fd == -1) {
     printf("pru0 - failed to open remoteproc driver");
     return -1;
@@ -203,7 +256,8 @@ int PruRestart(void) {
   }
 
   // PRU1
-  fd = open(PRU1_STATE, O_RDWR);
+  snprintf(path, sizeof(path), "%s/state", rp_pru1);
+  fd = open(path, O_RDWR);
   if (fd == -1) {
     printf("pru1 - failed to open remoteproc driver");
     return -1;

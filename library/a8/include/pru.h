@@ -11,11 +11,15 @@
 #define PRU1_DRAM		      (PRU_GLOBAL_BASE + 0x00002000)
 #define PRU_SHARED_DRAM		(PRU_GLOBAL_BASE + 0x00010000)
 
-// remote proc driver paths
-#define PRU0_FW "/sys/class/remoteproc/remoteproc1/firmware"
-#define PRU1_FW "/sys/class/remoteproc/remoteproc2/firmware"
-#define PRU0_STATE "/sys/class/remoteproc/remoteproc1/state"
-#define PRU1_STATE "/sys/class/remoteproc/remoteproc2/state"
+// Board remoteproc nodes: friendly, stable symlinks under /dev/remoteproc
+// (kernel CONFIG_REMOTEPROC_CDEV + BeagleBone udev) pointing at the two PRU
+// cores. pru.c builds "<path>/firmware" and "<path>/state" from these, so only
+// these two paths and the firmware prefix differ per SoC (vs am64x, which uses
+// /dev/remoteproc/j7-pru0_{0,1} and the "j721e" prefix). Firmware images are
+// named "<PRU_FW_PREFIX>-pru{0,1}-<app>-fw" under /lib/firmware.
+#define RP_PRU0_PATH   "/dev/remoteproc/pruss-core0"
+#define RP_PRU1_PATH   "/dev/remoteproc/pruss-core1"
+#define PRU_FW_PREFIX  "am335x"
 
 int PruMemMap(pru_mem_t* pru_mem);
 int PruInit(char* suffix);
