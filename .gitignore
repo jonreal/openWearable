@@ -11,3 +11,11 @@ types_matlab.taghl
 *.app/*
 moc_*
 **/rotation_display.app/*
+
+# Internal working notes (todo / planning / build journals / board inventory) — never published.
+# Mirrors the am64x branch convention: docs/ is public, notes/ stays local.
+notes/
+
+# Library build outputs
+library/lib/
+library/build/

@@ -1,5 +1,6 @@
 # OpenWearable Library Makefile
-# Builds libowpru.a (PRU drivers library)
+# Builds the per-core static libraries. Currently: libow_pru.a (PRU drivers).
+# Per-core source/include layout: common/  a8/  pru/  (the am64x branch adds r5f/ c7x/ c66x/)
 
 # Colors
 RED=\033[1;31m
@@ -10,23 +11,23 @@ RESET=\033[0m
 # openWearable path
 OW_DIR = /root/openWearable
 
+# TI PRU code-generation tools (for the clpru runtime headers: stdint.h, etc.)
+CGT_DIR = /usr/share/ti/cgt-pru
+
 # Build Directories
 LIB_DIR = $(OW_DIR)/library
 TARGET_DIR = $(LIB_DIR)/lib
 BUILD_DIR = $(LIB_DIR)/build
 
-# Include Directories
-PRU_CINC_DIR = -I$(LIB_DIR)/include
+# Include Directories (PRU: shared contract + pru-specific headers + clpru runtime)
+PRU_CINC_DIR = -I$(LIB_DIR)/common/include -I$(LIB_DIR)/pru/include -I$(CGT_DIR)/include
 
-# Library dependencies
-PRU_CLIB = -l$(CGT_DIR)/lib/libc.a
-
-# PRU source files (excluding main files)
-PRU_SRC = $(filter-out $(LIB_DIR)/pru_src/pru0_main.c $(LIB_DIR)/pru_src/pru1_main.c, $(wildcard $(LIB_DIR)/pru_src/*.c))
-PRU_OBJ = $(patsubst $(LIB_DIR)/pru_src/%,$(BUILD_DIR)/%,$(PRU_SRC:.c=.po))
+# PRU source files (excluding the per-app main files)
+PRU_SRC = $(filter-out $(LIB_DIR)/pru/src/pru0_main.c $(LIB_DIR)/pru/src/pru1_main.c, $(wildcard $(LIB_DIR)/pru/src/*.c))
+PRU_OBJ = $(patsubst $(LIB_DIR)/pru/src/%,$(BUILD_DIR)/%,$(PRU_SRC:.c=.po))
 
 # Libraries
-LIBOWPRU = $(TARGET_DIR)/libowpru.a
+LIBOWPRU = $(TARGET_DIR)/libow_pru.a
 
 # PRU Compiler settings
 PRU_CC = clpru
@@ -40,24 +41,24 @@ AR = ar
 ARFLAGS = rcs
 
 # Main targets
-.PHONY: all clean libowpru
+.PHONY: all clean libow_pru
 
-all: prepare_build libowpru
+all: prepare_build libow_pru
 
 prepare_build:
 	@echo "$(C2) \n Creating build directories... $(RESET)"
 	@mkdir -p $(BUILD_DIR) $(TARGET_DIR)
 
-# Build libowpru.a - PRU drivers library
-libowpru: $(LIBOWPRU)
+# Build libow_pru.a - PRU drivers library
+libow_pru: $(LIBOWPRU)
 
 $(LIBOWPRU): $(PRU_OBJ)
-	@echo "$(C2) \n Building libowpru.a... $(RESET)"
+	@echo "$(C2) \n Building libow_pru.a... $(RESET)"
 	@mkdir -p $(TARGET_DIR)
 	$(AR) $(ARFLAGS) $@ $^
 
 # Build PRU objects
-$(BUILD_DIR)/%.po: $(LIB_DIR)/pru_src/%.c
+$(BUILD_DIR)/%.po: $(LIB_DIR)/pru/src/%.c
 	@echo "$(C2) \n Building PRU object: $@... $(RESET)"
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -c -fe $@ $<

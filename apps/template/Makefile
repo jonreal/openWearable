@@ -9,7 +9,7 @@ RESET=\033[0m
 # App name
 APP_NAME = template
 
-# Architecture
+# Platform identity: drives the firmware name, the -D<ARCH> define, and PRUx_<ARCH>.cmd
 ARCH = am335x
 
 # openWearable path
@@ -25,11 +25,11 @@ TARGET_DIR = /root/openWearable/apps/bin
 
 # Library Directories
 LIB_DIR = $(OW_DIR)/library
-LIBOWPRU = $(LIB_DIR)/lib/libowpru.a
+LIBOWPRU = $(LIB_DIR)/lib/libow_pru.a
 
-# Source Directories
-CSRC_DIR = $(OW_DIR)/library/src
-PRU_CSRC_DIR = $(OW_DIR)/library/pru_src
+# Source Directories (per-core split: a8/ = Cortex-A8 / Linux, pru/ = PRU firmware)
+CSRC_DIR = $(OW_DIR)/library/a8/src
+PRU_CSRC_DIR = $(OW_DIR)/library/pru/src
 
 # Main targets
 TARGET = main
@@ -37,12 +37,14 @@ PRU0_TARGET = pru0_main
 PRU1_TARGET = pru1_main
 
 # Include Directories
-CINC_DIR = $(OW_DIR)/library/include \
+CINC_DIR = $(OW_DIR)/library/common/include \
+	-I$(OW_DIR)/library/a8/include \
 	-I$(PSSP_DIR)/include/$(ARCH) \
 	-I$(PSSP_DIR)/include \
 	-I./
 
-PRU_CINC_DIR = -I$(OW_DIR)/library/include/ \
+PRU_CINC_DIR = -I$(OW_DIR)/library/common/include \
+	-I$(OW_DIR)/library/pru/include \
 	-I$(PSSP_DIR)/include/$(ARCH) \
 	-I$(PSSP_DIR)/include \
 	-I$(CGT_DIR)/include \
@@ -63,6 +65,9 @@ APP_CPU_OBJ = $(patsubst %.c,$(BUILD_DIR)/%.o,$(APP_CPU_SRC))
 # App specific PRU source files
 APP_PRU_SRC = pruloop.c
 APP_PRU_OBJ = $(patsubst %.c,$(BUILD_DIR)/%.po,$(APP_PRU_SRC))
+
+# Main object (for main.c)
+MAIN_OBJ = $(BUILD_DIR)/$(TARGET).o
 
 # Compiler settings
 CC = gcc
@@ -108,21 +113,27 @@ install: $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
 	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU0_TARGET).elf /lib/firmware/$(ARCH)-pru0-$(APP_NAME)-fw
 	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU1_TARGET).elf /lib/firmware/$(ARCH)-pru1-$(APP_NAME)-fw
 
-# Build main app executable
-$(TARGET_DIR)/$(APP_NAME): $(CPU_OBJ) $(APP_CPU_OBJ)
+# Link arm main app executable
+$(TARGET_DIR)/$(APP_NAME): $(CPU_OBJ) $(APP_CPU_OBJ) $(MAIN_OBJ)
 	@echo "$(C1) \n Linking cpu... $(RESET)"
 	@mkdir -p $(TARGET_DIR)
-	$(CC) -Wl,-rpath,$(BUILD_DIR) -L$(BUILD_DIR) $(CFLAGS) $^ $(CSRC_DIR)/$(TARGET).c -I$(CINC_DIR) -o $@ $(CLIB) -lm -DFWSUFFIX=\"$(APP_NAME)\"
+	$(CC) -Wl,-rpath,$(BUILD_DIR) -L$(BUILD_DIR) $(CFLAGS) $^ -o $@ $(CLIB) -lm -DFWSUFFIX=\"$(APP_NAME)\"
+
+# Build rule for main.c
+$(BUILD_DIR)/$(TARGET).o: $(CSRC_DIR)/$(TARGET).c
+	@echo "$(C1) \n Building main... $(RESET)"
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -I$(CINC_DIR) -c -o $@ $< $(CLIB) -DFWSUFFIX=\"$(APP_NAME)\"
 
 # Build PRU0 firmware
 $(BUILD_DIR)/$(PRU0_TARGET).elf: $(BUILD_DIR)/$(PRU0_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU)
 	@echo "$(C1) \n Linking pru0... $(RESET)"
-	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=1024 $(BUILD_DIR)/$(PRU0_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU) $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU0_TARGET).map -o $@ ./PRU0.cmd
+	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=1024 $(BUILD_DIR)/$(PRU0_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU) $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU0_TARGET).map -o $@ ./PRU0_$(ARCH).cmd
 
 # Build PRU1 firmware
 $(BUILD_DIR)/$(PRU1_TARGET).elf: $(BUILD_DIR)/$(PRU1_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU)
 	@echo "$(C1) \n Linking pru1... $(RESET)"
-	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=1024 $(BUILD_DIR)/$(PRU1_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU) $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $@ ./PRU1.cmd
+	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=1024 $(BUILD_DIR)/$(PRU1_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU) $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $@ ./PRU1_$(ARCH).cmd
 
 # Build CPU objects
 $(BUILD_DIR)/%.o: $(CSRC_DIR)/%.c
