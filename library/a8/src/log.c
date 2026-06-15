@@ -483,39 +483,47 @@ int LogNewFile(log_t* log, char* file) {
 
   mlock(log->addr, LOGSIZE);
 
-  // Log time
-  time_t now = time(NULL);
-  struct tm* t = localtime(&now);
+  // ---- ASCII header, terminated by a "#DATA" line --------------------------
+  // Everything up to and including "#DATA\n" is human-readable metadata; a
+  // host-side decoder parses #fields/#record_bytes here, then reads the raw
+  // fixed-size binary records that follow. Each chunk is built in write_buff
+  // and memcpy'd to the mmap'd file, advancing log->location.
   int len = 0;
   char time_str[1024];
 
-  memcpy(log->write_buff, "#Date: ", 7);
-  strftime(time_str, 1024, "%d-%b-%Y %X\n", t);
-  strcat(log->write_buff, time_str);
-  len = strlen(log->write_buff);
+  // magic / version
+  len = sprintf(log->write_buff, "#openWearable-log v1\n");
   memcpy(log->addr + log->location, log->write_buff, len);
   log->location += len;
-  log->write_buff[0] = '\0';
 
-  // Log memory allocation
+  // date + sample rate
+  time_t now = time(NULL);
+  struct tm* t = localtime(&now);
+  strftime(time_str, sizeof(time_str), "%d-%b-%Y %X", t);
+  len = sprintf(log->write_buff, "#date: %s\n#fs_hz: %u\n",
+                time_str, log->pru_mem->p->fs_hz);
+  memcpy(log->addr + log->location, log->write_buff, len);
+  log->location += len;
+
+  // memory allocation (informational comment lines)
+  log->write_buff[0] = '\0';
   PruSprintMalloc(log->pru_mem, log->write_buff);
   len = strlen(log->write_buff);
   memcpy(log->addr + log->location, log->write_buff, len);
   log->location += len;
-  log->write_buff[0] = '\0';
 
-  // Log parameters
-  FormatSprintParams(log->pru_mem->p, log->write_buff);
+  // schema: #fields / #record_bytes (per-app, from format.c)
+  log->write_buff[0] = '\0';
+  FormatLogSchema(log->write_buff);
   len = strlen(log->write_buff);
   memcpy(log->addr + log->location, log->write_buff, len);
   log->location += len;
-  log->write_buff[0] = '\0';
 
-  // Log header
-  FormatSprintStateHeader(log->write_buff);
-  len = strlen(log->write_buff);
+  // start-of-binary-data sentinel
+  len = sprintf(log->write_buff, "#DATA\n");
   memcpy(log->addr + log->location, log->write_buff, len);
   log->location += len;
+
   log->write_buff[0] = '\0';
   return 0;
 }
@@ -545,16 +553,22 @@ void LogWriteStateToFile(log_t* log) {
     ((STATE_BUFF_LEN + log->cbuff->end - log->cbuff->start) % STATE_BUFF_LEN);
 
   if (size > MIN_STATE_REQ) {
-    // Measure formatting time
+    // Pack the available states as fixed-size binary records straight into
+    // write_buff (pointer-advance, no strcat). Never overflow the buffer — any
+    // remainder is picked up on the next flush.
+    int recbytes = FormatLogRecordBytes();
+    if (size * recbytes > WRITE_BUFF_LEN)
+      size = WRITE_BUFF_LEN / recbytes;
+
+    // Measure packing time
     clock_gettime(CLOCK_MONOTONIC, &format_time_start);
-    
+
+    uint8_t* wp = (uint8_t*) log->write_buff;
     for(int i=log->cbuff->start; i<log->cbuff->start+size; i++){
-      memset(log->cbuff->temp_buff, 0, TEMP_BUFF_LEN);
-      FormatSprintState(&log->pru_mem->s->state[i % STATE_BUFF_LEN],
-                     log->cbuff->temp_buff);
-      strcat(log->write_buff, log->cbuff->temp_buff);
+      FormatLogRecord(&log->pru_mem->s->state[i % STATE_BUFF_LEN], wp);
+      wp += recbytes;
     }
-    
+
     clock_gettime(CLOCK_MONOTONIC, &format_time_end);
     double format_ms = ((format_time_end.tv_sec - format_time_start.tv_sec) * 1000.0) + 
                       ((format_time_end.tv_nsec - format_time_start.tv_nsec) / 1000000.0);
@@ -562,9 +576,9 @@ void LogWriteStateToFile(log_t* log) {
 
     log->cbuff->start = (log->cbuff->start + size) % STATE_BUFF_LEN;
 
-    // Write to file
-    int len = strlen(log->write_buff);
-    
+    // Write to file (raw binary record block)
+    int len = size * recbytes;
+
     // Measure write time
     clock_gettime(CLOCK_MONOTONIC, &write_time_start);
     

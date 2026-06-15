@@ -19,3 +19,6 @@ notes/
 # Library build outputs
 library/lib/
 library/build/
+
+# Host tool binaries
+utils/logdecode/logdecode
