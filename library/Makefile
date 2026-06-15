@@ -11,13 +11,16 @@ RESET=\033[0m
 # openWearable path
 OW_DIR = /root/openWearable
 
+# TI PRU code-generation tools (for the clpru runtime headers: stdint.h, etc.)
+CGT_DIR = /usr/share/ti/cgt-pru
+
 # Build Directories
 LIB_DIR = $(OW_DIR)/library
 TARGET_DIR = $(LIB_DIR)/lib
 BUILD_DIR = $(LIB_DIR)/build
 
-# Include Directories (PRU: shared contract + pru-specific headers)
-PRU_CINC_DIR = -I$(LIB_DIR)/common/include -I$(LIB_DIR)/pru/include
+# Include Directories (PRU: shared contract + pru-specific headers + clpru runtime)
+PRU_CINC_DIR = -I$(LIB_DIR)/common/include -I$(LIB_DIR)/pru/include -I$(CGT_DIR)/include
 
 # PRU source files (excluding the per-app main files)
 PRU_SRC = $(filter-out $(LIB_DIR)/pru/src/pru0_main.c $(LIB_DIR)/pru/src/pru1_main.c, $(wildcard $(LIB_DIR)/pru/src/*.c))

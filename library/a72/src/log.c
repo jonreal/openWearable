@@ -22,369 +22,71 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <stdint.h>
-#include <errno.h>
-#include <sys/ioctl.h>
-#include <malloc.h>
 #include "pru.h"
 #include "format.h"
 
-// Define the PaRAM set structure to match hardware
-//typedef struct {
-//    volatile uint32_t opt;           // 0x00 - Options
-//    volatile uint32_t src;           // 0x04 - Source address
-//    volatile uint32_t a_b_cnt;       // 0x08 - A,B count
-//    volatile uint32_t dst;           // 0x0C - Destination address
-//    volatile uint32_t src_dst_bidx;  // 0x10 - Source, destination B index
-//    volatile uint32_t link_bcnt;     // 0x14 - Link, B count reload
-//    volatile uint32_t src_dst_cidx;  // 0x18 - Source, destination C index
-//    volatile uint32_t ccnt;          // 0x1C - C count
-//} edma_param_t;
-//
-//// DMA context 
-//struct dma_context {
-//    int dma_fd;                      // DMA device file descriptor
-//    void *edma_base;                 // Mapped EDMA controller base address
-//    void *dma_buf;                   // DMA buffer for source data
-//    size_t dma_buf_size;             // Size of DMA buffer
-//    edma_param_t *param_base;        // Pointer to PaRAM sets
-//    volatile uint32_t *er_reg;       // Event Register
-//    volatile uint32_t *ecr_reg;      // Event Clear Register
-//    volatile uint32_t *esr_reg;      // Event Set Register
-//    volatile uint32_t *eer_reg;      // Event Enable Register
-//    volatile uint32_t *eecr_reg;     // Event Enable Clear Register
-//    volatile uint32_t *eesr_reg;     // Event Enable Set Register
-//    volatile uint32_t *ipr_reg;      // Interrupt Pending Register
-//    volatile uint32_t *icr_reg;      // Interrupt Clear Register
-//    int initialized;                 // Flag to indicate if DMA is initialized
-//};
-
-// BeagleBone AM335x EDMA controller definitions
-//#define DMA_DEVICE "/dev/mem"
-//#define EDMA_BASE_ADDR 0x49000000  // Base address of EDMA3 controller
-//#define EDMA_SIZE 0x10000          // Size of memory region to map
-//
-//// EDMA register offsets
-//#define ER_OFFSET 0x1000         // Event Register
-//#define ECR_OFFSET 0x1008        // Event Clear Register
-//#define ESR_OFFSET 0x1010        // Event Set Register
-//#define EER_OFFSET 0x1020        // Event Enable Register
-//#define EECR_OFFSET 0x1028       // Event Enable Clear Register
-//#define EESR_OFFSET 0x1030       // Event Enable Set Register
-//#define IPR_OFFSET 0x1068        // Interrupt Pending Register
-//#define ICR_OFFSET 0x1070        // Interrupt Clear Register
-//#define PARAM_OFFSET 0x4000      // PaRAM base
-//#define PARAM_SIZE 32            // Each PaRAM entry is 32 bytes
-//
-//// PaRAM register offsets (within each 32-byte PaRAM set)
-//#define OPT_OFFSET 0x00          // Options Parameter
-//#define SRC_OFFSET 0x04          // Source Address
-//#define A_B_CNT_OFFSET 0x08      // A and B Count
-//#define DST_OFFSET 0x0C          // Destination Address
-//#define SRC_DST_BIDX_OFFSET 0x10 // Source and Destination B Index
-//#define LINK_BCNT_OFFSET 0x14    // Link and B Count Reload
-//#define SRC_DST_CIDX_OFFSET 0x18 // Source and Destination C Index
-//#define CCNT_OFFSET 0x1C         // C Count
-//
-//// Transfer complete bit
-//#define OPT_TCINTEN (1 << 20)    // Transfer complete interrupt enable
-
-// For simplicity, we'll use a predefined channel
-//#define DMA_CHANNEL 8
-
-// Max time to wait for DMA completion in microseconds
-//#define DMA_TIMEOUT_US 1000000   // 1 second
-
-// Function to initialize DMA
-//static dma_context_t* init_dma(void) {
-//    dma_context_t* ctx = malloc(sizeof(dma_context_t));
-//    if (!ctx) {
-//        fprintf(stderr, "Failed to allocate DMA context\n");
-//        return NULL;
-//    }
-//    
-//    // Initialize with default values
-//    ctx->dma_fd = -1;
-//    ctx->edma_base = NULL;
-//    ctx->dma_buf = NULL;
-//    ctx->dma_buf_size = 0;
-//    ctx->initialized = 0;
-//    
-//    // Check if we're running on BeagleBone by looking for a key file
-//    if (access("/sys/firmware/devicetree/base/model", F_OK) != 0) {
-//        printf("Not running on BeagleBone, DMA disabled\n");
-//        goto cleanup;
-//    }
-//    
-//    // Open model file to check if we're on AM335x
-//    FILE* model_file = fopen("/sys/firmware/devicetree/base/model", "r");
-//    if (!model_file) {
-//        printf("Could not determine platform, DMA disabled\n");
-//        goto cleanup;
-//    }
-//    
-//    char model[128];
-//    fgets(model, sizeof(model), model_file);
-//    fclose(model_file);
-//    
-//    // Only enable DMA on BeagleBone/AM335x platforms
-//    if (strstr(model, "BeagleBone") == NULL) {
-//        printf("Not running on BeagleBone, DMA disabled\n");
-//        goto cleanup;
-//    }
-//    
-//    // Open /dev/mem to access physical memory
-//    ctx->dma_fd = open(DMA_DEVICE, O_RDWR | O_SYNC);
-//    if (ctx->dma_fd < 0) {
-//        fprintf(stderr, "Failed to open %s: %s\n", DMA_DEVICE, strerror(errno));
-//        printf("DMA not available, using standard memcpy\n");
-//        goto cleanup;
-//    }
-//    
-//    // Map EDMA controller registers
-//    ctx->edma_base = mmap(NULL, EDMA_SIZE, PROT_READ | PROT_WRITE, 
-//                          MAP_SHARED, ctx->dma_fd, EDMA_BASE_ADDR);
-//    if (ctx->edma_base == MAP_FAILED) {
-//        fprintf(stderr, "Failed to map EDMA registers: %s\n", strerror(errno));
-//        printf("DMA not available, using standard memcpy\n");
-//        goto cleanup;
-//    }
-//    
-//    // Set up pointers to key registers
-//    ctx->er_reg = (volatile uint32_t*)((char*)ctx->edma_base + ER_OFFSET);
-//    ctx->ecr_reg = (volatile uint32_t*)((char*)ctx->edma_base + ECR_OFFSET);
-//    ctx->esr_reg = (volatile uint32_t*)((char*)ctx->edma_base + ESR_OFFSET);
-//    ctx->eer_reg = (volatile uint32_t*)((char*)ctx->edma_base + EER_OFFSET);
-//    ctx->eecr_reg = (volatile uint32_t*)((char*)ctx->edma_base + EECR_OFFSET);
-//    ctx->eesr_reg = (volatile uint32_t*)((char*)ctx->edma_base + EESR_OFFSET);
-//    ctx->ipr_reg = (volatile uint32_t*)((char*)ctx->edma_base + IPR_OFFSET);
-//    ctx->icr_reg = (volatile uint32_t*)((char*)ctx->edma_base + ICR_OFFSET);
-//    
-//    // Get pointer to PaRAM base
-//    ctx->param_base = (edma_param_t*)((char*)ctx->edma_base + PARAM_OFFSET);
-//    
-//    // Create buffer for DMA operations - use a smaller buffer size to ensure it fits
-//    ctx->dma_buf_size = WRITE_BUFF_LEN;
-//    
-//    // Try to allocate DMA-friendly buffer with alignment
-//    if (posix_memalign(&ctx->dma_buf, 128, ctx->dma_buf_size) != 0) {
-//        fprintf(stderr, "Failed to allocate aligned DMA buffer\n");
-//        printf("DMA not available, using standard memcpy\n");
-//        goto cleanup;
-//    }
-//    
-//    if (!ctx->dma_buf) {
-//        fprintf(stderr, "Failed to allocate DMA buffer\n");
-//        printf("DMA not available, using standard memcpy\n");
-//        goto cleanup;
-//    }
-//    
-//    // Zero out the buffer
-//    memset(ctx->dma_buf, 0, ctx->dma_buf_size);
-//    
-//    // Initialize our DMA channel
-//    // Disable event first
-//    *(ctx->eecr_reg) = (1 << DMA_CHANNEL);
-//    
-//    // Clear any pending events
-//    *(ctx->ecr_reg) = (1 << DMA_CHANNEL);
-//    
-//    // Set up PaRAM entry with defaults (will be updated per transfer)
-//    ctx->param_base[DMA_CHANNEL].opt = OPT_TCINTEN;  // Transfer complete interrupt
-//    ctx->param_base[DMA_CHANNEL].src = 0;            // Will be set during transfer
-//    ctx->param_base[DMA_CHANNEL].dst = 0;            // Will be set during transfer
-//    ctx->param_base[DMA_CHANNEL].a_b_cnt = 0;        // Will be set during transfer
-//    ctx->param_base[DMA_CHANNEL].src_dst_bidx = 0;   // 1D transfer, no indexing
-//    ctx->param_base[DMA_CHANNEL].link_bcnt = 0xFFFF; // No linking
-//    ctx->param_base[DMA_CHANNEL].src_dst_cidx = 0;   // 1D transfer, no indexing
-//    ctx->param_base[DMA_CHANNEL].ccnt = 1;           // 1D transfer
-//    
-//    // Enable DMA channel
-//    *(ctx->eesr_reg) = (1 << DMA_CHANNEL);
-//    
-//    ctx->initialized = 1;
-//    printf("DMA initialized successfully using EDMA channel %d\n", DMA_CHANNEL);
-//    return ctx;
-//    
-//cleanup:
-//    // Clean up if initialization fails
-//    if (ctx->dma_buf) {
-//        free(ctx->dma_buf);
-//    }
-//    
-//    if (ctx->edma_base && ctx->edma_base != MAP_FAILED) {
-//        munmap(ctx->edma_base, EDMA_SIZE);
-//    }
-//    
-//    if (ctx->dma_fd >= 0) {
-//        close(ctx->dma_fd);
-//    }
-//    
-//    free(ctx);
-//    return NULL;
-//}
-//
-//// Function to perform DMA transfer
-//static int dma_transfer(dma_context_t* ctx, void* src, void* dst, size_t len) {
-//    if (!ctx || !ctx->initialized) {
-//        return -1;
-//    }
-//    
-//    // Make sure the length is valid
-//    if (len == 0 || len > ctx->dma_buf_size) {
-//        fprintf(stderr, "Invalid DMA transfer size: %zu\n", len);
-//        return -1;
-//    }
-//    
-//    // For small transfers, just use memcpy - DMA has overhead
-//    if (len < 1024) {
-//        memcpy(dst, src, len);
-//        return 0;
-//    }
-//    
-//    // Physical address check - memory must be in a DMA-compatible region
-//    uintptr_t dst_addr = (uintptr_t)dst;
-//    
-//    // On AM335x, memory mapped files might not be DMA-accessible
-//    // Let's check if the destination looks like a valid physical address
-//    if (dst_addr < 0x80000000 || dst_addr > 0x90000000) {
-//        // Likely not a physical address we can use with DMA
-//        // Just use memcpy instead
-//        memcpy(dst, src, len);
-//        return 0;
-//    }
-//    
-//    // Copy source data to our DMA buffer
-//    // This step is needed because we need a DMA-accessible buffer
-//    memcpy(ctx->dma_buf, src, len);
-//    
-//    // Synchronize memory - ensure data is written to physical memory
-//    // before DMA reads it
-//    __sync_synchronize();
-//    
-//    // Disable event first
-//    *(ctx->eecr_reg) = (1 << DMA_CHANNEL);
-//    
-//    // Clear any pending events on our channel
-//    *(ctx->ecr_reg) = (1 << DMA_CHANNEL);
-//    *(ctx->icr_reg) = (1 << DMA_CHANNEL);
-//    
-//    // Set up transfer parameters
-//    ctx->param_base[DMA_CHANNEL].src = (uint32_t)((uintptr_t)ctx->dma_buf);
-//    ctx->param_base[DMA_CHANNEL].dst = (uint32_t)((uintptr_t)dst);
-//    
-//    // Set ACNT (number of bytes per array) and BCNT (number of arrays)
-//    // For simplicity, we'll use a block size of 1024 bytes
-//    uint32_t block_size = 1024;
-//    uint32_t num_blocks = (len + block_size - 1) / block_size;
-//    
-//    if (num_blocks > 1) {
-//        // ACNT=block_size, BCNT=num_blocks
-//        ctx->param_base[DMA_CHANNEL].a_b_cnt = block_size | (num_blocks << 16);
-//        ctx->param_base[DMA_CHANNEL].src_dst_bidx = block_size | (block_size << 16);
-//    } else {
-//        // Simple 1D transfer
-//        ctx->param_base[DMA_CHANNEL].a_b_cnt = len | (1 << 16); // ACNT=len, BCNT=1
-//        ctx->param_base[DMA_CHANNEL].src_dst_bidx = 0; // No indexing
-//    }
-//    
-//    // Enable event
-//    *(ctx->eesr_reg) = (1 << DMA_CHANNEL);
-//    
-//    // Trigger the transfer by setting the event
-//    *(ctx->esr_reg) = (1 << DMA_CHANNEL);
-//    
-//    // Use a very short timeout to prevent freezes
-//    #define SHORT_TIMEOUT_US 1000  // 1ms - if DMA doesn't complete quickly, use memcpy
-//    
-//    // Wait for transfer completion by polling the event register
-//    struct timespec start_time, current_time;
-//    clock_gettime(CLOCK_MONOTONIC, &start_time);
-//    
-//    // Set a maximum number of poll attempts
-//    int max_polls = 100;
-//    int poll_count = 0;
-//    
-//    while (poll_count < max_polls) {
-//        poll_count++;
-//        
-//        // Check if transfer is complete by checking the event register
-//        // A cleared event means the transfer is complete
-//        if (!(*(ctx->er_reg) & (1 << DMA_CHANNEL))) {
-//            // Success - DMA completed
-//            return 0;
-//        }
-//        
-//        // Brief pause to avoid hogging CPU
-//        usleep(10); // 10 microseconds
-//        
-//        // Check for timeout
-//        clock_gettime(CLOCK_MONOTONIC, &current_time);
-//        uint64_t elapsed_us = (current_time.tv_sec - start_time.tv_sec) * 1000000 +
-//                             (current_time.tv_nsec - start_time.tv_nsec) / 1000;
-//        
-//        if (elapsed_us > SHORT_TIMEOUT_US) {
-//            // Timeout occurred
-//            break;
-//        }
-//    }
-//    
-//    // If we get here, transfer didn't complete in time
-//    // Don't print error to avoid flooding the console
-//    // Just clear the events and fall back to memcpy
-//    *(ctx->ecr_reg) = (1 << DMA_CHANNEL);
-//    *(ctx->icr_reg) = (1 << DMA_CHANNEL);
-//    *(ctx->eecr_reg) = (1 << DMA_CHANNEL);
-//    
-//    // Fall back to memcpy
-//    memcpy(dst, src, len);
-//    return -1;
-//}
-//
-//// Function to cleanup DMA
-//static void cleanup_dma(dma_context_t* ctx) {
-//    if (!ctx) {
-//        return;
-//    }
-//    
-//    if (ctx->initialized) {
-//        // Disable our DMA channel
-//        if (ctx->eecr_reg) {
-//            *(ctx->eecr_reg) = (1 << DMA_CHANNEL);
-//        }
-//        
-//        // Clear any pending events/interrupts
-//        if (ctx->ecr_reg) {
-//            *(ctx->ecr_reg) = (1 << DMA_CHANNEL);
-//        }
-//        
-//        if (ctx->icr_reg) {
-//            *(ctx->icr_reg) = (1 << DMA_CHANNEL);
-//        }
-//    }
-//    
-//    // Free the DMA buffer
-//    if (ctx->dma_buf) {
-//        free(ctx->dma_buf);
-//    }
-//    
-//    // Unmap the EDMA controller registers
-//    if (ctx->edma_base && ctx->edma_base != MAP_FAILED) {
-//        munmap(ctx->edma_base, EDMA_SIZE);
-//    }
-//    
-//    // Close the device
-//    if (ctx->dma_fd >= 0) {
-//        close(ctx->dma_fd);
-//    }
-//    
-//    free(ctx);
-//}
-////#include "roshelper.h"
+// Logging is split across two contexts:
+//   producer - the real-time SIGALRM timer callback (UiTimerCallback). It must
+//              never block, so it only packs records and pushes them into a RAM
+//              ring (lock-free, async-signal-safe ops only).
+//   consumer - a writer thread that drains the ring to the file with write().
+// This keeps disk/SD latency off the control loop and makes run length
+// unbounded (no preallocated mmap, no mlock of the whole file).
 
 // ---------------------------------------------------------------------------
-// Function: void circBuffUpdate(void)
+//  SPSC ring buffer (single producer / single consumer, lock-free)
+// ---------------------------------------------------------------------------
+
+// Producer: copy 'len' bytes in. Returns 0 on success, -1 if full (caller drops).
+static int RingPush(ringbuf_t* r, const void* data, size_t len) {
+  size_t head = r->head;                                   // producer owns head
+  size_t tail = __atomic_load_n(&r->tail, __ATOMIC_ACQUIRE);
+  if (r->cap - (head - tail) < len)
+    return -1;                                             // not enough room
+  size_t off = head & (r->cap - 1);
+  size_t first = (len < r->cap - off) ? len : (r->cap - off);
+  memcpy(r->buf + off, data, first);
+  if (len > first)
+    memcpy(r->buf, (const uint8_t*) data + first, len - first);  // wrap
+  __atomic_store_n(&r->head, head + len, __ATOMIC_RELEASE);
+  return 0;
+}
+
+// Consumer: drain everything currently available to the file descriptor.
+static void RingDrain(ringbuf_t* r, int fd) {
+  for (;;) {
+    size_t tail = r->tail;                                 // consumer owns tail
+    size_t head = __atomic_load_n(&r->head, __ATOMIC_ACQUIRE);
+    size_t avail = head - tail;
+    if (avail == 0)
+      break;
+    size_t off = tail & (r->cap - 1);
+    size_t chunk = (avail < r->cap - off) ? avail : (r->cap - off);  // contiguous
+    ssize_t w = write(fd, r->buf + off, chunk);
+    if (w <= 0)
+      break;                                               // write error; retry next wake
+    __atomic_store_n(&r->tail, tail + (size_t) w, __ATOMIC_RELEASE);
+  }
+}
+
+// Writer thread: wait for data, drain it, repeat until shutdown.
+static void* LogWriter(void* arg) {
+  log_t* log = (log_t*) arg;
+  while (1) {
+    sem_wait(&log->wake);
+    RingDrain(&log->ring, log->fd);
+    if (!log->running) {
+      RingDrain(&log->ring, log->fd);                      // final flush
+      break;
+    }
+  }
+  return NULL;
+}
+
+// ---------------------------------------------------------------------------
+// Function: void LogCircBuffUpdate(log_t* log)
 //
-//  This function initializes the circular buffer.
+//  Mirror the PRU state-ring write index into our local circular buffer.
 // ---------------------------------------------------------------------------
 void LogCircBuffUpdate(log_t* log) {
   if (log->cbuff->end != log->pru_mem->s->cbuff_index)
@@ -392,19 +94,17 @@ void LogCircBuffUpdate(log_t* log) {
 }
 
 // ---------------------------------------------------------------------------
-// Function: void circBuffInit(void)
+// Function: circbuff_t* LogNewCircBuff(void)
 //
-//  This function initializes a circular buffer.
+//  Allocate and initialize a circular buffer.
 // ---------------------------------------------------------------------------
 circbuff_t* LogNewCircBuff(void) {
   circbuff_t* cb = malloc(sizeof(circbuff_t));
   cb->start = 0;
   cb->end = 0;
-  memset(cb->temp_buff,0, TEMP_BUFF_LEN);
+  memset(cb->temp_buff, 0, TEMP_BUFF_LEN);
   return cb;
 }
-
-
 
 void LogDebugWriteState(const shared_mem_t* sm, circbuff_t* cb, char* buff) {
     if (cb->start != sm->state[0].time){
@@ -416,261 +116,171 @@ void LogDebugWriteState(const shared_mem_t* sm, circbuff_t* cb, char* buff) {
 }
 
 // ----------------------------------------------------------------------------
-//  Functions: int LogInit(const pru_mem_t pru_mem)
+//  Function: log_t* LogInit(const pru_mem_t* pru_mem)
 //
-//  This function creates a log file.
-//
-//  TODO: check if file exists.
+//  Allocate the logger and its RAM ring. The writer thread is started per file
+//  (LogNewFile), not here.
 //  ------------------------------------------------------------------------- */
 log_t* LogInit(const pru_mem_t* pru_mem) {
-  // Create new datalog struct
   log_t* log = malloc(sizeof(log_t));
   log->pru_mem = pru_mem;
-  log->fd = 0;
-  log->location = 0;
-  log->addr = NULL;
+  log->fd = -1;
   log->cbuff = LogNewCircBuff();
   memset(log->write_buff, 0, WRITE_BUFF_LEN);
-  
-  // Initialize DMA
-  //log->dma_ctx = init_dma();
-  //log->use_dma = (log->dma_ctx != NULL && log->dma_ctx->initialized);
-  
-  // Initialize stats flag
-  //log->show_stats = 0;  // Don't show stats by default
-  
-  //if (log->use_dma) {
-  //  printf("DMA logging enabled\n");
-  //} else {
-  //  printf("DMA initialization failed or not available, using standard memcpy\n");
-  //}
-  
+
+  log->ring.buf = malloc(LOG_RING_CAP);
+  log->ring.cap = LOG_RING_CAP;
+  log->ring.head = 0;
+  log->ring.tail = 0;
+  if (log->ring.buf) {
+    memset(log->ring.buf, 0, LOG_RING_CAP);  // pre-fault the pages (resident)
+    mlock(log->ring.buf, LOG_RING_CAP);      // pin the (small) ring, not the file
+  }
+
+  log->running = 0;
+  log->dropped = 0;
+  log->total_bytes = 0;
+  log->show_stats = 0;
+  sem_init(&log->wake, 0, 0);
+
   return log;
 }
 
-
 int LogNewFile(log_t* log, char* file) {
-
-  // Open file, stretch and write blank
-  log->fd = open(file, O_RDWR | O_CREAT | O_TRUNC, 0666);
-  if (lseek(log->fd, LOGSIZE, SEEK_SET) == -1){
-    close(log->fd);
-    printf("Error stretching file.\n");
-    return -1;
-  }
-  if (write(log->fd, "", 1) == -1){
-    close(log->fd);
-    printf("Error writing blank at end of file.\n");
+  log->fd = open(file, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+  if (log->fd < 0) {
+    printf("Error opening log file %s\n", file);
     return -1;
   }
 
-  // memory map file
-  log->addr = mmap(
-      0, LOGSIZE, PROT_WRITE, MAP_SHARED | MAP_POPULATE, log->fd, 0
-  );
-  if (log->addr == MAP_FAILED) {
-    printf("mmap failed");
-    close(log->fd);
-    return -1;
-  }
+  // ASCII header (written directly, before the writer thread starts): magic,
+  // metadata, schema, then a "#DATA" sentinel. Raw binary records follow.
+  char hdr[4096];
+  char tmp[1024];
+  int len = 0;
+  len += sprintf(hdr + len, "#openWearable-log v1\n");
 
-  mlock(log->addr, LOGSIZE);
-
-  // Log time
   time_t now = time(NULL);
   struct tm* t = localtime(&now);
-  int len = 0;
-  char time_str[1024];
+  char time_str[256];
+  strftime(time_str, sizeof(time_str), "%d-%b-%Y %X", t);
+  len += sprintf(hdr + len, "#date: %s\n#fs_hz: %u\n", time_str, log->pru_mem->p->fs_hz);
 
-  memcpy(log->write_buff, "#Date: ", 7);
-  strftime(time_str, 1024, "%d-%b-%Y %X\n", t);
-  strcat(log->write_buff, time_str);
-  len = strlen(log->write_buff);
-  memcpy(log->addr + log->location, log->write_buff, len);
-  log->location += len;
-  log->write_buff[0] = '\0';
+  tmp[0] = '\0';
+  PruSprintMalloc(log->pru_mem, tmp);          // informational #comment lines
+  len += sprintf(hdr + len, "%s", tmp);
 
-  // Log memory allocation
-  PruSprintMalloc(log->pru_mem, log->write_buff);
-  len = strlen(log->write_buff);
-  memcpy(log->addr + log->location, log->write_buff, len);
-  log->location += len;
-  log->write_buff[0] = '\0';
+  tmp[0] = '\0';
+  FormatLogSchema(tmp);                         // #fields / #record_bytes
+  len += sprintf(hdr + len, "%s", tmp);
 
-  // Log parameters
-  FormatSprintParams(log->pru_mem->p, log->write_buff);
-  len = strlen(log->write_buff);
-  memcpy(log->addr + log->location, log->write_buff, len);
-  log->location += len;
-  log->write_buff[0] = '\0';
+  len += sprintf(hdr + len, "#DATA\n");
+  if (write(log->fd, hdr, len) != len)
+    printf("Warning: short header write\n");
 
-  // Log header
-  FormatSprintStateHeader(log->write_buff);
-  len = strlen(log->write_buff);
-  memcpy(log->addr + log->location, log->write_buff, len);
-  log->location += len;
-  log->write_buff[0] = '\0';
+  // Reset ring and start the writer thread.
+  log->ring.head = 0;
+  log->ring.tail = 0;
+  log->dropped = 0;
+  log->total_bytes = 0;
+  log->running = 1;
+  if (pthread_create(&log->writer, NULL, LogWriter, log) != 0) {
+    printf("Error starting log writer thread\n");
+    log->running = 0;
+    close(log->fd);
+    log->fd = -1;
+    return -1;
+  }
   return 0;
 }
 
+// Producer side - runs in the real-time timer callback. Packs the available
+// PRU states into write_buff and pushes the block into the ring (non-blocking).
 void LogWriteStateToFile(log_t* log) {
-  static struct timespec last_time;
-  static struct timespec curr_time;
-  static struct timespec format_time_start, format_time_end;
-  static struct timespec write_time_start, write_time_end;
-  static uint64_t total_bytes = 0;
-  static int first_call = 1;
-  static double total_seconds = 0.0;
-  static int dma_transfers = 0;
-  static int dma_errors = 0;
-  static double format_time_ms_total = 0.0;
-  static double write_time_ms_total = 0.0;
-  static int report_count = 0;
-  
-  // Initialize timer on first call
-  if (first_call) {
-    clock_gettime(CLOCK_MONOTONIC, &last_time);
-    first_call = 0;
+  static struct timespec t0, tlast;
+  static int started = 0;
+
+  if (!started) {
+    clock_gettime(CLOCK_MONOTONIC, &t0);
+    tlast = t0;
+    started = 1;
   }
-  
-  log->write_buff[0] = '\0';
+
   int size =
     ((STATE_BUFF_LEN + log->cbuff->end - log->cbuff->start) % STATE_BUFF_LEN);
 
   if (size > MIN_STATE_REQ) {
-    // Measure formatting time
-    clock_gettime(CLOCK_MONOTONIC, &format_time_start);
-    
-    for(int i=log->cbuff->start; i<log->cbuff->start+size; i++){
-      memset(log->cbuff->temp_buff, 0, TEMP_BUFF_LEN);
-      FormatSprintState(&log->pru_mem->s->state[i % STATE_BUFF_LEN],
-                     log->cbuff->temp_buff);
-      strcat(log->write_buff, log->cbuff->temp_buff);
-    }
-    
-    clock_gettime(CLOCK_MONOTONIC, &format_time_end);
-    double format_ms = ((format_time_end.tv_sec - format_time_start.tv_sec) * 1000.0) + 
-                      ((format_time_end.tv_nsec - format_time_start.tv_nsec) / 1000000.0);
-    format_time_ms_total += format_ms;
+    int recbytes = FormatLogRecordBytes();
+    if ((size_t)(size * recbytes) > WRITE_BUFF_LEN)
+      size = WRITE_BUFF_LEN / recbytes;           // never overflow staging buf
 
+    uint8_t* wp = (uint8_t*) log->write_buff;
+    for (int i = log->cbuff->start; i < log->cbuff->start + size; i++) {
+      FormatLogRecord(&log->pru_mem->s->state[i % STATE_BUFF_LEN], wp);
+      wp += recbytes;
+    }
     log->cbuff->start = (log->cbuff->start + size) % STATE_BUFF_LEN;
 
-    // Write to file
-    int len = strlen(log->write_buff);
-    
-    // Measure write time
-    clock_gettime(CLOCK_MONOTONIC, &write_time_start);
-    
-    // Always use memcpy for the first few transfers to establish baseline
-    static int transfer_count = 0;
-    
-//    if (transfer_count < 100) {
-//        // Start with memcpy for the first 100 transfers
-//        memcpy(log->addr + log->location, log->write_buff, len);
-//        transfer_count++;
-//    } else if (log->use_dma && log->dma_ctx && log->dma_ctx->initialized) {
-//        // After establishing baseline, try DMA
-//        dma_transfers++;
-//        if (dma_transfer(log->dma_ctx, log->write_buff, log->addr + log->location, len) < 0) {
-//            // Fall back to memcpy if DMA transfer fails
-//            memcpy(log->addr + log->location, log->write_buff, len);
-//            dma_errors++;
-//            
-//            // If we get too many consecutive errors, disable DMA
-//            if (dma_errors > 20 && dma_errors == dma_transfers) {
-//                printf("Too many DMA errors, disabling DMA\n");
-//                log->use_dma = 0;
-//            }
-//        }
-//    } else {
-//        memcpy(log->addr + log->location, log->write_buff, len);
-//    }
+    size_t len = (size_t)(size * recbytes);
+    if (RingPush(&log->ring, log->write_buff, len) == 0) {
+      log->total_bytes += len;
+      sem_post(&log->wake);                       // async-signal-safe wake
+    } else {
+      log->dropped += size;                       // ring full: disk too slow
+    }
 
-    memcpy(log->addr + log->location, log->write_buff, len);
-    transfer_count++;
- 
-    clock_gettime(CLOCK_MONOTONIC, &write_time_end);
-    double write_ms = (
-        ((write_time_end.tv_sec - write_time_start.tv_sec) * 1000.0)
-        + ((write_time_end.tv_nsec - write_time_start.tv_nsec) / 1000000.0)
-    );
-    write_time_ms_total += write_ms;
-    log->location += len;
-    
-    // Update statistics
-    total_bytes += len;
-    report_count++;
-    
-    // Calculate throughput (every ~1 second to avoid flooding terminal)
-    clock_gettime(CLOCK_MONOTONIC, &curr_time);
-    double elapsed = (curr_time.tv_sec - last_time.tv_sec) + 
-                    (curr_time.tv_nsec - last_time.tv_nsec) / 1.0e9;
-    
-    total_seconds += elapsed;
-    
-    if (elapsed >= 1.0) {
-      double current_kbps = (len * 8.0) / (elapsed * 1024.0);
-      double avg_kbps = (total_bytes * 8.0) / (total_seconds * 1024.0);
-      
-      // Calculate average operation times
-      double avg_format_ms = format_time_ms_total / (double)report_count;
-      double avg_write_ms = write_time_ms_total / (double)report_count;
-      
-      // Print throughput statistics if show_stats is enabled
-      if (log->show_stats) {
-        printf("[LOG] Throughput: %.2f kbps current | %.2f kbps avg | %.2f MB total", 
-               current_kbps, avg_kbps, total_bytes / (1024.0 * 1024.0));
-        
-        // Print DMA statistics if enabled
-        //if (log->use_dma) {
-        //  printf(" | DMA: %d transfers, %d errors", dma_transfers, dma_errors);
-        //}
-        
-        // Print operation timing
-        printf(" | Format: %.3f ms, Write: %.3f ms", avg_format_ms, avg_write_ms);
-        printf("\n");
+    // Periodic throughput/drop report (-s). printf in a signal handler isn't
+    // strictly async-signal-safe, but it is diagnostic-only, as before.
+    if (log->show_stats) {
+      struct timespec now;
+      clock_gettime(CLOCK_MONOTONIC, &now);
+      double since = (now.tv_sec - tlast.tv_sec) + (now.tv_nsec - tlast.tv_nsec) / 1e9;
+      if (since >= 1.0) {
+        double total = (now.tv_sec - t0.tv_sec) + (now.tv_nsec - t0.tv_nsec) / 1e9;
+        double avg_kbps = (log->total_bytes * 8.0) / (total * 1024.0);
+        size_t ring_used = log->ring.head - log->ring.tail;
+        printf("[LOG] %.2f kbps avg | %.2f MB | dropped %llu rec | ring %zu/%zu KB\n",
+               avg_kbps, log->total_bytes / (1024.0 * 1024.0),
+               (unsigned long long) log->dropped,
+               ring_used / 1024, log->ring.cap / 1024);
+        tlast = now;
       }
-      
-      // Reset timer and counters
-      last_time = curr_time;
-      format_time_ms_total = 0.0;
-      write_time_ms_total = 0.0;
-      report_count = 0;
     }
   }
 }
 
+// Stop logging: tell the writer to drain + exit, then close the file.
+// By the time this is called the producer (timer callback) has stopped pushing
+// (UiStopAndSaveLog clears the logging flag first), so no records race in.
 int LogSaveFile(log_t* log) {
+  if (log->fd < 0)
+    return 0;
 
-  munlock(log->addr, LOGSIZE);
-  // Unmap and truncate file
-  if (munmap(log->addr, LOGSIZE) == -1){
-    close(log->fd);
-    printf("unmap failed\n");
-    return -1;
-  }
-  if (ftruncate(log->fd, log->location) == -1){
-    close(log->fd);
-    printf("Error truncating file.\n");
-    return -1;
-  }
+  log->running = 0;
+  sem_post(&log->wake);                  // wake writer to do its final drain
+  pthread_join(log->writer, NULL);
+
+  fsync(log->fd);
   close(log->fd);
-  log->fd = 0;
-  log->location = 0;
-  log->addr = NULL;
-  memset(log->cbuff->temp_buff,0, TEMP_BUFF_LEN);
-  memset(log->write_buff, 0, WRITE_BUFF_LEN);
+  log->fd = -1;
+
+  if (log->dropped)
+    printf("Log closed: %llu records dropped (disk could not keep up)\n",
+           (unsigned long long) log->dropped);
   return 0;
 }
 
 void LogCleanup(log_t* log) {
-  // Clean up DMA resources if initialized
-  //if (log->use_dma && log->dma_ctx) {
-  //  cleanup_dma(log->dma_ctx);
-  //  log->dma_ctx = NULL;
-  //}
-  
+  if (!log)
+    return;
+  if (log->fd >= 0)
+    LogSaveFile(log);                    // stop thread + close if still open
+
+  if (log->ring.buf) {
+    munlock(log->ring.buf, log->ring.cap);
+    free(log->ring.buf);
+  }
+  sem_destroy(&log->wake);
+  free(log->cbuff);
   free(log);
 }
-
-

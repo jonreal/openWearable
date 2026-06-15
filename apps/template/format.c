@@ -15,6 +15,7 @@
 
 #include "format.h"
 #include <stdio.h>
+#include <stdint.h>
 
 void FormatSprintParams(const param_mem_t* param, char* buff) {
   sprintf(buff, "\n#Parameters:\n"
@@ -55,4 +56,31 @@ void FormatSprintStateHeader(char* buff) {
 
 void FormatSprintPublishState(const state_t* st, char* buff) {
   FormatSprintState(st,buff);
+}
+
+// ---------------------------------------------------------------------------
+//  Binary log schema (template)
+//
+//  One record = the four state fields packed little-endian, 16 bytes:
+//    time:u32, pru0var:u32, pru1var:u32, cpuvar:u32
+//  Keep FormatLogSchema's field list in lock-step with FormatLogRecord so the
+//  host-side decoder can rebuild the columns from the file header.
+// ---------------------------------------------------------------------------
+int FormatLogRecordBytes(void) {
+  return 4 * (int)sizeof(uint32_t);
+}
+
+void FormatLogSchema(char* buff) {
+  sprintf(buff,
+          "\n#fields: time:u32,pru0var:u32,pru1var:u32,cpuvar:u32\n"
+          "#record_bytes: %d\n",
+          FormatLogRecordBytes());
+}
+
+void FormatLogRecord(const state_t* st, void* rec) {
+  uint32_t* r = (uint32_t*) rec;
+  r[0] = st->time;
+  r[1] = st->pru0var;
+  r[2] = st->pru1var;
+  r[3] = st->cpudata.cpuvar;
 }

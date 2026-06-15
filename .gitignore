@@ -13,6 +13,9 @@ moc_*
 **/rotation_display.app/*
 **/library/lib
 
+# Host tool binaries
+utils/logdecode/logdecode
+
 # Internal-only, local working files (todo / planning / build journals / board+host
 # specifics). Lives inside the repo dir for convenience but is NEVER published. Public
 # docs go in docs/ ; the audience split is intentional — see docs/README.md.
