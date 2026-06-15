@@ -22,10 +22,8 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 
-// Board remoteproc nodes (see pru.h). Keeping these here as the single
-// board-specific knob lets the remoteproc logic below stay SoC-agnostic.
-const char* rp_pru0 = RP_PRU0_PATH;
-const char* rp_pru1 = RP_PRU1_PATH;
+// The board-specific values used below — rp_pru0, rp_pru1, pru_fw_prefix — are
+// defined per SoC in board.c (declared in pru.h), so this file is board-agnostic.
 
 // ---------------------------------------------------------------------------
 // Function: int PruMemMap(pru_mem_t)
@@ -89,7 +87,7 @@ int PruWriteFirmware(char* suffix) {
 
   // PRU0
   memset(buf, 0, sizeof(buf));
-  snprintf(buf, sizeof(buf), "%s-pru0-%s-fw", PRU_FW_PREFIX, suffix);
+  snprintf(buf, sizeof(buf), "%s-pru0-%s-fw", pru_fw_prefix, suffix);
   snprintf(path, sizeof(path), "%s/firmware", rp_pru0);
   int fd = open(path, O_WRONLY);
   if (fd == -1) {
@@ -105,7 +103,7 @@ int PruWriteFirmware(char* suffix) {
 
   // PRU1
   memset(buf, 0, sizeof(buf));
-  snprintf(buf, sizeof(buf), "%s-pru1-%s-fw", PRU_FW_PREFIX, suffix);
+  snprintf(buf, sizeof(buf), "%s-pru1-%s-fw", pru_fw_prefix, suffix);
   snprintf(path, sizeof(path), "%s/firmware", rp_pru1);
   fd = open(path, O_WRONLY);
   if (fd == -1) {
