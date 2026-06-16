@@ -23,7 +23,7 @@
 #include <sys/types.h>
 
 // The board-specific values used below — rp_pru0, rp_pru1, pru_fw_prefix — are
-// defined per SoC in board.c (declared in pru.h), so this file is board-agnostic.
+// defined per SoC in board.c (declared in pru.h).
 
 // ---------------------------------------------------------------------------
 // Function: int PruMemMap(pru_mem_t)

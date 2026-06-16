@@ -1,4 +1,4 @@
-/* Copyright 2017 Jonathan Realmuto
+/* Copyright 2026 Jonathan Realmuto
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -13,20 +13,16 @@
  limitations under the License.
 =============================================================================*/
 
-// Board-specific definitions for the AM335x (BeagleBone) target. This is the
-// single place the SoC differs from the am64x backend: the two PRU remoteproc
-// node paths and the firmware-image prefix. They are declared (extern) in
-// pru.h, so the rest of the A8 library stays board-agnostic and pru.c can be
-// kept identical across branches. The am64x board.c is the same shape with
-// /dev/remoteproc/j7-pru0_{0,1} and the "j721e" prefix.
-
+// Board-specific definitions for the AM335x (BeagleBone) target.
+// They are declared (extern) in pru.h, so the rest of the A8 library stays
+// board-agnostic and pru.c can be kept identical across branches.
 #include "pru.h"
 
-// Friendly, stable remoteproc symlinks under /dev/remoteproc (kernel
-// CONFIG_REMOTEPROC_CDEV + BeagleBone udev) for the two PRU cores. pru.c builds
-// "<path>/firmware" and "<path>/state" from these.
+// Remoteproc symlinks under /dev/remoteproc (kernel
+// CONFIG_REMOTEPROC_CDEV + BeagleBone udev) for the two PRU cores.
 const char* const rp_pru0 = "/dev/remoteproc/pruss-core0";
 const char* const rp_pru1 = "/dev/remoteproc/pruss-core1";
 
-// PRU firmware images are named "<pru_fw_prefix>-pru{0,1}-<app>-fw" in /lib/firmware.
+// PRU firmware images are named "<pru_fw_prefix>-pru{0,1}-<app>-fw"
+// in /lib/firmware.
 const char* const pru_fw_prefix = "am335x";
