@@ -21,11 +21,9 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/types.h>
-#include <dirent.h>
 
-// remoteproc paths
-const char* rp_pru0_0 = "/dev/remoteproc/j7-pru0_0";
-const char* rp_pru0_1 = "/dev/remoteproc/j7-pru0_1";
+// The board-specific values used below — rp_pru0, rp_pru1, pru_fw_prefix — are
+// defined per SoC in board.c (declared in pru.h), so this file is board-agnostic.
 
 // ---------------------------------------------------------------------------
 // Function: int PruMemMap(pru_mem_t)
@@ -35,6 +33,10 @@ const char* rp_pru0_1 = "/dev/remoteproc/j7-pru0_1";
 // Inputs:    pru_mem_t* - pointer to pru_mem pointer struct
 // Outputs:   returns 0 on success
 // ---------------------------------------------------------------------------
+// NOTE: this is the one function that differs from the am335x/main pru.c — the
+// J721E uses a unified single mmap of the ICSSG shared RAM with param/LUT at
+// offsets within it, vs am335x's three separate PRU0-DRAM/PRU1-DRAM/shared-RAM
+// maps. Everything else in this file is byte-identical to main's pru.c.
 int PruMemMap(pru_mem_t* pru_mem) {
 
   int fd = open("/dev/mem", O_RDWR | O_SYNC);
@@ -54,25 +56,6 @@ int PruMemMap(pru_mem_t* pru_mem) {
 
   close(fd);
 
-  // Zero State
-  //for (uint32_t i = 0; i < STATE_BUFF_LEN; i++) {
-  //  uint8_t *iq = (uint8_t*)&(pru_mem->s->state[i]);
-  //  for (uint32_t j = 0; j < sizeof(state_t); j++) {
-  //    iq[j] = 0;
-  //  }
-  //}
-  // Zero debug buffer
-  //for (int i=0; i<10; i++){
-  //  pru_mem->p->debug_buff[i] = 0;
-  //}
-
-  //pru_mem->p->debug_buff[0] = 0;
-  //pru_mem->p->debug_buff[1] = 0;
-  //pru_mem->p->debug_buff[2] = 0;
-  //pru_mem->p->debug_buff[3] = 0;
-
-
-
   PruCtlReset(&pru_mem->s->pru_ctl);
 
   char buff[1024] = {0,};
@@ -81,16 +64,17 @@ int PruMemMap(pru_mem_t* pru_mem) {
   return 0;
 }
 
+
 int PruWriteFirmware(char* suffix) {
   int rtn;
   char buf[64];
+  char path[256];
 
   // PRU0
   memset(buf, 0, sizeof(buf));
-  snprintf(buf, sizeof(buf), "j721e-pru0-%s-fw", suffix);
-  char rp_pru0_0_fw[256] = {0};
-  snprintf(rp_pru0_0_fw, sizeof(rp_pru0_0_fw), "%s/firmware", rp_pru0_0);
-  int fd = open(rp_pru0_0_fw, O_WRONLY);
+  snprintf(buf, sizeof(buf), "%s-pru0-%s-fw", pru_fw_prefix, suffix);
+  snprintf(path, sizeof(path), "%s/firmware", rp_pru0);
+  int fd = open(path, O_WRONLY);
   if (fd == -1) {
     printf("pru0 - failed to open firmware location");
     return -1;
@@ -104,10 +88,9 @@ int PruWriteFirmware(char* suffix) {
 
   // PRU1
   memset(buf, 0, sizeof(buf));
-  snprintf(buf, sizeof(buf), "j721e-pru1-%s-fw", suffix);
-  char rp_pru0_1_fw[256] = {0};
-  snprintf(rp_pru0_1_fw, sizeof(rp_pru0_1_fw), "%s/firmware", rp_pru0_1);
-  fd = open(rp_pru0_1_fw, O_WRONLY);
+  snprintf(buf, sizeof(buf), "%s-pru1-%s-fw", pru_fw_prefix, suffix);
+  snprintf(path, sizeof(path), "%s/firmware", rp_pru1);
+  fd = open(path, O_WRONLY);
   if (fd == -1) {
     printf("pru1 - failed to open firmware location");
     return -1;
@@ -127,7 +110,7 @@ int PruWriteFirmware(char* suffix) {
 //  Polls a remoteproc's "state" until it reports "running" (bounded ~1 s).
 //  The PRU boot after a "start" write is asynchronous; on a cold run the
 //  firmware load takes tens of ms, during which the PRU's memInit() zeroes
-//  pru_ctl and would clobber an enable bit the A72 set too early. Waiting for
+//  pru_ctl and would clobber an enable bit the A-core set too early. Waiting for
 //  "running" here closes that race so memInit() completes before PruEnable().
 //
 // Outputs:   0 once running, -1 on timeout/error
@@ -160,6 +143,7 @@ static int PruWaitRunning(const char* rp_path) {
 int PruInit(char* suffix){
   int rtn;
   char buf[64] = {0};
+  char path[256];
 
   if (PruRestart() == -1) {
     printf("restart pru failed.\n");
@@ -172,9 +156,8 @@ int PruInit(char* suffix){
   }
 
   // PRU0
-  char state_path0[256] = {0};
-  snprintf(state_path0, sizeof(state_path0), "%s/state", rp_pru0_0);
-  int fd = open(state_path0, O_RDWR);
+  snprintf(path, sizeof(path), "%s/state", rp_pru0);
+  int fd = open(path, O_RDWR);
   if (fd == -1) {
     printf("pru0 - failed to open remoteproc driver");
     return -1;
@@ -189,9 +172,8 @@ int PruInit(char* suffix){
   }
 
   // PRU1
-  char rp_pru0_1_state[256] = {0};
-  snprintf(rp_pru0_1_state, sizeof(rp_pru0_1_state), "%s/state", rp_pru0_1);
-  fd = open(rp_pru0_1_state, O_RDWR);
+  snprintf(path, sizeof(path), "%s/state", rp_pru1);
+  fd = open(path, O_RDWR);
   if (fd == -1) {
     printf("pru1 - failed to open remoteproc driver");
     return -1;
@@ -206,13 +188,12 @@ int PruInit(char* suffix){
   }
 
   // Wait for both cores to actually reach "running" before returning, so the
-  // PRU's memInit() (which zeroes pru_ctl) finishes before the A72 enables.
-  // This is what makes the PRUs come up on the first (cold) run, not the second.
-  if (PruWaitRunning(rp_pru0_0) == -1) {
+  // PRU's memInit() (which zeroes pru_ctl) finishes before the A-core enables.
+  if (PruWaitRunning(rp_pru0) == -1) {
     printf("pru0 - did not reach running state\n");
     return -1;
   }
-  if (PruWaitRunning(rp_pru0_1) == -1) {
+  if (PruWaitRunning(rp_pru1) == -1) {
     printf("pru1 - did not reach running state\n");
     return -1;
   }
@@ -229,11 +210,11 @@ int PruInit(char* suffix){
 int PruRestart(void) {
   int rtn;
   char buf[64];
+  char path[256];
 
-  // PRU0_0
-  char rp_pru0_0_state[256] = {0};
-  snprintf(rp_pru0_0_state, sizeof(rp_pru0_0_state), "%s/state", rp_pru0_0);
-  int fd = open(rp_pru0_0_state, O_RDWR);
+  // PRU0
+  snprintf(path, sizeof(path), "%s/state", rp_pru0);
+  int fd = open(path, O_RDWR);
   if (fd == -1) {
     printf("pru0 - failed to open remoteproc driver");
     return -1;
@@ -258,9 +239,8 @@ int PruRestart(void) {
   }
 
   // PRU1
-  char rp_pru0_1_state[256] = {0};
-  snprintf(rp_pru0_1_state, sizeof(rp_pru0_1_state), "%s/state", rp_pru0_1);
-  fd = open(rp_pru0_1_state, O_RDWR);
+  snprintf(path, sizeof(path), "%s/state", rp_pru1);
+  fd = open(path, O_RDWR);
   if (fd == -1) {
     printf("pru1 - failed to open remoteproc driver");
     return -1;
@@ -333,26 +313,6 @@ void PruSprintMalloc(const pru_mem_t* pru_mem, char* buff) {
           sizeof(*(pru_mem->s)));
 }
 
-// ----------------------------------------------------------------------------
-// Functions: void PruLoadParams(char* file)
-//
-// This function loads parameters from file.
-//
-// Input:   path to file
-//
-// TODO: Use strcmp for parameter inputs
-// ------------------------------------------------------------------------- */
-//int PruLoadParams(const char* file, param_mem_t* param) {
-//  FILE* fp = fopen(file, "r");
-//  if (fp != NULL) {
-//    fscanf(fp, "%u%*[^\n]\n", &param->fs_hz);
-//    fclose(fp);
-//    param->fs_ticks = HZ_TO_TICKS(param->fs_hz);
-//    return 0;
-//  }
-//  return -1;
-//}
-//
 // ----------------------------------------------------------------------------
 // Function: void PruEnable(int en, pru_ctl_t* ctl)
 //
