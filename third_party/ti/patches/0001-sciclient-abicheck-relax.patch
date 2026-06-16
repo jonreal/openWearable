@@ -1,0 +1,24 @@
+relax Sciclient_abiCheck — board TIFS speaks TISCI ABI major 3, PSDK-10.1 expects 4
+
+The BeagleBone AI-64's stock Device Manager (Fiery Fox 10.0.1) answers
+TISCI_MSG_VERSION with abi_major = 3, but PSDK-10.1's Sciclient hardcodes an
+expected major of 4, so Sciclient_abiCheck() returns CSL_EFAIL and every core
+hangs at appSciclientInit. The transport itself works fine on ABI 3 (the R5F
+does UDMA + thousands of DM transactions), so we lower the expected major to 3.
+Applies to all cores (R5F/C66/C7x) — guarding it to the DSPs leaves the R5Fs hung.
+
+Reversible: restore (4U). Captured byte-exact against PSDK-RTOS 10.01.00.04
+(pdk_jacinto_10_01_00_25). Apply from the PDK root with `patch -p1` / `git apply -p1`
+(build-firmware.sh does this automatically when this file is present).
+
+--- a/packages/ti/drv/sciclient/soc/V1/sciclient_fmwMsgParams.h
++++ b/packages/ti/drv/sciclient/soc/V1/sciclient_fmwMsgParams.h
+@@ -67,7 +67,7 @@
+  */
+ /* ABI Major revision - Major revision changes
+ *       indicate backward compatibility breakage */
+-#define SCICLIENT_FIRMWARE_ABI_MAJOR                     (4U)
++#define SCICLIENT_FIRMWARE_ABI_MAJOR                     (3U)
+ /* ABI Minor revision - Minor revision changes
+ *       indicate backward compatibility is maintained,
+ *       however, new messages OR extensions to existing

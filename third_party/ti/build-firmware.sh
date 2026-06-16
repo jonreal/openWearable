@@ -8,6 +8,15 @@
 # Prereqs: TI PSDK-RTOS 10.01.00.04 + the CGTs installed (see MANIFEST.md). Outputs land in
 # third_party/ti/out/. Deploy + run per docs/C7X-TIDL.md §2.3–§4.
 #
+# ── Set these before calling (shown with the values that work on the reference build host).
+#    Only TI_SDK_HOME is mandatory; the rest auto-detect under it but are listed so you can
+#    override, and because two of them are easy to get wrong: ──────────────────────────────────
+#      export TI_SDK_HOME=$HOME                                    # root holding the PSDK + CGTs
+#      export SDK_BUILDER=$PSDK_RTOS/sdk_builder                   # where make_firmware.sh lives
+#      export C6X_GEN_INSTALL_PATH=$HOME/ti/ti-cgt-c6000_8.3.7     # cl6x (C66)
+#      export LD_LIBRARY_PATH=$HOME/locallibs:$LD_LIBRARY_PATH     # a dir with libtinfo.so.5 —
+#                                                                  # tiarmclang (R5F) needs ncurses5
+#
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 OUT="$HERE/out"; mkdir -p "$OUT"
@@ -17,7 +26,7 @@ OUT="$HERE/out"; mkdir -p "$OUT"
 PSDK_RTOS="${PSDK_RTOS:-$(find "$TI_SDK_HOME" -maxdepth 2 -type d -name 'ti-processor-sdk-rtos-j721e*' 2>/dev/null | sort | tail -1)}"
 : "${PSDK_RTOS:?could not locate ti-processor-sdk-rtos-j721e* under $TI_SDK_HOME — set PSDK_RTOS}"
 VISION_APPS="${VISION_APPS:-$(find "$PSDK_RTOS" -maxdepth 1 -type d -name 'vision_apps' | head -1)}"
-SDK_BUILDER="${SDK_BUILDER:-$VISION_APPS}"        # where make_firmware.sh lives (TI layout: vision_apps/)
+SDK_BUILDER="${SDK_BUILDER:-$PSDK_RTOS/sdk_builder}"   # where make_firmware.sh lives (PSDK-RTOS layout)
 PDK="${PDK:-$(find "$PSDK_RTOS" -maxdepth 1 -type d -name 'pdk*' | head -1)}"
 C6X_GEN_INSTALL_PATH="${C6X_GEN_INSTALL_PATH:-$(find "$TI_SDK_HOME" -maxdepth 2 -type d -name 'ti-cgt-c6000_*' | sort | tail -1)}"
 
@@ -54,7 +63,19 @@ find "$VISION_APPS/out" -path '*R5F*' -name 'vx_app_rtos_linux_mcu2_0.out' -dele
 
 # ── Build the fleet ─────────────────────────────────────────────────────────────────────────────
 export C6X_GEN_INSTALL_PATH
-export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"     # some hosts need locallibs here (see MANIFEST host notes)
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"     # must contain libtinfo.so.5 for tiarmclang — see EXPORTS above
+
+# Preflight: the R5F compiler (tiarmclang) dynamically links libtinfo.so.5 (ncurses5), which
+# modern distros don't ship. Catch the "libtinfo.so.5: cannot open shared object file" failure
+# now, with a clear hint, instead of mid-build as a cryptic mcu2_0/mcu2_1 ELF-not-found.
+TIARMCLANG="$(find "$TI_SDK_HOME" -maxdepth 2 -type d -name 'ti-cgt-armllvm_*' 2>/dev/null | sort | tail -1)/bin/tiarmclang"
+if [[ -x "$TIARMCLANG" ]] && ! "$TIARMCLANG" --version >/dev/null 2>&1; then
+    echo "ERROR: tiarmclang cannot run — almost certainly missing libtinfo.so.5 (ncurses5)."
+    echo "       Put a dir containing libtinfo.so.5 on LD_LIBRARY_PATH, e.g.:"
+    echo "         export LD_LIBRARY_PATH=\$HOME/locallibs:\$LD_LIBRARY_PATH"
+    exit 1
+fi
+
 cd "$SDK_BUILDER"
 BUILD_EDGEAI=yes BUILD_CPU_C6x_1=yes BUILD_CPU_C6x_2=yes ./make_firmware.sh
 

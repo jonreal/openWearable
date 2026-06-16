@@ -16,6 +16,17 @@ releases — wrong for this board).
 | **edgeai-tidl-tools** | tag `10_01_00_02`, **SOC `am68pa`** | <https://github.com/TexasInstruments/edgeai-tidl-tools> | per-model `.bin` artifact compile (x86) |
 | **Prebuilt C7x firmware** (fallback) | `10.01.00.04` | `git.ti.com/.../psdk_fw/j721e/vision_apps_eaik/` | smoke-test the C7x core without a full SDK build |
 
+## Build host (x86_64 Linux) system packages
+
+The fleet cross-builds on an x86_64 Linux PC (the CGTs are x86-only). Beyond the toolchains above,
+one easily-missed system dependency:
+
+- **`libtinfo.so.5` (ncurses5)** — `tiarmclang` (the R5F compiler) dynamically links it, but modern
+  distros ship only `libtinfo.so.6`, so the R5F builds (mcu2_0, mcu2_1) fail with
+  `libtinfo.so.5: cannot open shared object file`. Install the distro's `libtinfo5`/`libncurses5`
+  package, **or** (no root) drop a copy in a dir and put it on `LD_LIBRARY_PATH`
+  (`export LD_LIBRARY_PATH=$HOME/locallibs:$LD_LIBRARY_PATH`). `build-firmware.sh` preflights this.
+
 ## Boot firmware — intentionally NOT changed
 
 The board keeps its **stock boot firmware**: TIFS/Device-Manager **`Fiery Fox 10.0.1`, TISCI

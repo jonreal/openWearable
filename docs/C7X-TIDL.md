@@ -4,6 +4,33 @@ How to get neural-network inference running on the **C7x + MMA** deep-learning a
 the TDA4VM/J721E, on the stock BeagleBoard.org Debian image (no full SDK reflash). The proof
 target is the **resnet18 OSRT example returning a real classification on the C7x**.
 
+## TL;DR
+
+Five moves across two machines — the board, and an x86_64 Linux build host. Full detail in the
+numbered parts below.
+
+1. **Board prep (BBAI64)** — flash the Debian image, `apt install` kernel `…-r64`
+   (`CONFIG_REMOTEPROC_CDEV`), build + select the openWearable `-tidl` device tree, build the A72
+   `~/tidl` runtime ([Part 1](#1-a72-runtime-libraries)), and clone `edgeai-tidl-tools` + drop in a
+   compiled model artifact ([Part 3](#3-compiling-a-model-artifact-x86-host)).
+2. **Host prep (x86 Linux)** — install TI PSDK-RTOS 10.1 + the C7x/C66/R5F CGTs
+   ([MANIFEST](../third_party/ti/MANIFEST.md) — incl. the easily-missed `libtinfo.so.5`).
+3. **Build the fleet (x86)** — `third_party/ti/build-firmware.sh` applies the one ABI patch +
+   the ETHFW-off flag and builds the 5 `*.out` ELFs ([Part 2](#2-the-vision_apps-firmware-fleet)).
+4. **Deploy (x86 → board)** — copy the 5 ELFs to `/lib/firmware`, repoint the `j7-*` symlinks,
+   reboot ([§2.3](#23-deploy-to-the-board)).
+5. **Run (board)** — `source ~/tidl/setenv.sh` and run the resnet example
+   ([Part 4](#4-running-inference-on-the-board-the-resnet-proof)).
+
+**Done when** the example prints `Offloaded Nodes 52, Total Nodes 52` and a real top-1 class
+(`warplane` on the airshow image) with `IPC: Init … Done` — the whole graph ran on the C7x.
+
+> **Note (maintainers).** Bring-up used debug breadcrumbs patched into the firmware source; those
+> are **not** part of this guide. A fresh setup starts from pristine SDK source, so Part 2 is just
+> "apply the overlay + build" — there is no de-breadcrumb step.
+
+---
+
 > **Prereqs.** Finish [SETUP.md](SETUP.md) Parts A–C first (flashed image, ssh, toolchains,
 > and the openWearable device tree built + selected). This guide is **BeagleBone AI-64 only**.
 > Everything is pinned to **PSDK 10.01.00.04** — the firmware, the A72 runtime libs, and the
@@ -162,11 +189,22 @@ is cross-built on a Linux PC and the ELFs copied to the board. Install the TI PS
 and its compilers per the manifest, then:
 
 ```bash
-export TI_SDK_HOME=~/ti                 # wherever TI's installer put the PSDK + CGTs
-third_party/ti/build-firmware.sh        # clones/pins SDK pieces, applies patches, builds the 5 ELFs
+# Point at your install (only TI_SDK_HOME is mandatory; the rest auto-detect under it, but these
+# two are easy to get wrong, so set them explicitly):
+export TI_SDK_HOME=$HOME                                     # root holding the PSDK + CGTs
+export SDK_BUILDER=$HOME/psdk-rtos/ti-processor-sdk-rtos-j721e-evm-10_01_00_04/sdk_builder
+export C6X_GEN_INSTALL_PATH=$HOME/ti/ti-cgt-c6000_8.3.7      # cl6x (C66)
+export LD_LIBRARY_PATH=$HOME/locallibs:$LD_LIBRARY_PATH      # a dir with libtinfo.so.5 — tiarmclang
+                                                            # (R5F) links ncurses5; modern distros
+                                                            # ship only libtinfo.so.6
+
+third_party/ti/build-firmware.sh        # applies the ABI patch + ETHFW-off, builds the 5 ELFs
 ```
-See [`third_party/ti/README.md`](../third_party/ti/README.md) for the exact toolchain versions
-and build flags. Outputs are the 5 `vx_app_rtos_linux_*.out` ELFs.
+The script **preflights `tiarmclang`** and stops early with a clear hint if `libtinfo.so.5` is
+missing (otherwise the R5F cores fail mid-build as a cryptic "ELF not found"). See
+[`third_party/ti/README.md`](../third_party/ti/README.md) and
+[`MANIFEST.md`](../third_party/ti/MANIFEST.md) for toolchain versions and build flags. Outputs are
+the 5 `vx_app_rtos_linux_*.out` ELFs in `third_party/ti/out/`.
 
 ### 2.3 Deploy to the board
 

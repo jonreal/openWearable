@@ -27,18 +27,18 @@ it to the DSPs left the R5Fs hung).
   `pdk .../drv/sciclient/src/sciclient.c`, `Sciclient_abiCheck()`, so any ACK'd version response
   passes (keep the `abi_minor` check).
 
-`build-firmware.sh` applies the canonical macro change in-place (idempotent, guarded) if no
-`0001-*.patch` file is present here.
+The byte-exact diff is **captured here as
+[`0001-sciclient-abicheck-relax.patch`](0001-sciclient-abicheck-relax.patch)** (the canonical
+macro form, against PSDK-RTOS 10.01.00.04). `build-firmware.sh` prefers it — it applies the
+`.patch` with `patch -p1` / `git apply -p1`. If the file is ever removed, the script falls back to
+the same change scripted in-place (idempotent, guarded), so the build still works.
 
-**Capture the byte-exact patch (recommended, on the build host).** Once the SDK source is checked
-out and edited, snapshot the real diff so review/repro is exact:
+**How it was captured** (for reference, if you ever re-derive it against a different SDK): edit
+the macro in the SDK, then snapshot the diff with paths relative to the PDK root —
 ```bash
-PDK=$(find "$TI_SDK_HOME" -type d -name 'pdk*' | head -1)
-git -C "$PDK" diff -- packages/ti/drv/sciclient \
-  > third_party/ti/patches/0001-sciclient-abicheck-relax.patch
+PDK=$(find "$TI_SDK_HOME" -type d -name 'pdk*' | head -1); REL=packages/ti/drv/sciclient/soc/V1/sciclient_fmwMsgParams.h
+diff -u --label "a/$REL" --label "b/$REL" "$PDK/$REL.orig" "$PDK/$REL" > 0001-sciclient-abicheck-relax.patch
 ```
-(If the PDK isn't a git repo, `diff -u` the pristine vs edited file instead.) Commit the captured
-`.patch`; the script will then prefer it over the scripted edit.
 
 ---
 
