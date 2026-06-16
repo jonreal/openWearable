@@ -25,10 +25,6 @@ numbered parts below.
 **Done when** the example prints `Offloaded Nodes 52, Total Nodes 52` and a real top-1 class
 (`warplane` on the airshow image) with `IPC: Init … Done` — the whole graph ran on the C7x.
 
-> **Note (maintainers).** Bring-up used debug breadcrumbs patched into the firmware source; those
-> are **not** part of this guide. A fresh setup starts from pristine SDK source, so Part 2 is just
-> "apply the overlay + build" — there is no de-breadcrumb step.
-
 ---
 
 > **Prereqs.** Finish [SETUP.md](SETUP.md) Parts A–C first (flashed image, ssh, toolchains,
