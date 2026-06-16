@@ -6,7 +6,7 @@ A real-time hardware/software platform for wearable robotics development based o
 
 openWearable is an open-source project designed to provide a complete hardware and software solution for developing wearable robotic systems, with a focus on real-time control. The platform utilizes the TI BeagleBone Black's Programmable Real-time Units (PRUs) to achieve deterministic high-speed control loops alongside a full Linux environment.
 
-Current applications include:
+Current/past applications include:
 - Upper limb soft exosuits
 - Powered ankle-foot prostheses
 - Haptic feedback systems
@@ -15,7 +15,7 @@ Current applications include:
 ## Getting Started
 
 ### Hardware Requirements
-- BeagleBone Black or BeagleBone Blue
+- BeagleBone Black or BeagleBone AI64 (see arm64 branch)
 - Compatible sensors (see hardware directory)
 - Actuators (PAMs, motors, etc.)
 
