@@ -18,20 +18,21 @@
  *   Usage: logdecode <logfile.bin>  > out.csv
  *
  * Reads the self-describing ASCII header that openWearable's logger writes
- * (see library/a8/src/log.c):
+ * (see library/a72/src/log.c):
  *
  *   #openWearable-log v1
  *   #date: ...
  *   #fs_hz: 1000
- *   #fields: time:u32,pru0var:u32,...
+ *   #fields: frame:u32,pru0var:u32,...
  *   #record_bytes: 16
  *   #DATA
  *   <raw fixed-size little-endian records>
  *
- * then streams the binary records out as CSV (one row per record). The field
- * order/types in '#fields:' must match the packing in the app's format.c
- * FormatLogRecord(). Supported types: u8 i8 u16 i16 u32 i32 u64 i64 f32 f64
- * and fix16 (Q16.16 fixed-point -> decoded as float).
+ * then streams the binary records out as CSV (one row per record), preceded by
+ * the '#date:' and '#fs_hz:' lines carried verbatim from the log header so the
+ * CSV is self-describing. The field order/types in '#fields:' must match the
+ * packing in the app's format.c FormatLogRecord(). Supported types: u8 i8 u16
+ * i16 u32 i32 u64 i64 f32 f64 and fix16 (Q16.16 fixed-point -> decoded float).
  */
 
 #include <stdio.h>
@@ -77,6 +78,8 @@ int main(int argc, char** argv) {
   field_t fields[MAX_FIELDS];
   int nf = 0, recbytes = 0, have_data = 0;
   char line[2048];
+  char date_line[256] = "";   /* carried through to the CSV preamble */
+  char fs_line[256]   = "";
 
   /* Parse the ASCII header line-by-line until the "#DATA" sentinel. */
   while (fgets(line, sizeof(line), f)) {
@@ -96,6 +99,12 @@ int main(int argc, char** argv) {
       }
     } else if ((p = strstr(line, "#record_bytes:")) != NULL) {
       recbytes = atoi(p + 14);
+    } else if (!strncmp(line, "#date:", 6)) {
+      snprintf(date_line, sizeof(date_line), "%s", line);
+      date_line[strcspn(date_line, "\r\n")] = '\0';   /* keep verbatim, drop EOL */
+    } else if (!strncmp(line, "#fs_hz:", 7)) {
+      snprintf(fs_line, sizeof(fs_line), "%s", line);
+      fs_line[strcspn(fs_line, "\r\n")] = '\0';
     }
   }
 
@@ -106,7 +115,11 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  /* CSV column header. */
+  /* CSV preamble: carry the log start date + sampling rate through as comment
+   * lines (the source log already uses '#'-comments; pandas/numpy skip them
+   * with comment='#'). Then the CSV column header. */
+  if (date_line[0]) printf("%s\n", date_line);
+  if (fs_line[0])   printf("%s\n", fs_line);
   for (int i = 0; i < nf; i++) printf("%s%s", i ? "," : "", fields[i].name);
   printf("\n");
 

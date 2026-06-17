@@ -59,6 +59,11 @@ int main(void) {
 
   initialize(&mem);
 
+  // Hook handles: a const view (read-only) + a mutable io surface. The stable
+  // pointers are set once here; io.s is repointed to the current slot each tick.
+  pru_view_t view = { &counter, mem.p, mem.l };
+  pru_io_t   io   = { NULL, &mem.s->pru_ctl };
+
   // wait till enabled
   while (mem.s->pru_ctl.bit.enable == 0);
   mem.s->pru_ctl.bit.shdw_enable = mem.s->pru_ctl.bit.enable;
@@ -78,16 +83,11 @@ int main(void) {
     clearTimerFlag();
     debugPinHigh();
     mem.s->pru_ctl.bit.shdw_enable = mem.s->pru_ctl.bit.enable;
-    mem.s->state[counter.index].time = counter.frame;
+    mem.s->state[counter.index].frame = counter.frame;
+    io.s = &mem.s->state[counter.index];          // this tick's slot
 
     // Estimate
-    Pru0UpdateState(
-      &counter,
-      mem.p,
-      mem.l,
-      &mem.s->state[counter.index],
-      &mem.s->pru_ctl
-    );
+    Pru0UpdateState(&view, &io);
 
     // Wait for pru1 to be done
     mem.s->pru_ctl.bit.pru0_done = 1;
@@ -97,13 +97,7 @@ int main(void) {
     mem.s->pru_ctl.bit.pru1_done = 0;
 
     // Control
-    Pru0UpdateControl(
-      &counter,
-      mem.p,
-      mem.l,
-      &mem.s->state[counter.index],
-      &mem.s->pru_ctl
-    );
+    Pru0UpdateControl(&view, &io);
 
     // Copy cpudata to state
     mem.s->state[counter.index].cpudata = mem.s->cpudata;

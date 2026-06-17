@@ -62,6 +62,10 @@ int main(void) {
 
   initialize(&mem);
 
+  // Hook handles: a const view (read-only) + a mutable io surface. The stable
+  // pointers are set once here; io.s is repointed to the current slot each tick.
+  pru_view_t view = { &counter, mem.p, mem.l };
+  pru_io_t   io   = { NULL, &mem.s->pru_ctl };
 
   // wait till enabled
   while (mem.s->pru_ctl.bit.shdw_enable == 0);
@@ -77,15 +81,10 @@ int main(void) {
 
     // Pre bookkeeping
     debugPinHigh();
+    io.s = &mem.s->state[counter.index];          // this tick's slot
 
     // Estimate
-    Pru1UpdateState(
-      &counter,
-      mem.p,
-      mem.l,
-      &mem.s->state[counter.index],
-      &mem.s->pru_ctl
-    );
+    Pru1UpdateState(&view, &io);
 
     // Wait for pru0 to be done
     debugPinLow();
@@ -98,13 +97,7 @@ int main(void) {
 
 
     // Control
-    Pru1UpdateControl(
-      &counter,
-      mem.p,
-      mem.l,
-      &mem.s->state[counter.index],
-      &mem.s->pru_ctl
-    );
+    Pru1UpdateControl(&view, &io);
 
 
     // Post bookkeeping

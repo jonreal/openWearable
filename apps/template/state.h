@@ -13,7 +13,7 @@ typedef struct {
 
 // --- State
 typedef struct {
-  volatile uint32_t time;
+  volatile uint32_t frame;        // monotonic loop counter (PRU0 writes pru_count_t.frame)
   volatile uint32_t pru0var;
   volatile uint32_t pru1var;
   cpudata_t cpudata;
