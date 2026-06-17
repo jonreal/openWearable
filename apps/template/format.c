@@ -1,4 +1,4 @@
-/* Copyright 2018-2019 Jonathan Realmuto
+/* Copyright 2018-2026 Jonathan Realmuto
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -14,73 +14,32 @@
 =============================================================================*/
 
 #include "format.h"
+#include <stddef.h>
 #include <stdio.h>
-#include <stdint.h>
 
+// ---------------------------------------------------------------------------
+//  Log schema -- the one thing you edit per app.
+//
+//  One row per logged column: { name, type, offsetof(state_t, field) }. The
+//  generic core (library/a8/src/format_core.c) turns this single table into the
+//  packed binary record, the '#fields:' file header, and the -v debug screen.
+//  state_t is for shared access, not just logging, so list only the fields you
+//  want, in any order. Supported types: OW_{U,I}{8,16,32,64}, OW_F{32,64},
+//  OW_FIX16 (Q16.16, stored raw, decoded to float by utils/logdecode).
+// ---------------------------------------------------------------------------
+const ow_field_t ow_schema[] = {
+  { "frame",   OW_U32, offsetof(state_t, frame)          },
+  { "pru0var", OW_U32, offsetof(state_t, pru0var)        },
+  { "pru1var", OW_U32, offsetof(state_t, pru1var)        },
+  { "cpuvar",  OW_U32, offsetof(state_t, cpudata.cpuvar) },
+};
+const size_t ow_schema_count = sizeof ow_schema / sizeof ow_schema[0];
+
+// ---------------------------------------------------------------------------
+//  Parameters header (app-specific: param_mem_t differs per app).
+// ---------------------------------------------------------------------------
 void FormatSprintParams(const param_mem_t* param, char* buff) {
   sprintf(buff, "\n#Parameters:\n"
           "#\tFs = %i (Hz)\n#",
           param->fs_hz);
-}
-
-// ---------------------------------------------------------------------------
-// Function: void printState(uint8_t si, FILE *fp)
-//           void sprintState(uint8_t si, char* buff)
-//
-//  This function prints the states.
-//
-// Input: pointer to file or buff
-// ---------------------------------------------------------------------------
-void FormatSprintState(const state_t* st, char* buff) {
-  sprintf(buff,
-          "%u\t"        // timeStamp - uint32_t
-          "%u\t"        // pru0 var - uint32_t
-          "%u\t"        // pru1 var - uint32_t
-          "%u\t"        // cpu var - uint32_t
-          "\n",
-          st->time,
-          st->pru0var,
-          st->pru1var,
-          st->cpudata.cpuvar
-          );
-}
-
-void FormatSprintStateHeader(char* buff) {
-  sprintf(buff,
-          "\n# frame\t"
-          "pru0val\t"
-          "pru1val\t"
-          "cpuval\t"
-          "\n");
-}
-
-void FormatSprintPublishState(const state_t* st, char* buff) {
-  FormatSprintState(st,buff);
-}
-
-// ---------------------------------------------------------------------------
-//  Binary log schema (template)
-//
-//  One record = the four state fields packed little-endian, 16 bytes:
-//    time:u32, pru0var:u32, pru1var:u32, cpuvar:u32
-//  Keep FormatLogSchema's field list in lock-step with FormatLogRecord so the
-//  host-side decoder can rebuild the columns from the file header.
-// ---------------------------------------------------------------------------
-int FormatLogRecordBytes(void) {
-  return 4 * (int)sizeof(uint32_t);
-}
-
-void FormatLogSchema(char* buff) {
-  sprintf(buff,
-          "\n#fields: time:u32,pru0var:u32,pru1var:u32,cpuvar:u32\n"
-          "#record_bytes: %d\n",
-          FormatLogRecordBytes());
-}
-
-void FormatLogRecord(const state_t* st, void* rec) {
-  uint32_t* r = (uint32_t*) rec;
-  r[0] = st->time;
-  r[1] = st->pru0var;
-  r[2] = st->pru1var;
-  r[3] = st->cpudata.cpuvar;
 }

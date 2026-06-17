@@ -107,11 +107,11 @@ circbuff_t* LogNewCircBuff(void) {
 }
 
 void LogDebugWriteState(const shared_mem_t* sm, circbuff_t* cb, char* buff) {
-    if (cb->start != sm->state[0].time){
+    if (cb->start != sm->state[0].frame){
       FormatSprintState(&sm->state[0], buff);
       fprintf(stdout, buff);
       buff[0] = '\0';
-      cb->start = sm->state[0].time;
+      cb->start = sm->state[0].frame;
     }
 }
 

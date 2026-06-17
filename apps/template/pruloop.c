@@ -26,19 +26,11 @@ volatile register uint32_t __R31;
 void Pru0Init(pru_mem_t* mem) {
 }
 
-void Pru0UpdateState(const pru_count_t* c,
-                     const param_mem_t* p_,
-                     const lut_mem_t* l_,
-                     state_t* s_,
-                     pru_ctl_t* ctl_) {
-  s_->pru0var++;
+void Pru0UpdateState(const pru_view_t* view, pru_io_t* io) {
+  io->s->pru0var++;
 }
 
-void Pru0UpdateControl(const pru_count_t* c,
-                       const param_mem_t* p_,
-                       const lut_mem_t* l_,
-                       state_t* s_,
-                       pru_ctl_t* ctl_){
+void Pru0UpdateControl(const pru_view_t* view, pru_io_t* io) {
   debug_buff[0] = 0xFF;
 }
 
@@ -53,25 +45,17 @@ void Pru0Cleanup(void) {
 void Pru1Init(pru_mem_t* mem) {
 }
 
-void Pru1UpdateState(const pru_count_t* c,
-                     const param_mem_t* p_,
-                     const lut_mem_t* l_,
-                     state_t* s_,
-                     pru_ctl_t* ctl_) {
+void Pru1UpdateState(const pru_view_t* view, pru_io_t* io) {
 
   // Pulse a few pins
-  if ((c->frame % 50) == 0) {
+  if ((view->c->frame % 50) == 0) {
     __R30 ^= (1 << 0);
     __R30 ^= (1 << 1);
   }
-  s_->pru1var = s_->pru1var + 2;
+  io->s->pru1var = io->s->pru1var + 2;
 }
 
-void Pru1UpdateControl(const pru_count_t* c,
-                       const param_mem_t* p_,
-                       const lut_mem_t* l_,
-                       state_t* s_,
-                       pru_ctl_t* ctl_) {
+void Pru1UpdateControl(const pru_view_t* view, pru_io_t* io) {
   debug_buff[1] = 0xA;
 }
 
