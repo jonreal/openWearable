@@ -46,8 +46,13 @@ extern volatile sig_atomic_t sigexit;   // set by the SIGINT handler (ui.c)
 
 // Free-running pace (~500 Hz). Bounds A72/C7x load; becomes a runtime param when
 // inference cost matters (see notes/milestone-1-hetero/C7X-MLP-EXEC-PLAN.md).
-#define NN_PERIOD_US   2000
-#define NN_TIMEOUT_US  100000           // 100 ms ceiling per invoke
+#define NN_PERIOD_US          2000
+// The FIRST invoke triggers TIDLRT_create on the C7x (allocate 16 memrecs, init
+// MMA/DRU) -- seconds, not ms. A short timeout here fires mid-create and re-kicks
+// READY, desyncing the handshake ("hangs on first boot"). Give create plenty of
+// room; steady-state invokes are sub-ms so 0.5 s is a generous ceiling.
+#define NN_TIMEOUT_US         500000     // 0.5 s ceiling, steady-state invoke
+#define NN_CREATE_TIMEOUT_US  15000000   // 15 s ceiling, first invoke (create)
 
 static int               g_fd  = -1;
 static volatile uint8_t* g_mb  = NULL;
@@ -77,8 +82,9 @@ static long stage_file(const char* path, uint32_t off, uint32_t cap) {
 }
 
 // One blocking C7x invoke. Returns the C7x STATUS (>= 0) or a negative host
-// error (-2 = shutting down, -3 = timeout).
-static int nn_invoke(const float* in, float* out) {
+// error (-2 = shutting down, -3 = timeout). Do NOT re-kick while waiting -- a
+// premature retry mid-create desyncs the firmware handshake.
+static int nn_invoke(const float* in, float* out, long timeout_us) {
   wr32(MB_DONE, 0);
   memcpy((void*)(g_mb + MB_INPUT), in, N_FEAT * sizeof(float));
   __sync_synchronize();
@@ -91,7 +97,7 @@ static int nn_invoke(const float* in, float* out) {
     struct timespec t1;
     clock_gettime(CLOCK_MONOTONIC, &t1);
     long us = (t1.tv_sec - t0.tv_sec) * 1000000L + (t1.tv_nsec - t0.tv_nsec) / 1000L;
-    if (us > NN_TIMEOUT_US) return -3;
+    if (us > timeout_us) return -3;
   }
   int st = (int)rd32(MB_STATUS);
   memcpy(out, (void*)(g_mb + MB_OUTPUT), N_OUT * sizeof(float));
@@ -111,15 +117,17 @@ static void* nn_thread(void* arg) {
 
   nn_feat_t feat;
   float out[N_OUT];
+  int first = 1;   // the first invoke triggers TIDLRT_create (slow)
 
   while (g_run && !sigexit) {
     NnForward(g_mem, &feat);
     uint32_t stamp = g_mem->s->state[g_mem->s->cbuff_index].frame;
 
-    int st = nn_invoke(feat.x, out);
+    int st = nn_invoke(feat.x, out, first ? NN_CREATE_TIMEOUT_US : NN_TIMEOUT_US);
 
     cpudata_t* cd = &g_mem->s->cpudata;
     if (st >= 0) {
+      first = 0;                          // create done; steady-state from here
       cd->nn.seq++;                       // odd: write in progress (seqlock)
       __sync_synchronize();
       for (int i = 0; i < N_OUT; i++)
@@ -157,7 +165,17 @@ int NnStart(pru_mem_t* pru_mem, const char* net_path, const char* io_path) {
   if (nlen < 0 || ilen < 0) { NnStop(); return -1; }
   wr32(MB_NETLEN, (uint32_t)nlen);
   wr32(MB_IOLEN,  (uint32_t)ilen);
+  wr32(MB_READY, 0);                       // clean handshake start (no stale kick)
   wr32(MB_DONE, 0);
+
+  // memInit() (pru0_main.c) zeroes state[] but NOT cpudata -> clear the NN result
+  // so leftovers from a prior run can't masquerade as fresh and seq starts at 0.
+  cpudata_t* cd0 = &pru_mem->s->cpudata;
+  for (int i = 0; i < N_OUT; i++) cd0->nn.y[i] = 0;
+  cd0->nn.seq    = 0;
+  cd0->nn.stamp  = 0;
+  cd0->nn.status = 0;
+
   printf("NN: staged net=%ldB io=%ldB; starting inference thread.\n", nlen, ilen);
 
   NnInit();
@@ -179,6 +197,11 @@ void NnStop(void) {
     pthread_join(g_thr, NULL);
     NnCleanup();
   }
-  if (g_mb && g_mb != MAP_FAILED) { munmap((void*)g_mb, MB_LEN); g_mb = NULL; }
+  if (g_mb && g_mb != MAP_FAILED) {
+    wr32(MB_READY, 0);                     // leave the mailbox clean for the next run
+    wr32(MB_DONE, 0);
+    munmap((void*)g_mb, MB_LEN);
+    g_mb = NULL;
+  }
   if (g_fd >= 0) { close(g_fd); g_fd = -1; }
 }

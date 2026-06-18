@@ -40,8 +40,9 @@ const ow_field_t ow_schema[] = {
   { "nn_y5",    OW_FIX16, offsetof(state_t, cpudata.nn.y[5])  },
   { "nn_y6",    OW_FIX16, offsetof(state_t, cpudata.nn.y[6])  },
   { "nn_y7",    OW_FIX16, offsetof(state_t, cpudata.nn.y[7])  },
-  { "nn_seq",   OW_U32,   offsetof(state_t, cpudata.nn.seq)   },
-  { "nn_stamp", OW_U32,   offsetof(state_t, cpudata.nn.stamp) },
+  { "nn_seq",    OW_U32,   offsetof(state_t, cpudata.nn.seq)    },
+  { "nn_stamp",  OW_U32,   offsetof(state_t, cpudata.nn.stamp)  },
+  { "nn_status", OW_I32,   offsetof(state_t, cpudata.nn.status) },
 };
 const size_t ow_schema_count = sizeof ow_schema / sizeof ow_schema[0];
 
