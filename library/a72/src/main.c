@@ -83,12 +83,12 @@ int main(int argc, char **argv) {
         printf("\nPerformance statistics enabled.\n\n");
         break;
       case 'n':
-        strncpy(netfile, optarg, sizeof(netfile) - 1);
+        snprintf(netfile, sizeof(netfile), "%s", optarg);
         nnFlag = 1;
         printf("\nC7x net file: %s.\n\n", netfile);
         break;
       case 'i':
-        strncpy(iofile, optarg, sizeof(iofile) - 1);
+        snprintf(iofile, sizeof(iofile), "%s", optarg);
         printf("\nC7x io file: %s.\n\n", iofile);
         break;
     }
@@ -141,8 +141,8 @@ int main(int argc, char **argv) {
       printf("\n-n requires -i <io descriptor>.\n");
       return -1;
     }
-    strncpy(uiflags.nn_net, netfile, sizeof(uiflags.nn_net) - 1);
-    strncpy(uiflags.nn_io,  iofile,  sizeof(uiflags.nn_io)  - 1);
+    snprintf(uiflags.nn_net, sizeof(uiflags.nn_net), "%s", netfile);
+    snprintf(uiflags.nn_io,  sizeof(uiflags.nn_io),  "%s", iofile);
   }
   if (UiInit(&pru_mem,uiflags) != 0) {
     printf("Tui init failed.\n");
