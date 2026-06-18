@@ -6,9 +6,33 @@
 // packing can be issue -- use 32bit types
 
 
+// --- NN inference IO (C7x + MMA TIDL) ---------------------------------------
+// Model tensor sizes -- must match the compiled TIDL net and the host tooling
+// (tidl/host/ow_c7x_infer.py N_IN/N_OUT).
+#define N_FEAT 16   // model input  width
+#define N_OUT  8    // model output width
+
+// A72-private model input. Produced by NnForward() from a window over state[];
+// it never lives in PRU shared RAM (the A72<->C7x mailbox carries it as float32).
+typedef struct {
+  float x[N_FEAT];
+} nn_feat_t;
+
+// NN result. Written by the A72 inference thread; PRU0 snapshots cpudata into
+// the state ring every tick (pru0_main.c) -> read-only sample-and-hold for PRU,
+// exactly like params. Seqlock: `seq` is odd while y[] is mid-write, even when
+// stable; a tear-free consumer reads seq (even), reads y[], re-reads seq (equal).
+typedef struct {
+  volatile fix16_t  y[N_OUT];   // prediction (Q16.16)
+  volatile uint32_t seq;        // seqlock counter (even = stable, odd = writing)
+  volatile uint32_t stamp;      // state.frame the input window ended on (staleness)
+  volatile int32_t  status;     // last TIDLRT return code (0 = ok, <0 = host err)
+} nn_out_t;
+
 // --- cpudata struct
 typedef struct {
   volatile uint32_t cpuvar;
+  nn_out_t nn;                  // NN result -- rides the existing cpudata snapshot
 } cpudata_t;
 
 // --- State

@@ -68,7 +68,7 @@ CPU_SRC = $(filter-out $(CSRC_DIR)/$(TARGET).c, $(wildcard $(CSRC_DIR)/*.c))
 CPU_OBJ = $(patsubst $(CSRC_DIR)/%,$(BUILD_DIR)/%,$(CPU_SRC:.c=.o))
 
 # App specific CPU source files
-APP_CPU_SRC = format.c uiloop.c cpuloop.c
+APP_CPU_SRC = format.c uiloop.c cpuloop.c nnloop.c
 APP_CPU_OBJ = $(patsubst %.c,$(BUILD_DIR)/%.o,$(APP_CPU_SRC))
 
 # App specific PRU source files

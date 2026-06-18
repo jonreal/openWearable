@@ -28,10 +28,20 @@
 //  OW_FIX16 (Q16.16, stored raw, decoded to float by utils/logdecode).
 // ---------------------------------------------------------------------------
 const ow_field_t ow_schema[] = {
-  { "frame",   OW_U32, offsetof(state_t, frame)          },
-  { "pru0var", OW_U32, offsetof(state_t, pru0var)        },
-  { "pru1var", OW_U32, offsetof(state_t, pru1var)        },
-  { "cpuvar",  OW_U32, offsetof(state_t, cpudata.cpuvar) },
+  { "frame",    OW_U32,   offsetof(state_t, frame)            },
+  { "pru0var",  OW_U32,   offsetof(state_t, pru0var)          },
+  { "pru1var",  OW_U32,   offsetof(state_t, pru1var)          },
+  { "cpuvar",   OW_U32,   offsetof(state_t, cpudata.cpuvar)   },
+  { "nn_y0",    OW_FIX16, offsetof(state_t, cpudata.nn.y[0])  },
+  { "nn_y1",    OW_FIX16, offsetof(state_t, cpudata.nn.y[1])  },
+  { "nn_y2",    OW_FIX16, offsetof(state_t, cpudata.nn.y[2])  },
+  { "nn_y3",    OW_FIX16, offsetof(state_t, cpudata.nn.y[3])  },
+  { "nn_y4",    OW_FIX16, offsetof(state_t, cpudata.nn.y[4])  },
+  { "nn_y5",    OW_FIX16, offsetof(state_t, cpudata.nn.y[5])  },
+  { "nn_y6",    OW_FIX16, offsetof(state_t, cpudata.nn.y[6])  },
+  { "nn_y7",    OW_FIX16, offsetof(state_t, cpudata.nn.y[7])  },
+  { "nn_seq",   OW_U32,   offsetof(state_t, cpudata.nn.seq)   },
+  { "nn_stamp", OW_U32,   offsetof(state_t, cpudata.nn.stamp) },
 };
 const size_t ow_schema_count = sizeof ow_schema / sizeof ow_schema[0];
 

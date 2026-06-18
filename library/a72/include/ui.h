@@ -30,6 +30,9 @@ typedef struct {
   char udphost[64];
   int nodma;        // Flag to disable DMA transfers
   int show_stats;   // Flag to show performance statistics
+  int nn_enable;    // Flag to run C7x TIDL inference (-n given)
+  char nn_net[256]; // compiled net.bin path
+  char nn_io[256];  // io descriptor path
 } ui_flags_t;
 
 typedef struct {

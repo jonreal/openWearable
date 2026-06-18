@@ -48,7 +48,10 @@ int main(int argc, char **argv) {
   int lutFlag = 0;
   int nodmaFlag = 0;
   int statsFlag = 0;
-  while((c = getopt(argc, argv, "vu:rc:l:ds")) != -1) {
+  int nnFlag = 0;
+  char netfile[256] = {0};
+  char iofile[256] = {0};
+  while((c = getopt(argc, argv, "vu:rc:l:dsn:i:")) != -1) {
     switch (c) {
       case 'v':
         uiflags.debug = 1;
@@ -78,6 +81,15 @@ int main(int argc, char **argv) {
       case 's':
         statsFlag = 1;
         printf("\nPerformance statistics enabled.\n\n");
+        break;
+      case 'n':
+        strncpy(netfile, optarg, sizeof(netfile) - 1);
+        nnFlag = 1;
+        printf("\nC7x net file: %s.\n\n", netfile);
+        break;
+      case 'i':
+        strncpy(iofile, optarg, sizeof(iofile) - 1);
+        printf("\nC7x io file: %s.\n\n", iofile);
         break;
     }
   }
@@ -123,6 +135,15 @@ int main(int argc, char **argv) {
   // Set flags in the UI flags structure
   uiflags.nodma = nodmaFlag;
   uiflags.show_stats = statsFlag;
+  uiflags.nn_enable = nnFlag;
+  if (nnFlag) {
+    if (iofile[0] == '\0') {
+      printf("\n-n requires -i <io descriptor>.\n");
+      return -1;
+    }
+    strncpy(uiflags.nn_net, netfile, sizeof(uiflags.nn_net) - 1);
+    strncpy(uiflags.nn_io,  iofile,  sizeof(uiflags.nn_io)  - 1);
+  }
   if (UiInit(&pru_mem,uiflags) != 0) {
     printf("Tui init failed.\n");
     return -1;

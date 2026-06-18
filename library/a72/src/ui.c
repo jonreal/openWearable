@@ -26,6 +26,7 @@
 #include "pru.h"
 #include "debug.h"
 #include "format.h"
+#include "nn.h"
 //#include "roshelper.h"
 
 volatile sig_atomic_t input_ready;
@@ -81,6 +82,9 @@ ui_flags_t UiInitFlags(void) {
   f.udppublish = 0;
   f.nodma = 1;
   f.show_stats = 0;  // Stats hidden by default
+  f.nn_enable = 0;   // C7x inference off unless -n is given
+  f.nn_net[0] = '\0';
+  f.nn_io[0] = '\0';
   return f;
 }
 
@@ -108,6 +112,13 @@ int UiInit(pru_mem_t* pru_mem, ui_flags_t flags) {
   }
 
   CpuInit(uidata.cpudata);
+
+  if (uidata.flag.nn_enable) {
+    if (NnStart(pru_mem, uidata.flag.nn_net, uidata.flag.nn_io) != 0) {
+      printf("C7x inference init failed -- continuing without it.\n");
+      uidata.flag.nn_enable = 0;
+    }
+  }
 
   if (uidata.flag.udppublish)
     uidata.udp = UdpInit(flags.udphost);
@@ -232,6 +243,9 @@ int UiLogging(void) {
 int UiCleanup(void) {
 
   alarm(0);
+
+  if (uidata.flag.nn_enable)
+    NnStop();
 
   if(fcntl(0, F_SETOWN, getpid()) == -1){
     printf("F_SETOWN error.\n");
