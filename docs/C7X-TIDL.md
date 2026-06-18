@@ -342,3 +342,20 @@ Expected: `libtidl_onnxrt_EP loaded`, `Final number of subgraphs created are : 1
 - **Reversibility.** Everything here is firmware + device-tree only — the Debian kernel/userland
   is untouched. The stock `.tisdk` firmware symlinks and the recovery boot label (stock DTB) let
   you fall back at any point.
+
+## 7. The openWearable fleet-free C7x firmware (`tidl/`)
+
+Sections 1–4 stand up the **full vision_apps fleet** to run TIDL via the TIOVX graph (the resnet
+proof). openWearable's own inference path goes further: a **fleet-free** C7x firmware that runs
+`TIDLRT_create`/`invoke` directly — no TIOVX, no IPC framework — with input/output over a simple
+A72↔C7x shared-memory mailbox. It reuses the proven C7x boot from this fleet bring-up but replaces
+the `appInit()` chain with `ow_c7x_tidl_run()`.
+
+It lives in **[`tidl/`](../tidl/)** with its own complete runbook (build → deploy → run → debug),
+the committed prebuilt firmware (deploy is a symlink — no x86 host needed), and the hello-world
+model. It builds **standalone** — `make -C tidl/`, `cl7x` only, no fleet/concerto — see
+[`tidl/README.md`](../tidl/README.md).
+
+> One TI-test-harness bug gated this for ~14 board cycles: `tidl_rt.c`'s `pFxnUnLock` callback
+> `memset`s `0xDA` over the L1/L2/L3 scratch on every engine critical-section exit, corrupting the
+> live MMA/DRU stream mid-`algProcess`. Fix: vendored in `tidl/src/tidl_rt.c` (see its PROVENANCE).
