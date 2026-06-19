@@ -18,7 +18,7 @@
 
 / {
 	compatible = "beagle,j721e-beagleboneai64", "ti,j721e";
-	model = "BeagleBoard.org BeagleBone AI-64 openWearable-v0";
+	model = "BeagleBoard.org BeagleBone AI-64 openWearable-vision-apps-v0";
 
 	aliases {
 		serial0 = &wkup_uart0;
