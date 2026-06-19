@@ -1088,39 +1088,33 @@
 			<&mcu_r5fss0_core1_memory_region>;
 };
 
-/* OW: run the main_r5fss0 cluster in SPLIT mode (dtsi default is lockstep=1).
- * The vision_apps fleet uses BOTH cores of this cluster as independent CPUs:
- * core0 = mcu2_0 (5c00000), core1 = mcu2_1 (5d00000). In lockstep, core1 never
- * registers a remoteproc, so the A72 vision_apps runtime can't find "5d00000.r5f"
- * (its hard-coded handle for mcu2_1) and mcu2_1's firmware ended up mis-loaded on
- * the wrong cluster (main_r5fss1 / 5e00000), where its Sciclient host context
- * (BUILD_MCU2_1 -> MAIN_0_R5_NONSEC_1) drove the wrong secure-proxy threads, so
- * the DM never answered, mcu2_1 hung at appSciclientInit, and the cpu-sync fleet
- * barrier stalled (resnet timed out). Split mode puts mcu2_1 back on its native
- * core 5d00000, whose secure-proxy threads match its host context. */
+/* OW: run main_r5fss0 in SPLIT mode (dtsi default is lockstep=1) so both cores
+ * are independent OW R5F control cores -- core0 = 5c00000, core1 = 5d00000 --
+ * mirroring the dual-PRU pattern. Each comes up offline (firmware-name deleted on
+ * the cores below) and is loaded by the A72 at runtime via remoteproc, like the
+ * PRUs. (In the vision DT these same cores are mcu2_0/mcu2_1 of the fleet.) */
 &main_r5fss0 {
 	ti,cluster-mode = <0>;	/* 0 = split, 1 = lockstep */
 };
 
 &main_r5fss0_core0 {
+	/* OW R5F core0 (5c00000). No firmware-name -> offline at boot; the A72 loads OW
+	 * firmware at runtime via remoteproc, like the PRUs (PruInit). The 31 MB a2
+	 * carveout is inherited from the vision mcu2_0 map -- oversized for OW's tiny
+	 * firmware (runs from TCM, only puts its resource table at the carveout base),
+	 * but harmless. */
+	/delete-property/ firmware-name;
 	mboxes = <&mailbox0_cluster1 &mbox_main_r5fss0_core0>;
-	/* mcu2_0: load spans a2100000..a3ffffff (.bss ~17 MB + IRQ-stack PT_LOAD at
-	 * 0xa3ffec00, readelf-confirmed), so it needs the full 31 MB merged a2100000
-	 * region. core1 now probes independently (split mode) and lives at a4/a5 — no
-	 * overlap. */
 	memory-region = <&main_r5fss0_core0_dma_memory_region>,
 			<&main_r5fss0_core0_memory_region>;
 };
 
 &main_r5fss0_core1 {
-	/* mcu2_1. mailbox already correct (cluster1 / core1). In split mode this core
-	 * (5d00000) runs the BUILD_MCU2_1 firmware (vx_app_rtos_linux_mcu2_1.out),
-	 * which LOADs at a4100000..a444ffff with its IRQ-stack PT_LOAD at 0xa5ffec00
-	 * and ipc_vring at 0xaa000000 (readelf-confirmed). Those load addresses are
-	 * the regions historically labelled main_r5fss1_core0/core1 (a4/a5) — reused
-	 * here because the firmware's link map is fixed and independent of which
-	 * physical core runs it. main_r5fss1 is disabled below so nothing else claims
-	 * a4/a5. Board side: symlink j7-main-r5f0_1-fw -> vx_app_rtos_linux_mcu2_1.out. */
+	/* OW R5F core1 (5d00000). No firmware-name -> offline at boot; A72-loaded at
+	 * runtime. Carveouts a4/a5 (labelled main_r5fss1_core0/core1 for historical
+	 * reasons) are inherited from the vision mcu2_1 map -- oversized for OW's tiny
+	 * firmware, harmless. */
+	/delete-property/ firmware-name;
 	mboxes = <&mailbox0_cluster1 &mbox_main_r5fss0_core1>;
 	memory-region = <&main_r5fss1_core0_dma_memory_region>,
 			<&main_r5fss1_core0_memory_region>,
