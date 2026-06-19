@@ -27,25 +27,22 @@ void NnInit(void) {
   // one-time warmup / scaling-constant setup goes here
 }
 
-// FIRST LIGHT: emit the known test vector (matches tidl/host/ow_c7x_infer.py
-// X_DEFAULT) so cpudata.nn.y reproduces the verified reference output
-// [0, 0.3083, 0.1019, 0.0454, 0, 0.2057, 0.2034, 0] (max|err| ~0.045, int8).
-// Once the loop is proven, swap the body for a real window over state[].
+// Live features from the PRU frame counter (read from the newest state[] slot --
+// the real windowing entry point). Each input is a multiple of the frame count
+// taken as a fix16 (Q16.16) fraction: a bounded sawtooth that advances with the
+// control loop at a per-feature rate, so the C7x output visibly tracks live PRU
+// data. Stand-in for real sensor features; MLP size unchanged.
+//
+// (To feed actual sensor data later, window a channel over the ring instead:
+//    uint32_t idx = mem->s->cbuff_index;
+//    for (i=0..N_FEAT-1) { slot = (idx + 1 + i) % STATE_BUFF_LEN;       // old->new
+//                          feat->x[i] = fix16_to_float(mem->s->state[slot].pru1var); } )
 void NnForward(const pru_mem_t* mem, nn_feat_t* feat) {
-  (void)mem;
-  for (int i = 0; i < N_FEAT; i++)
-    feat->x[i] = (float)i / (float)N_FEAT - 0.5f;
-
-  // --- real sensor window (disabled until first light passes) ----------------
-  // The newest completed ring slot is mem->s->cbuff_index; walk back N_FEAT-1
-  // slots for a time window of one channel, converting fix16 sensor data to
-  // float for the model:
-  //
-  //   uint32_t idx = mem->s->cbuff_index;
-  //   for (int i = 0; i < N_FEAT; i++) {
-  //     uint32_t slot = (idx + 1 + i) % STATE_BUFF_LEN;   // oldest..newest
-  //     feat->x[i] = fix16_to_float(mem->s->state[slot].pru1var);
-  //   }
+  uint32_t frame = mem->s->state[mem->s->cbuff_index].frame;
+  for (int i = 0; i < N_FEAT; i++) {
+    fix16_t f = (fix16_t)((frame * (uint32_t)(i + 1)) & 0xFFFF);  // [0,1) in Q16.16
+    feat->x[i] = fix16_to_float(f) - 0.5f;                         // center -> [-0.5, 0.5)
+  }
 }
 
 void NnInterpret(const nn_out_t* out) {

@@ -143,6 +143,8 @@ int main(int argc, char **argv) {
     }
     snprintf(uiflags.nn_net, sizeof(uiflags.nn_net), "%s", netfile);
     snprintf(uiflags.nn_io,  sizeof(uiflags.nn_io),  "%s", iofile);
+  } else {
+    printf("\nNN inference disabled. Pass -n <net.bin> -i <io.bin> to enable.\n\n");
   }
   if (UiInit(&pru_mem,uiflags) != 0) {
     printf("Tui init failed.\n");
