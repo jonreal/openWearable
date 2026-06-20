@@ -104,7 +104,17 @@ INSTALLNONEXEC = install -m 644
 # Build targets
 .PHONY: all clean install check_libs
 
-all: check_libs $(TARGET_DIR)/$(APP_NAME) $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf install
+# --- R5F control firmware (Cortex-R5F bare-metal, arm-none-eabi-gcc) ---------
+R5F_CC = arm-none-eabi-gcc
+R5F_CFLAGS = -mcpu=cortex-r5 -marm -mfloat-abi=soft -ffreestanding -nostdlib \
+	-nostartfiles -O2 -Wall \
+	-I$(OW_DIR)/library/r5f/include -I$(OW_DIR)/library/common/include -I./
+R5F_SRC_DIR = $(OW_DIR)/library/r5f/src
+R5F_COMMON  = $(R5F_SRC_DIR)/r5f_start.S ./r5floop.c
+R5F0_FW = $(BUILD_DIR)/j7-r5f0-$(APP_NAME)-fw.ow
+R5F1_FW = $(BUILD_DIR)/j7-r5f1-$(APP_NAME)-fw.ow
+
+all: check_libs $(TARGET_DIR)/$(APP_NAME) $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf $(R5F0_FW) install
 
 # Check if required libraries exist
 check_libs:
@@ -123,10 +133,11 @@ clean:
 	@echo "$(C2) $(RM) -r /lib/firmware/$(ARCH)-pru1-$(APP_NAME)-fw $(RESET)"; $(RM) -r /lib/firmware/$(ARCH)-pru1-$(APP_NAME)-fw
 
 # Install firmware
-install: $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf
+install: $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf $(R5F0_FW)
 	@echo "$(C1) \n Installing PRU firmware... $(RESET)"
 	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU0_TARGET).elf /lib/firmware/$(ARCH)-pru0-$(APP_NAME)-fw
 	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU1_TARGET).elf /lib/firmware/$(ARCH)-pru1-$(APP_NAME)-fw
+	$(INSTALLNONEXEC) $(R5F0_FW) /lib/firmware/j7-r5f0-$(APP_NAME)-fw.ow
 
 # Link arm main app executable
 $(TARGET_DIR)/$(APP_NAME): $(CPU_OBJ) $(APP_CPU_OBJ) $(MAIN_OBJ)
@@ -191,3 +202,14 @@ debug:
 	@echo "$(C1) APP_CPU_OBJ = $(APP_CPU_OBJ) $(RESET)"
 	@echo "$(C1) APP_PRU_SRC = $(APP_PRU_SRC) $(RESET)"
 	@echo "$(C1) APP_PRU_OBJ = $(APP_PRU_OBJ) $(RESET)"
+
+# --- R5F control firmware rules ---------------------------------------------
+$(BUILD_DIR)/r5f%.ld: ./R5F_$(ARCH).ld.in
+	@mkdir -p $(BUILD_DIR)
+	$(R5F_CC) -E -P -x c -DR5F_CORE=$* $< -o $@
+
+$(R5F0_FW): $(R5F_SRC_DIR)/r5f0_main.c $(R5F_COMMON) $(BUILD_DIR)/r5f0.ld
+	$(R5F_CC) $(R5F_CFLAGS) -DR5F_CORE=0 -T $(BUILD_DIR)/r5f0.ld $(R5F_SRC_DIR)/r5f0_main.c $(R5F_COMMON) -o $@
+
+$(R5F1_FW): $(R5F_SRC_DIR)/r5f1_main.c $(R5F_COMMON) $(BUILD_DIR)/r5f1.ld
+	$(R5F_CC) $(R5F_CFLAGS) -DR5F_CORE=1 -T $(BUILD_DIR)/r5f1.ld $(R5F_SRC_DIR)/r5f1_main.c $(R5F_COMMON) -o $@

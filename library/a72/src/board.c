@@ -29,3 +29,8 @@ const char* const rp_pru1 = "/dev/remoteproc/j7-pru0_1";
 
 // PRU firmware images are named "<pru_fw_prefix>-pru{0,1}-<app>-fw" in /lib/firmware.
 const char* const pru_fw_prefix = "j721e";
+
+// R5F remoteproc nodes (main_r5fss0 core0/core1). The app loads OW control
+// firmware "j7-r5f{0,1}-<app>-fw.ow" onto these at runtime (R5fInit), like the PRUs.
+const char* const rp_r5f0 = "/dev/remoteproc/j7-main-r5f0_0";
+const char* const rp_r5f1 = "/dev/remoteproc/j7-main-r5f0_1";

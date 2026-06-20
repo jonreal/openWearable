@@ -82,14 +82,12 @@
 			no-map;
 		};
 
-		/* OW: merged a2100000..a4000000 (31 MB) into ONE contiguous region. The
-		 * heavy 10.1 vision_apps mcu2_0 fw has a ~17 MB .bss @0xa2104000 that must
-		 * live in a SINGLE carveout (remoteproc maps one carveout per PT_LOAD
-		 * segment); the old 15M+1M-gap+15M layout failed with "bad phdr". Cluster
-		 * is lockstep -> core1 never probes, so its separate regions are absorbed. */
+		/* OW R5F (main_r5fss0) carveout. OW firmware runs code from ATCM, so this region
+		 * holds only the resource table -- 1 MB (matching the linker CARVEOUT in
+		 * R5F_j721e.ld.in) is plenty. The old 31 MB was the vision mcu2_0 .bss map. */
 		main_r5fss0_core0_memory_region: r5f-memory@a2100000 {
 			compatible = "shared-dma-pool";
-			reg = <0x00 0xa2100000 0x00 0x1f00000>;
+			reg = <0x00 0xa2100000 0x00 0x100000>;
 			no-map;
 		};
 
@@ -1088,22 +1086,22 @@
 			<&mcu_r5fss0_core1_memory_region>;
 };
 
-/* OW: run main_r5fss0 in SPLIT mode (dtsi default is lockstep=1) so both cores
- * are independent OW R5F control cores -- core0 = 5c00000, core1 = 5d00000 --
- * mirroring the dual-PRU pattern. The K3 R5F driver REQUIRES a firmware-name to
- * register the rproc (it cannot sit "offline" like a PRU), so each core boots a
- * stable stock IPC-echo "parking" firmware (does nothing); the A72 then stops it
- * and loads OW control firmware at runtime, keeping the DT decoupled from our
- * ever-changing build. (In the vision DT these same cores are mcu2_0/mcu2_1.) */
+/* OW: main_r5fss0 runs in LOCKSTEP (the dtsi default). The two cores execute in
+ * hardware lockstep as ONE fault-checked rproc -- core0 (5c00000) is the active
+ * pair, core1 (5d00000) is the HW slave and does not probe -- the safe default for
+ * a wearable control brain. The K3 R5F driver REQUIRES a firmware-name to register
+ * the rproc, so core0 boots the OW "park" firmware (j7-r5f0-park-fw.ow, a stub
+ * honoring the graceful-stop handshake); the A72 then stops it and loads OW control
+ * firmware at runtime. For PARALLEL R5F roles later, bring up main_r5fss1 (2 cores,
+ * currently disabled below) rather than splitting this cluster. */
 &main_r5fss0 {
-	ti,cluster-mode = <0>;	/* 0 = split, 1 = lockstep */
+	ti,cluster-mode = <1>;	/* 0 = split, 1 = lockstep */
 };
 
 &main_r5fss0_core0 {
-	/* OW R5F core0 (5c00000). firmware-name = the OW "park" firmware (utils/r5f/park ->
-	 * j7-r5f0-park-fw.ow): a minimal stub honoring the K3 graceful-stop handshake,
-	 * so the A72 stops it and loads OW control firmware at runtime. The 31 MB a2 carveout is inherited from the
-	 * vision mcu2_0 map -- oversized for OW's tiny firmware, harmless. */
+	/* OW R5F core0 (5c00000) -- the active lockstep core. firmware-name = the OW
+	 * "park" firmware (utils/r5f/park -> j7-r5f0-park-fw.ow), a stub honoring the K3
+	 * graceful-stop handshake so the A72 can load OW control fw at runtime. */
 	firmware-name = "j7-r5f0-park-fw.ow";
 	mboxes = <&mailbox0_cluster1 &mbox_main_r5fss0_core0>;
 	memory-region = <&main_r5fss0_core0_dma_memory_region>,
@@ -1111,15 +1109,13 @@
 };
 
 &main_r5fss0_core1 {
-	/* OW R5F core1 (5d00000). firmware-name = the OW "park" firmware
-	 * (utils/r5f/park -> j7-r5f1-park-fw.ow); A72 stops it + loads OW control fw. Carveouts a4/a5 (labelled
-	 * main_r5fss1_core0/core1 for historical reasons) are inherited from the vision
-	 * mcu2_1 map -- oversized for OW's tiny firmware, harmless. */
+	/* OW R5F core1 (5d00000) -- the HW lockstep SLAVE; not probed in lockstep, so the
+	 * firmware-name / memory-region below are inert (kept valid for a clean switch
+	 * back to split mode). */
 	firmware-name = "j7-r5f1-park-fw.ow";
 	mboxes = <&mailbox0_cluster1 &mbox_main_r5fss0_core1>;
 	memory-region = <&main_r5fss1_core0_dma_memory_region>,
-			<&main_r5fss1_core0_memory_region>,
-			<&main_r5fss1_core1_memory_region>;
+			<&main_r5fss1_core0_memory_region>;
 };
 
 /* OW: main_r5fss1 (mcu3_0/mcu3_1, cores 5e00000/5f00000) is NOT part of the

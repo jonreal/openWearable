@@ -27,6 +27,7 @@
 #include "log.h"
 #include "ui.h"
 #include "format.h"
+#include "r5f.h"
 
 volatile sig_atomic_t doneFlag;
 
@@ -154,17 +155,21 @@ int main(int argc, char **argv) {
   if (uiflags.debug) {
 
     PruEnable(1, &pru_mem.s->pru_ctl);
+    R5fInit(FWSUFFIX);   // PRU ticking -> ICSSG clocked; stop park + load control fw
     signal(SIGINT, sigintHandler);
     circbuff_t* cb = LogNewCircBuff();
     while (!doneFlag) {
       LogDebugWriteState(pru_mem.s, cb, buff);
     }
     PruPrintDebugBuffer(pru_mem.p->debug_buff);
+    R5fCleanup();   // stop the R5F before the PRU (ICSSG stays clocked under it)
     PruEnable(0, &pru_mem.s->pru_ctl);
     PruRestart();
   } else {
     PruEnable(1, &pru_mem.s->pru_ctl);
+    R5fInit(FWSUFFIX);   // PRU ticking -> ICSSG clocked; stop park + load control fw
     if ((UiLoop(&pru_mem) == 1) | (doneFlag)){
+      R5fCleanup();   // stop the R5F before the PRU
       PruEnable(0, &pru_mem.s->pru_ctl);
       PruRestart();
     }

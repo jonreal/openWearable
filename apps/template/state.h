@@ -38,8 +38,7 @@ typedef struct {
 // --- r5f_state: the R5F pair's output, nested in the snapshot like cpu_state.
 // Written by the R5F into ICSSG shared RAM; PRU0 snapshots it into the state ring.
 typedef struct {
-  volatile uint32_t r5f0var;
-  volatile uint32_t r5f1var;
+  volatile uint32_t r5fvar;
 } r5f_state_t;
 
 // --- State

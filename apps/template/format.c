@@ -43,8 +43,7 @@ const ow_field_t ow_schema[] = {
   { "nn_seq",    OW_U32,   offsetof(state_t, cpu_state.nn.seq)    },
   { "nn_stamp",  OW_U32,   offsetof(state_t, cpu_state.nn.stamp)  },
   { "nn_status", OW_I32,   offsetof(state_t, cpu_state.nn.status) },
-  { "r5f0var",   OW_U32,   offsetof(state_t, r5f_state.r5f0var) },
-  { "r5f1var",   OW_U32,   offsetof(state_t, r5f_state.r5f1var) },
+  { "r5fvar",   OW_U32,   offsetof(state_t, r5f_state.r5fvar) },
 };
 const size_t ow_schema_count = sizeof ow_schema / sizeof ow_schema[0];
 
