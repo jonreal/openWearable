@@ -9,7 +9,7 @@ RESET=\033[0m
 # App name
 APP_NAME = template
 
-# Platform identity: drives the firmware name, the -D<ARCH> define, and PRUx_<ARCH>.cmd
+# Platform identity: drives the -D<ARCH> define and the PRUx_<ARCH>.cmd / R5F0_<ARCH>.ld linkers
 ARCH = j721e
 
 # PSSP ICSSG header dir. The PRU subsystem (ICSSG) is shared across K3 devices; in this
@@ -39,11 +39,18 @@ LIBOWPRU = $(LIB_DIR)/lib/libow_pru.a
 # Source Directories
 CSRC_DIR = $(OW_DIR)/library/a72/src
 PRU_CSRC_DIR = $(OW_DIR)/library/pru/src
+R5F_CSRC_DIR = $(OW_DIR)/library/r5f/src
 
-# Main targets
+# Main targets (PRU pair + one lockstep R5F core)
 TARGET = main
 PRU0_TARGET = pru0_main
 PRU1_TARGET = pru1_main
+R5F0_TARGET = r5f0_main
+
+# Firmware image names -- convention j7-<proc>-<app>-fw.ow (.ow = openWearable)
+PRU0_FW = j7-pru0-$(APP_NAME)-fw.ow
+PRU1_FW = j7-pru1-$(APP_NAME)-fw.ow
+R5F0_FW = j7-r5f0-$(APP_NAME)-fw.ow
 
 # Include Directories
 CINC_DIR = $(OW_DIR)/library/common/include \
@@ -57,6 +64,10 @@ PRU_CINC_DIR = -I$(OW_DIR)/library/common/include \
 	-I$(PSSP_DIR)/include/$(PSSP_ARCH) \
 	-I$(PSSP_DIR)/include \
 	-I$(CGT_DIR)/include \
+	-I./
+
+R5F_CINC_DIR = -I$(OW_DIR)/library/r5f/include \
+	-I$(OW_DIR)/library/common/include \
 	-I./
 
 # Library dependencies
@@ -74,6 +85,9 @@ APP_CPU_OBJ = $(patsubst %.c,$(BUILD_DIR)/%.o,$(APP_CPU_SRC))
 # App specific PRU source files
 APP_PRU_SRC = pruloop.c
 APP_PRU_OBJ = $(patsubst %.c,$(BUILD_DIR)/%.po,$(APP_PRU_SRC))
+
+# App specific R5F source files (the hooks, like pruloop.c for the PRU)
+APP_R5F_SRC = r5floop.c
 
 # Main object (for main.c)
 MAIN_OBJ = $(BUILD_DIR)/$(TARGET).o
@@ -96,6 +110,12 @@ PRU_CFLAGS = \
 	-D$(shell echo $(ARCH) | tr a-z A-Z) -DFIXMATH_NO_CACHE -DPRU\
 	--hardware_mac=on --gen_func_subsections=on
 
+# R5F: Cortex-R5F bare-metal (arm-none-eabi-gcc); code in ATCM, MPU off, OW crt0
+R5F_CC = arm-none-eabi-gcc
+R5F_CFLAGS = \
+	-mcpu=cortex-r5 -marm -mfloat-abi=soft -ffreestanding -nostdlib \
+	-nostartfiles -O2 -Wall $(R5F_CINC_DIR)
+
 # Install stuff
 INSTALL = install -m 755
 INSTALLDIR = install -d -m 755
@@ -104,17 +124,7 @@ INSTALLNONEXEC = install -m 644
 # Build targets
 .PHONY: all clean install check_libs
 
-# --- R5F control firmware (Cortex-R5F bare-metal, arm-none-eabi-gcc) ---------
-R5F_CC = arm-none-eabi-gcc
-R5F_CFLAGS = -mcpu=cortex-r5 -marm -mfloat-abi=soft -ffreestanding -nostdlib \
-	-nostartfiles -O2 -Wall \
-	-I$(OW_DIR)/library/r5f/include -I$(OW_DIR)/library/common/include -I./
-R5F_SRC_DIR = $(OW_DIR)/library/r5f/src
-R5F_COMMON  = $(R5F_SRC_DIR)/r5f_start.S ./r5floop.c
-R5F0_FW = $(BUILD_DIR)/j7-r5f0-$(APP_NAME)-fw.ow
-R5F1_FW = $(BUILD_DIR)/j7-r5f1-$(APP_NAME)-fw.ow
-
-all: check_libs $(TARGET_DIR)/$(APP_NAME) $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf $(R5F0_FW) install
+all: check_libs $(TARGET_DIR)/$(APP_NAME) $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf $(BUILD_DIR)/$(R5F0_FW) install
 
 # Check if required libraries exist
 check_libs:
@@ -129,15 +139,14 @@ clean:
 	@echo "$(C1) \n Cleaning $(APP_NAME)... $(RESET)"
 	@echo "$(C2) $(RM) -r ./build $(RESET)"; $(RM) -r ./build
 	@echo "$(C2) $(RM) -r $(TARGET_DIR) $(RESET)"; $(RM) -r $(TARGET_DIR)
-	@echo "$(C2) $(RM) -r /lib/firmware/$(ARCH)-pru0-$(APP_NAME)-fw $(RESET)"; $(RM) -r /lib/firmware/$(ARCH)-pru0-$(APP_NAME)-fw
-	@echo "$(C2) $(RM) -r /lib/firmware/$(ARCH)-pru1-$(APP_NAME)-fw $(RESET)"; $(RM) -r /lib/firmware/$(ARCH)-pru1-$(APP_NAME)-fw
+	@echo "$(C2) $(RM) firmware $(RESET)"; $(RM) /lib/firmware/$(PRU0_FW) /lib/firmware/$(PRU1_FW) /lib/firmware/$(R5F0_FW)
 
 # Install firmware
-install: $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf $(R5F0_FW)
-	@echo "$(C1) \n Installing PRU firmware... $(RESET)"
-	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU0_TARGET).elf /lib/firmware/$(ARCH)-pru0-$(APP_NAME)-fw
-	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU1_TARGET).elf /lib/firmware/$(ARCH)-pru1-$(APP_NAME)-fw
-	$(INSTALLNONEXEC) $(R5F0_FW) /lib/firmware/j7-r5f0-$(APP_NAME)-fw.ow
+install: $(BUILD_DIR)/$(PRU0_TARGET).elf $(BUILD_DIR)/$(PRU1_TARGET).elf $(BUILD_DIR)/$(R5F0_FW)
+	@echo "$(C1) \n Installing firmware... $(RESET)"
+	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU0_TARGET).elf /lib/firmware/$(PRU0_FW)
+	$(INSTALLNONEXEC) $(BUILD_DIR)/$(PRU1_TARGET).elf /lib/firmware/$(PRU1_FW)
+	$(INSTALLNONEXEC) $(BUILD_DIR)/$(R5F0_FW) /lib/firmware/$(R5F0_FW)
 
 # Link arm main app executable
 $(TARGET_DIR)/$(APP_NAME): $(CPU_OBJ) $(APP_CPU_OBJ) $(MAIN_OBJ)
@@ -160,6 +169,12 @@ $(BUILD_DIR)/$(PRU0_TARGET).elf: $(BUILD_DIR)/$(PRU0_TARGET).po $(APP_PRU_OBJ) $
 $(BUILD_DIR)/$(PRU1_TARGET).elf: $(BUILD_DIR)/$(PRU1_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU)
 	@echo "$(C1) \n Linking pru1... $(RESET)"
 	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=1024 $(BUILD_DIR)/$(PRU1_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU) $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $@ ./PRU1_$(ARCH).cmd
+
+# Build R5F0 firmware (lockstep core: r5f0_main + app hooks + crt0; single GNU ld step)
+$(BUILD_DIR)/$(R5F0_FW): $(R5F_CSRC_DIR)/$(R5F0_TARGET).c $(R5F_CSRC_DIR)/r5f_start.S $(APP_R5F_SRC) R5F0_$(ARCH).ld
+	@echo "$(C1) \n Linking r5f0... $(RESET)"
+	@mkdir -p $(BUILD_DIR)
+	$(R5F_CC) $(R5F_CFLAGS) -T R5F0_$(ARCH).ld $(R5F_CSRC_DIR)/$(R5F0_TARGET).c $(R5F_CSRC_DIR)/r5f_start.S $(APP_R5F_SRC) -o $@
 
 # Build CPU objects
 $(BUILD_DIR)/%.o: $(CSRC_DIR)/%.c
@@ -192,24 +207,7 @@ $(BUILD_DIR)/%.po: %.c
 
 # Helper for debugging
 debug:
-	@echo "$(C1) APP_NAME = $(APP_NAME) $(RESET)"
-	@echo "$(C1) BUILD_DIR = $(BUILD_DIR) $(RESET)"
-	@echo "$(C1) TARGET_DIR = $(TARGET_DIR) $(RESET)"
-	@echo "$(C1) LIBOWPRU = $(LIBOWPRU) $(RESET)"
 	@echo "$(C1) CPU_SRC = $(CPU_SRC) $(RESET)"
-	@echo "$(C1) CPU_OBJ = $(CPU_OBJ) $(RESET)"
 	@echo "$(C1) APP_CPU_SRC = $(APP_CPU_SRC) $(RESET)"
-	@echo "$(C1) APP_CPU_OBJ = $(APP_CPU_OBJ) $(RESET)"
-	@echo "$(C1) APP_PRU_SRC = $(APP_PRU_SRC) $(RESET)"
-	@echo "$(C1) APP_PRU_OBJ = $(APP_PRU_OBJ) $(RESET)"
-
-# --- R5F control firmware rules ---------------------------------------------
-$(BUILD_DIR)/r5f%.ld: ./R5F_$(ARCH).ld.in
-	@mkdir -p $(BUILD_DIR)
-	$(R5F_CC) -E -P -x c -DR5F_CORE=$* $< -o $@
-
-$(R5F0_FW): $(R5F_SRC_DIR)/r5f0_main.c $(R5F_COMMON) $(BUILD_DIR)/r5f0.ld
-	$(R5F_CC) $(R5F_CFLAGS) -DR5F_CORE=0 -T $(BUILD_DIR)/r5f0.ld $(R5F_SRC_DIR)/r5f0_main.c $(R5F_COMMON) -o $@
-
-$(R5F1_FW): $(R5F_SRC_DIR)/r5f1_main.c $(R5F_COMMON) $(BUILD_DIR)/r5f1.ld
-	$(R5F_CC) $(R5F_CFLAGS) -DR5F_CORE=1 -T $(BUILD_DIR)/r5f1.ld $(R5F_SRC_DIR)/r5f1_main.c $(R5F_COMMON) -o $@
+	@echo "$(C1) APP_R5F_SRC = $(APP_R5F_SRC) $(RESET)"
+	@echo "$(C1) firmware = $(PRU0_FW) $(PRU1_FW) $(R5F0_FW) $(RESET)"

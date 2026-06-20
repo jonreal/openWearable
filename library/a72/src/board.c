@@ -27,10 +27,11 @@
 const char* const rp_pru0 = "/dev/remoteproc/j7-pru0_0";
 const char* const rp_pru1 = "/dev/remoteproc/j7-pru0_1";
 
-// PRU firmware images are named "<pru_fw_prefix>-pru{0,1}-<app>-fw" in /lib/firmware.
-const char* const pru_fw_prefix = "j721e";
+// Firmware images: "<pru_fw_prefix>-pru{0,1}-<app>-fw<pru_fw_ext>" in /lib/firmware
+// (convention j7-<proc>-<app>-fw.ow; .ow marks openWearable vs stock TI firmware).
+const char* const pru_fw_prefix = "j7";
+const char* const pru_fw_ext = ".ow";
 
-// R5F remoteproc nodes (main_r5fss0 core0/core1). The app loads OW control
-// firmware "j7-r5f{0,1}-<app>-fw.ow" onto these at runtime (R5fInit), like the PRUs.
+// R5F remoteproc node (main_r5fss0, lockstep -> one rproc = core0). The app loads OW
+// control firmware "j7-r5f0-<app>-fw.ow" onto it at runtime (R5fInit), like the PRUs.
 const char* const rp_r5f0 = "/dev/remoteproc/j7-main-r5f0_0";
-const char* const rp_r5f1 = "/dev/remoteproc/j7-main-r5f0_1";

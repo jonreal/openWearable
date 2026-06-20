@@ -72,7 +72,7 @@ int PruWriteFirmware(char* suffix) {
 
   // PRU0
   memset(buf, 0, sizeof(buf));
-  snprintf(buf, sizeof(buf), "%s-pru0-%s-fw", pru_fw_prefix, suffix);
+  snprintf(buf, sizeof(buf), "%s-pru0-%s-fw%s", pru_fw_prefix, suffix, pru_fw_ext);
   snprintf(path, sizeof(path), "%s/firmware", rp_pru0);
   int fd = open(path, O_WRONLY);
   if (fd == -1) {
@@ -88,7 +88,7 @@ int PruWriteFirmware(char* suffix) {
 
   // PRU1
   memset(buf, 0, sizeof(buf));
-  snprintf(buf, sizeof(buf), "%s-pru1-%s-fw", pru_fw_prefix, suffix);
+  snprintf(buf, sizeof(buf), "%s-pru1-%s-fw%s", pru_fw_prefix, suffix, pru_fw_ext);
   snprintf(path, sizeof(path), "%s/firmware", rp_pru1);
   fd = open(path, O_WRONLY);
   if (fd == -1) {

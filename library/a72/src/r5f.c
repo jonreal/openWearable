@@ -4,7 +4,7 @@
  * stop -> write firmware name -> start -> wait running. The R5F graceful stop
  * needs firmware cooperation (park + control fw both implement the RP_MBOX_SHUTDOWN
  * handshake), so `echo stop` blocks until the core quiesces. main_r5fss0 runs in
- * LOCKSTEP, so there is ONE rproc (rp_r5f0); core1 (rp_r5f1) does not probe.
+ * LOCKSTEP, so there is ONE rproc (rp_r5f0).
 =============================================================================*/
 #include "r5f.h"
 #include <stdio.h>

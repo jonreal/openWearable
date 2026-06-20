@@ -1,16 +1,22 @@
+@ openWearable R5F crt0 (bare-metal startup) for arm-none-eabi-gcc -nostartfiles.
+@ clpru ships a C runtime (_c_int00) for the PRU; the R5F toolchain does not, so OW
+@ supplies the startup: the exception vector table, stack + .bss init, the jump to
+@ main(), and data/prefetch ABORT handlers that stamp DFAR/DFSR (and a 0xDEAD..
+@ marker) to the carveout debug window (_dbg_base, from the linker) -- so a stray
+@ memory fault is observable from the A72 instead of silently wedging the core.
   .syntax unified
   .arm
   .section .vectors, "ax"
   .global _vectors
 _vectors:
-  b _start
-  b .
-  b .
-  b _pabort
-  b _dabort
-  b .
-  b .
-  b .
+  b _start          @ reset
+  b .               @ undef
+  b .               @ svc
+  b _pabort         @ prefetch abort
+  b _dabort         @ data abort
+  b .               @ reserved
+  b .               @ irq
+  b .               @ fiq
 
   .section .text.start, "ax"
   .global _start
@@ -30,8 +36,7 @@ _start:
 2:
   b     2b
 
-  @ Fault handlers: stamp the cause/address to the carveout dbg window
-  @ (_dbg_base = CARVEOUT + 0x400) so the A72 can read why a core wedged.
+  @ Fault handlers: stamp cause/address to the carveout debug window (_dbg_base).
   .type _dabort, %function
 _dabort:
   ldr   r0, =_dbg_base

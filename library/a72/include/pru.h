@@ -18,6 +18,7 @@
 extern const char* const rp_pru0;
 extern const char* const rp_pru1;
 extern const char* const pru_fw_prefix;
+extern const char* const pru_fw_ext;   // ".ow" -- openWearable firmware marker
 
 int PruMemMap(pru_mem_t* pru_mem);
 int PruInit(char* suffix);

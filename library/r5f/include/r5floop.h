@@ -21,14 +21,10 @@ typedef struct {
   pru_ctl_t*   ctl;         // PRU flow-control word (a hook may read enable/done to gate)
 } r5f_io_t;
 
-// Per-app hooks. r5f0 = main_r5fss0_core0 (5c00000), r5f1 = core1 (5d00000).
+// Per-app hooks (one lockstep core). r5f0 = main_r5fss0 (active core = core0, 5c00000).
 void R5f0Init(pru_mem_t* mem);
 void R5f0UpdateState(const r5f_view_t* view, r5f_io_t* io);
 void R5f0UpdateControl(const r5f_view_t* view, r5f_io_t* io);
 void R5f0Cleanup(void);
-void R5f1Init(pru_mem_t* mem);
-void R5f1UpdateState(const r5f_view_t* view, r5f_io_t* io);
-void R5f1UpdateControl(const r5f_view_t* view, r5f_io_t* io);
-void R5f1Cleanup(void);
 
 #endif
