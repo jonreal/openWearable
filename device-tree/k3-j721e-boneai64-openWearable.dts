@@ -1100,22 +1100,22 @@
 };
 
 &main_r5fss0_core0 {
-	/* OW R5F core0 (5c00000). firmware-name = stock IPC-echo parking stub
-	 * (bb-j721e-evm-firmware) so the rproc registers; the A72 stops it and loads OW
-	 * control firmware at runtime. The 31 MB a2 carveout is inherited from the
+	/* OW R5F core0 (5c00000). firmware-name = the OW "park" firmware (utils/r5f/park ->
+	 * j7-r5f0-park-fw.ow): a minimal stub honoring the K3 graceful-stop handshake,
+	 * so the A72 stops it and loads OW control firmware at runtime. The 31 MB a2 carveout is inherited from the
 	 * vision mcu2_0 map -- oversized for OW's tiny firmware, harmless. */
-	firmware-name = "j7-main-r5f0_0-fw.tisdk";
+	firmware-name = "j7-r5f0-park-fw.ow";
 	mboxes = <&mailbox0_cluster1 &mbox_main_r5fss0_core0>;
 	memory-region = <&main_r5fss0_core0_dma_memory_region>,
 			<&main_r5fss0_core0_memory_region>;
 };
 
 &main_r5fss0_core1 {
-	/* OW R5F core1 (5d00000). firmware-name = stock IPC-echo parking stub; A72
-	 * stops it and loads OW control firmware at runtime. Carveouts a4/a5 (labelled
+	/* OW R5F core1 (5d00000). firmware-name = the OW "park" firmware
+	 * (utils/r5f/park -> j7-r5f1-park-fw.ow); A72 stops it + loads OW control fw. Carveouts a4/a5 (labelled
 	 * main_r5fss1_core0/core1 for historical reasons) are inherited from the vision
 	 * mcu2_1 map -- oversized for OW's tiny firmware, harmless. */
-	firmware-name = "j7-main-r5f0_1-fw.tisdk";
+	firmware-name = "j7-r5f1-park-fw.ow";
 	mboxes = <&mailbox0_cluster1 &mbox_main_r5fss0_core1>;
 	memory-region = <&main_r5fss1_core0_dma_memory_region>,
 			<&main_r5fss1_core0_memory_region>,
