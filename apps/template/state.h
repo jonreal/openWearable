@@ -55,6 +55,7 @@ typedef struct {
   volatile uint32_t debug_buff[10];
   uint32_t fs_hz;
   uint32_t fs_ticks;
+  uint32_t r5f_decimate;   // R5F runs its hooks every Nth PRU frame (A72-set; no fw rebuild to retune)
 } param_mem_t;
 
 

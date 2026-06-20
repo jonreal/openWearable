@@ -18,7 +18,7 @@ typedef struct {
 
 typedef struct {
   r5f_state_t* s;           // this pair's live output (shared_mem.r5f_state); PRU snapshots it
-  pru_ctl_t*   ctl;         // shared flow-control utility bits
+  pru_ctl_t*   ctl;         // PRU flow-control word (a hook may read enable/done to gate)
 } r5f_io_t;
 
 // Per-app hooks. r5f0 = main_r5fss0_core0 (5c00000), r5f1 = core1 (5d00000).
@@ -31,8 +31,4 @@ void R5f1UpdateState(const r5f_view_t* view, r5f_io_t* io);
 void R5f1UpdateControl(const r5f_view_t* view, r5f_io_t* io);
 void R5f1Cleanup(void);
 
-// Flow-control utility bits (the shared pru_ctl; mirrors PruGetCtlBit etc.).
-static inline uint8_t R5fGetCtlBit(const pru_ctl_t* c, uint8_t n) { return ((c->bit.utility & (1u << n)) == (1u << n)); }
-static inline void R5fSetCtlBit(pru_ctl_t* c, uint8_t n) { c->bit.utility |= (1u << n); }
-static inline void R5fClearCtlBit(pru_ctl_t* c, uint8_t n) { c->bit.utility &= ~(1u << n); }
 #endif

@@ -10,8 +10,6 @@
 
 volatile uint32_t* r5f_debug_buff;
 
-#define R5F_DECIM 10u   // run the hooks every Nth PRU frame (-> a param later)
-
 int main(void) {
   shared_mem_t* sm = (shared_mem_t*)(uintptr_t) global_sharedram_base;
   param_mem_t*  pm = (param_mem_t*)(uintptr_t)(global_sharedram_base + param_ram_offset);
@@ -24,11 +22,13 @@ int main(void) {
   r5f_view_t view = { &counter, pm };
   r5f_io_t   io   = { &sm->r5f_state, &sm->pru_ctl };
 
+  uint32_t decim = pm->r5f_decimate;   // A72-set; cached (static per run)
+  if (decim == 0u) decim = 1u;
   uint32_t last = 0xFFFFFFFFu;
   for (;;) {
     if (R5fShutdownRequested()) R5fShutdownAckHalt();   // mailbox first -- always killable
     uint32_t f = sm->state[sm->cbuff_index].frame;       // the shared PRU clock
-    if ((f % R5F_DECIM) == 0u && f != last) {
+    if ((f % decim) == 0u && f != last) {
       last = f;
       counter.frame = f;
       R5f0UpdateState(&view, &io);

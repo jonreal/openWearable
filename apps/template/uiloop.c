@@ -87,6 +87,7 @@ int PruLoadParams(const char* file, param_mem_t* param) {
   // Defaults
   param->fs_hz = 1000;
   param->fs_ticks = HZ_TO_TICKS(param->fs_hz);
+  param->r5f_decimate = 10;   // R5F hook rate = PRU fs / decimate (retune here, no fw rebuild)
 
   return 0;
 }

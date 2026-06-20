@@ -52,6 +52,7 @@ const size_t ow_schema_count = sizeof ow_schema / sizeof ow_schema[0];
 // ---------------------------------------------------------------------------
 void FormatSprintParams(const param_mem_t* param, char* buff) {
   sprintf(buff, "\n#Parameters:\n"
-          "#\tFs = %i (Hz)\n#",
-          param->fs_hz);
+          "#\tFs = %i (Hz)\n"
+          "#\tR5F decimate = %i (hooks every Nth PRU frame)\n#",
+          param->fs_hz, param->r5f_decimate);
 }
