@@ -63,7 +63,7 @@ static void UiTimerCallback(int sig) {
   if (uidata.flag.udppublish)
     UdpPublish(uidata.log, uidata.udp);
 
-  CpuLoop(uidata.cpudata);
+  CpuLoop(uidata.cpu_state);
 
   //DebugPinLow();
 }
@@ -99,7 +99,7 @@ int UiInit(pru_mem_t* pru_mem, ui_flags_t flags) {
 
   //uidata.rosbuffer[0] = '\0';
   uidata.counter = 0;
-  uidata.cpudata = &pru_mem->s->cpudata;
+  uidata.cpu_state = &pru_mem->s->cpu_state;
 
   // Set the use_dma flag in the log structure based on the nodma flag
   //if (uidata.log && uidata.flag.nodma) {
@@ -111,7 +111,7 @@ int UiInit(pru_mem_t* pru_mem, ui_flags_t flags) {
     uidata.log->show_stats = uidata.flag.show_stats;
   }
 
-  CpuInit(uidata.cpudata);
+  CpuInit(uidata.cpu_state);
 
   if (uidata.flag.nn_enable) {
     if (NnStart(pru_mem, uidata.flag.nn_net, uidata.flag.nn_io) != 0) {

@@ -125,7 +125,7 @@ static void* nn_thread(void* arg) {
 
     int st = nn_invoke(feat.x, out, first ? NN_CREATE_TIMEOUT_US : NN_TIMEOUT_US);
 
-    cpudata_t* cd = &g_mem->s->cpudata;
+    cpu_state_t* cd = &g_mem->s->cpu_state;
     if (st >= 0) {
       first = 0;                          // create done; steady-state from here
       cd->nn.seq++;                       // odd: write in progress (seqlock)
@@ -168,9 +168,9 @@ int NnStart(pru_mem_t* pru_mem, const char* net_path, const char* io_path) {
   wr32(MB_READY, 0);                       // clean handshake start (no stale kick)
   wr32(MB_DONE, 0);
 
-  // memInit() (pru0_main.c) zeroes state[] but NOT cpudata -> clear the NN result
+  // memInit() (pru0_main.c) zeroes state[] but NOT cpu_state -> clear the NN result
   // so leftovers from a prior run can't masquerade as fresh and seq starts at 0.
-  cpudata_t* cd0 = &pru_mem->s->cpudata;
+  cpu_state_t* cd0 = &pru_mem->s->cpu_state;
   for (int i = 0; i < N_OUT; i++) cd0->nn.y[i] = 0;
   cd0->nn.seq    = 0;
   cd0->nn.stamp  = 0;

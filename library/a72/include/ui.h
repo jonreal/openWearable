@@ -39,7 +39,7 @@ typedef struct {
   unsigned int counter;
   ui_flags_t flag;
   pru_mem_t* pru_mem;
-  cpudata_t* cpudata;
+  cpu_state_t* cpu_state;
   log_t* log;
   udp_t* udp;
 //  rospub_t* ros;

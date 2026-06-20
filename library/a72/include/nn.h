@@ -25,7 +25,7 @@
 // the compiled net + io descriptor, calls the app NnInit(), and spawns a
 // free-running worker thread. Each cycle the thread calls NnForward() to pack
 // features, runs one C7x invoke, converts the float output to fix16, and
-// publishes it into pru_mem->s->cpudata.nn (which PRU0 snapshots every tick).
+// publishes it into pru_mem->s->cpu_state.nn (which PRU0 snapshots every tick).
 //
 // Returns 0 on success; on failure the mailbox is torn down and inference is
 // simply not running (the rest of the app is unaffected).

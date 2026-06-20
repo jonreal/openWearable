@@ -30,7 +30,7 @@ void NnInit(void);
 // inference, on the worker thread.
 void NnForward(const pru_mem_t* mem, nn_feat_t* feat);
 
-// Optional: app-side use of a fresh result (already published to cpudata.nn).
+// Optional: app-side use of a fresh result (already published to cpu_state.nn).
 void NnInterpret(const nn_out_t* out);
 
 // One-time teardown after the worker thread stops.

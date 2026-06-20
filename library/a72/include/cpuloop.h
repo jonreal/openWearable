@@ -18,8 +18,8 @@
 
 #include "mem_types.h"
 
-void CpuInit(cpudata_t* cpudata);
-void CpuLoop(cpudata_t* cpudata);
+void CpuInit(cpu_state_t* cpu_state);
+void CpuLoop(cpu_state_t* cpu_state);
 void CpuCleanup(void);
 
 #endif

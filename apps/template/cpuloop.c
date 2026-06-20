@@ -17,12 +17,12 @@
 #include "cpuloop.h"
 #include <stdio.h>
 
-void CpuInit(cpudata_t* cpudata) {
-  cpudata->cpuvar = 0;
+void CpuInit(cpu_state_t* cpu_state) {
+  cpu_state->cpuvar = 0;
 }
 
-void CpuLoop(cpudata_t* cpudata)  {
-  (cpudata->cpuvar)++;
+void CpuLoop(cpu_state_t* cpu_state)  {
+  (cpu_state->cpuvar)++;
 }
 
 void CpuCleanup(void) {

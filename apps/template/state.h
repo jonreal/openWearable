@@ -18,7 +18,7 @@ typedef struct {
   float x[N_FEAT];
 } nn_feat_t;
 
-// NN result. Written by the A72 inference thread; PRU0 snapshots cpudata into
+// NN result. Written by the A72 inference thread; PRU0 snapshots cpu_state into
 // the state ring every tick (pru0_main.c) -> read-only sample-and-hold for PRU,
 // exactly like params. Seqlock: `seq` is odd while y[] is mid-write, even when
 // stable; a tear-free consumer reads seq (even), reads y[], re-reads seq (equal).
@@ -29,18 +29,26 @@ typedef struct {
   volatile int32_t  status;     // last TIDLRT return code (0 = ok, <0 = host err)
 } nn_out_t;
 
-// --- cpudata struct
+// --- cpu_state struct
 typedef struct {
   volatile uint32_t cpuvar;
-  nn_out_t nn;                  // NN result -- rides the existing cpudata snapshot
-} cpudata_t;
+  nn_out_t nn;                  // NN result -- rides the existing cpu_state snapshot
+} cpu_state_t;
+
+// --- r5f_state: the R5F pair's output, nested in the snapshot like cpu_state.
+// Written by the R5F into ICSSG shared RAM; PRU0 snapshots it into the state ring.
+typedef struct {
+  volatile uint32_t r5f0var;
+  volatile uint32_t r5f1var;
+} r5f_state_t;
 
 // --- State
 typedef struct {
   volatile uint32_t frame;        // monotonic loop counter (PRU0 writes pru_count_t.frame)
   volatile uint32_t pru0var;
   volatile uint32_t pru1var;
-  cpudata_t cpudata;
+  cpu_state_t cpu_state;
+  r5f_state_t r5f_state;
  } state_t;
 
 // --- Parameters

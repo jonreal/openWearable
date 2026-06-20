@@ -99,8 +99,9 @@ int main(void) {
     // Control
     Pru0UpdateControl(&view, &io);
 
-    // Copy cpudata to state
-    mem.s->state[counter.index].cpudata = mem.s->cpudata;
+    // Copy cpu_state + r5f_state into this tick's ring slot
+    mem.s->state[counter.index].cpu_state = mem.s->cpu_state;
+    mem.s->state[counter.index].r5f_state = mem.s->r5f_state;
 
     // Post bookkeeping
     mem.s->cbuff_index = counter.index;

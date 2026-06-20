@@ -47,7 +47,7 @@ void NnForward(const pru_mem_t* mem, nn_feat_t* feat) {
 
 void NnInterpret(const nn_out_t* out) {
   // Template: the result is consumed via the log schema (format.c) and the PRU
-  // snapshot of cpudata.nn -- nothing extra to do here.
+  // snapshot of cpu_state.nn -- nothing extra to do here.
   (void)out;
 }
 
