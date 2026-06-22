@@ -68,8 +68,12 @@ name → start).
 
 ## Build & deploy
 
-Development is on a laptop (this repo); **building and running happen on the board over
-ssh** (sources at `/root/openWearable`).
+Development is on a **Mac Studio** (this repo); **building and running happen on the board** over
+ssh (sources at `/root/openWearable`). The Mac Studio and the board carry the **same git repo kept
+in sync** (push/pull) and normally sit at the **same HEAD** — don't treat either as canonical-or-stale;
+verify with a live `git rev-parse HEAD` on each, not the frozen session-start git snapshot. **For a
+test iteration, edit directly on the board** (DTS, firmware, etc.) so you can build/run without a
+push/pull round-trip first; sync back to the Mac Studio afterward.
 
 **Repo docs split:** `docs/` = public, reproducible setup manuals (no personal hostnames).
 `notes/` = internal planning + live board/host inventory — **git-ignored, never published**.
@@ -81,7 +85,11 @@ C7x/vision_apps firmware without vendoring TI's multi-GB source).
    installs firmware to `/lib/firmware/`, binary to `apps/bin/`.
 3. Run: `apps/bin/<app>` (flags: `-c <config>`, `-l <lut>`, `-v` debug, `-d` no-DMA — logging
    no-op, `-s` stats).
-4. Device-tree changes require recompiling the `.dts` and rebooting the board.
+4. **Device-tree:** edit `device-tree/k3-j721e-boneai64-openWearable.dts` directly — on the board it
+   is **symlinked** into the official **BeagleBoard-DeviceTrees** repo (`~/BeagleBoard-DeviceTrees/
+   src/arm64/ti/`). Build + install in one step: `cd ~/BeagleBoard-DeviceTrees && make install_arm64`
+   (compiles all DTBs, copies `k3-*.dtb` → `/boot/firmware/ti/`, the extlinux fdt path). **Reboot** to
+   apply (a board-state change → confirm first). No per-file `make <name>.dtb`, no manual copy.
 
 ## Current initiative: heterogeneous compute (Milestone 1)
 

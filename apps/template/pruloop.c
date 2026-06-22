@@ -17,6 +17,8 @@
 
 
 
+#include "mcspi_j721e.h"   // J721E McSPI driver (pru0_0 bus = McSPI7)
+
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 
@@ -26,6 +28,12 @@ volatile register uint32_t __R31;
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem) {
+  // pru0_0 hardware SPI bus = McSPI7 (0x2170000). Bring it up + reach self-check:
+  // debug_buff[2] = HL_REV; a sane non-zero value confirms the PRU reached the
+  // controller through the interconnect/firewall. (Full-duplex loopback was
+  // proven during bring-up -- see docs/COMM-BUS-LAYOUT.md.)
+  mcspiInit(MCSPI7_BASE, 8u, 200u);
+  debug_buff[2] = mcspiHlRev(MCSPI7_BASE);
 }
 
 void Pru0UpdateState(const pru_view_t* view, pru_io_t* io) {
@@ -47,6 +55,10 @@ void Pru0Cleanup(void) {
 // Edit user defined functions below
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
+  // pru0_1 hardware SPI bus = McSPI6 (0x2160000). Same driver, different base.
+  // debug_buff[3] = HL_REV reach self-check.
+  mcspiInit(MCSPI6_BASE, 8u, 200u);
+  debug_buff[3] = mcspiHlRev(MCSPI6_BASE);
 }
 
 void Pru1UpdateState(const pru_view_t* view, pru_io_t* io) {
