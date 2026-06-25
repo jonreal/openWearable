@@ -42,18 +42,35 @@ tidl/
 
 ---
 
+## The two committed firmwares — which is which
+`firmware/` holds **two** prebuilt, ready-to-deploy C7x ELFs. They are functionally the same engine
+(fleet-free TIDL, create-once/run-many); they differ only in how the per-inference I/O is sized:
+
+| File | I/O sizing | size | sha256 (head) | Use |
+|---|---|---|---|---|
+| **`vx_app_rtos_linux_c7x_1.out`** | **variable, ≤1024** in/out (host stages `INLEN`/`OUTLEN`; `0`→ defaults to 16/8) | 12103880 | `f7fdfa27` | **Current / recommended.** Runs any model with I/O ≤ 1024 — no rebuild. This is what `make` outputs. |
+| `vx_app_rtos_linux_c7x_1.out.fixed-16x8` | fixed **16→8** only (compile-time) | 12103880 | `5865138c` | Legacy / reference. The first hardware-proven fleet-free image; kept for rollback + provenance. |
+
+> The variable-size image is capped at 1024 floats/buffer **on purpose** — a 16384 (64 KB) buffer
+> hard-stalls `TIDLRT_invoke` on this silicon (see the ⚠️ under "Per-model I/O sizes" below and
+> `src/PROVENANCE.md`). Both ELFs are byte-size-identical because 1024-float buffers don't grow the
+> image vs the 16/8 ones.
+
 ## Quick start — deploy the prebuilt firmware (no x86 host needed)
-The repo is checked out on the board at `/root/openWearable`, and the firmware is committed, so
+The repo is checked out on the board at `/root/openWearable`, and both firmwares are committed, so
 deploy is just a symlink + reboot. **This swaps the C7x firmware — a board state change; get the
 usual go-ahead first.**
 ```bash
-# on the board (A72):
+# on the board (A72) -- recommended (variable-size) image:
 ln -sf /root/openWearable/tidl/firmware/vx_app_rtos_linux_c7x_1.out /lib/firmware/j7-c71_0-fw
+#   ...or the legacy fixed-16x8 image:
+# ln -sf /root/openWearable/tidl/firmware/vx_app_rtos_linux_c7x_1.out.fixed-16x8 /lib/firmware/j7-c71_0-fw
 sync && reboot
 # after it comes back, confirm the C7x is up:
 cat /sys/class/remoteproc/remoteproc2/state     # -> running   (remoteproc2 = 64800000.dsp = C7x)
+dmesg | grep "Booting fw image j7-c71"          # size 12103880 = our image
 ```
-Then run an inference:
+Then run an inference (default 16/8 tiny MLP):
 ```bash
 cd /root/openWearable
 python3 tidl/host/ow_c7x_infer.py tidl/models/ow_tiny_net.bin tidl/models/ow_tiny_io.bin
@@ -110,9 +127,23 @@ is created once and reused (load-once / run-many); a different net needs a reboo
 | Offset | Field | Offset | Field |
 |---|---|---|---|
 | `0x00` | `READY` (A72→C7x, `0xC7C7AA01`) | `0x40` | `OW_DBG[]` progress markers (10 words) |
-| `0x10` | `DONE` (C7x→A72, `0xC7C7DD01`)  | `0x200` | firmware text log ring |
-| `0x20` | `STATUS` (TIDLRT return code)   | `0x100000` | `NET` (compiled net.bin) |
-| `0x30` | `NETLEN` / `0x38` `IOLEN`       | `0x2000000`/`0x2100000`/`0x2180000` | `IO` / `INPUT` / `OUTPUT` |
+| `0x10` | `DONE` (C7x→A72, `0xC7C7DD01`)  | `0x70` | `INVOKES` (C7x→A72 invoke counter) |
+| `0x20` | `STATUS` (TIDLRT return code)   | `0x78`/`0x7C` | `INLEN`/`OUTLEN` (A72→C7x I/O element counts; `0`=default 16/8) |
+| `0x30` | `NETLEN` / `0x38` `IOLEN`       | `0x200` | firmware text log ring |
+| `0x100000` | `NET` (compiled net.bin)  | `0x2000000`/`0x2100000`/`0x2180000` | `IO` / `INPUT` / `OUTPUT` |
+
+**Per-model I/O sizes — no firmware rebuild.** The firmware sizes its mailbox float copies from
+`INLEN`/`OUTLEN` (staged by the host like `NETLEN`/`IOLEN`), bounded by static buffers
+(`OW_N_*_MAX`, **1024** each — see below). A new model with I/O ≤ that needs only a fresh
+`net.bin`/`io.bin` + reboot. `0` (or a host that never writes them) falls back to the historical
+**16→8** contract, so old callers keep working. Run a non-default size with `ow_c7x_infer.py
+net.bin io.bin --n-in N --n-out M`.
+
+> ⚠️ **Why the cap is 1024, not bigger.** A 16384-float (64 KB) `s_in`/`s_out` was validated on
+> hardware to **hard-stall `TIDLRT_invoke`** (create still succeeds; `algProcess` never returns) —
+> a large contiguous cacheable I/O buffer trips some engine/erratum assumption. At 1024 (4 KB) the
+> firmware builds byte-size-identical to the proven 16/8 image and runs clean. Raising `OW_N_*_MAX`
+> requires **re-validation on the board**, not just a recompile.
 
 ## Debug
 - **Progress + result:** `ow_c7x_infer.py` prints the `OW_DBG` markers (`enter`, `create_st`,

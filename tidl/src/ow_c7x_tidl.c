@@ -44,16 +44,32 @@ extern int32_t appSciclientInit(uint32_t self_cpu_id);
 #define OW_MB_NETLEN      (OW_MB_BASE + 0x30)   /* A72 -> C7x: net.bin byte length          */
 #define OW_MB_IOLEN       (OW_MB_BASE + 0x38)   /* A72 -> C7x: io.bin  byte length          */
 #define OW_MB_INVOKES     (OW_MB_BASE + 0x70)   /* C7x -> A72: cumulative invoke count (loop) */
+#define OW_MB_INLEN       (OW_MB_BASE + 0x78)   /* A72 -> C7x: input  element count (0 = default) */
+#define OW_MB_OUTLEN      (OW_MB_BASE + 0x7C)   /* A72 -> C7x: output element count (0 = default) */
 #define OW_MB_NET         (OW_MB_BASE + 0x00100000)  /* net.bin (sTIDL_Network_t)           */
 #define OW_MB_IO          (OW_MB_BASE + 0x02000000)  /* io.bin  (sTIDL_IOBufDesc_t)         */
-#define OW_MB_INPUT       (OW_MB_BASE + 0x02100000)  /* input  float32[OW_N_IN]             */
-#define OW_MB_OUTPUT      (OW_MB_BASE + 0x02180000)  /* output float32[OW_N_OUT]            */
+#define OW_MB_INPUT       (OW_MB_BASE + 0x02100000)  /* input  float32[INLEN]  (512 KB window) */
+#define OW_MB_OUTPUT      (OW_MB_BASE + 0x02180000)  /* output float32[OUTLEN] (512 KB window) */
 
 #define OW_MB_READY_MAGIC  0xC7C7AA01u
 #define OW_MB_DONE_MAGIC   0xC7C7DD01u
 
-#define OW_N_IN   16
-#define OW_N_OUT   8
+/* Per-model I/O element counts now arrive at runtime over the mailbox (OW_MB_INLEN /
+ * OW_MB_OUTLEN), so a new model size needs only a fresh net.bin/io.bin + reboot -- NO
+ * firmware rebuild. DEFAULT is the fallback when the host stages 0 (legacy callers that
+ * predate the length words); MAX is the static s_in/s_out ceiling the runtime size is
+ * bounds-checked against.
+ *
+ * MAX is 1024 (4 KB per buffer) DELIBERATELY, not larger: a 16384-float (64 KB) s_in/s_out
+ * was validated on hardware to HARD-STALL TIDLRT_invoke (algProcess never returns; create
+ * still succeeds) -- a large contiguous cacheable I/O buffer trips some engine/erratum
+ * assumption. 1024 builds byte-size-identical to the proven 16/8 firmware and runs clean.
+ * Raising it needs re-validation on the board, not just a recompile. 1024 floats in =
+ * e.g. an 8ch x 128-sample EMG window, which covers the near-term models. */
+#define OW_N_IN_DEFAULT   16
+#define OW_N_OUT_DEFAULT   8
+#define OW_N_IN_MAX      1024
+#define OW_N_OUT_MAX     1024
 
 #define RD32(a)   (*(volatile uint32_t *)(uintptr_t)(a))
 #define WR32(a,v) (*(volatile uint32_t *)(uintptr_t)(a) = (uint32_t)(v))
@@ -221,8 +237,8 @@ int32_t TIDLRT_setParamsDefault(sTIDLRT_Params_t *prms)
 /* =====================================================================================
  *  The inference entry point — called from main.c appMain (replaces the step-1 markers).
  * ===================================================================================== */
-static float s_in[OW_N_IN];
-static float s_out[OW_N_OUT];
+static float s_in[OW_N_IN_MAX];
+static float s_out[OW_N_OUT_MAX];
 
 /* Debug markers in the EXCLUSIVE mailbox scratch (0xB8000040+), not APP_LOG (which the other
  * fleet cores clobber). DDR_SHARED_MEM is mapped NON-cacheable by main.c appMmuMap, so plain
@@ -239,6 +255,7 @@ int32_t ow_c7x_tidl_run(void)
     sTIDLRT_Tensor_t *out[1] = { &outT };
     app_udma_init_prms_t udmaPrm;
     uint32_t          netLen, ioLen;
+    uint32_t          nIn = OW_N_IN_DEFAULT, nOut = OW_N_OUT_DEFAULT;
     uint32_t          nInvoke = 0;
 
     OW_DBG[0] = 0xABCD0001u;                       /* entered run */
@@ -250,6 +267,8 @@ int32_t ow_c7x_tidl_run(void)
      * on stale data before the host stages anything). */
     WR32(OW_MB_READY, 0);
     WR32(OW_MB_DONE,  0);
+    WR32(OW_MB_INLEN,  0);   /* stale lengths must not leak to a legacy (default-size) caller */
+    WR32(OW_MB_OUTLEN, 0);
 
     /* 1. Single-core inits the dropped appInit() used to do: sciclient (RM via TIFS) then UDMA.
      *    The TIDL engine pulls its DMA handle from gUdmaDrvObjPtr. Done ONCE for the lifetime. */
@@ -275,6 +294,22 @@ int32_t ow_c7x_tidl_run(void)
         {
             netLen = RD32(OW_MB_NETLEN);
             ioLen  = RD32(OW_MB_IOLEN);
+            /* Per-model I/O element counts (staged like NETLEN/IOLEN). 0 -> a legacy host
+             * that predates the length words -> keep the historical 16/8 contract. The
+             * tensor dims still come from io.bin; these only size the mailbox float copies
+             * and bound them against the static s_in/s_out buffers. */
+            nIn  = RD32(OW_MB_INLEN);
+            nOut = RD32(OW_MB_OUTLEN);
+            if (nIn  == 0u) nIn  = OW_N_IN_DEFAULT;
+            if (nOut == 0u) nOut = OW_N_OUT_DEFAULT;
+            if ((nIn > OW_N_IN_MAX) || (nOut > OW_N_OUT_MAX))
+            {
+                ow_log_str("io size exceeds firmware max\n");
+                WR32(OW_MB_STATUS, (uint32_t)(-100));
+                WR32(OW_MB_READY, 0);
+                WR32(OW_MB_DONE, OW_MB_DONE_MAGIC);
+                return -100;
+            }
             OW_DBG[5] = netLen;
             OW_DBG[6] = 0xABCD0003u;                /* pre-create */
             TIDLRT_setParamsDefault(&prms);
@@ -310,7 +345,7 @@ int32_t ow_c7x_tidl_run(void)
         }
 
         /* 5. Pull this kick's input, run inference (engine + MMA). */
-        memcpy(s_in, (void *)(uintptr_t)OW_MB_INPUT, sizeof(s_in));
+        memcpy(s_in, (void *)(uintptr_t)OW_MB_INPUT, nIn * sizeof(float));
         OW_DBG[8] = 0xABCD0004u;                    /* pre-invoke */
         status = TIDLRT_invoke(handle, in, out);
         OW_DBG[9] = (uint32_t)status;               /* invoke status */
@@ -318,7 +353,7 @@ int32_t ow_c7x_tidl_run(void)
 
         /* 6. Publish float output, bump the invoke counter, consume READY, then signal DONE
          *    (clear READY BEFORE DONE so the next host kick is always a clean 0->magic edge). */
-        memcpy((void *)(uintptr_t)OW_MB_OUTPUT, s_out, sizeof(s_out));
+        memcpy((void *)(uintptr_t)OW_MB_OUTPUT, s_out, nOut * sizeof(float));
         WR32(OW_MB_INVOKES, ++nInvoke);
         WR32(OW_MB_READY, 0);
         WR32(OW_MB_DONE,  OW_MB_DONE_MAGIC);
