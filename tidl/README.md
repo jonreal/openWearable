@@ -76,6 +76,25 @@ cd /root/openWearable
 python3 tidl/host/ow_c7x_infer.py tidl/models/ow_tiny_net.bin tidl/models/ow_tiny_io.bin
 # -> C7x status=0  output=[...]  float ref=[...]  max|abs err|=0.0449  PASS
 ```
+
+### Running a different model (variable-size firmware) — one model per boot
+The variable-size firmware reads each model's I/O size from the host, so a different model (e.g. the
+32→4 demonstrator) just needs its own `net.bin`/`io.bin` + `--n-in`/`--n-out`:
+```bash
+python3 tidl/host/ow_c7x_infer.py tidl/models/ow_mlp32x4_net.bin tidl/models/ow_mlp32x4_io.bin \
+        --n-in 32 --n-out 4
+# -> C7x status=0  invoke#=1  output=[0.0000, 0.0000, 0.7479, 0.0000]
+#    float ref (gen_mlp32x4.py) = [0, 0, 0.7459, 0]   (int8 quant; the 3 ReLU zeros are exact)
+```
+
+> ⚠️ **One model per boot (create-once).** The firmware creates the network on the **first** kick
+> after boot and caches it for the whole boot (load-once / run-many). Back-to-back invokes of the
+> *same* model are fine (`invoke#` climbs). But to switch models you **must reboot the C7x first** —
+> staging a different `net.bin` without a reboot is silently ignored, and you get the
+> *previously-created* net's output on truncated input (measured: `tiny → mlp32x4` with no reboot
+> gives `[0,0,0.1705,0.3500]`, **not** the 32→4 result). So to run both, the sequence is:
+> **`tiny → reboot → mlp32x4`** (or vice-versa) — each model must be the first one created after a boot.
+
 Restore the stock resnet-capable fleet at any time: `ln -sf vx_app_rtos_linux_c7x_1.out.ow
 /lib/firmware/j7-c71_0-fw` (if that backup is present) + reboot.
 
