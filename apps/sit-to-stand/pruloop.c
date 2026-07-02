@@ -103,18 +103,26 @@ void Pru1Init(pru_mem_t* mem) {
 
 void Pru1UpdateState(const pru_view_t* view, pru_io_t* io) {
 
+  // Trial phases (Option A): PRE(Tdelay) -> UP(Ttrial, inflated) -> DOWN(Ttrial,
+  // deflated) -> END. UP captures the sit-to-stand transition; DOWN keeps the log
+  // running through deflation so the stand-to-sit transition is captured too. Only
+  // END returns early (clears the ctl bit -> uiloop stops the log); PRE/UP/DOWN all
+  // fall through to the sensor reads below. status: 0=baseline/idle, 1=up, 2=down.
   if (PruGetCtlBit(io->ctl, 0)) {
-    if (cyclecnt < view->p->Tdelay) {                 // PRE
+    if (cyclecnt < view->p->Tdelay) {                             // PRE (baseline, deflated)
       io->s->status = 0;
-    } else if (cyclecnt < view->p->Ttrial) {          // ACTIVE
+    } else if (cyclecnt < view->p->Tdelay + view->p->Ttrial) {   // UP (inflate -> sit-to-stand)
       PamSetPd(pam, view->p->Ptarget);
       io->s->status = 1;
-    } else {                                          // POST
+    } else if (cyclecnt < view->p->Tdelay + 2*view->p->Ttrial) { // DOWN (deflate -> stand-to-sit)
+      PamSetPd(pam, 0);
+      io->s->status = 2;
+    } else {                                                     // END
       PamSetPd(pam, 0);
       PruClearCtlBit(io->ctl, 0);
       io->s->status = 0;
       cyclecnt = 0;
-      return;                                         // no extra +1 tick
+      return;                                                    // no extra +1 tick
     }
     cyclecnt++;
   } else {
