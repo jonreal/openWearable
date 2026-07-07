@@ -20,6 +20,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <sys/mman.h>
 #include <stdint.h>
 #include "pru.h"
@@ -147,7 +148,34 @@ log_t* LogInit(const pru_mem_t* pru_mem) {
 }
 
 int LogNewFile(log_t* log, char* file) {
-  log->fd = open(file, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+  // Never overwrite an existing log. Open with O_EXCL; on a name clash insert
+  // "-1", "-2", ... before the extension until a free name is found. O_EXCL makes
+  // the create atomic (no TOCTOU race), so no data is ever silently clobbered.
+  char actual[600];
+  snprintf(actual, sizeof(actual), "%s", file);
+  log->fd = open(actual, O_WRONLY | O_CREAT | O_EXCL, 0666);
+  if (log->fd < 0 && errno == EEXIST) {
+    char base[512], ext[64];
+    const char* dot   = strrchr(file, '.');
+    const char* slash = strrchr(file, '/');
+    if (dot && (!slash || dot > slash)) {         // a real extension (dot after last '/')
+      size_t bl = (size_t)(dot - file);
+      if (bl >= sizeof(base)) bl = sizeof(base) - 1;
+      memcpy(base, file, bl);
+      base[bl] = '\0';
+      snprintf(ext, sizeof(ext), "%s", dot);
+    } else {
+      snprintf(base, sizeof(base), "%s", file);
+      ext[0] = '\0';
+    }
+    for (int i = 1; i < 100000 && log->fd < 0; i++) {
+      snprintf(actual, sizeof(actual), "%s-%d%s", base, i, ext);
+      log->fd = open(actual, O_WRONLY | O_CREAT | O_EXCL, 0666);
+      if (log->fd < 0 && errno != EEXIST) break;  // a real error, not a clash
+    }
+    if (log->fd >= 0)
+      printf("Log file %s exists; not overwriting -- saving to %s instead.\n", file, actual);
+  }
   if (log->fd < 0) {
     printf("Error opening log file %s\n", file);
     return -1;
