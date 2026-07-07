@@ -68,37 +68,34 @@ void Pru1Init(pru_mem_t* mem) {
   i2c = I2cInit(2);
   mux = MuxI2cInit(i2c,0x70,PCA9548);
 
-  // Ch. 8, 8-1 = 7
-  reservoir = PamReservoirInit(PressureSensorInit(mux,7,0x28));
+  // Ch. 6, 6-1 = 5
+  reservoir = PamReservoirInit(PressureSensorInit(mux,5,0x28));
 
   // pam
   // sensor on mux ch. 6, 6 - 1 = 5
-  // in: P8.45, MODE5, pr1_pru1_pru_r30_0
-  // out: 8.46, MODE5, pr1_pru1_pru_r30_1
-  // NOTE: the refactored PamInitMuscle dropped the two inflate/deflate timing
-  // args this app used (0x1F8A034 = 504.6258 ms, 0x2FAAD48 = 762.6769 ms). Those
-  // are no longer settable through the API -- verify the new driver's timing on
-  // the bench, or restore configurability in library/pru/src/pam.c if needed.
+  // IN: * P8.46, MODE5, pr1_pru1_pru_r30_1 */
+  // OUT:* P8.44, MODE5, pr1_pru1_pru_r30_3 */
+
   pam = PamInitMuscle(PressureSensorInit(mux,5,0x28),
                         reservoir,
-                        0, 1,
+                        1, 3,
                         refractory,
                         FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
   PamSetPd(pam,0);
 
-  // Load Cell r (right support rail, wrt to participant)
-  // CLK: pr1_pru1_pru_r30_3, P8.44
-  // DOUT: pr1_pru1_pru_r31_6, P8.39
-  loadcell_r = Hx711InitLoadCell(3, 6, HX711_GAIN_64);
+  //// Load Cell r (right support rail, wrt to participant)
+  //// CLK: pr1_pru1_pru_r30_3, P8.44
+  //// DOUT: pr1_pru1_pru_r31_6, P8.39
+  //loadcell_r = Hx711InitLoadCell(3, 6, HX711_GAIN_64);
 
-  // Load Cell l (left support rail, wrt to participant)
-  // CLK: P8.43, MODE5, pr1_pru1_pru_r30_2
-  // DOUT: P8.40, MODE6, pr1_pru1_pru_r31_7
-  loadcell_l = Hx711InitLoadCell(2, 7, HX711_GAIN_64);
+  //// Load Cell l (left support rail, wrt to participant)
+  //// CLK: P8.43, MODE5, pr1_pru1_pru_r30_2
+  //// DOUT: P8.40, MODE6, pr1_pru1_pru_r31_7
+  //loadcell_l = Hx711InitLoadCell(2, 7, HX711_GAIN_64);
 
   // Sync In
-  // In: P8.42, MODE6, pr1_pru1_pru_r31_5 */
-  sync = SyncInitChan(5);
+  ///* P8.45, MODE5, pr1_pru1_pru_r30_0 */
+  sync = SyncInitChan(0);
 }
 
 void Pru1UpdateState(const pru_view_t* view, pru_io_t* io) {
@@ -111,6 +108,7 @@ void Pru1UpdateState(const pru_view_t* view, pru_io_t* io) {
   if (PruGetCtlBit(io->ctl, 0)) {
     if (cyclecnt < view->p->Tdelay) {                             // PRE (baseline, deflated)
       io->s->status = 0;
+      SyncOutHigh(sync);
     } else if (cyclecnt < view->p->Tdelay + view->p->Ttrial) {   // UP (inflate -> sit-to-stand)
       PamSetPd(pam, view->p->Ptarget);
       io->s->status = 1;
@@ -119,6 +117,7 @@ void Pru1UpdateState(const pru_view_t* view, pru_io_t* io) {
       io->s->status = 2;
     } else {                                                     // END
       PamSetPd(pam, 0);
+      SyncOutLow(sync);
       PruClearCtlBit(io->ctl, 0);
       io->s->status = 0;
       cyclecnt = 0;
@@ -139,8 +138,8 @@ void Pru1UpdateState(const pru_view_t* view, pru_io_t* io) {
   PamUpdate(pam);
   io->s->pam_state = PamGetState(pam);
 
-  io->s->load_r = Hx711Sample(loadcell_r);
-  io->s->load_l = Hx711Sample(loadcell_l);
+  //io->s->load_r = Hx711Sample(loadcell_r);
+  //io->s->load_l = Hx711Sample(loadcell_l);
 
   SyncInUpdate(sync);
   io->s->sync_state = SyncGetState(sync);
@@ -152,6 +151,6 @@ void Pru1UpdateControl(const pru_view_t* view, pru_io_t* io) {
 void Pru1Cleanup(void) {
   PamReservoirFree(reservoir);
   PamMuscleFree(pam);
-  Hx711Free(loadcell_r);
-  Hx711Free(loadcell_l);
+  //Hx711Free(loadcell_r);
+  //Hx711Free(loadcell_l);
 }

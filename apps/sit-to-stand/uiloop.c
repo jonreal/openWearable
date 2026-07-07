@@ -55,6 +55,7 @@ int UiLoop(const pru_mem_t* pru_mem) {
           // Wait for input.
           UiPollForUserInput();
           scanf(" %s", input_string);
+          strcpy(log_file, "datalog/");
           strcat(log_file, input_string);
           printf("\t\tSaving data to %s\n",log_file);
           UiNewLogFile(log_file);
