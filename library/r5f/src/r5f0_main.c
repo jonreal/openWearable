@@ -17,6 +17,7 @@ int main(void) {
   r5f_debug_buff = &pm->debug_buff[0];
 
   pru_count_t counter = { 0, 0 };
+  sm->r5f_state = (r5f_state_t){0};   // clear the R5F's live output each run; ICSSG RAM persists across fw reload
   R5f0Init(&mem);
 
   r5f_view_t view = { &counter, pm };

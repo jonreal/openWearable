@@ -37,20 +37,14 @@ static void I2cClearInterrupts(uint32_t regmap)
 i2c_t* I2cInit(uint8_t channel)
 {
   i2c_t* i2c = malloc(sizeof(i2c_t));
-  switch (channel) {
-    case 1 :
-      i2c->regmap = SOC_I2C_1_REGS;
-      /* CM_PER_I2C1_CLKCTRL: MODULEMODE = 0x2 - enable */
-      HWREG(0x44E00000 + 0x48) = 0x2;
-      __delay_cycles(1000);
-      break;
-    case 2 :
-      i2c->regmap = SOC_I2C_2_REGS;
-      /* CM_PER_I2C2_CLKCTRL: MODULEMODE = 0x2 - enable */
-      HWREG(0x44E00000 + 0x44) = 0x2;
-      __delay_cycles(1000);
-      break;
-  }
+
+  /* J721E MAIN I2C: base = 0x02000000 + channel*0x10000 (channel N -> I2C N,
+   * e.g. channel 2 -> I2C2 @ 0x02020000, header P9.19/P9.20). Unlike AM335x we
+   * do NOT poke CM_PER here: on J721E the I2C functional clock is provisioned
+   * outside the firmware (Linux/DM keeps the controller clocked). Same base-swap
+   * pattern as spidriver.c -> mcspi_j721e.c; the OMAP I2C register offsets used
+   * by hsi2c.c are identical between AM335x and J721E. */
+  i2c->regmap = 0x02000000u + (uint32_t)channel * 0x10000u;
 
   /* I2C_SYS : soft reset */
   HWREG(i2c->regmap + 0x10) = (1 << 1);

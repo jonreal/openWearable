@@ -601,6 +601,17 @@
 
   // OpenWearable
 
+	/* pru0_1 valve digital outputs (PAM solenoids). Four header GPO pads on the
+	 * PRG0_PRU1 slice, driven by PRU1 __R30 bits 2-5 (GP mode enabled via gpcfg1
+	 * in pru1_main.c). Mux mode 0 = PRU GPO. Applied via &icssg0 pinctrl-0 below. */
+	pru0_1_valve_pins_default: pru0-1-valve-default-pins {
+		pinctrl-single,pins = <
+			J721E_IOPAD(0x108, PIN_OUTPUT, 0) /* (AD27) PRG0_PRU1_GPO2 P8.43 R30.2 */
+			J721E_IOPAD(0x10c, PIN_OUTPUT, 0) /* (AC25) PRG0_PRU1_GPO3 P8.44 R30.3 */
+			J721E_IOPAD(0x110, PIN_OUTPUT, 0) /* (AD29) PRG0_PRU1_GPO4 P8.41 R30.4 */
+			J721E_IOPAD(0x114, PIN_OUTPUT, 0) /* (AB27) PRG0_PRU1_GPO5 P8.42 R30.5 */
+		>;
+	};
 
 };
 
@@ -1240,6 +1251,15 @@
 &main_timer0 { status = "reserved"; };
 &main_timer1 { status = "reserved"; };
 &main_timer2 { status = "reserved"; };
+
+/* pru0_1 valve GPO pinmux: apply the pad group at ICSSG0 probe. The driver core
+ * auto-selects the "default" pinctrl state, so this muxes the four PRG0_PRU1 GPO
+ * pads (P8.41-P8.44) to PRU output mode without touching the PRU child nodes or
+ * remoteproc enumeration. */
+&icssg0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pru0_1_valve_pins_default>;
+};
 
 //&icssg0 {
 //  status = "okay";

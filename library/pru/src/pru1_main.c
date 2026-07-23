@@ -118,8 +118,10 @@ void initialize(pru_mem_t* mem) {
   // Clear SYSCFG[STANDBY_INIT] to enable OCP master port
   //CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
 
-  // Pin Mux
-  // CT_CFG.GPCFG0 = 0;
+  // Route PRU1 R30/R31 to the GPO/GPI pads (general-purpose mode) so valve
+  // outputs on PRG0_PRU1_GPOx are driven by __R30. PRU0 sets the analogous
+  // gpcfg0 in pru0_main.c; without this __R30 never reaches the header pads.
+  CT_CFG.gpcfg1_reg_bit.pr1_pru1_gp_mux_sel = 0;
 
   // Memory
   memInit(mem);

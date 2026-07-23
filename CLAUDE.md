@@ -12,7 +12,7 @@ this platform over, e.g., an NVIDIA Jetson).
 
 | Branch   | Target board            | SoC                                   | Status                                          |
 |----------|-------------------------|---------------------------------------|-------------------------------------------------|
-| `main`   | BeagleBone Black / Blue | TI **AM335x** (1× Cortex-A8 + 2× PRU) | Stable — public/product, minimal.               |
+| `main`   | BeagleBone Black        | TI **AM335x** (1× Cortex-A8 + 2× PRU) | Stable — public/product, minimal.               |
 | `lab`    | BeagleBone Black        | TI **AM335x**                         | Research apps off `main` (additive only).       |
 | `am64x`  | **BeagleBone AI-64**    | TI **TDA4VM / J721E**                 | **This branch.** Active dev — heterogeneous compute. |
 
