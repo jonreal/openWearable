@@ -41,12 +41,19 @@
 uint32_t mcspiHlRev(uint32_t base);
 
 /* Soft-reset + master-mode init of channel 0 (full-duplex, EPOL active-low CS).
- * wl_bits = word length in bits (1..32, e.g. 8 or 16); clkdiv selects the SPI
- * clock from the 48 MHz functional clock via CLKG=1 + EXTCLK. */
-void mcspiInit(uint32_t base, uint8_t wl_bits, uint16_t clkdiv);
+ * wl_bits = word length in bits (1..32, e.g. 8/16/24); clkdiv selects the SPI
+ * clock from the functional clock via CLKG=1 + EXTCLK; mode = SPI mode 0..3
+ * (PHA = mode&1, POL = mode&2). */
+void mcspiInit(uint32_t base, uint8_t wl_bits, uint16_t clkdiv, uint8_t mode);
 
 /* One channel-0 transfer: write tx, poll EOT, return the received word. */
 uint32_t mcspiXfer(uint32_t base, uint32_t tx);
+
+/* Manual chip-select (CHCONF.FORCE) to hold CS low across a multi-word frame.
+ * mcspiFrameXfer asserts CS, exchanges n words full-duplex, then releases CS. */
+void mcspiCsAssert(uint32_t base);
+void mcspiCsRelease(uint32_t base);
+void mcspiFrameXfer(uint32_t base, const uint32_t* tx, uint32_t* rx, uint32_t n);
 
 /* Disable channel 0 (leaves the clock alone — owned by Linux/TISCI on J721E). */
 void mcspiCleanup(uint32_t base);

@@ -613,6 +613,17 @@
 		>;
 	};
 
+	/* CLKIN for the ADS131M08 (test-ads131m08): EHRPWM2_A on P9.14. Linux
+	 * (pwmchip1) generates the ~8.192 MHz clock; this only routes the pad. The PWM
+	 * enable + McSPI7 clock-pin are runtime (not DT-expressible) -- see the app's
+	 * adc-setup.sh. The manual SPI chip-select (P9.28 -> GPIO) also lives there,
+	 * to avoid clashing with the comm-bus McSPI7 CS0 in the shared pin groups. */
+	epwm2_clkin_pins_default: epwm2-clkin-default-pins {
+		pinctrl-single,pins = <
+			J721E_IOPAD(0x178, PIN_OUTPUT, 11) /* (U27) EHRPWM2_A P9.14 (ADS131M08 CLKIN) */
+		>;
+	};
+
 };
 
 &wkup_pmx0 {
@@ -1259,6 +1270,12 @@
 &icssg0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pru0_1_valve_pins_default>;
+};
+
+/* Route EHRPWM2_A to P9.14 for the ADS131M08 CLKIN (test-ads131m08). */
+&main_ehrpwm2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&epwm2_clkin_pins_default>;
 };
 
 //&icssg0 {

@@ -40,6 +40,7 @@ LIBOWPRU = $(LIB_DIR)/lib/libow_pru.a
 CSRC_DIR = $(OW_DIR)/library/a72/src
 PRU_CSRC_DIR = $(OW_DIR)/library/pru/src
 R5F_CSRC_DIR = $(OW_DIR)/library/r5f/src
+COMMON_CSRC_DIR = $(OW_DIR)/library/common/src
 
 # Main targets (PRU pair + one lockstep R5F core)
 TARGET = main
@@ -91,6 +92,18 @@ APP_R5F_SRC = r5floop.c
 
 # Main object (for main.c)
 MAIN_OBJ = $(BUILD_DIR)/$(TARGET).o
+
+# Header dependencies: rebuild every core's objects/firmware when a shared app
+# header changes. state.h is the cross-core shared-memory contract (PRU, R5F and
+# A72 all include it); without this, editing it left firmware stale and the cores
+# disagreed on the memory layout. This only ADDS a prerequisite -- recipes below
+# are unchanged.
+# This block's targets appear before `all:`, so pin the default goal explicitly.
+.DEFAULT_GOAL := all
+APP_HDRS = $(wildcard *.h)
+$(CPU_OBJ) $(APP_CPU_OBJ) $(MAIN_OBJ) $(APP_PRU_OBJ) \
+$(BUILD_DIR)/$(PRU0_TARGET).po $(BUILD_DIR)/$(PRU1_TARGET).po \
+$(BUILD_DIR)/$(R5F0_FW): $(APP_HDRS)
 
 # Compiler settings
 CC = gcc
@@ -171,7 +184,7 @@ $(BUILD_DIR)/$(PRU1_TARGET).elf: $(BUILD_DIR)/$(PRU1_TARGET).po $(APP_PRU_OBJ) $
 	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=1024 $(BUILD_DIR)/$(PRU1_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU) $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $@ ./PRU1_$(ARCH).cmd
 
 # Build R5F0 firmware (lockstep core: r5f0_main + app hooks + bus drivers + crt0; single GNU ld step)
-R5F_DRV_SRC = $(R5F_CSRC_DIR)/i2c_j721e.c
+R5F_DRV_SRC = $(COMMON_CSRC_DIR)/i2c_j721e.c
 $(BUILD_DIR)/$(R5F0_FW): $(R5F_CSRC_DIR)/$(R5F0_TARGET).c $(R5F_CSRC_DIR)/r5f_start.S $(R5F_DRV_SRC) $(APP_R5F_SRC) R5F0_$(ARCH).ld
 	@echo "$(C1) \n Linking r5f0... $(RESET)"
 	@mkdir -p $(BUILD_DIR)

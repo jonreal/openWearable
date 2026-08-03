@@ -10,6 +10,21 @@
 
 volatile uint32_t* r5f_debug_buff;
 
+/* Freestanding libc shims: even under -ffreestanding the compiler may emit
+ * memset/memcpy for aggregate init/assignment (e.g. a `= {0}` struct/array), and
+ * the R5F links -nostdlib. Minimal byte-wise versions, available to all R5F fw. */
+void* memset(void* s, int c, size_t n) {
+  unsigned char* p = (unsigned char*)s;
+  while (n--) *p++ = (unsigned char)c;
+  return s;
+}
+void* memcpy(void* d, const void* s, size_t n) {
+  unsigned char* dp = (unsigned char*)d;
+  const unsigned char* sp = (const unsigned char*)s;
+  while (n--) *dp++ = *sp++;
+  return d;
+}
+
 int main(void) {
   shared_mem_t* sm = (shared_mem_t*)(uintptr_t) global_sharedram_base;
   param_mem_t*  pm = (param_mem_t*)(uintptr_t)(global_sharedram_base + param_ram_offset);

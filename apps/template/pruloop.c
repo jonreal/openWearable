@@ -32,7 +32,7 @@ void Pru0Init(pru_mem_t* mem) {
   // debug_buff[2] = HL_REV; a sane non-zero value confirms the PRU reached the
   // controller through the interconnect/firewall. (Full-duplex loopback was
   // proven during bring-up -- see docs/COMM-BUS-LAYOUT.md.)
-  mcspiInit(MCSPI7_BASE, 8u, 200u);
+  mcspiInit(MCSPI7_BASE, 8u, 200u, 0u);
   debug_buff[2] = mcspiHlRev(MCSPI7_BASE);
 }
 
@@ -57,7 +57,7 @@ void Pru0Cleanup(void) {
 void Pru1Init(pru_mem_t* mem) {
   // pru0_1 hardware SPI bus = McSPI6 (0x2160000). Same driver, different base.
   // debug_buff[3] = HL_REV reach self-check.
-  mcspiInit(MCSPI6_BASE, 8u, 200u);
+  mcspiInit(MCSPI6_BASE, 8u, 200u, 0u);
   debug_buff[3] = mcspiHlRev(MCSPI6_BASE);
 }
 

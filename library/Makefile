@@ -26,6 +26,12 @@ PRU_CINC_DIR = -I$(LIB_DIR)/common/include -I$(LIB_DIR)/pru/include -I$(CGT_DIR)
 PRU_SRC = $(filter-out $(LIB_DIR)/pru/src/pru0_main.c $(LIB_DIR)/pru/src/pru1_main.c, $(wildcard $(LIB_DIR)/pru/src/*.c))
 PRU_OBJ = $(patsubst $(LIB_DIR)/pru/src/%,$(BUILD_DIR)/%,$(PRU_SRC:.c=.po))
 
+# Shared, core-agnostic J721E memmap drivers (library/common/src) the PRU archive
+# needs. Listed explicitly (not globbed) so R5F-only drivers in common/ are not
+# pulled into libow_pru.a. mcspi_j721e is used by the PRU comm-bus (McSPI7/6).
+COMMON_PRU_SRC = $(LIB_DIR)/common/src/mcspi_j721e.c
+COMMON_PRU_OBJ = $(patsubst $(LIB_DIR)/common/src/%,$(BUILD_DIR)/%,$(COMMON_PRU_SRC:.c=.po))
+
 # Libraries
 LIBOWPRU = $(TARGET_DIR)/libow_pru.a
 
@@ -52,7 +58,7 @@ prepare_build:
 # Build libow_pru.a - PRU drivers library
 libow_pru: $(LIBOWPRU)
 
-$(LIBOWPRU): $(PRU_OBJ)
+$(LIBOWPRU): $(PRU_OBJ) $(COMMON_PRU_OBJ)
 	@echo "$(C2) \n Building libow_pru.a... $(RESET)"
 	@mkdir -p $(TARGET_DIR)
 	$(AR) $(ARFLAGS) $@ $^
@@ -60,6 +66,12 @@ $(LIBOWPRU): $(PRU_OBJ)
 # Build PRU objects
 $(BUILD_DIR)/%.po: $(LIB_DIR)/pru/src/%.c
 	@echo "$(C2) \n Building PRU object: $@... $(RESET)"
+	@mkdir -p $(BUILD_DIR)
+	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -c -fe $@ $<
+
+# Build shared common/src drivers into the PRU archive (same clpru toolchain)
+$(BUILD_DIR)/%.po: $(LIB_DIR)/common/src/%.c
+	@echo "$(C2) \n Building common PRU object: $@... $(RESET)"
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -c -fe $@ $<
 
