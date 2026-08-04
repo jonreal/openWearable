@@ -184,7 +184,7 @@ $(BUILD_DIR)/$(PRU1_TARGET).elf: $(BUILD_DIR)/$(PRU1_TARGET).po $(APP_PRU_OBJ) $
 	$(PRU_CC) $(PRU_CFLAGS) -z --heap_size=1024 $(BUILD_DIR)/$(PRU1_TARGET).po $(APP_PRU_OBJ) $(LIBOWPRU) $(PRU_CLIB) -m $(BUILD_DIR)/$(PRU1_TARGET).map -o $@ ./PRU1_$(ARCH).cmd
 
 # Build R5F0 firmware (lockstep core: r5f0_main + app hooks + bus drivers + crt0; single GNU ld step)
-R5F_DRV_SRC = $(COMMON_CSRC_DIR)/mcspi_j721e.c $(COMMON_CSRC_DIR)/ads131m08.c $(COMMON_CSRC_DIR)/gpio_j721e.c
+R5F_DRV_SRC = $(COMMON_CSRC_DIR)/mcspi_j721e.c $(COMMON_CSRC_DIR)/gpio_j721e.c $(COMMON_CSRC_DIR)/epwm_j721e.c $(COMMON_CSRC_DIR)/ads131.c
 $(BUILD_DIR)/$(R5F0_FW): $(R5F_CSRC_DIR)/$(R5F0_TARGET).c $(R5F_CSRC_DIR)/r5f_start.S $(R5F_DRV_SRC) $(APP_R5F_SRC) R5F0_$(ARCH).ld
 	@echo "$(C1) \n Linking r5f0... $(RESET)"
 	@mkdir -p $(BUILD_DIR)

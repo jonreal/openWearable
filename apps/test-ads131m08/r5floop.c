@@ -1,35 +1,38 @@
-/* test-ads131m08 R5F hooks -- main_r5fss0 (lockstep) drives the ADS131M08 over
- * McSPI7 (memmap). R5f0Init brings up the SPI channel + resets the ADC + does the
- * reach self-check; R5f0UpdateState reads one conversion frame each (decimated)
- * tick into r5f_state, which PRU0 snapshots into the log ring.
+/* test-ads131m08 R5F hooks -- main_r5fss0 drives the ADS131M08 via the ads131
+ * device driver: SPI on McSPI7, GPIO chip-select on P9.28, and CLKIN generated
+ * on EHRPWM2 (P9.14) -- all in firmware. R5f0Init sets it up + reach self-check;
+ * R5f0UpdateState reads all 8 channels each (decimated) tick into r5f_state,
+ * which PRU0 snapshots into the log ring.
  *
- * Prereqs on the Linux side before running: McSPI7 clocked (runtime-PM pinned,
- * /dev/spidevX left unopened) and an external CLKIN on the ADC (fMOD = fCLKIN/2).
+ * Linux-side prereq (R5F can't enable J721E clocks): pin EHRPWM2 + McSPI7
+ * runtime-PM on before running -- see apps/test-ads131m08/adc-setup.sh.
 =============================================================================*/
 #include "r5floop.h"
 #include "mcspi_j721e.h"
 #include "gpio_j721e.h"
-#include "ads131m08.h"
+#include "epwm_j721e.h"
+#include "ads131.h"
 
-#define ADC_BASE     MCSPI7_BASE   // pru0_0 bus = McSPI7 (0x02170000), P9.29/30/31
-#define ADC_CLKDIV   200u          // SCLK divider (verify on scope; conservative)
-#define ADC_CS_BASE  GPIO1_BASE    // manual CS: P9.28 = main_gpio1 line 11
-#define ADC_CS_BIT   (1u << 11)
+static const ads131_cfg_t adc_cfg = {
+  .spi_base = MCSPI7_BASE,     // pru0_0 bus = McSPI7 (P9.29/30/31)
+  .sclk_div = 200u,            // SCLK divider (conservative)
+  .cs_base  = GPIO1_BASE,      // CS = P9.28 = main_gpio1 line 11
+  .cs_bit   = (1u << 11),
+  .cs_pad   = 0x0011C230u,     // P9.28 CTRL_MMR pad -> GPIO (self-contained remux)
+  .pwm_base = EPWM2_BASE,      // CLKIN = EHRPWM2_A on P9.14
+  .clkin_hz = 8192000u,        // ~8.192 MHz (TBPRD from 125 MHz TBCLK)
+};
 
 void R5f0Init(pru_mem_t* mem) {
-  // HL_REV != 0 proves the R5F reached McSPI7 through the interconnect/firewall.
-  mem->s->r5f_state.hlrev = mcspiHlRev(ADC_BASE);
-  // Configure SPI (24-bit, mode 1) + manual CS GPIO + RESET the ADC. (The ID it
-  // returns lands in `response` until the first conversion frame overwrites it.)
-  mem->s->r5f_state.response = ads131Init(ADC_BASE, ADC_CLKDIV, ADC_CS_BASE, ADC_CS_BIT);
+  mem->s->r5f_state.hlrev = mcspiHlRev(MCSPI7_BASE);   // McSPI7 reach self-check
+  mem->s->r5f_state.response = Ads131Init(&adc_cfg);   // ID (0x28xx expected)
 }
 
 void R5f0UpdateState(const r5f_view_t* view, r5f_io_t* io) {
-  ads131_frame_t f;
-  ads131ReadFrame(&f);
+  int32_t ch[8];
+  Ads131ReadAllChannels(ch);
   for (int i = 0; i < 8; i++)
-    io->s->adc[i] = f.ch[i];
-  io->s->response = f.response;
+    io->s->adc[i] = ch[i];
   io->s->r5fvar++;
 }
 
