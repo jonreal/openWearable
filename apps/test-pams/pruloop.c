@@ -12,10 +12,10 @@ volatile register uint32_t __R31;
 #define I2C_CH        2      // I2C2 @ 0x02020000 -> header P9.19 (SCL) / P9.20 (SDA)
 #define MUX_ADDR      0x70   // PCA9548 I2C address
 #define SENSOR_ADDR   0x28   // HSC/SSC pressure sensor I2C address
-#define RES_CHAN      5      // mux channel: reservoir sensor
-#define MUSCLE_CHAN   5      // mux channel: muscle sensor (set == RES_CHAN if only one sensor is wired)
-#define HP_PIN        2      // inflate valve -> R30.2 -> PRG0_PRU1_GPO2 (P8.43)
-#define LP_PIN        3      // deflate valve -> R30.3 -> PRG0_PRU1_GPO3 (P8.44)
+#define RES_CHAN      7      // mux channel: reservoir sensor
+#define MUSCLE_CHAN   1      //
+#define HP_PIN        2      // inflate valve -> R30.2 -> (P8.43)
+#define LP_PIN        3      // deflate valve -> R30.3 -> (P8.44)
 #define T_REFRACT     150    // refractory ticks after reaching target
 
 // Spare valve DO already pinmuxed for future use: R30.4 (GPO4/P8.41), R30.5 (GPO5/P8.42).
@@ -37,34 +37,31 @@ void Pru0Cleanup(void) {}
 // PRU1 -- PAM: I2C pressure + valve control
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
-  // NOTE: PamInitMuscle -> PamUpdate -> PressureSensorSample does an I2C read and
-  // will hang here if the I2C2 clock is off / the mux/sensor don't ACK. Ensure the
-  // controller is clocked (Linux keeps 2020000.i2c runtime-PM pinned) before start.
+
   i2c = I2cInit(I2C_CH);
   mux = MuxI2cInit(i2c, MUX_ADDR, PCA9548);
 
   reservoir = PamReservoirInit(PressureSensorInit(mux, RES_CHAN, SENSOR_ADDR));
 
-  // tau_in/tau_out are unused by PamActionSimple; a NULL filter -> pm = pm_raw.
-  pam = PamInitMuscle(PressureSensorInit(mux, MUSCLE_CHAN, SENSOR_ADDR),
-                      reservoir, HP_PIN, LP_PIN, 0, 0, T_REFRACT, 0);
-  PamSetPd(pam, 0);
+  //pam = PamInitMuscle(PressureSensorInit(mux, MUSCLE_CHAN, SENSOR_ADDR),
+  //                    reservoir, HP_PIN, LP_PIN, 0, 0, T_REFRACT, 0);
+  //PamSetPd(pam, 0);
 }
 
 void Pru1UpdateState(const pru_view_t* view, pru_io_t* io) {
-  PamSetPd(pam, view->p->Pd);                          // UI-commanded target
+  //PamSetPd(pam, view->p->Pd);                          // UI-commanded target
 
   PamReservoirUpdate(reservoir);
   io->s->p_res = PamReservoirGetPressure(reservoir);
 
-  PamActionSimple(pam);                                // bang-bang -> valve command u
-  PamUpdate(pam);                                      // sample muscle pressure
-  io->s->pam_state = PamGetState(pam);
+  //PamActionSimple(pam);                                // bang-bang -> valve command u
+  //PamUpdate(pam);                                      // sample muscle pressure
+  //io->s->pam_state = PamGetState(pam);
 }
 
 void Pru1UpdateControl(const pru_view_t* view, pru_io_t* io) {}
 
 void Pru1Cleanup(void) {
-  PamMuscleFree(pam);
-  PamReservoirFree(reservoir);
+  //PamMuscleFree(pam);
+  //PamReservoirFree(reservoir);
 }
