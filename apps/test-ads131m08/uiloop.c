@@ -76,7 +76,23 @@ int UiLoop(const pru_mem_t* pru_mem) {
   }
 }
 
+// Keep a peripheral's functional clock from autosuspending: the R5F drives
+// EHRPWM2 (CLKIN) and McSPI7 (SPI) registers directly but can't enable a J721E
+// clock, so Linux must hold them on. Doing it here -- before the R5F starts --
+// makes the binary self-contained (no adc-setup.sh needed).
+static void pin_clock_on(const char* dev) {
+  char path[128];
+  snprintf(path, sizeof(path), "/sys/bus/platform/devices/%s/power/control", dev);
+  FILE* f = fopen(path, "w");
+  if (f) { fputs("on\n", f); fclose(f); }
+  else   { printf("warning: could not pin clock for %s (run as root?)\n", dev); }
+}
+
 int PruLoadParams(const char* file, param_mem_t* param) {
+
+  // Hold the ADS131M08's CLKIN (EHRPWM2) and SPI (McSPI7) clocks on for the R5F.
+  pin_clock_on("3020000.pwm");   // EHRPWM2 -> CLKIN (P9.14)
+  pin_clock_on("2170000.spi");   // McSPI7  -> SPI
 
   // Defaults
   param->fs_hz = 1000;
