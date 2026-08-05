@@ -45,6 +45,9 @@ void Ads131ReadAllChannels(int32_t ch[ADS131_NCH]);
 /* Convenience: read a frame, return one channel. */
 int32_t Ads131Read(uint8_t channel);
 
+/* STATUS word (frame word0) captured by the last Ads131ReadAllChannels. */
+uint32_t Ads131LastStatus(void);
+
 /* Gain: per-channel (read-modify-write) and all-eight-at-once. */
 void Ads131SetGain(uint8_t channel, ads131_gain_t gain);
 void Ads131SetGainAll(const ads131_gain_t gain[ADS131_NCH]);

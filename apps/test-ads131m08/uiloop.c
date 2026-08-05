@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <string.h>
+#include <unistd.h>
 
 extern volatile sig_atomic_t input_ready;
 
@@ -76,10 +77,9 @@ int UiLoop(const pru_mem_t* pru_mem) {
   }
 }
 
-// Keep a peripheral's functional clock from autosuspending: the R5F drives
-// EHRPWM2 (CLKIN) and McSPI7 (SPI) registers directly but can't enable a J721E
-// clock, so Linux must hold them on. Doing it here -- before the R5F starts --
-// makes the binary self-contained (no adc-setup.sh needed).
+// The R5F drives the McSPI7 registers directly but can't enable a J721E functional
+// clock, so Linux must hold McSPI7's clock on (runtime-PM). Do it here, before the
+// R5F starts, so the binary stays self-contained (no setup script).
 static void pin_clock_on(const char* dev) {
   char path[128];
   snprintf(path, sizeof(path), "/sys/bus/platform/devices/%s/power/control", dev);
@@ -88,11 +88,54 @@ static void pin_clock_on(const char* dev) {
   else   { printf("warning: could not pin clock for %s (run as root?)\n", dev); }
 }
 
+static int pwm_write(const char* path, const char* val) {
+  FILE* f = fopen(path, "w");
+  if (!f) return -1;
+  fputs(val, f);
+  fclose(f);
+  return 0;
+}
+
+// Find the pwmchip index backing platform device `dev` (e.g. "3020000.pwm"), or -1.
+static int pwm_find_chip(const char* dev) {
+  for (int n = 0; n < 16; n++) {
+    char link[64], target[256];
+    snprintf(link, sizeof(link), "/sys/class/pwm/pwmchip%d/device", n);
+    ssize_t k = readlink(link, target, sizeof(target) - 1);
+    if (k < 0) continue;
+    target[k] = '\0';
+    const char* base = strrchr(target, '/');
+    base = base ? base + 1 : target;
+    if (strcmp(base, dev) == 0) return n;
+  }
+  return -1;
+}
+
+// Generate the ADS131M08 CLKIN on EHRPWM2_A (P9.14) with the Linux pwm framework.
+// The EHRPWM TBCLK is gated by pwm-tiehrpwm and can only be ungated by a userspace
+// consumer -- the R5F cannot do it. The pinmux (mode 6 = EHRPWM2_A) is set by the
+// DTB. EHRPWM2 = 3020000.pwm; channel 0 = EHRPWM2_A. 128 ns -> 7.8125 MHz at 50%
+// duty (within the ADS131M08 CLKIN spec for every PGA gain; see README.md).
+static void pwm_clkin_start(void) {
+  int chip = pwm_find_chip("3020000.pwm");
+  if (chip < 0) { printf("warning: EHRPWM2 (3020000.pwm) pwmchip not found\n"); return; }
+  char dir[48], path[80];
+  snprintf(dir, sizeof(dir), "/sys/class/pwm/pwmchip%d", chip);
+
+  snprintf(path, sizeof(path), "%s/pwm0", dir);
+  if (access(path, F_OK) != 0) {            // export channel 0 if not already
+    snprintf(path, sizeof(path), "%s/export", dir);
+    pwm_write(path, "0\n");
+  }
+  snprintf(path, sizeof(path), "%s/pwm0/period",     dir); pwm_write(path, "128\n");
+  snprintf(path, sizeof(path), "%s/pwm0/duty_cycle", dir); pwm_write(path, "64\n");
+  snprintf(path, sizeof(path), "%s/pwm0/enable",     dir); pwm_write(path, "1\n");
+}
+
 int PruLoadParams(const char* file, param_mem_t* param) {
 
-  // Hold the ADS131M08's CLKIN (EHRPWM2) and SPI (McSPI7) clocks on for the R5F.
-  pin_clock_on("3020000.pwm");   // EHRPWM2 -> CLKIN (P9.14)
-  pin_clock_on("2170000.spi");   // McSPI7  -> SPI
+  pin_clock_on("2170000.spi");   // McSPI7 SPI clock on for the R5F
+  pwm_clkin_start();             // ADS131M08 CLKIN on EHRPWM2_A (P9.14)
 
   // Defaults
   param->fs_hz = 1000;

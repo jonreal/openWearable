@@ -32,6 +32,7 @@
 #define UNPACK16(w) ((uint16_t)(((w) >> 8) & 0xFFFFu))
 
 static ads131_cfg_t s_cfg;
+static uint32_t      s_last_status;   /* frame word0 from the last ReadAllChannels */
 
 static void spin(volatile uint32_t n) { while (n) { --n; } }
 
@@ -82,7 +83,8 @@ uint16_t Ads131Init(const ads131_cfg_t* cfg)
   uint32_t tx[NWORD] = {0}, rx[NWORD] = {0};
   s_cfg = *cfg;
 
-  epwmInitClock(cfg->pwm_base, cfg->clkin_hz);          /* CLKIN                */
+  if (cfg->pwm_base)                                    /* CLKIN (0 = external) */
+    epwmInitClock(cfg->pwm_base, cfg->clkin_hz);
   pad_gpio_output(cfg->cs_pad);                         /* CS pad -> GPIO       */
   gpioInitOutput(cfg->cs_base, cfg->cs_bit);            /* CS idle high         */
   mcspiInit(cfg->spi_base, WLBITS, cfg->sclk_div, SPIMODE);  /* 24-bit, mode 1  */
@@ -98,8 +100,14 @@ void Ads131ReadAllChannels(int32_t ch[ADS131_NCH])
 {
   uint32_t tx[NWORD] = {0}, rx[NWORD] = {0};
   frame(tx, rx, NWORD);                                 /* NULL command         */
+  s_last_status = rx[0];                                /* STATUS word          */
   for (uint32_t i = 0u; i < ADS131_NCH; ++i)
     ch[i] = sext24(rx[1u + i]);
+}
+
+uint32_t Ads131LastStatus(void)
+{
+  return s_last_status;
 }
 
 int32_t Ads131Read(uint8_t channel)

@@ -1,16 +1,15 @@
 /* test-ads131m08 R5F hooks -- main_r5fss0 drives the ADS131M08 via the ads131
- * device driver: SPI on McSPI7, GPIO chip-select on P9.28, and CLKIN generated
- * on EHRPWM2 (P9.14) -- all in firmware. R5f0Init sets it up + reach self-check;
- * R5f0UpdateState reads all 8 channels each (decimated) tick into r5f_state,
- * which PRU0 snapshots into the log ring.
+ * device driver: SPI on McSPI7 + GPIO chip-select on P9.28, all in firmware.
+ * R5f0Init sets it up + reach self-check; R5f0UpdateState reads all 8 channels
+ * each (decimated) tick into r5f_state, which PRU0 snapshots into the log ring.
  *
- * Linux-side prereq (R5F can't enable J721E clocks): pin EHRPWM2 + McSPI7
- * runtime-PM on before running -- see apps/test-ads131m08/adc-setup.sh.
+ * CLKIN is NOT generated here: the J721E EHRPWM TBCLK is a Linux-owned clock the
+ * R5F cannot enable, so the A72 generates the ~7.8 MHz CLKIN on EHRPWM2_A (P9.14)
+ * with the pwm framework in PruLoadParams (uiloop.c). See README.md.
 =============================================================================*/
 #include "r5floop.h"
 #include "mcspi_j721e.h"
 #include "gpio_j721e.h"
-#include "epwm_j721e.h"
 #include "ads131.h"
 
 static const ads131_cfg_t adc_cfg = {
@@ -19,8 +18,8 @@ static const ads131_cfg_t adc_cfg = {
   .cs_base  = GPIO1_BASE,      // CS = P9.28 = main_gpio1 line 11
   .cs_bit   = (1u << 11),
   .cs_pad   = 0x0011C230u,     // P9.28 CTRL_MMR pad -> GPIO (self-contained remux)
-  .pwm_base = EPWM2_BASE,      // CLKIN = EHRPWM2_A on P9.14
-  .clkin_hz = 8192000u,        // ~8.192 MHz (TBPRD from 125 MHz TBCLK)
+  .pwm_base = 0u,              // CLKIN via Linux pwm (uiloop.c); R5F can't gate TBCLK
+  .clkin_hz = 0u,              // (unused when pwm_base == 0)
 };
 
 void R5f0Init(pru_mem_t* mem) {
