@@ -96,8 +96,13 @@ apps/bin/test-ads131m08          # add -v for per-record debug rows
 
 On start, `PruLoadParams`:
 1. pins the McSPI7 functional clock on (`2170000.spi`),
-2. enables CLKIN on EHRPWM2_A via the pwm framework (`3020000.pwm`, channel 0),
+2. brings up CLKIN on EHRPWM2_A — ungates the Linux-owned TBCLK via the pwm
+   framework, then programs EHRPWM2 directly (fixes the cold-boot `TBPRD=0` case).
+   **Fully self-contained; no setup script required.**
 3. sets `fs = 1 kHz`, `r5f_decimate = 10` → ADC sampled at 100 Hz.
+
+> `enable-pwm.sh` runs the same CLKIN bring-up standalone — handy to scope P9.14 or
+> enable CLKIN without starting the app.
 
 ---
 
