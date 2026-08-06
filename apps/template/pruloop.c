@@ -15,32 +15,16 @@
 
 #include "pruloop.h"
 
-
-
-#include "mcspi_j721e.h"   // J721E McSPI driver (pru0_0 bus = McSPI7)
-
-volatile register uint32_t __R30;
-volatile register uint32_t __R31;
-
 // ---------------------------------------------------------------------------
 // PRU0
 //
-// Edit user defined functions below
+// Skeleton: just spins a counter each tick. Add real-time I/O in the hooks.
 // ---------------------------------------------------------------------------
 void Pru0Init(pru_mem_t* mem) {
-  // pru0_0 hardware SPI bus = McSPI7 (0x2170000). Bring it up + reach self-check:
-  // debug_buff[2] = HL_REV; a sane non-zero value confirms the PRU reached the
-  // controller through the interconnect/firewall. (Full-duplex loopback was
-  // proven during bring-up -- see docs/COMM-BUS-LAYOUT.md.)
-  mcspiInit(MCSPI7_BASE, 8u, 200u, 0u);
-  debug_buff[2] = mcspiHlRev(MCSPI7_BASE);
 }
 
 void Pru0UpdateState(const pru_view_t* view, pru_io_t* io) {
-  //io->s->pru0var++;
-  debug_buff[1]++;
-
-  io->s->pru0var = debug_buff[1];
+  io->s->pru0var++;
 }
 
 void Pru0UpdateControl(const pru_view_t* view, pru_io_t* io) {
@@ -52,22 +36,12 @@ void Pru0Cleanup(void) {
 // ---------------------------------------------------------------------------
 // PRU1
 //
-// Edit user defined functions below
+// Skeleton: just spins a counter each tick. Add real-time I/O in the hooks.
 // ---------------------------------------------------------------------------
 void Pru1Init(pru_mem_t* mem) {
-  // pru0_1 hardware SPI bus = McSPI6 (0x2160000). Same driver, different base.
-  // debug_buff[3] = HL_REV reach self-check.
-  mcspiInit(MCSPI6_BASE, 8u, 200u, 0u);
-  debug_buff[3] = mcspiHlRev(MCSPI6_BASE);
 }
 
 void Pru1UpdateState(const pru_view_t* view, pru_io_t* io) {
-
-  // Pulse a few pins
-  if ((view->c->frame % 50) == 0) {
-    __R30 ^= (1 << 0);
-    __R30 ^= (1 << 1);
-  }
   io->s->pru1var++;
 }
 
@@ -76,4 +50,3 @@ void Pru1UpdateControl(const pru_view_t* view, pru_io_t* io) {
 
 void Pru1Cleanup(void) {
 }
-

@@ -5,10 +5,9 @@ core in the `Init / Update / Cleanup` lifecycle — **PRU0, PRU1, R5F, A72** —
 optional **C7x + MMA** neural-net inference. Copy it and fill in the per-core hooks.
 
 ## What it does
-- **PRU0/PRU1** — hard-real-time loop. pru0_0 brings up McSPI7 (**P9.28–31**),
-  pru0_1 brings up McSPI6 (**P9.21/P9.22**) as reach self-checks; PRU1 toggles
-  `R30[0:1]` as a heartbeat.
-- **R5F / A72** — lifecycle hooks + logging.
+- **PRU0/PRU1, R5F, A72** — each core runs the lifecycle and just increments its own
+  counter (`pru0var`, `pru1var`, `r5fvar`). **No peripherals are wired** — it's a
+  pure skeleton; add device bring-up in the hooks (a `test-spi` app comes later).
 - **C7x** (optional) — runs a TIDL MLP (16 in → 8 out); the A72 bridges features in
   and predictions out.
 
