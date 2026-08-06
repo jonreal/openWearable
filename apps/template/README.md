@@ -7,7 +7,7 @@ optional **C7x + MMA** neural-net inference. Copy it and fill in the per-core ho
 ## What it does
 - **PRU0/PRU1, R5F, A72** — each core runs the lifecycle and just increments its own
   counter (`pru0var`, `pru1var`, `r5fvar`). **No peripherals are wired** — it's a
-  pure skeleton; add device bring-up in the hooks (a `test-spi` app comes later).
+  pure skeleton; add device bring-up in the hooks.
 - **C7x** (optional) — runs a TIDL MLP (16 in → 8 out); the A72 bridges features in
   and predictions out.
 
