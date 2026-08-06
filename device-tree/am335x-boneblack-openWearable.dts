@@ -43,6 +43,12 @@
 			AM33XX_IOPAD(0x9a0, PIN_OUTPUT_PULLDOWN | MUX_MODE5)	  /* P9.42, MODE5, pr1_pru0_pru_r30_4 */
 			AM33XX_IOPAD(0x964, PIN_INPUT)	                        /* Unused P.42 */
 
+      AM33XX_IOPAD(0x0e0, PIN_OUTPUT_PULLDOWN | MUX_MODE5)    /* P8.27, MODE5, pr1_pru1_pru_r30_8 */
+      AM33XX_IOPAD(0x0e8, PIN_OUTPUT_PULLDOWN | MUX_MODE5)    /* P8.28, MODE5, pr1_pru1_pru_r30_10 */
+      AM33XX_IOPAD(0x0e4, PIN_OUTPUT_PULLDOWN | MUX_MODE5)    /* P8.29, MODE5, pr1_pru1_pru_r30_9 */
+      AM33XX_IOPAD(0x0ec, PIN_OUTPUT_PULLDOWN | MUX_MODE5)    /* P8.30, MODE5, pr1_pru1_pru_r30_11 */
+
+      /* LCD -- BOOT PINS, can give issues when connected during boot */
 			AM33XX_IOPAD(0x8a0, PIN_OUTPUT_PULLDOWN | MUX_MODE5)	  /* P8.45, MODE5, pr1_pru1_pru_r30_0 */
 			AM33XX_IOPAD(0x8a4, PIN_OUTPUT_PULLDOWN | MUX_MODE5)	  /* P8.46, MODE5, pr1_pru1_pru_r30_1 */
 			AM33XX_IOPAD(0x8a8, PIN_OUTPUT_PULLDOWN | MUX_MODE5)	  /* P8.43, MODE5, pr1_pru1_pru_r30_2 */
