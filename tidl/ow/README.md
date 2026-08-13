@@ -9,13 +9,13 @@ EMG transformer to come.
 > **Why its own top-level dir (not `library/`)?** The C7x is the **only** core whose firmware
 > cannot be built on the board: TI's C7000 codegen (`cl7x`) is x86-only, and the build needs the
 > multi-GB TI PSDK. So this firmware is **built off-board on an x86 Linux host and committed as a
-> prebuilt binary**; the board just symlinks + loads it. (The on-board-buildable cores — PRU now,
+> prebuilt binary**; the board just installs it (`make install`) + loads it. (The on-board-buildable cores — PRU now,
 > C66/R5F later — live in `library/`.) Everything openWearable *can* own lives here; only TI's SDK
 > + compilers stay external, pinned in [`tidl/vision-apps/MANIFEST.md`](../tidl/vision-apps/MANIFEST.md).
 
 ## Layout
 ```
-tidl/
+tidl/ow/
   README.md            ← you are here (the full runbook)
   Makefile             the WHOLE build — cl7x only, no fleet/concerto (see "Rebuild" below)
   src/                 the 4 sources compiled into the firmware (+ provenance)
@@ -38,7 +38,7 @@ tidl/
 |---|---|---|
 | **Rebuild firmware** | x86_64 Linux | TI PSDK-RTOS 10.01.00.04 + **only** the C7000 CGT (`cl7x` 4.1.0) |
 | **Compile a model** | x86_64 Linux | edgeai-tidl-tools (Docker) — see `models/README.md` |
-| **Deploy + run** | the board (A72) | nothing extra — symlink the committed ELF, reboot |
+| **Deploy + run** | the board (A72) | nothing extra — `make -C tidl/ow install`, reboot |
 
 ---
 
@@ -58,12 +58,12 @@ tidl/
 
 ## Quick start — deploy the prebuilt firmware (no x86 host needed)
 The repo is checked out on the board at `/root/openWearable`, and both firmwares are committed, so
-deploy is just a symlink + reboot. **This swaps the C7x firmware — a board state change; get the
+deploy is one `make install` + reboot. **This swaps the C7x firmware — a board state change; get the
 usual go-ahead first.**
 ```bash
 # on the board (A72) -- recommended (variable-size) image:
-ln -sf /root/openWearable/tidl/ow/firmware/vx_app_rtos_linux_c7x_1.out /lib/firmware/j7-c71_0-fw
-#   ...or the legacy fixed-16x8 image:
+make -C /root/openWearable/tidl/ow install      # -> j7-c71_0-fw = vx_app_rtos_linux_c7x_1.out
+#   ...or the legacy fixed-16x8 image (manual override, no make target):
 # ln -sf /root/openWearable/tidl/ow/firmware/vx_app_rtos_linux_c7x_1.out.fixed-16x8 /lib/firmware/j7-c71_0-fw
 sync && reboot
 # after it comes back, confirm the C7x is up:
