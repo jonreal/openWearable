@@ -44,8 +44,8 @@ file (authored by us — not a patch against TI's); the kernel is a stock apt in
 |---|---|---|---|
 | Device tree (ours) | vision_apps carveouts; DSP tick-timer reserve; SA2UL disable; mcu2_0 31MB merge; R5F split-mode | `device-tree/k3-j721e-boneai64-openWearable-tidl.dts` | ✅ in-tree |
 | Kernel | REMOTEPROC_CDEV | apt install (no patch) | n/a |
-| Firmware (TI patch) | `Sciclient_abiCheck` ABI-major relax | `third_party/ti/patches/` + `build-firmware.sh` | ✅ recipe in-tree |
-| Firmware (TI flag) | `BUILD_ENABLE_ETHFW=no` (mcu2_0) | `third_party/ti/build-firmware.sh` | ✅ in-tree |
+| Firmware (TI patch) | `Sciclient_abiCheck` ABI-major relax | `tidl/vision-apps/patches/` + `build-firmware.sh` | ✅ recipe in-tree |
+| Firmware (TI flag) | `BUILD_ENABLE_ETHFW=no` (mcu2_0) | `tidl/vision-apps/build-firmware.sh` | ✅ in-tree |
 
 Debug-only diagnostics from bring-up (a GTC-clock-query skip and breadcrumb stores) are
 **deliberately excluded** from this production overlay — they were artifacts of debugging the

@@ -6,7 +6,7 @@
 #
 # RUN ON AN x86_64 LINUX BUILD HOST — the C7x (cl7x) and C66 (cl6x) compilers have no arm64 build.
 # Prereqs: TI PSDK-RTOS 10.01.00.04 + the CGTs installed (see MANIFEST.md). Outputs land in
-# third_party/ti/out/. Deploy + run per docs/C7X-TIDL.md §2.3–§4.
+# tidl/vision-apps/out/. Deploy + run per docs/C7X-TIDL.md §2.3–§4.
 #
 # ── Set these before calling (shown with the values that work on the reference build host).
 #    Only TI_SDK_HOME is mandatory; the rest auto-detect under it but are listed so you can

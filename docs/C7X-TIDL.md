@@ -14,8 +14,8 @@ numbered parts below.
    `~/tidl` runtime ([Part 1](#1-a72-runtime-libraries)), and clone `edgeai-tidl-tools` + drop in a
    compiled model artifact ([Part 3](#3-compiling-a-model-artifact-x86-host)).
 2. **Host prep (x86 Linux)** — install TI PSDK-RTOS 10.1 + the C7x/C66/R5F CGTs
-   ([MANIFEST](../third_party/ti/MANIFEST.md) — incl. the easily-missed `libtinfo.so.5`).
-3. **Build the fleet (x86)** — `third_party/ti/build-firmware.sh` applies the one ABI patch +
+   ([MANIFEST](../tidl/vision-apps/MANIFEST.md) — incl. the easily-missed `libtinfo.so.5`).
+3. **Build the fleet (x86)** — `tidl/vision-apps/build-firmware.sh` applies the one ABI patch +
    the ETHFW-off flag and builds the 5 `*.out` ELFs ([Part 2](#2-the-vision_apps-firmware-fleet)).
 4. **Deploy (x86 → board)** — copy the 5 ELFs to `/lib/firmware`, repoint the `j7-*` symlinks,
    reboot ([§2.3](#23-deploy-to-the-board)).
@@ -139,7 +139,7 @@ venv (stock onnxruntime). The `TIDLExecutionProvider` only exists in the `~/tidl
 The fleet firmware is **not** what TI ships in the stock Debian image — the stock `.tisdk`
 firmware keeps the cores offline, and the 10.1 SDK build needs several patches to boot on this
 board against its stock boot firmware. The patches are tiny and fully captured as a
-**patch-overlay** in [`../third_party/ti/`](../third_party/ti/): a pinned manifest + `.patch`
+**patch-overlay** in [`../tidl/vision-apps/`](../tidl/vision-apps/): a pinned manifest + `.patch`
 files + a build driver. You build the TI SDK once, overlaid; the multi-GB SDK source stays out
 of this repo.
 
@@ -164,7 +164,7 @@ patch against anything), and the kernel is a stock apt install. All of it is con
 **2. Kernel** — stock apt install, no patch: `linux-image-6.12.57-ti-arm64-r64`
 (`CONFIG_REMOTEPROC_CDEV=y`, for the `/dev/remoteproc*` cdev the runtime needs).
 
-**3. TI firmware patch-overlay** — [`third_party/ti/`](../third_party/ti/) (the *only* actual
+**3. TI firmware patch-overlay** — [`tidl/vision-apps/`](../tidl/vision-apps/) (the *only* actual
 patches to TI source):
 
 | Patch | Why |
@@ -194,13 +194,13 @@ export LD_LIBRARY_PATH=$HOME/locallibs:$LD_LIBRARY_PATH      # a dir with libtin
                                                             # (R5F) links ncurses5; modern distros
                                                             # ship only libtinfo.so.6
 
-third_party/ti/build-firmware.sh        # applies the ABI patch + ETHFW-off, builds the 5 ELFs
+tidl/vision-apps/build-firmware.sh        # applies the ABI patch + ETHFW-off, builds the 5 ELFs
 ```
 The script **preflights `tiarmclang`** and stops early with a clear hint if `libtinfo.so.5` is
 missing (otherwise the R5F cores fail mid-build as a cryptic "ELF not found"). See
-[`third_party/ti/README.md`](../third_party/ti/README.md) and
-[`MANIFEST.md`](../third_party/ti/MANIFEST.md) for toolchain versions and build flags. Outputs are
-the 5 `vx_app_rtos_linux_*.out` ELFs in `third_party/ti/out/`.
+[`tidl/vision-apps/README.md`](../tidl/vision-apps/README.md) and
+[`MANIFEST.md`](../tidl/vision-apps/MANIFEST.md) for toolchain versions and build flags. Outputs are
+the 5 `vx_app_rtos_linux_*.out` ELFs in `tidl/vision-apps/out/`.
 
 ### 2.3 Deploy to the board
 
@@ -343,7 +343,7 @@ Expected: `libtidl_onnxrt_EP loaded`, `Final number of subgraphs created are : 1
   is untouched. The stock `.tisdk` firmware symlinks and the recovery boot label (stock DTB) let
   you fall back at any point.
 
-## 7. The openWearable fleet-free C7x firmware (`tidl/`)
+## 7. The openWearable fleet-free C7x firmware (`tidl/ow/`)
 
 Sections 1–4 stand up the **full vision_apps fleet** to run TIDL via the TIOVX graph (the resnet
 proof). openWearable's own inference path goes further: a **fleet-free** C7x firmware that runs
@@ -351,11 +351,11 @@ proof). openWearable's own inference path goes further: a **fleet-free** C7x fir
 A72↔C7x shared-memory mailbox. It reuses the proven C7x boot from this fleet bring-up but replaces
 the `appInit()` chain with `ow_c7x_tidl_run()`.
 
-It lives in **[`tidl/`](../tidl/)** with its own complete runbook (build → deploy → run → debug),
+It lives in **[`tidl/ow/`](../tidl/ow/)** with its own complete runbook (build → deploy → run → debug),
 the committed prebuilt firmware (deploy is a symlink — no x86 host needed), and the hello-world
-model. It builds **standalone** — `make -C tidl/`, `cl7x` only, no fleet/concerto — see
-[`tidl/README.md`](../tidl/README.md).
+model. It builds **standalone** — `make -C tidl/ow/`, `cl7x` only, no fleet/concerto — see
+[`tidl/ow/README.md`](../tidl/ow/README.md).
 
 > One TI-test-harness bug gated this for ~14 board cycles: `tidl_rt.c`'s `pFxnUnLock` callback
 > `memset`s `0xDA` over the L1/L2/L3 scratch on every engine critical-section exit, corrupting the
-> live MMA/DRU stream mid-`algProcess`. Fix: vendored in `tidl/src/tidl_rt.c` (see its PROVENANCE).
+> live MMA/DRU stream mid-`algProcess`. Fix: vendored in `tidl/ow/src/tidl_rt.c` (see its PROVENANCE).

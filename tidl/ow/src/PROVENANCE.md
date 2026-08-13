@@ -1,4 +1,4 @@
-# tidl/src — provenance
+# tidl/ow/src — provenance
 
 These are the four sources the Makefile compiles into the C7x firmware's "application" objects.
 Two are openWearable's own; two are TI PSDK-RTOS 10.01.00.04 files we vendor **because we modify

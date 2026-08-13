@@ -1,6 +1,6 @@
 /* openWearable: VENDORED from PSDK-RTOS 10.01.00.04 vision_apps/platform/j721e/rtos/c7x_1/main.c.
  * OW change: appMain runs ow_c7x_tidl_run() instead of appInit()/appRun(); DDR_SHARED_MEM mapped
- * non-cacheable. See tidl/src/PROVENANCE.md. Original TI header below. */
+ * non-cacheable. See tidl/ow/src/PROVENANCE.md. Original TI header below. */
 /*
  *
  * Copyright (c) 2018 Texas Instruments Incorporated

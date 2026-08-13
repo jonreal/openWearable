@@ -29,7 +29,7 @@
 
 extern volatile sig_atomic_t sigexit;   // set by the SIGINT handler (ui.c)
 
-// --- A72<->C7x DDR mailbox -- MUST match tidl/src/ow_c7x_tidl.c -------------
+// --- A72<->C7x DDR mailbox -- MUST match tidl/ow/src/ow_c7x_tidl.c -------------
 #define MB_BASE     0xB8000000UL
 #define MB_LEN      0x02200000UL        // ~34 MB window (covers NET/IO/INPUT/OUTPUT)
 #define MB_READY    0x00000000          // A72->C7x kick   (RDY_MAGIC)

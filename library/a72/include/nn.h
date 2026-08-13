@@ -21,7 +21,7 @@
 // A72 <-> C7x TIDL inference plumbing (generic; the per-app feature/result
 // logic lives in the NnForward()/NnInterpret() hooks, see nnloop.h).
 //
-// NnStart() opens the C7x DDR mailbox (tidl/src/ow_c7x_tidl.c protocol), stages
+// NnStart() opens the C7x DDR mailbox (tidl/ow/src/ow_c7x_tidl.c protocol), stages
 // the compiled net + io descriptor, calls the app NnInit(), and spawns a
 // free-running worker thread. Each cycle the thread calls NnForward() to pack
 // features, runs one C7x invoke, converts the float output to fix16, and

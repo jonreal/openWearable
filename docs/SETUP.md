@@ -175,7 +175,7 @@ nvim ~/.vimrc      # then run :PluginInstall
 The C7x + MMA accelerator runs neural nets through TI's **TIDL** stack (three pieces: the A72
 runtime libs, the vision_apps firmware fleet, and per-model artifacts). The full reproducible
 bring-up — build the runtime, build + deploy the firmware fleet via the
-[`third_party/ti`](../third_party/ti/) patch-overlay, compile a model, and run the resnet18
+[`tidl/vision-apps`](../tidl/vision-apps/) patch-overlay, compile a model, and run the resnet18
 proof — is its own guide:
 
 ➡️ **[C7X-TIDL.md](C7X-TIDL.md)**

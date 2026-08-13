@@ -77,7 +77,7 @@ push/pull round-trip first; sync back to the Mac Studio afterward.
 
 **Repo docs split:** `docs/` = public, reproducible setup manuals (no personal hostnames).
 `notes/` = internal planning + live board/host inventory — **git-ignored, never published**.
-`third_party/ti/` = the TI SDK **patch-overlay** (pinned manifest + patches that reproduce the
+`tidl/vision-apps/` = the TI SDK **patch-overlay** (pinned manifest + patches that reproduce the
 C7x/vision_apps firmware without vendoring TI's multi-GB source).
 
 1. `cd library && make` → builds `libow_pru.a`.

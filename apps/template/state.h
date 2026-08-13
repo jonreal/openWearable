@@ -8,7 +8,7 @@
 
 // --- NN inference IO (C7x + MMA TIDL) ---------------------------------------
 // Model tensor sizes -- must match the compiled TIDL net and the host tooling
-// (tidl/host/ow_c7x_infer.py N_IN/N_OUT).
+// (tidl/ow/host/ow_c7x_infer.py N_IN/N_OUT).
 #define N_FEAT 16   // model input  width
 #define N_OUT  8    // model output width
 

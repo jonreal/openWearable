@@ -1,9 +1,9 @@
-# tidl/firmware — prebuilt C7x firmware (deploy artifacts)
+# tidl/ow/firmware — prebuilt C7x firmware (deploy artifacts)
 
 This dir holds **two** committed, ready-to-deploy openWearable fleet-free C7x TIDL firmwares. They
 are checked in (rather than built on demand) because the C7x toolchain is x86-only — committing the
 ELF lets the board **deploy by symlink with no build host** (see `../README.md` §Deploy). Rebuild
-with `make -C tidl/` on an x86 host when the source changes.
+with `make -C tidl/ow/` on an x86 host when the source changes.
 
 | File | I/O sizing | sha256 (head) | Bytes |
 |---|---|---|---|
@@ -15,7 +15,7 @@ Both are byte-size-identical: a 1024-float `s_in`/`s_out` does not grow the imag
 prior image, frozen for rollback + provenance.
 
 ## Provenance (both)
-- **Built by:** `tidl/Makefile` (standalone — `cl7x` only, no fleet/concerto) from `tidl/src/*`
+- **Built by:** `tidl/ow/Makefile` (standalone — `cl7x` only, no fleet/concerto) from `tidl/ow/src/*`
   over **TI PSDK-RTOS 10.01.00.04**, C7000 CGT 4.1.0.LTS. The build is reproducible (no embedded
   timestamps): rebuilding `vx_app_rtos_linux_c7x_1.out` from the committed source reproduces
   `f7fdfa27` exactly.
@@ -35,7 +35,7 @@ prior image, frozen for rollback + provenance.
   engine/erratum assumption. At 1024 the image is byte-size-identical to the proven 16/8 build and
   runs clean. **Raising the cap requires re-validation on the board, not just a recompile.**
 - **Verified:** BeagleBone AI-64 (`boneai64-0`), first invoke after a warm reboot — default 16/8
-  tiny MLP (`tidl/models/ow_tiny_{net,io}.bin`) runs end-to-end, `max|abs err| 0.0449` vs float ref
+  tiny MLP (`tidl/ow/models/ow_tiny_{net,io}.bin`) runs end-to-end, `max|abs err| 0.0449` vs float ref
   (int8 quant), `create_st=0 invoke_st=0 status=0 invoke#=1`.
 
 ## The legacy image (`vx_app_rtos_linux_c7x_1.out.fixed-16x8`)

@@ -1,4 +1,4 @@
-# tidl/Makefile — standalone build of the openWearable fleet-free C7x TIDL firmware.
+# tidl/ow/Makefile — standalone build of the openWearable fleet-free C7x TIDL firmware.
 #
 # This is the WHOLE build. It does NOT use vision_apps' fleet build (no concerto, no mcu2_0/
 # c6x_x, and crucially NO R5F/C66/A72 toolchains). It compiles, with cl7x only:
@@ -8,9 +8,10 @@
 # kernel, mmalib, TIDL) + our two linker scripts. Result: the same firmware concerto produces.
 #
 # USAGE (x86_64 Linux host with the TI PSDK + C7000 CGT installed):
-#     make -C tidl/ PSDK=/path/to/ti-processor-sdk-rtos-j721e-evm-10_01_00_04
-#   or edit the PSDK/CGT defaults below, then:  make -C tidl/
-# Output: tidl/firmware/vx_app_rtos_linux_c7x_1.out  (stripped; scp to board, symlink j7-c71_0-fw).
+#     make -C tidl/ow/ PSDK=/path/to/ti-processor-sdk-rtos-j721e-evm-10_01_00_04
+#   or edit the PSDK/CGT defaults below, then:  make -C tidl/ow/
+# Output: tidl/ow/firmware/vx_app_rtos_linux_c7x_1.out  (stripped). Deploy on the board with
+# 'make -C tidl/ow install' -- symlinks the committed prebuilt as j7-c71_0-fw (no host build needed).
 
 # ── EDIT THESE (or pass on the command line / environment) ──────────────────────────────────────
 PSDK ?= $(HOME)/psdk-rtos/ti-processor-sdk-rtos-j721e-evm-10_01_00_04
@@ -22,6 +23,7 @@ SRC    := $(HERE)/src
 BUILD  := $(HERE)/build
 LNKDIR := $(HERE)/linker
 OUT    := $(HERE)/firmware/vx_app_rtos_linux_c7x_1.out
+FWDIR  := /lib/firmware
 CL7X   := $(CGT)/bin/cl7x
 AR7X   := $(CGT)/bin/ar7x
 STRIP  := $(CGT)/bin/strip7x
@@ -96,8 +98,15 @@ LNKCMDS := "$(LNKDIR)/j721e_linker_freertos.cmd" "$(LNKDIR)/linker_mem_map.cmd"
 LFLAGS  := -z --warn_sections --reread_libs --rom_model
 
 # ── rules ───────────────────────────────────────────────────────────────────────────────────────
-.PHONY: all clean
+.PHONY: all clean install
 all: $(OUT)
+
+# Deploy on the board: symlink the committed prebuilt ELF as the C7x firmware.
+# (No build here -- cl7x is x86-only; the prebuilt in firmware/ is committed, so this
+#  works on the board straight from a clone. reboot to load.)
+install:
+	ln -sf $(OUT) $(FWDIR)/j7-c71_0-fw
+	@echo "installed j7-c71_0-fw -> $(OUT)  (reboot to load)"
 
 $(BUILD) $(BUILD)/au $(dir $(OUT)):
 	@mkdir -p $@

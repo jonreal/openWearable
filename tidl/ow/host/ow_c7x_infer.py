@@ -2,7 +2,7 @@
 """openWearable A72-side host tool for the fleet-free C7x TIDL mailbox (Path-Y step 2).
 
 Stages a compiled TIDL net + input into DDR_SHARED_MEM via /dev/mem, kicks the C7x, and reads
-back the float output. The C7x firmware side is tidl/src/ow_c7x_tidl.c. This proves the
+back the float output. The C7x firmware side is tidl/ow/src/ow_c7x_tidl.c. This proves the
 A72<->C7x shared-memory mailbox that becomes the cpuloop transport. Pure stdlib (no numpy) so it
 runs on the board's minimal Python.
 

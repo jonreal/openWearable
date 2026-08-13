@@ -22,6 +22,6 @@ utils/logdecode/logdecode
 notes/
 
 # TI SDK patch-overlay: the *recipe* (MANIFEST, patches/, build scripts) is tracked under
-# third_party/ti/ ; the multi-GB TI source checkouts and build outputs are not.
-third_party/ti/src/
-third_party/ti/out/
+# tidl/vision-apps/ ; the multi-GB TI source checkouts and build outputs are not.
+tidl/vision-apps/src/
+tidl/vision-apps/out/

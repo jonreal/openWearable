@@ -1,4 +1,4 @@
-# tidl/models — the hello-world nets + how TIDL artifacts are compiled
+# tidl/ow/models — the hello-world nets + how TIDL artifacts are compiled
 
 The C7x firmware is **model-agnostic** (it loads a compiled net at runtime over the mailbox).
 This dir holds two minimal nets and the flow that produced their artifacts:
@@ -25,7 +25,7 @@ This dir holds two minimal nets and the flow that produced their artifacts:
 
 ## How the artifacts were compiled (x86 + edgeai-tidl-tools, in the TIDL Docker container)
 Artifact compile (like the firmware build) needs TI's x86 TIDL tools — it is **not** done on the
-board. Reference flow (edgeai-tidl-tools `10_01_00_02`, **SOC `am68pa`** per `third_party/ti/MANIFEST.md`),
+board. Reference flow (edgeai-tidl-tools `10_01_00_02`, **SOC `am68pa`** per `tidl/vision-apps/MANIFEST.md`),
 repo bind-mounted at `/home/root`:
 
 ```bash
@@ -47,7 +47,7 @@ The 32→4 model run on the **variable-size firmware** (`vx_app_rtos_linux_c7x_1
 after a fresh boot, with the host staging `INLEN=32`/`OUTLEN=4`:
 
 ```bash
-python3 tidl/host/ow_c7x_infer.py tidl/models/ow_mlp32x4_net.bin tidl/models/ow_mlp32x4_io.bin \
+python3 tidl/ow/host/ow_c7x_infer.py tidl/ow/models/ow_mlp32x4_net.bin tidl/ow/models/ow_mlp32x4_io.bin \
         --n-in 32 --n-out 4
 # create_st=0 invoke_st=0 status=0 invoke#=1
 # output    = [0.0000, 0.0000, 0.7479, 0.0000]

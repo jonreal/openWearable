@@ -1,6 +1,6 @@
 /* openWearable: VENDORED from PSDK-RTOS 10.01.00.04 c7x-mma-tidl/ti_dl/test/src/tidl_rt.c.
  * OW change: removed the test harness's pFxnUnLock 0xDA scratch-corruption + restored real
- * HwiP_disable/restore (the bug that stalled the DRU). See tidl/src/PROVENANCE.md. TI header below. */
+ * HwiP_disable/restore (the bug that stalled the DRU). See tidl/ow/src/PROVENANCE.md. TI header below. */
 /*
 *
 * Copyright (c) {2015 - 2020} Texas Instruments Incorporated
