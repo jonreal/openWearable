@@ -26,6 +26,12 @@ PRU_CINC_DIR = -I$(LIB_DIR)/common/include -I$(LIB_DIR)/pru/include -I$(CGT_DIR)
 PRU_SRC = $(filter-out $(LIB_DIR)/pru/src/pru0_main.c $(LIB_DIR)/pru/src/pru1_main.c, $(wildcard $(LIB_DIR)/pru/src/*.c))
 PRU_OBJ = $(patsubst $(LIB_DIR)/pru/src/%,$(BUILD_DIR)/%,$(PRU_SRC:.c=.po))
 
+# Cross-core source: device drivers whose chip protocol is platform neutral, so
+# the same file serves both branches (mirrors the am64x common/src layout). On
+# AM335x the only real-time core is the PRU, so these link into libow_pru.a.
+COMMON_SRC = $(wildcard $(LIB_DIR)/common/src/*.c)
+COMMON_OBJ = $(patsubst $(LIB_DIR)/common/src/%,$(BUILD_DIR)/%,$(COMMON_SRC:.c=.po))
+
 # Libraries
 LIBOWPRU = $(TARGET_DIR)/libow_pru.a
 
@@ -52,7 +58,7 @@ prepare_build:
 # Build libow_pru.a - PRU drivers library
 libow_pru: $(LIBOWPRU)
 
-$(LIBOWPRU): $(PRU_OBJ)
+$(LIBOWPRU): $(PRU_OBJ) $(COMMON_OBJ)
 	@echo "$(C2) \n Building libow_pru.a... $(RESET)"
 	@mkdir -p $(TARGET_DIR)
 	$(AR) $(ARFLAGS) $@ $^
@@ -60,6 +66,12 @@ $(LIBOWPRU): $(PRU_OBJ)
 # Build PRU objects
 $(BUILD_DIR)/%.po: $(LIB_DIR)/pru/src/%.c
 	@echo "$(C2) \n Building PRU object: $@... $(RESET)"
+	@mkdir -p $(BUILD_DIR)
+	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -c -fe $@ $<
+
+# Build cross-core objects
+$(BUILD_DIR)/%.po: $(LIB_DIR)/common/src/%.c
+	@echo "$(C2) \n Building common object: $@... $(RESET)"
 	@mkdir -p $(BUILD_DIR)
 	$(PRU_CC) $(PRU_CFLAGS) $(PRU_CINC_DIR) -c -fe $@ $<
 
@@ -74,4 +86,5 @@ debug:
 	@echo " BUILD_DIR = $(BUILD_DIR)"
 	@echo " TARGET_DIR = $(TARGET_DIR)"
 	@echo " PRU_SRC = $(PRU_SRC)"
+	@echo " COMMON_SRC = $(COMMON_SRC)"
 	@echo " PRU_OBJ = $(PRU_OBJ)"
