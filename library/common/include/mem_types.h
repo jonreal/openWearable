@@ -25,7 +25,7 @@
 
 // Debug pins
 #define PRU0_DEBUG_PIN  5
-#define PRU1_DEBUG_PIN  8
+#define PRU1_DEBUG_PIN  0
 
 // Structures ----------------------------------------------------------------
 
