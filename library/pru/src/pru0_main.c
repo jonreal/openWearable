@@ -33,6 +33,13 @@ volatile register uint32_t __R30;
 volatile register uint32_t __R31;
 volatile uint32_t* debug_buff;
 
+// Deadline for the PRU<->PRU seq barrier: if the peer stops advancing its seq (a
+// wedge the per-driver bounds didn't catch, or an unanticipated one), fail-stop
+// instead of spinning forever. ~tens of ms of spins -- far above any legitimate
+// one-tick wait (~hundreds of us), so it never false-trips; verified by a
+// no-false-fault run. See notes/comm-hardening-plan.md (Item 4).
+static const uint32_t PEER_WAIT_BUDGET = 2000000u;
+
 // Prototypes -----------------------------------------------------------------
 void initialize(pru_mem_t* mem);
 void cleanup(void);
@@ -103,11 +110,18 @@ int main(void) {
     // Estimate
     Pru0UpdateState(&view, &io);
 
-    // Barrier: publish state-done seq, wait for pru1 control-done
+    // Barrier: publish state-done seq, wait for pru1 control-done (bounded --
+    // a wedged peer that stops advancing pru1_seq must fail-stop, not hang us).
     mem.s->pru0_seq = n;
     debugPinLow();
+    uint32_t bw = 0;
     while (((int32_t)(mem.s->pru1_seq - n) < 0)
-           && (mem.s->arm & ARM_RUN) && !mem.s->fault.raised);
+           && (mem.s->arm & ARM_RUN) && !mem.s->fault.raised) {
+      if (++bw > PEER_WAIT_BUDGET) {
+        ErrorRaise(ERR_PRU_PEER_TIMEOUT, n);   // peer wedged -> fail-stop both cores
+        break;
+      }
+    }
      debugPinHigh();
     if (!(mem.s->arm & ARM_RUN) || mem.s->fault.raised)
       break;

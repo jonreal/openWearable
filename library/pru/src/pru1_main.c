@@ -49,6 +49,11 @@ extern far char __PRU_PARAM;
 extern far char __PRU_LUTAB;
 extern far char __PRU_SHAREDMEM;
 
+// Deadline for the PRU<->PRU seq barrier (must match pru0_main): a peer that
+// stops advancing its seq fail-stops instead of hanging us. See
+// notes/comm-hardening-plan.md (Item 4).
+static const uint32_t PEER_WAIT_BUDGET = 2000000u;
+
 // Main ----------------------------------------------------------------------
 int main(void) {
   pru_count_t counter = {0, 0};
@@ -87,10 +92,16 @@ int main(void) {
     // Estimate
     Pru1UpdateState(&view, &io);
 
-    // Barrier: wait for pru0 state-done
+    // Barrier: wait for pru0 state-done (bounded -- wedged peer -> fail-stop).
     debugPinLow();
+    uint32_t bw = 0;
     while (((int32_t)(mem.s->pru0_seq - n) < 0)
-           && (mem.s->arm & ARM_RUN) && !mem.s->fault.raised);
+           && (mem.s->arm & ARM_RUN) && !mem.s->fault.raised) {
+      if (++bw > PEER_WAIT_BUDGET) {
+        ErrorRaise(ERR_PRU_PEER_TIMEOUT, n);
+        break;
+      }
+    }
     debugPinHigh();
     if (!(mem.s->arm & ARM_RUN) || mem.s->fault.raised)
       break;
