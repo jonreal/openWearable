@@ -21,6 +21,7 @@
 #include "hw_hsi2c.h"
 #include "hsi2c.h"
 #include "i2cdriver.h"
+#include "error.h"
 
 extern volatile uint32_t* debug_buff;
 
@@ -34,9 +35,45 @@ static void I2cClearInterrupts(uint32_t regmap)
   HWREG(regmap + 0x30) = 0x7FFF;
 }
 
+static const uint32_t I2C_WAIT_BUDGET = 20000u;  // spin cap; fires only on a fault
+
+// Bounded wait for an interrupt-status flag. Returns ERR_NONE, or a fault code
+// on a peripheral error (NACK/AL/AERR/ROVR) or budget expiry.
+static int I2cWaitFlag(uint32_t regmap, uint32_t flag)
+{
+  uint32_t n = 0;
+  while (!(I2CMasterIntStatusEx(regmap, flag))) {
+    if (I2CMasterErr(regmap))
+      return ERR_I2C_NACK;
+    if (++n > I2C_WAIT_BUDGET)
+      return ERR_I2C_TIMEOUT;
+  }
+  return ERR_NONE;
+}
+
+// Bounded wait for the bus to go free.
+static int I2cWaitBusFree(uint32_t regmap)
+{
+  uint32_t n = 0;
+  while (I2CMasterBusBusy(regmap)) {
+    if (++n > I2C_WAIT_BUDGET)
+      return ERR_I2C_TIMEOUT;
+  }
+  return ERR_NONE;
+}
+
+// Record a fault on the handle and abort the transaction cleanly.
+static void I2cFault(i2c_t* i2c, int err)
+{
+  i2c->last_err = err;
+  I2CMasterStop(i2c->regmap);
+  I2cClearInterrupts(i2c->regmap);
+}
+
 i2c_t* I2cInit(uint8_t channel)
 {
   i2c_t* i2c = malloc(sizeof(i2c_t));
+  i2c->last_err = 0;
   switch (channel) {
     case 1 :
       i2c->regmap = SOC_I2C_1_REGS;
@@ -283,8 +320,10 @@ void I2cTxByte(const i2c_t* i2c, uint8_t addr, uint8_t reg, uint8_t tx)
   I2cClearInterrupts(i2c->regmap);
 }
 
-void I2cTxByteNoReg(const i2c_t* i2c, uint8_t addr, uint8_t tx)
+void I2cTxByteNoReg(i2c_t* i2c, uint8_t addr, uint8_t tx)
 {
+  int err;
+
   I2cClearInterrupts(i2c->regmap);
 
   /* Slave address */
@@ -301,14 +340,14 @@ void I2cTxByteNoReg(const i2c_t* i2c, uint8_t addr, uint8_t tx)
                                   | I2C_INT_RECV_READY
                                   | I2C_INT_ADRR_READY_ACESS);
 
-  /* Make sure bus is free */
-  while(I2CMasterBusBusy(i2c->regmap));
+  /* Make sure bus is free (bounded) */
+  if ((err = I2cWaitBusFree(i2c->regmap))) { I2cFault(i2c, err); return; }
 
   /* Start condition */
   I2CMasterStart(i2c->regmap);
 
-  /* Wait for transmit ready */
-  while(!(I2CMasterIntStatusEx(i2c->regmap, I2C_INT_TRANSMIT_READY)));
+  /* Wait for transmit ready (bounded) */
+  if ((err = I2cWaitFlag(i2c->regmap, I2C_INT_TRANSMIT_READY))) { I2cFault(i2c, err); return; }
 
   /* Write payload (tx) to fifo */
   I2CMasterDataPut(i2c->regmap, tx);
@@ -316,8 +355,8 @@ void I2cTxByteNoReg(const i2c_t* i2c, uint8_t addr, uint8_t tx)
   /* Clear int */
   I2CMasterIntClearEx(i2c->regmap, I2C_INT_TRANSMIT_READY);
 
-  /* Wait for registers ready */
-  while(!(I2CMasterIntStatusEx(i2c->regmap, I2C_INT_ADRR_READY_ACESS)));
+  /* Wait for registers ready (bounded) */
+  if ((err = I2cWaitFlag(i2c->regmap, I2C_INT_ADRR_READY_ACESS))) { I2cFault(i2c, err); return; }
 
   /* Clear int */
   I2CMasterIntClearEx(i2c->regmap, I2C_INT_ADRR_READY_ACESS);
@@ -328,10 +367,11 @@ void I2cTxByteNoReg(const i2c_t* i2c, uint8_t addr, uint8_t tx)
   I2cClearInterrupts(i2c->regmap);
 }
 
-void I2cRxBurstNoReg(const i2c_t* i2c,
+void I2cRxBurstNoReg(i2c_t* i2c,
                 uint8_t addr, uint16_t len, uint8_t *buffer)
 {
   uint16_t i = 0;
+  int err;
 
   I2cClearInterrupts(i2c->regmap);
 
@@ -354,8 +394,8 @@ void I2cRxBurstNoReg(const i2c_t* i2c,
 
   while(I2CDataCountGet(i2c->regmap) != 0){
 
-    /* Wait for receive ready */
-    while(!(I2CMasterIntStatusEx(i2c->regmap, I2C_INT_RECV_READY)));
+    /* Wait for receive ready (bounded) */
+    if ((err = I2cWaitFlag(i2c->regmap, I2C_INT_RECV_READY))) { I2cFault(i2c, err); return; }
 
     buffer[i++] = I2CMasterDataGet(i2c->regmap);
 
@@ -363,8 +403,8 @@ void I2cRxBurstNoReg(const i2c_t* i2c,
     I2CMasterIntClearEx(i2c->regmap, I2C_INT_RECV_READY);
   }
 
-  /* Wait for registers ready */
-  while(!(I2CMasterIntStatusEx(i2c->regmap, I2C_INT_ADRR_READY_ACESS)));
+  /* Wait for registers ready (bounded) */
+  if ((err = I2cWaitFlag(i2c->regmap, I2C_INT_ADRR_READY_ACESS))) { I2cFault(i2c, err); return; }
 
   /* Clear int */
   I2CMasterIntClearEx(i2c->regmap, I2C_INT_ADRR_READY_ACESS);

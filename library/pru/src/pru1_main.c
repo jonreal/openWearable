@@ -56,48 +56,57 @@ int main(void) {
 
   initialize(&mem);
 
+  // fault reporting: bind the shared fault record, the enable bit, and the
+  // live tick counter so ErrorRaise() can fail-stop from deep in the drivers.
+  ErrorInit(&mem.s->fault, &counter.frame);
+
   // Hook handles: a const view (read-only) + a mutable io surface. The stable
   // pointers are set once here; io.s is repointed to the current slot each tick.
   pru_view_t view = { &counter, mem.p, mem.l };
-  pru_io_t   io   = { NULL, &mem.s->pru_ctl };
+  pru_io_t   io   = { NULL, &mem.s->arm, &mem.s->pru1 };
 
-  // wait till enabled
-  while (mem.s->pru_ctl.bit.shdw_enable == 0);
+  // publish readiness, wait for A8 enable (arm RUN)
+  mem.s->pru1_seq = 0;
+  mem.s->pru1 = PRU_READY;
+  while (!(mem.s->arm & ARM_RUN));
   debugPinLow();
 
+  uint32_t n = 0;
+
   // Control Loop
-  while (mem.s->pru_ctl.bit.shdw_enable) {
+  while ((mem.s->arm & ARM_RUN) && !mem.s->fault.raised) {
 
     // Poll of IEP timer interrupt
     while ((CT_INTC.SECR0 & (1 << 7)) == 0);
 
     // Pre bookkeeping
     debugPinHigh();
+    n++;
     io.s = &mem.s->state[counter.index];          // this tick's slot
 
     // Estimate
     Pru1UpdateState(&view, &io);
 
-    // Wait for pru0 to be done
+    // Barrier: wait for pru0 state-done
     debugPinLow();
-    while (!(mem.s->pru_ctl.bit.pru0_done));
+    while (((int32_t)(mem.s->pru0_seq - n) < 0)
+           && (mem.s->arm & ARM_RUN) && !mem.s->fault.raised);
     debugPinHigh();
-    mem.s->pru_ctl.bit.pru0_done = 0;
+    if (!(mem.s->arm & ARM_RUN) || mem.s->fault.raised)
+      break;
 
     // Control
     Pru1UpdateControl(&view, &io);
 
-    // Post bookkeeping
-    mem.s->pru_ctl.bit.pru1_done = 1;
+    // Post bookkeeping (publish control-done seq)
+    mem.s->pru1_seq = n;
     updateCounters(&counter);
     while (CT_INTC.SECR0 & (1 << 7));
     debugPinLow();
   }
   debugPinLow();
 
-  // make sure nothing hangs
-  mem.s->pru_ctl.bit.pru0_done = 0;
-  mem.s->pru_ctl.bit.pru1_done = 0;
+  // (owned-words handshake is single-writer; nothing to unwind)
 
   cleanup();
   __halt();

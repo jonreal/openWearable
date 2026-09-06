@@ -70,16 +70,19 @@ int main(void) {
   // Hook handles: a const view (read-only) + a mutable io surface. The stable
   // pointers are set once here; io.s is repointed to the current slot each tick.
   pru_view_t view = { &counter, mem.p, mem.l };
-  pru_io_t   io   = { NULL, &mem.s->pru_ctl };
+  pru_io_t   io   = { NULL, &mem.s->arm, &mem.s->pru0 };
 
-  // wait till enabled
-  while (mem.s->pru_ctl.bit.enable == 0);
-  mem.s->pru_ctl.bit.shdw_enable = mem.s->pru_ctl.bit.enable;
+  // publish readiness, wait for A8 enable (arm RUN)
+  mem.s->pru0_seq = 0;
+  mem.s->pru0 = PRU_READY;
+  while (!(mem.s->arm & ARM_RUN));
   clearIepInterrupt();
   startTimer();
 
+  uint32_t n = 0;
+
   // Control Loop
-  while (mem.s->pru_ctl.bit.shdw_enable) {
+  while ((mem.s->arm & ARM_RUN) && !mem.s->fault.raised) {
 
     // Poll for IEP timer interrupt
     while ((CT_INTC.SECR0 & (1 << 7)) == 0);
@@ -87,19 +90,21 @@ int main(void) {
     // Pre bookkeeping
     clearTimerFlag();
     debugPinHigh();
-    mem.s->pru_ctl.bit.shdw_enable = mem.s->pru_ctl.bit.enable;
+    n++;
     mem.s->state[counter.index].frame = counter.frame;
     io.s = &mem.s->state[counter.index];          // this tick's slot
 
     // Estimate
     Pru0UpdateState(&view, &io);
 
-    // Wait for pru1 to be done
-    mem.s->pru_ctl.bit.pru0_done = 1;
+    // Barrier: publish state-done seq, wait for pru1 control-done
+    mem.s->pru0_seq = n;
     debugPinLow();
-    while(!(mem.s->pru_ctl.bit.pru1_done));
+    while (((int32_t)(mem.s->pru1_seq - n) < 0)
+           && (mem.s->arm & ARM_RUN) && !mem.s->fault.raised);
      debugPinHigh();
-    mem.s->pru_ctl.bit.pru1_done = 0;
+    if (!(mem.s->arm & ARM_RUN) || mem.s->fault.raised)
+      break;
 
     // Control
     Pru0UpdateControl(&view, &io);
@@ -115,9 +120,7 @@ int main(void) {
  }
   debugPinLow();
 
-  // ensure nothing hangs
-  mem.s->pru_ctl.bit.pru0_done = 0;
-  mem.s->pru_ctl.bit.pru1_done = 0;
+  // (owned-words handshake is single-writer; nothing to unwind)
 
   cleanup();
   __halt();

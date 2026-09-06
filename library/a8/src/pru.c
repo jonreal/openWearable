@@ -71,7 +71,7 @@ int PruMemMap(pru_mem_t* pru_mem) {
     pru_mem->p->debug_buff[i] = 0;
   }
 
-  PruCtlReset(&pru_mem->s->pru_ctl);
+  PruCtlReset(pru_mem->s);
 
   char buff[1024] = {0,};
   PruSprintMalloc(pru_mem, buff);
@@ -303,8 +303,9 @@ int PruCleanup(void) {
 //
 // Input:   pointer to pru control stuct (pru_ctl_t).
 // ---------------------------------------------------------------------------
-void PruCtlReset(pru_ctl_t* ctl) {
-  ctl->reg = 0x00;
+void PruCtlReset(shared_mem_t* s) {
+  s->arm = 0; s->pru0 = 0; s->pru1 = 0;
+  s->pru0_seq = 0; s->pru1_seq = 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -333,11 +334,11 @@ void PruSprintMalloc(const pru_mem_t* pru_mem, char* buff) {
 //
 //  This function sets the enbable bit in the flow bit feild to 1 (enable).
 // ---------------------------------------------------------------------------
-void PruEnable(int en, pru_ctl_t* ctl) {
+void PruEnable(int en, shared_mem_t* s) {
   if (en == 1)
-    ctl->bit.enable = 1;
+    s->arm |= ARM_RUN;
   else
-    ctl->bit.enable = 0;
+    s->arm &= ~ARM_RUN;
 }
 
 // ---------------------------------------------------------------------------

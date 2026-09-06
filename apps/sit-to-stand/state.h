@@ -34,5 +34,9 @@ typedef struct {
   uint32_t Ttrial;
 } param_mem_t;
 
+// Owned-words command/signal bits (app-specific; bits 8+).
+enum { CMD_TRIAL      = 1u << 8 };   // A8->PRU (arm):  start a trial
+enum { SIG_TRIAL_DONE = 1u << 8 };   // PRU->A8 (pru1): trial complete
+
 
 #endif

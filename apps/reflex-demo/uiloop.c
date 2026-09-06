@@ -94,7 +94,6 @@ int UiLoop(const pru_mem_t* pru_mem) {
           scanf(" %f", &input_float);
           pru_mem->p->P0 = fix16_from_float(input_float);
           UiPrintMenu(pru_mem);
-          UiSetPruCtlBit(pru_mem,2);
           break;
         }
 

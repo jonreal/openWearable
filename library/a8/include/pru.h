@@ -26,9 +26,9 @@ int PruInit(char* suffix);
 int PruWriteFirmware(char* suffix);
 int PruRestart(void);
 int PruCleanup(void);
-void PruCtlReset(pru_ctl_t* ctl);
+void PruCtlReset(shared_mem_t* s);
 void PruSprintMalloc(const pru_mem_t* pru_mem, char* buff);
-void PruEnable(int en, pru_ctl_t* ctl);
+void PruEnable(int en, shared_mem_t* s);
 void PruPrintDebugBuffer(const volatile uint32_t* db);
 int PruLoadLut(char* file, lut_mem_t* l);
 

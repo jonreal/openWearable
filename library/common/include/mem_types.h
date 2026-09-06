@@ -18,6 +18,7 @@
 
 #include <stddef.h>
 #include "state.h"
+#include "error.h"
 
 #define PRU_CTRL_BASE     0x00022000
 //#define STATE_BUFF_LEN    149
@@ -29,24 +30,29 @@
 
 // Structures ----------------------------------------------------------------
 
-// Flow control
-typedef union {
-  volatile uint16_t reg;
-  volatile struct {
-    unsigned enable : 1;            // bit 0 (set by ARM and shadowed)
-    unsigned pru0_done : 1;         // bit 1 (set by pru0, read/reset by pru1)
-    unsigned pru1_done : 1;         // bit 2 (set by pru1, read/reset by pru0)
-    unsigned shdw_enable : 1;       // bit 3 (shawdow reg. for enable)
-    unsigned utility : 12;          // 12 bits for user defined things
- } bit;
-} pru_ctl_t;
+// Owned-words signaling labels (enum, not #define). Explicit masks: this struct
+// is a clpru<->gcc shared-memory ABI, so no bitfields. App command/signal bits
+// use 8..30 (named per app in its state.h); bit 31 avoided (int enum, --c99).
+enum arm_bit {            // written only by the A8
+  ARM_RUN = 1u << 0,      // enable the control loop
+};
+enum pru_bit {            // written only by the owning PRU (pru0 / pru1)
+  PRU_READY = 1u << 0,    // driver + app init complete
+  PRU_FAULT = 1u << 1,    // reserved; fault today via shared_mem_t.fault
+};
 
 // Shared Memory -> mapped to SRAM
 typedef struct {
   volatile uint32_t cbuff_index;
   state_t state[STATE_BUFF_LEN];
   cpudata_t cpudata;
-  pru_ctl_t pru_ctl;
+  volatile error_t fault;      // latched fault (fail-stop); ARM reads .raised
+  // Owned-words signaling: ONE writer per word; every core reads all of it.
+  volatile uint32_t arm;       // A8-owned  : ARM_RUN + A8->PRU commands
+  volatile uint32_t pru0;      // PRU0-owned: PRU_READY/FAULT + signals
+  volatile uint32_t pru1;      // PRU1-owned: PRU_READY/FAULT + signals
+  volatile uint32_t pru0_seq;  // PRU0-owned: monotonic tick barrier
+  volatile uint32_t pru1_seq;  // PRU1-owned: monotonic tick barrier
 } shared_mem_t;
 
 // Lookuptable

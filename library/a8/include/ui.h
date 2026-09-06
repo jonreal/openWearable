@@ -55,11 +55,11 @@ void UiStopAndSaveLog(void);
 
 void UiWelcome(void);
 void UiPollForUserInput(void);
-int UiGetPruCtlBit(const pru_mem_t* pru_mem, unsigned char n);
-void UiSetPruCtlBit(const pru_mem_t* pru_mem, unsigned char n);
-void UiClearPruCtlBit(const pru_mem_t* pru_mem, unsigned char n);
-void UiPollPruCtlBit(const pru_mem_t* pru_mem, unsigned char n,
-                     unsigned char value);
+void UiSetCmd(const pru_mem_t* pru_mem, uint32_t mask);    // A8->PRU: assert command
+void UiClearCmd(const pru_mem_t* pru_mem, uint32_t mask);  // A8->PRU: deassert command
+int  UiGetCmd(const pru_mem_t* pru_mem, uint32_t mask);    // read own command bit
+int  UiSignaled(const pru_mem_t* pru_mem, uint32_t mask);  // PRU->A8: any core signalled?
+void UiPollSignal(const pru_mem_t* pru_mem, uint32_t mask, int value); // block until signal==value
 
 int UiLogging(void);
 

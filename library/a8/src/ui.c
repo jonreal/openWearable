@@ -59,8 +59,12 @@ static void UiTimerCallback(int sig) {
   //  RosPubPublish(uidata.ros, uidata.rosbuffer);
   //}
 
-  if (uidata.flag.udppublish)
+  if (uidata.flag.udppublish) {
     UdpPublish(uidata.log, uidata.udp);
+    static unsigned ow_scope_hb = 0;
+    if ((ow_scope_hb++ % 200) == 0)     // ~1 Hz schema heartbeat for late joiners
+      UdpPublishSchema(uidata.udp);
+  }
 
   CpuLoop(uidata.cpudata);
 
@@ -193,30 +197,27 @@ void UiWelcome(void) {
   getchar();
 }
 
-int UiGetPruCtlBit(const pru_mem_t* pru_mem, unsigned char n) {
-  return ((pru_mem->s->pru_ctl.bit.utility & (1 << n)) == (1 << n));
+// A8->PRU commands (A8 owns the arm word): set/clear/read own command bits.
+void UiSetCmd(const pru_mem_t* pru_mem, uint32_t mask) {
+  pru_mem->s->arm |= mask;
+}
+void UiClearCmd(const pru_mem_t* pru_mem, uint32_t mask) {
+  pru_mem->s->arm &= ~mask;
+}
+int UiGetCmd(const pru_mem_t* pru_mem, uint32_t mask) {
+  return (pru_mem->s->arm & mask) != 0;
 }
 
-void UiSetPruCtlBit(const pru_mem_t* pru_mem, unsigned char n) {
-  pru_mem->s->pru_ctl.bit.utility |= (1 << n);
+// PRU->A8 signals (PRUs own pru0/pru1): read (OR both cores) / block until value.
+int UiSignaled(const pru_mem_t* pru_mem, uint32_t mask) {
+  return ((pru_mem->s->pru0 | pru_mem->s->pru1) & mask) != 0;
 }
-
-void UiClearPruCtlBit(const pru_mem_t* pru_mem, unsigned char n) {
-  pru_mem->s->pru_ctl.bit.utility &= ~(1 << n);
-}
-
-void UiPollPruCtlBit(const pru_mem_t* pru_mem, unsigned char n,
-                    unsigned char value) {
+void UiPollSignal(const pru_mem_t* pru_mem, uint32_t mask, int value) {
   while (1) {
     if (sigexit)
       break;
-    if (value == 1) {
-      if ((pru_mem->s->pru_ctl.bit.utility & (1 << n)) == (1 << n))
-        break;
-    } else {
-      if (!((pru_mem->s->pru_ctl.bit.utility & (1 << n)) == (1 << n)))
-        break;
-    }
+    if (UiSignaled(pru_mem, mask) == (value != 0))
+      break;
   }
 }
 

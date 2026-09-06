@@ -18,19 +18,30 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <stdint.h>
 #include "log.h"
 
 #define REMOTE_SERVER_PORT 1500
 #define MAX_PACKET_SIZE 1024
 
+// Framed-binary scope protocol (see notes/scope-architecture.md + gui/scope.py).
+// Header (little-endian, 12 bytes): magic[2]='OW' ver:u8 kind:u8 schema_id:u32 seq:u32
+#define OW_SCOPE_VER          1
+#define OW_SCOPE_KIND_DATA    0
+#define OW_SCOPE_KIND_SCHEMA  1
+#define OW_SCOPE_HEADER_SIZE  12
+
 typedef struct {
   int sd, rc, i;
   struct sockaddr_in cliAddr, remoteServAddr;
   struct hostent *h;
+  uint32_t seq;         // monotonic DATA-frame sequence (host-side drop detection)
+  uint32_t schema_id;   // stable id of the active ow_schema[] layout
   char buff[MAX_PACKET_SIZE];
 } udp_t;
 
 udp_t* UdpInit(const char* myhostname);
-void UdpPublish(const log_t* log, udp_t* udp);
+void UdpPublish(const log_t* log, udp_t* udp);   // sends one binary DATA frame
+void UdpPublishSchema(udp_t* udp);               // sends the '#fields:' SCHEMA frame
 
 #endif

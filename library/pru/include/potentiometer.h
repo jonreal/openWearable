@@ -17,13 +17,16 @@
 #define _POT_H_
 
 #include <stdint.h>
+#include "filter.h"              // iir_filt_t + FiltIir (same filter as pam_t)
 
 typedef struct{
   uint8_t adc_ch;
-  volatile uint32_t value;
+  iir_filt_t* filt;              // optional IIR filter (NULL = none), like pam_t
+  volatile uint32_t value_raw;   // raw ADC sample
+  volatile uint32_t value;       // filtered (or raw if no filter)
 } potentiometer_t;
 
-potentiometer_t* PotentiometerInit(uint8_t adc_ch);
+potentiometer_t* PotentiometerInit(uint8_t adc_ch, iir_filt_t* filter);
 void PotentiometerUpdate(potentiometer_t* pot);
 void PotentiometerFree(potentiometer_t* pot);
 

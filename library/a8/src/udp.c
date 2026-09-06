@@ -18,7 +18,28 @@
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
+#include <stdint.h>
 #include "format.h"
+
+// FNV-1a 32-bit: a stable schema id from the '#fields:' text. The host listener
+// keys DATA frames to the last SCHEMA frame's id, so only stability matters here
+// (the algorithm need not match the host's).
+static uint32_t ScopeFnv1a32(const char* s, size_t n) {
+  uint32_t h = 2166136261u;
+  for (size_t i = 0; i < n; i++) { h ^= (uint8_t) s[i]; h *= 16777619u; }
+  return h;
+}
+
+// Write the 12-byte little-endian frame header; returns bytes written.
+static int ScopeWriteHeader(uint8_t* buf, uint8_t kind,
+                            uint32_t schema_id, uint32_t seq) {
+  buf[0] = 'O'; buf[1] = 'W';
+  buf[2] = OW_SCOPE_VER;
+  buf[3] = kind;
+  memcpy(buf + 4, &schema_id, 4);   // ARM A8 is little-endian == wire order
+  memcpy(buf + 8, &seq, 4);
+  return OW_SCOPE_HEADER_SIZE;
+}
 
 
 udp_t* UdpInit(const char* myhostname) {
@@ -62,15 +83,34 @@ udp_t* UdpInit(const char* myhostname) {
     exit(1);
   }
 
+  // Precompute the scope schema id from the active '#fields:' layout.
+  FormatLogSchema(udp->buff);
+  udp->schema_id = ScopeFnv1a32(udp->buff, strlen(udp->buff));
+  udp->seq = 0;
+
   return udp;
 }
 
+// One binary DATA frame: [header][FormatLogRecord bytes] for the newest ring slot.
 void UdpPublish(const log_t* log, udp_t* udp) {
-  udp->buff[0] = '\0';
-  int i = log->cbuff->end; // print from end of buff
-  FormatSprintPublishState(&log->pru_mem->s->state[i % STATE_BUFF_LEN],
-                          udp->buff);
-  udp->rc = sendto(udp->sd, udp->buff, MAX_PACKET_SIZE, 0,
-      (struct sockaddr *) &(udp->remoteServAddr),sizeof(udp->remoteServAddr));
+  uint8_t* p = (uint8_t*) udp->buff;
+  int n = ScopeWriteHeader(p, OW_SCOPE_KIND_DATA, udp->schema_id, udp->seq);
+  int i = log->cbuff->end;   // most-recent ring slot
+  FormatLogRecord(&log->pru_mem->s->state[i % STATE_BUFF_LEN], p + n);
+  int len = n + FormatLogRecordBytes();
+  udp->rc = sendto(udp->sd, udp->buff, len, 0,
+      (struct sockaddr *) &(udp->remoteServAddr), sizeof(udp->remoteServAddr));
+  udp->seq++;
+}
+
+// One SCHEMA frame: [header][ASCII '#fields:' text] so late-joining listeners
+// self-configure. Sent at startup and as a low-rate heartbeat (see uiloop).
+void UdpPublishSchema(udp_t* udp) {
+  uint8_t* p = (uint8_t*) udp->buff;
+  int n = ScopeWriteHeader(p, OW_SCOPE_KIND_SCHEMA, udp->schema_id, 0);
+  FormatLogSchema((char*) (p + n));
+  int len = n + (int) strlen((char*) (p + n));
+  udp->rc = sendto(udp->sd, udp->buff, len, 0,
+      (struct sockaddr *) &(udp->remoteServAddr), sizeof(udp->remoteServAddr));
 }
 

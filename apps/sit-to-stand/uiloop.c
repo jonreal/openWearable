@@ -83,9 +83,10 @@ int UiLoop(const pru_mem_t* pru_mem) {
           // Data collection loop
           printf("\t\tTrial collection ongoing...\n");
           UiStartLog();
-          UiSetPruCtlBit(pru_mem, 0);
+          UiSetCmd(pru_mem, CMD_TRIAL);
 
-          UiPollPruCtlBit(pru_mem, 0, 0);
+          UiPollSignal(pru_mem, SIG_TRIAL_DONE, 1);
+          UiClearCmd(pru_mem, CMD_TRIAL);
           UiStopAndSaveLog();
 
           trial_count = n;   // advance only after a completed trial

@@ -24,6 +24,13 @@ typedef struct {
   i2cmux_t* mux;
   uint8_t mux_channel;
   uint8_t i2c_address;
+  // Decimation (sensor owns "how often am I sampled"): hit the bus every
+  // `decimate` ticks, staggered by `phase`; skip ticks return the held value.
+  uint32_t decimate;
+  uint32_t phase;
+  uint32_t cnt;
+  volatile fix16_t last;    // last decoded value, held across skip ticks
+  volatile uint8_t fresh;   // 1 if this tick did a real read (for fault judging)
 } pressure_sensor_t;
 
 // Public
@@ -31,6 +38,8 @@ pressure_sensor_t* PressureSensorInit(i2cmux_t* mux,
                                       uint8_t mux_channel,
                                       uint8_t i2c_address);
 void PressureSensorFree(pressure_sensor_t* sensor);
-fix16_t PressureSensorSample(const pressure_sensor_t* sensor);
+void PressureSensorSetDecimate(pressure_sensor_t* sensor,
+                               uint32_t decimate, uint32_t phase);
+fix16_t PressureSensorSample(pressure_sensor_t* sensor);
 
 #endif /* _HSCSANN150PG2A3_H_ */

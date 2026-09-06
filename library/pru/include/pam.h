@@ -52,6 +52,7 @@ typedef struct {
   iir_filt_t* filt;
   uint32_t T_refract;
   volatile uint32_t cnt;
+  volatile uint32_t drop_count;     // consecutive dropped sensor reads
   volatile pam_fsm_t fsm;
   volatile pam_state_t s;
 } pam_t;

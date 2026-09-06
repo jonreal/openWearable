@@ -52,15 +52,15 @@ void Pru0Init(pru_mem_t* mem) {
 
   // pot1 - adc ch 0
   // pot2 - adc ch 1
-  pot1 = PotentiometerInit(0);
-  pot2 = PotentiometerInit(1);
+  pot1 = PotentiometerInit(0, FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
+  pot2 = PotentiometerInit(1, FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
 
 }
 
 void Pru0UpdateState(const pru_view_t* view, pru_io_t* io) {
 
   PotentiometerUpdate(pot1);
-  //PotentiometerUpdate(pot2);
+  PotentiometerUpdate(pot2);
 
   io->s->pot1 = pot1->value;
   io->s->pot2 = pot2->value;
@@ -111,6 +111,11 @@ void Pru1Init(pru_mem_t* mem) {
                         refractory,
                         FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
   PamSetPd(pam2,fix16_from_int(20));
+
+  // i2c round-robin: one pressure read per tick (reservoir/pam1/pam2 staggered).
+  PressureSensorSetDecimate(reservoir->sensor, 3, 0);
+  PressureSensorSetDecimate(pam1->sensor,      3, 1);
+  PressureSensorSetDecimate(pam2->sensor,      3, 2);
 
 
 

@@ -105,7 +105,8 @@ void Pru1UpdateState(const pru_view_t* view, pru_io_t* io) {
   // running through deflation so the stand-to-sit transition is captured too. Only
   // END returns early (clears the ctl bit -> uiloop stops the log); PRE/UP/DOWN all
   // fall through to the sensor reads below. status: 0=baseline/idle, 1=up, 2=down.
-  if (PruGetCtlBit(io->ctl, 0)) {
+  static uint32_t trial_done = 0;
+  if (PruCmd(io, CMD_TRIAL) && !trial_done) {
     if (cyclecnt < view->p->Tdelay) {                             // PRE (baseline, deflated)
       io->s->status = 0;
       SyncOutHigh(sync);
@@ -118,13 +119,18 @@ void Pru1UpdateState(const pru_view_t* view, pru_io_t* io) {
     } else {                                                     // END
       PamSetPd(pam, 0);
       SyncOutLow(sync);
-      PruClearCtlBit(io->ctl, 0);
+      PruSignal(io, SIG_TRIAL_DONE);
+      trial_done = 1;
       io->s->status = 0;
       cyclecnt = 0;
       return;                                                    // no extra +1 tick
     }
     cyclecnt++;
   } else {
+    if (!PruCmd(io, CMD_TRIAL)) {   // A8 deasserted -> re-arm
+      trial_done = 0;
+      PruUnsignal(io, SIG_TRIAL_DONE);
+    }
     io->s->status = 0;
     cyclecnt = 0;
   }

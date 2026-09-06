@@ -19,6 +19,7 @@
 
 typedef struct {
   uint32_t regmap;
+  int last_err;        // last i2c fault code (error_code_t); 0 = ERR_NONE
 } i2c_t;
 
 /* ---- Prototypes ---- */
@@ -28,8 +29,8 @@ uint8_t I2cRxByte(const i2c_t* i2c, uint8_t addr, uint8_t reg);
 void I2cTxByte(const i2c_t* i2c,uint8_t addr, uint8_t reg, uint8_t tx);
 void I2cRxBurst(const i2c_t* i2c,
               uint8_t addr, uint8_t reg, uint16_t len, uint8_t *buf);
-void I2cRxBurstNoReg(const i2c_t* i2c,
+void I2cRxBurstNoReg(i2c_t* i2c,
               uint8_t addr, uint16_t len, uint8_t *buffer);
-void I2cTxByteNoReg(const i2c_t* i2c, uint8_t addr, uint8_t tx);
+void I2cTxByteNoReg(i2c_t* i2c, uint8_t addr, uint8_t tx);
 
 #endif

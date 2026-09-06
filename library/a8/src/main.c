@@ -117,24 +117,35 @@ int main(int argc, char **argv) {
     return -1;
   }
 
+  pru_mem.s->fault.raised = 0;   // clear stale shared-SRAM before the run
+
   if (uiflags.debug) {
-    PruEnable(1, &pru_mem.s->pru_ctl);
+    PruEnable(1, pru_mem.s);
     signal(SIGINT, sigintHandler);
     circbuff_t* cb = LogNewCircBuff();
-    while (!doneFlag) {
+    while (!doneFlag && !pru_mem.s->fault.raised) {
       LogDebugWriteState(pru_mem.s, cb, buff);
     }
-    PruEnable(0, &pru_mem.s->pru_ctl);
+    PruEnable(0, pru_mem.s);
     usleep(10000);
     PruPrintDebugBuffer(pru_mem.p->debug_buff);
   } else {
-    PruEnable(1, &pru_mem.s->pru_ctl);
+    PruEnable(1, pru_mem.s);
     if ((UiLoop(&pru_mem) == 1) | (doneFlag)){
-      PruEnable(0, &pru_mem.s->pru_ctl);
+      PruEnable(0, pru_mem.s);
     }
   }
   usleep(10000);
   UiCleanup();
   PruRestart();
+  if (pru_mem.s->fault.raised) {
+    fprintf(stderr,
+            "\n[FAULT] run stopped by PRU: code=%u core=%u context=0x%06x frame=%u\n",
+            (unsigned) pru_mem.s->fault.code,
+            (unsigned) pru_mem.s->fault.core,
+            (unsigned) pru_mem.s->fault.context,
+            (unsigned) pru_mem.s->fault.frame);
+    return 2;
+  }
   return 0;
 }

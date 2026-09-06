@@ -27,5 +27,8 @@ typedef struct {
   uint32_t fs_ticks;
 } param_mem_t;
 
+// Owned-words command bits (app-specific; bits 8+).
+enum { CMD_SYNC = 1u << 8 };   // A8->PRU (arm): log-sync trigger
+
 
 #endif

@@ -62,7 +62,7 @@ int UiLoop(const pru_mem_t* pru_mem) {
           UiStartLog();
 
           // Set bit 0 for sync
-          UiSetPruCtlBit(pru_mem,0);
+          UiSetCmd(pru_mem, CMD_SYNC);
 
           UiPrintMenu(pru_mem);
           break;
@@ -73,7 +73,7 @@ int UiLoop(const pru_mem_t* pru_mem) {
           if (!UiLogging()) {
             printf("\t\t Not currently logging data!\n");
           } else {
-            UiClearPruCtlBit(pru_mem,0);
+            UiClearCmd(pru_mem, CMD_SYNC);
             UiStopAndSaveLog();
           }
 

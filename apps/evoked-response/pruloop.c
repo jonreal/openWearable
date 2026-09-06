@@ -68,7 +68,7 @@ void Pru1Init(pru_mem_t* mem) {
 
 void Pru1UpdateState(const pru_view_t* view, pru_io_t* io) {
 
-  uint32_t ctl_bit = PruGetCtlBit(io->ctl,0);
+  uint32_t ctl_bit = PruCmd(io, CMD_SYNC);
   if (ctl_bit && !log_flag) {
     log_flag = 1;
     SyncOutHigh(sync);

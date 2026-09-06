@@ -33,8 +33,9 @@ typedef struct {
 } pru_view_t;
 
 typedef struct {
-  state_t*   s;           // this iteration's state slot (read/write)
-  pru_ctl_t* ctl;         // flow-control register (utility bits)
+  state_t* s;                     // this iteration's state slot (read/write)
+  const volatile uint32_t* cmd;   // A8 command word (arm) -- read
+  volatile uint32_t*       sig;   // this core's signal word (pru0/pru1) -- write
 } pru_io_t;
 
 // Prototypes ---------------------------------------------------------------
@@ -48,20 +49,10 @@ void Pru1UpdateState(const pru_view_t* view, pru_io_t* io);
 void Pru1UpdateControl(const pru_view_t* view, pru_io_t* io);
 void Pru1Cleanup(void);
 
-uint8_t PruGetCtlBit(const pru_ctl_t* ctl_, uint8_t nbit);
-void PruSetCtlBit(pru_ctl_t* ctl_, uint8_t nbit);
-void PruClearCtlBit(pru_ctl_t* ctl_, uint8_t nbit);
-
-// inline helpers here
-inline uint8_t PruGetCtlBit(const pru_ctl_t* ctl_, uint8_t nbit) {
-  return ((ctl_->bit.utility & (1 << nbit)) == (1 << nbit));
-}
-
-inline void PruSetCtlBit(pru_ctl_t* ctl_, uint8_t nbit) {
-  ctl_->bit.utility |= (1 << nbit);
-}
-
-inline void PruClearCtlBit(pru_ctl_t* ctl_, uint8_t nbit) {
-  ctl_->bit.utility &= ~(1 << nbit);
-}
+// Owned-words signaling (one writer per word; everyone reads). cmd = A8 command
+// word (read); sig = this core's own signal word (write). Masks are enum labels:
+// framework ARM_*/PRU_* (mem_types.h); app command/signal bits in its state.h.
+static inline int  PruCmd(const pru_io_t* io, uint32_t mask) { return (*io->cmd & mask) != 0; }
+static inline void PruSignal(pru_io_t* io, uint32_t mask)    { *io->sig |=  mask; }
+static inline void PruUnsignal(pru_io_t* io, uint32_t mask)  { *io->sig &= ~mask; }
 #endif

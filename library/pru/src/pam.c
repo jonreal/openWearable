@@ -15,6 +15,7 @@
 
 
 #include "pam.h"
+#include "error.h"
 #include <stdlib.h>
 
 volatile register uint32_t __R30;
@@ -79,6 +80,7 @@ pam_t* PamInitMuscle(pressure_sensor_t* sens,
   pam->s.pd = 0;
   pam->filt = filter;
   pam->cnt = 0;
+  pam->drop_count = 0;
 
   // Will hang here if i2c mux/channel is off
   PamUpdate(pam);
@@ -97,7 +99,24 @@ pam_state_t PamGetState(const pam_t* pam) {
 }
 
 void PamUpdate(pam_t* pam) {
-  pam->s.pm_raw = PressureSensorSample(pam->sensor);
+  i2c_t* i2c = pam->sensor->mux->i2c;   // i2c fault side-channel
+  i2c->last_err = ERR_NONE;             // clear-before
+
+  fix16_t sample = PressureSensorSample(pam->sensor);
+
+  if (pam->sensor->fresh) {             // only judge faults on a real (non-decimated) read
+    if (i2c->last_err != ERR_NONE) {    // check-after: this read dropped
+      if (++pam->drop_count >= error_max_consecutive_drops)
+        ErrorRaise(ERR_CORE_PRU1, (error_code_t) i2c->last_err,
+                   ((uint32_t) pam->sensor->mux_channel << 8)
+                     | pam->sensor->i2c_address);
+      return;                           // sample-hold: keep last pm
+    }
+    pam->drop_count = 0;                // good read: reset the run
+  }
+
+  // Fresh read or decimated skip: filter at full rate on the (fresh or held) sample.
+  pam->s.pm_raw = sample;
   if (pam->filt)
     pam->s.pm = FiltIir(pam->s.pm_raw,pam->filt);
   else
