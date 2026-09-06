@@ -1,0 +1,3 @@
+# openWearable web hub (host-side). numpy comes in via gui/scope.py.
+aiohttp>=3.9
+numpy>=1.24

@@ -1,0 +1,70 @@
+:root {
+  --bg: #ffffff;
+  --fg: #1a1a1a;
+  --muted: #6b7280;
+  --panel-bg: #f7f7f8;
+  --border: #e2e2e6;
+  --ok: #16a34a;
+  --bad: #dc2626;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e0f13;
+    --fg: #e6e6ea;
+    --muted: #9aa0aa;
+    --panel-bg: #16181d;
+    --border: #262932;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+#title { font-weight: 600; }
+#status { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); }
+#status.connected    { color: var(--ok);  border-color: var(--ok); }
+#status.disconnected { color: var(--bad); border-color: var(--bad); }
+
+main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.5rem 0.5rem 0.25rem;
+  overflow-x: auto;
+}
+.panel-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0 0.25rem 0.35rem;
+}
+
+/* uPlot legend/axes readability in dark mode */
+.u-legend { font-size: 11px; }
+.u-title { display: none; }

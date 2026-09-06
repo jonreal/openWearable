@@ -22,3 +22,7 @@ library/build/
 
 # Host tool binaries
 utils/logdecode/logdecode
+
+# Python bytecode (host tools / gui)
+__pycache__/
+*.pyc

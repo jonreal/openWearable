@@ -278,6 +278,33 @@ class ScopeListener:
             out[name] = col.astype(np.float64) / FIX16_ONE if name in fix16 else col
         return out
 
+    def snapshot_since(self, cursor):
+        """Incremental read for streaming consumers (the web hub).
+
+        Returns (new_cursor, cols) where cols is {field: float64 ndarray} for the
+        records written since `cursor` (a value previously returned here, or None
+        for "give me the current window"). If a consumer falls behind past the ring
+        capacity, it silently resyncs to the oldest still-held sample. All fields
+        are float64 (fix16 decoded) for uniform JSON serialization.
+        """
+        with self._lock:
+            if self._dtype is None:
+                return cursor, {}
+            w = self._write
+            if cursor is None or cursor > w or (w - cursor) > self._filled:
+                cursor = w - self._filled          # first call / fell behind -> resync
+            m = w - cursor
+            if m <= 0:
+                return w, {}
+            idx = np.arange(cursor, w) % self.capacity
+            block = self._ring[idx].copy()
+            fix16 = self._fix16
+        cols = {}
+        for name in block.dtype.names:
+            col = block[name].astype(np.float64)
+            cols[name] = col / FIX16_ONE if name in fix16 else col
+        return w, cols
+
     def latest(self):
         """Newest single record as {field_name: python scalar}, or {} if none yet."""
         with self._lock:
