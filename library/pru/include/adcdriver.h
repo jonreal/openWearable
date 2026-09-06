@@ -31,4 +31,10 @@ uint32_t AdcSampleChBits(uint8_t ch);
 fix16_t AdcSampleChmV(uint8_t ch);
 void AdcCleanup(void);
 
+// Fault side-channel (mirrors i2c_t.last_err). Clear before a read, check after:
+// AdcSampleChBits bounds its FIFO poll and sets the error on timeout instead of
+// spinning. Returns an error_code_t value (ERR_NONE / ERR_ADC_TIMEOUT).
+void AdcClearErr(void);
+int  AdcGetErr(void);
+
 #endif

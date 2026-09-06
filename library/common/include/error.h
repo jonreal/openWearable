@@ -25,11 +25,17 @@ typedef enum {
   ERR_CORE_ARM,
 } error_core_t;
 
-// Fault codes. Grow per client (SPI/ADC/...) as they adopt the framework.
+// Fault codes. Grow per client as they adopt the framework. APPEND ONLY --
+// pam.c casts i2c_t.last_err (ERR_I2C_*) through this enum, so existing values
+// must not shift.
 typedef enum {
   ERR_NONE = 0,
   ERR_I2C_TIMEOUT,
   ERR_I2C_NACK,
+  ERR_ADC_TIMEOUT,
+  ERR_SPI_TIMEOUT,
+  ERR_ENC_TIMEOUT,
+  ERR_PRU_PEER_TIMEOUT,
 } error_code_t;
 
 // Single latched fault record (fail-stop: the first fault wins). Lives in
@@ -46,14 +52,19 @@ typedef struct {
 // Defined in error.c; promotable to a runtime param later.
 extern const uint32_t error_max_consecutive_drops;
 
-// PRU-side. Bind the shared-memory hooks once, from the framework init:
+// PRU-side. Bind the shared-memory hooks once, from each core's pru_main:
+//   self       - THIS core's id (ERR_CORE_PRU0 / ERR_CORE_PRU1). The PRUs are
+//                interchangeable, so core identity is injected here (the one place
+//                it's known) rather than hardcoded in the shared drivers.
 //   fault      - the shared fault record (setting .raised IS the fail-stop signal)
 //   frame_src  - a live tick counter, copied into the record on raise
-void ErrorInit(volatile error_t* fault,
+void ErrorInit(error_core_t self,
+               volatile error_t* fault,
                const volatile uint32_t* frame_src);
 
-// PRU-side. Latch the first fault and request the coordinated fail-stop
-// (clears enable so both cores exit through the normal cleanup/vent path).
-void ErrorRaise(error_core_t core, error_code_t code, uint32_t context);
+// PRU-side, core-agnostic. Latch the first fault and request the coordinated
+// fail-stop (both cores exit through the normal cleanup/vent path). The raising
+// core is the one bound in ErrorInit -- callers never pass it.
+void ErrorRaise(error_code_t code, uint32_t context);
 
 #endif /* _ERROR_H_ */

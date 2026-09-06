@@ -17,6 +17,17 @@
 #include "soc_AM33XX.h"
 #include "hw_types.h"
 #include "tsc_adc.h"
+#include "error.h"
+
+// ---- fault side-channel (mirrors i2c_t.last_err; module-level = ADC is a
+// singleton, and one core owns it per app). The driver never wedges: the FIFO
+// poll is bounded and sets adc_last_err on expiry; the consumer
+// (potentiometer.c) checks it and applies the fail-stop / sample-hold policy.
+static const uint32_t ADC_WAIT_BUDGET = 20000u;   // spin cap; fires only on a fault
+static volatile int   adc_last_err    = ERR_NONE;
+
+void AdcClearErr(void) { adc_last_err = ERR_NONE; }
+int  AdcGetErr(void)   { return adc_last_err; }
 
 void AdcInit(void)
 {
@@ -198,8 +209,17 @@ uint32_t AdcSampleChBits(uint8_t ch)
   // Enable steps:
   HWREG(SOC_ADC_TSC_0_REGS + 0x54) = (1 << (ch+1));
 
-  // IRQSTATUS: poll for interrupt
-  while( (HWREG(SOC_ADC_TSC_0_REGS + 0x28) & (1 << 2)) == 0){}
+  // IRQSTATUS: bounded poll for the FIFO-threshold interrupt. A dead/hung ADC
+  // must not wedge the PRU: on budget expiry, flag the fault, clear the IRQ, and
+  // return (rtn=0). The consumer sees AdcGetErr() and holds last-good / fail-stops.
+  uint32_t w = 0;
+  while ((HWREG(SOC_ADC_TSC_0_REGS + 0x28) & (1 << 2)) == 0) {
+    if (++w > ADC_WAIT_BUDGET) {
+      adc_last_err = ERR_ADC_TIMEOUT;
+      HWREG(SOC_ADC_TSC_0_REGS + 0x28) = 0x7FF;   // clear/abort
+      return rtn;
+    }
+  }
 
   // Write to memory
   rtn = (uint32_t) (FIFO[0] & 0xFFF);

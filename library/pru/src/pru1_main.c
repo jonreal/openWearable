@@ -58,7 +58,7 @@ int main(void) {
 
   // fault reporting: bind the shared fault record, the enable bit, and the
   // live tick counter so ErrorRaise() can fail-stop from deep in the drivers.
-  ErrorInit(&mem.s->fault, &counter.frame);
+  ErrorInit(ERR_CORE_PRU1, &mem.s->fault, &counter.frame);
 
   // Hook handles: a const view (read-only) + a mutable io surface. The stable
   // pointers are set once here; io.s is repointed to the current slot each tick.

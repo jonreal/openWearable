@@ -26,6 +26,7 @@
 #include "i2cdriver.h"
 #include "spidriver.h"
 #include "pruloop.h"
+#include "error.h"
 
 // Globals (pru_io) -----------------------------------------------------------
 volatile register uint32_t __R30;
@@ -66,6 +67,11 @@ int main(void) {
   pru_mem_t mem = {NULL, NULL, NULL};
 
   initialize(&mem);
+
+  // fault reporting: bind THIS core's id + the shared fault record + tick counter,
+  // so drivers running on PRU0 (e.g. the ADC pots) can fail-stop. The PRUs are
+  // interchangeable, so both mains bind the same record with their own core id.
+  ErrorInit(ERR_CORE_PRU0, &mem.s->fault, &counter.frame);
 
   // Hook handles: a const view (read-only) + a mutable io surface. The stable
   // pointers are set once here; io.s is repointed to the current slot each tick.

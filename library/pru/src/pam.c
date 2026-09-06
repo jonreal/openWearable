@@ -107,7 +107,7 @@ void PamUpdate(pam_t* pam) {
   if (pam->sensor->fresh) {             // only judge faults on a real (non-decimated) read
     if (i2c->last_err != ERR_NONE) {    // check-after: this read dropped
       if (++pam->drop_count >= error_max_consecutive_drops)
-        ErrorRaise(ERR_CORE_PRU1, (error_code_t) i2c->last_err,
+        ErrorRaise((error_code_t) i2c->last_err,      // core-agnostic (see ErrorInit)
                    ((uint32_t) pam->sensor->mux_channel << 8)
                      | pam->sensor->i2c_address);
       return;                           // sample-hold: keep last pm

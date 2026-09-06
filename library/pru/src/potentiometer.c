@@ -19,20 +19,31 @@
 #include "adcdriver.h"
 #include "filter.h"
 #include "fix16.h"
+#include "error.h"
 
 potentiometer_t* PotentiometerInit(uint8_t adc_ch, iir_filt_t* filter) {
   potentiometer_t* pot = malloc(sizeof(potentiometer_t));
 
-  pot->adc_ch    = adc_ch;
-  pot->filt      = filter;
-  pot->value_raw = 0;
-  pot->value     = 0;
+  pot->adc_ch     = adc_ch;
+  pot->filt       = filter;
+  pot->value_raw  = 0;
+  pot->value      = 0;
+  pot->drop_count = 0;
 
   return pot;
 }
 
 void PotentiometerUpdate(potentiometer_t* pot) {
-  pot->value_raw = AdcSampleChBits(pot->adc_ch);
+  AdcClearErr();                                  // clear-before
+  uint32_t sample = AdcSampleChBits(pot->adc_ch);
+
+  if (AdcGetErr() != ERR_NONE) {                  // check-after: this read dropped
+    if (++pot->drop_count >= error_max_consecutive_drops)
+      ErrorRaise(ERR_ADC_TIMEOUT, pot->adc_ch);   // fail-stop (core-agnostic)
+    return;                                       // sample-hold: keep last value
+  }
+  pot->drop_count = 0;                            // good read: reset the run
+  pot->value_raw  = sample;
 
   // Same pattern as PamUpdate: filter the raw sample if a filter is attached.
   if (pot->filt)

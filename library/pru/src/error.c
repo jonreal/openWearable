@@ -24,20 +24,23 @@ const uint32_t error_max_consecutive_drops = 2;
 
 static volatile error_t*        g_fault  = 0;
 static const volatile uint32_t* g_frame  = 0;
+static uint8_t                  g_core   = 0;   // THIS core, set once in ErrorInit
 
-void ErrorInit(volatile error_t* fault,
+void ErrorInit(error_core_t self,
+               volatile error_t* fault,
                const volatile uint32_t* frame_src) {
+  g_core   = (uint8_t) self;
   g_fault  = fault;
   if (fault) fault->raised = 0u;   // start clean regardless of stale SRAM
   g_frame  = frame_src;
 }
 
-void ErrorRaise(error_core_t core, error_code_t code, uint32_t context) {
+void ErrorRaise(error_code_t code, uint32_t context) {
   if (g_fault && !g_fault->raised) {        // fail-stop: keep the FIRST fault
     g_fault->frame   = g_frame ? *g_frame : 0u;
     g_fault->context = context;
     g_fault->code    = (uint16_t) code;
-    g_fault->core    = (uint8_t)  core;
+    g_fault->core    = g_core;              // whichever core bound ErrorInit
     g_fault->raised  = 1u;
   }
   // Setting fault.raised (above) IS the fail-stop signal: both PRU loops test it

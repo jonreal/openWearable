@@ -24,6 +24,7 @@ typedef struct{
   iir_filt_t* filt;              // optional IIR filter (NULL = none), like pam_t
   volatile uint32_t value_raw;   // raw ADC sample
   volatile uint32_t value;       // filtered (or raw if no filter)
+  uint32_t drop_count;           // consecutive faulted reads (fail-stop budget)
 } potentiometer_t;
 
 potentiometer_t* PotentiometerInit(uint8_t adc_ch, iir_filt_t* filter);
