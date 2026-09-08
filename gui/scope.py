@@ -439,24 +439,36 @@ def _selftest(port, rate, seconds):
     return 0 if ok else 1
 
 
-def _listen(port, host, seconds):
-    """Plain listen: print stats + a tail of named values (replaces udplistener.py)."""
+def _listen(port, host, seconds, period=1.0, col=11):
+    """Plain listen: stream the latest values as aligned columns (replaces udplistener.py).
+
+    Header (field names) is reprinted every 20 rows so it stays visible; a compact
+    stats line prints every 10 rows.
+    """
     listener = ScopeListener(port=port, host=host).start()
     print(f"listening for openWearable binary telemetry on udp://{host or '0.0.0.0'}:{port} ...")
     t_end = None if seconds <= 0 else time.monotonic() + seconds
+    fields, rows = [], 0
     try:
         while t_end is None or time.monotonic() < t_end:
-            time.sleep(1.0)
+            time.sleep(period)
             s = listener.stats()
             if not s["fields"]:
                 print("  (waiting for schema frame...)")
                 continue
+            if s["fields"] != fields:              # (re)print header on schema change
+                fields, rows = s["fields"], 0
             snap = listener.snapshot(1)
-            tail = {k: (round(float(v[-1]), 4) if len(v) else None)
-                    for k, v in snap.items()}
-            print(f"fps={s['fps']} avg={s['avg_fps']} data={s['data']} "
-                  f"drop={s['dropped']} reord={s['reordered']} bad={s['bad_frames']} "
-                  f"fill={s['fill']}/{s['capacity']}  {tail}")
+            if not snap:
+                continue
+            if rows % 20 == 0:
+                print("".join(f"{n:>{col}.{col}}" for n in fields))
+            vals = [float(snap[n][-1]) if len(snap[n]) else float("nan") for n in fields]
+            print("".join(f"{v:>{col}.4g}" for v in vals))
+            rows += 1
+            if rows % 10 == 0:
+                print(f"  [fps={s['fps']} drop={s['dropped']} reord={s['reordered']} "
+                      f"bad={s['bad_frames']} fill={s['fill']}/{s['capacity']}]")
     except KeyboardInterrupt:
         pass
     finally:
