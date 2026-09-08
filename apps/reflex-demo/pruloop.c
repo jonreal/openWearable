@@ -18,6 +18,7 @@
 #include "filtcoeff.h"
 #include "reflex.h"
 #include "potentiometer.h"
+#include "epcontroller.h"
 
 volatile register uint32_t __R30;
 volatile register uint32_t __R31;
@@ -31,6 +32,7 @@ pam_t* pam2;
 reflex_t* reflex;
 potentiometer_t* pot1;
 potentiometer_t* pot2;
+epcontroller_t* ep;
 
 // Not connected, only sensor
 //pam_t* pam3;
@@ -42,6 +44,10 @@ const fix16_t a_dcblck[2] = {fix16_one, 0xFFFF3333};  // -0.80
 
 const uint32_t refractory = 150;
 
+// EP re-commands its baseline only when it moves by more than this (fix16 ~0.05),
+// so a sustained reflex jump isn't pulled back each tick (both edit pam->pd).
+const fix16_t EP_APPLY_EPS = 3277;
+
 // ---------------------------------------------------------------------------
 // PRU0
 //
@@ -50,10 +56,10 @@ const uint32_t refractory = 150;
 
 void Pru0Init(pru_mem_t* mem) {
 
-  // pot1 - adc ch 0
-  // pot2 - adc ch 1
-  pot1 = PotentiometerInit(0, FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
-  pot2 = PotentiometerInit(1, FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
+  // pot1 - adc ch 0 (EP), pot2 - adc ch 1 (stiffness). Pass raw: the smoothing
+  // now lives in the EP controller (source-agnostic), so we don't double-filter.
+  pot1 = PotentiometerInit(0, NULL);
+  pot2 = PotentiometerInit(1, NULL);
 
 }
 
@@ -120,11 +126,15 @@ void Pru1Init(pru_mem_t* mem) {
 
 
 
-//
-//  reflex = ReflexInit(pam1,pam2,fix16_from_int(5), fix16_from_int(95),
-//                      FiltIirInit(1, b_dcblck, a_dcblck));
-//
-//
+  // Reflex (unchanged): owns the PAM pair, jumps the EP on a load trigger.
+  reflex = ReflexInit(pam1, pam2, fix16_from_int(5), fix16_from_int(95),
+                      FiltIirInit(1, b_dcblck, a_dcblck));
+
+  // EP / impedance controller: pots -> zero-load antagonist setpoints. Pmax is
+  // set live from params each control tick; a 1.3 Hz LP smooths each setpoint.
+  ep = EpControllerInit(0,
+                        FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a),
+                        FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
   //// pam3
   //// sensor on mux ch. 4, 4 - 1 = 3
   //// out: NC
@@ -164,14 +174,34 @@ void Pru1UpdateState(const pru_view_t* view, pru_io_t* io) {
 
 void Pru1UpdateControl(const pru_view_t* view, pru_io_t* io) {
 
-//  ReflexUpdate(reflex, p_->threshold, p_->dP, 0);
-//
-//  if (PruGetCtlBit(ctl_,2)) {
-//    PamSetPd(pam1,p_->P0);
-//    PamSetPd(pam2,p_->P0);
-//    PruClearCtlBit(ctl_,2);
-//  }
-//
+  // --- EP controller: pots -> filtered zero-load antagonist baseline (Pd1/Pd2).
+  //     pot1 -> EP theta_d in [-1,1] (2*frac - 1); pot2 -> stiffness k in [0,1].
+  fix16_t potA = fix16_div(fix16_from_int((int) io->s->pot1), fix16_from_int(4095));
+  fix16_t potB = fix16_div(fix16_from_int((int) io->s->pot2), fix16_from_int(4095));
+  EpControllerSetPmax(ep, view->p->Pmax);
+  EpControllerSetEp(ep, fix16_ssub(fix16_smul(fix16_from_int(2), potA), fix16_one));
+  EpControllerSetK(ep, potB);
+  EpControllerUpdate(ep);
+
+  // EP is an event-driven editor: (re)command the baseline only when it actually
+  // moves, so a reflex jump isn't pulled back every tick. Both edit pam->pd; the
+  // PamSetPd HOLD-gate serializes them (no mid-move stomping).
+  fix16_t pd1 = EpControllerGetPd1(ep);
+  fix16_t pd2 = EpControllerGetPd2(ep);
+  static fix16_t last_pd1 = 0, last_pd2 = 0;
+  static uint32_t primed = 0;
+  fix16_t d1 = fix16_ssub(pd1, last_pd1); if (d1 < 0) d1 = -d1;
+  fix16_t d2 = fix16_ssub(pd2, last_pd2); if (d2 < 0) d2 = -d2;
+  if (!primed || d1 > EP_APPLY_EPS || d2 > EP_APPLY_EPS) {
+    PamSetPd(pam1, pd1);
+    PamSetPd(pam2, pd2);
+    last_pd1 = pd1; last_pd2 = pd2; primed = 1;
+  }
+
+  // Reflex (unchanged, owns the PAMs): jumps the EP under load, when enabled.
+  if (PruCmd(io, CMD_REFLEX))
+    ReflexUpdate(reflex, view->p->threshold, view->p->dP, 0);
+
   PamActionSimple(pam1);
   PamActionSimple(pam2);
 

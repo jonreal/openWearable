@@ -9,17 +9,19 @@ extern volatile sig_atomic_t input_ready;
 void UiPrintMenu(const pru_mem_t* pru_mem) {
   printf(
   "\n\n---------------------------------------------------------------------\n"
-  " \t P0 = %3.2f,\t dP = %3.2f,\t threshold = %3.5f\n\n"
+  " \t Pmax = %3.2f,\t dP = %3.2f,\t threshold = %3.5f,\t reflex = %s\n\n"
   "Menu: s - start log\n"
   "      d - stop log\n"
-  "      h - change P0\n"
+  "      m - change Pmax\n"
   "      g - change dP\n"
   "      f - change threshold\n"
+  "      r - toggle reflex on/off\n"
   "      e - exit\n"
   "-----------------------------------------------------------------------\n",
-  fix16_to_float(pru_mem->p->P0),
+  fix16_to_float(pru_mem->p->Pmax),
   fix16_to_float(pru_mem->p->dP),
-  fix16_to_float(pru_mem->p->threshold));
+  fix16_to_float(pru_mem->p->threshold),
+  UiGetCmd(pru_mem, CMD_REFLEX) ? "ON" : "off");
   fflush(stdout);
 }
 
@@ -86,13 +88,13 @@ int UiLoop(const pru_mem_t* pru_mem) {
           break;
         }
 
-        // --- P0
-        case 'h' : {
+        // --- Pmax (EP controller ceiling)
+        case 'm' : {
           printf("\t\tEnter new value: ");
           fflush(stdout);
           UiPollForUserInput();
           scanf(" %f", &input_float);
-          pru_mem->p->P0 = fix16_from_float(input_float);
+          pru_mem->p->Pmax = fix16_from_float(input_float);
           UiPrintMenu(pru_mem);
           break;
         }
@@ -118,6 +120,16 @@ int UiLoop(const pru_mem_t* pru_mem) {
           UiPrintMenu(pru_mem);
           break;
         }
+
+        // --- toggle reflex on/off (A8-owned command bit, read by the PRU)
+        case 'r' : {
+          if (UiGetCmd(pru_mem, CMD_REFLEX))
+            UiClearCmd(pru_mem, CMD_REFLEX);
+          else
+            UiSetCmd(pru_mem, CMD_REFLEX);
+          UiPrintMenu(pru_mem);
+          break;
+        }
       }
     }
   }
@@ -132,6 +144,7 @@ int PruLoadParams(const char* file, param_mem_t* param) {
   param->P0 = 0;
   param->threshold = fix16_from_float(0.025);
   param->dP = fix16_from_int(4);
+  param->Pmax = fix16_from_int(30);   // EP controller ceiling (UI-mutable via [m])
 
   return 0;
 }

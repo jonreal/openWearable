@@ -32,7 +32,11 @@ typedef struct {
   fix16_t P0;
   volatile fix16_t threshold;
   volatile fix16_t dP;
+  volatile fix16_t Pmax;        // EP controller pressure ceiling (UI-mutable)
 } param_mem_t;
+
+// A8 -> PRU command bits (owned-words signaling, app bits start at 8).
+enum { CMD_REFLEX = 1u << 8 };  // [r] toggles the reflex on/off
 
 
 #endif
