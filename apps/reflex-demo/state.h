@@ -22,6 +22,13 @@ typedef struct {
   volatile fix16_t triggersignal;
   volatile uint32_t pot1;
   volatile uint32_t pot2;
+  // Echoed command state (telemetry confirmation of what the board is actually
+  // running, so the operator console reflects real state -- no command acks).
+  volatile fix16_t pmax;
+  volatile fix16_t dp;
+  volatile fix16_t thr;
+  volatile uint32_t reflex_on;
+  volatile uint32_t armed;
  } state_t;
 
 // --- Parameters

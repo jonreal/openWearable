@@ -68,3 +68,34 @@ main {
 /* uPlot legend/axes readability in dark mode */
 .u-legend { font-size: 11px; }
 .u-title { display: none; }
+
+/* header ARM switch */
+.spacer { flex: 1; }
+#arm {
+  font: 600 12px/1 inherit;
+  padding: 5px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  color: var(--fg);
+}
+#arm.armed    { background: var(--bad); color: #fff; border-color: var(--bad); }
+#arm.disarmed { color: var(--muted); }
+
+/* controls panel */
+#controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.5rem;
+  padding: 0.7rem 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  border-bottom: 1px solid var(--border);
+}
+.ctl { display: flex; align-items: center; gap: 0.5rem; font-size: 13px; }
+.ctl > label { color: var(--muted); min-width: 6.5rem; }
+.ctl input[type=range] { width: 150px; accent-color: var(--ok); }
+.ctl input:disabled { opacity: 0.4; cursor: not-allowed; }
+.ctl-val  { font-variant-numeric: tabular-nums; min-width: 3rem; text-align: right; }
+.ctl-echo { color: var(--muted); font-size: 11px; min-width: 4.5rem; }

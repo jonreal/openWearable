@@ -32,8 +32,13 @@ const ow_field_t ow_schema[] = {
   { "p2d",      OW_FIX16,  offsetof(state_t, pam2_state.pd)      },
   { "u2",       OW_I32,    offsetof(state_t, pam2_state.u)       },
   { "trigger",  OW_FIX16,  offsetof(state_t, triggersignal)      },
-  { "pot1",     OW_U32,  offsetof(state_t, pot1)      },
-  { "pot2",     OW_U32,  offsetof(state_t, pot2)      },
+  { "pot1",     OW_U32,    offsetof(state_t, pot1)               },
+  { "pot2",     OW_U32,    offsetof(state_t, pot2)               },
+  { "pmax",     OW_FIX16,  offsetof(state_t, pmax)               },
+  { "dp",       OW_FIX16,  offsetof(state_t, dp)                 },
+  { "thr",      OW_FIX16,  offsetof(state_t, thr)                },
+  { "reflex",   OW_U32,    offsetof(state_t, reflex_on)          },
+  { "armed",    OW_U32,    offsetof(state_t, armed)              },
 };
 const size_t ow_schema_count = sizeof ow_schema / sizeof ow_schema[0];
 

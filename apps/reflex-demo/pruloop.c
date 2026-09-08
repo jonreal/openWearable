@@ -207,6 +207,14 @@ void Pru1UpdateControl(const pru_view_t* view, pru_io_t* io) {
   //s_->pam4_state = PamGetState(pam4);
   io->s->triggersignal = reflex->triggersignal;
 
+  // Echo command state into telemetry so the operator console confirms what the
+  // board is actually running (params + reflex + arm), no command acks needed.
+  io->s->pmax      = view->p->Pmax;
+  io->s->dp        = view->p->dP;
+  io->s->thr       = view->p->threshold;
+  io->s->reflex_on = PruCmd(io, CMD_REFLEX) ? 1u : 0u;
+  io->s->armed     = (*io->cmd & ARM_ARMED) ? 1u : 0u;
+
 }
 
 void Pru1Cleanup(void) {

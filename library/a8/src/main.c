@@ -27,6 +27,7 @@
 #include "log.h"
 #include "ui.h"
 #include "format.h"
+#include "cmd.h"
 
 volatile sig_atomic_t doneFlag;
 
@@ -119,6 +120,8 @@ int main(int argc, char **argv) {
 
   pru_mem.s->fault.raised = 0;   // clear stale shared-SRAM before the run
 
+  CmdInit(&pru_mem);             // host->board command channel (udp:1501, disarmed)
+
   if (uiflags.debug) {
     PruEnable(1, pru_mem.s);
     signal(SIGINT, sigintHandler);
@@ -136,6 +139,7 @@ int main(int argc, char **argv) {
     }
   }
   usleep(10000);
+  CmdCleanup();
   UiCleanup();
   PruRestart();
   if (pru_mem.s->fault.raised) {

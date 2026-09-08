@@ -4,6 +4,8 @@
 const panelsEl = document.getElementById("panels");
 const statusEl = document.getElementById("status");
 const titleEl = document.getElementById("title");
+const controlsEl = document.getElementById("controls");
+const armBtn = document.getElementById("arm");
 
 const WINDOW = 2000; // samples kept per field (uPlot downsamples to screen width)
 const PALETTE = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b",
@@ -15,6 +17,9 @@ let buffers = {};         // field -> number[]
 let sampleIdx = [];       // synthetic x when xField is null
 let plots = [];           // [{u, fields}]
 let plotsReady = false;
+let controls = [];        // [{spec, el, valEl, echoEl}]
+let armed = false;
+let sock = null;          // active WebSocket (controls send through it)
 
 function color(i) { return PALETTE[i % PALETTE.length]; }
 
@@ -68,7 +73,84 @@ function setup(msg) {
     plots.push({ u, fields: p.fields });
   }
   plotsReady = true;
+  buildControls(dash.controls || []);
   redraw();
+}
+
+// -- control panel (commands out; gated by a single ARM switch) --------------
+function sendCmd(obj) {
+  if (sock && sock.readyState === WebSocket.OPEN) sock.send(JSON.stringify(obj));
+}
+
+function setArmed(a) {
+  armed = a;
+  armBtn.textContent = a ? "ARMED" : "DISARMED";
+  armBtn.className = a ? "armed" : "disarmed";
+  controls.forEach(c => { c.el.disabled = !a; });   // controls live only while armed
+}
+
+function buildControls(specs) {
+  controlsEl.innerHTML = "";
+  controls = [];
+  armBtn.hidden = specs.length === 0;
+  controlsEl.hidden = specs.length === 0;
+  for (const spec of specs) {
+    const row = document.createElement("div");
+    row.className = "ctl";
+    const label = document.createElement("label");
+    label.textContent = spec.label;
+    row.appendChild(label);
+
+    let el, valEl = null;
+    if (spec.kind === "toggle") {
+      el = document.createElement("input");
+      el.type = "checkbox";
+      el.addEventListener("change",
+        () => sendCmd({ type: "cmd", name: spec.cmd, value: el.checked ? 1 : 0 }));
+    } else {
+      el = document.createElement("input");
+      el.type = "range";
+      el.min = spec.lo; el.max = spec.hi; el.step = spec.step; el.value = spec.lo;
+      valEl = document.createElement("span");
+      valEl.className = "ctl-val";
+      valEl.textContent = (+spec.lo).toFixed(2);
+      el.addEventListener("input", () => {
+        valEl.textContent = (+el.value).toFixed(2);
+        sendCmd({ type: "cmd", name: spec.cmd, value: +el.value });
+      });
+    }
+    el.disabled = true;                 // gated until armed
+    row.appendChild(el);
+    if (valEl) row.appendChild(valEl);
+    const echoEl = document.createElement("span");
+    echoEl.className = "ctl-echo";
+    row.appendChild(echoEl);
+    controlsEl.appendChild(row);
+    controls.push({ spec, el, valEl, echoEl });
+  }
+  armBtn.onclick = () => sendCmd({ type: "arm", on: !armed });
+  setArmed(false);
+}
+
+function latest(field) {
+  const b = buffers[field];
+  return (b && b.length) ? b[b.length - 1] : null;
+}
+
+function updateControls() {
+  const a = latest("armed");
+  if (a !== null) setArmed(a >= 0.5);
+  for (const c of controls) {
+    if (!c.spec.echo) continue;
+    const v = latest(c.spec.echo);
+    if (v === null) continue;
+    if (c.spec.kind === "toggle") {
+      if (document.activeElement !== c.el) c.el.checked = v >= 0.5;  // don't fight the user
+      c.echoEl.textContent = v >= 0.5 ? "on" : "off";
+    } else {
+      c.echoEl.textContent = "now " + (+v).toFixed(2);
+    }
+  }
 }
 
 function appendData(cols) {
@@ -88,6 +170,7 @@ function appendData(cols) {
     if (sampleIdx.length > WINDOW) sampleIdx.splice(0, sampleIdx.length - WINDOW);
   }
   redraw();
+  updateControls();
 }
 
 function redraw() {
@@ -108,15 +191,15 @@ function resize() {
 window.addEventListener("resize", resize);
 
 function connect() {
-  const ws = new WebSocket(`ws://${location.host}/ws`);
-  ws.onopen = () => setStatus(true);
-  ws.onmessage = (ev) => {
+  sock = new WebSocket(`ws://${location.host}/ws`);
+  sock.onopen = () => setStatus(true);
+  sock.onmessage = (ev) => {
     const msg = JSON.parse(ev.data);
     if (msg.type === "init") setup(msg);
     else if (msg.type === "data") appendData(msg.cols);
   };
-  ws.onclose = () => { setStatus(false); setTimeout(connect, 1000); };
-  ws.onerror = () => ws.close();
+  sock.onclose = () => { setStatus(false); setTimeout(connect, 1000); };
+  sock.onerror = () => sock.close();
 }
 
 connect();

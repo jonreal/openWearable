@@ -34,7 +34,8 @@
 // is a clpru<->gcc shared-memory ABI, so no bitfields. App command/signal bits
 // use 8..30 (named per app in its state.h); bit 31 avoided (int enum, --c99).
 enum arm_bit {            // written only by the A8
-  ARM_RUN = 1u << 0,      // enable the control loop
+  ARM_RUN   = 1u << 0,    // enable the control loop
+  ARM_ARMED = 1u << 1,    // command channel: changes accepted only while set
 };
 enum pru_bit {            // written only by the owning PRU (pru0 / pru1)
   PRU_READY = 1u << 0,    // driver + app init complete

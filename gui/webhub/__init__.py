@@ -5,6 +5,9 @@ thin instance in `apps/<app>/gui/dashboard.py` using these primitives. See
 notes/scope-architecture.md.
 """
 
-from gui.webhub.dashboard import Dashboard, TimePanel, auto_dashboard, load_app_dashboard
+from gui.webhub.dashboard import (
+    Dashboard, TimePanel, Slider, Toggle, auto_dashboard, load_app_dashboard,
+)
 
-__all__ = ["Dashboard", "TimePanel", "auto_dashboard", "load_app_dashboard"]
+__all__ = ["Dashboard", "TimePanel", "Slider", "Toggle",
+           "auto_dashboard", "load_app_dashboard"]

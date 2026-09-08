@@ -151,6 +151,7 @@ class ScopeListener:
         self._t_start = None
         self._recent = deque()   # monotonic recv times, trimmed to _WIN seconds
         self._WIN = 2.0
+        self._src_host = None    # IP of the last telemetry sender (the board)
 
     # -- lifecycle ----------------------------------------------------------
     def start(self):
@@ -181,6 +182,10 @@ class ScopeListener:
     def __exit__(self, *exc):
         self.stop()
 
+    def source_host(self):
+        """IP of the last telemetry sender (the board), or None if none seen yet."""
+        return self._src_host
+
     # -- receive loop -------------------------------------------------------
     def _run(self):
         while not self._stop.is_set():
@@ -190,6 +195,7 @@ class ScopeListener:
                 continue
             except OSError:
                 break
+            self._src_host = _addr[0]      # remember the board (for the cmd channel)
             if len(pkt) < HEADER_SIZE:
                 self._bad_frames += 1
                 continue

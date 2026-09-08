@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "cmd.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
@@ -146,6 +147,21 @@ int PruLoadParams(const char* file, param_mem_t* param) {
   param->Pmax = fix16_from_int(30);   // EP controller ceiling (UI-mutable via [m])
 
   return 0;
+}
+
+// Per-app command hook (see cmd.h): maps host command names to this app's params
+// and command bits. Only called while armed -- the cmd channel enforces the gate.
+void CmdApply(pru_mem_t* pm, const char* name, float value) {
+  if (strcmp(name, "Pmax") == 0)
+    pm->p->Pmax = fix16_from_float(value);
+  else if (strcmp(name, "dP") == 0)
+    pm->p->dP = fix16_from_float(value);
+  else if (strcmp(name, "threshold") == 0)
+    pm->p->threshold = fix16_from_float(value);
+  else if (strcmp(name, "reflex") == 0) {
+    if (value != 0.0f) pm->s->arm |=  CMD_REFLEX;
+    else               pm->s->arm &= ~CMD_REFLEX;
+  }
 }
 
 

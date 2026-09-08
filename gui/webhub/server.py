@@ -15,15 +15,17 @@ Then open http://<this-host>:8080 from a laptop or phone on the same network.
 
 import argparse
 import asyncio
+import json
 import threading
 import time
 from pathlib import Path
 
 import numpy as np
-from aiohttp import web
+from aiohttp import web, WSMsgType
 
 from gui.scope import ScopeListener, ScopeSender
 from gui.webhub.dashboard import auto_dashboard, load_app_dashboard
+from gui.webhub.commander import Commander
 
 WEB_DIR = Path(__file__).parent / "web"
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -32,11 +34,19 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 class Hub:
     """Owns the listener + resolved dashboard; each WS connection streams from it."""
 
-    def __init__(self, listener, app_name, fps):
+    def __init__(self, listener, app_name, fps, commander, board_host=None):
         self.listener = listener
         self.app_name = app_name
         self.fps = fps
+        self.commander = commander
+        self._board_host = board_host    # explicit --board; else learned from telemetry
         self._dashboard = None  # resolved lazily once the schema is known
+
+    def resolve_board(self):
+        """Point the commander at the board: explicit --board, else the telemetry source."""
+        if not self.commander.host:
+            self.commander.host = self._board_host or self.listener.source_host()
+        return self.commander.host
 
     def dashboard(self):
         """Resolve (once) the per-app dashboard, or the auto fallback. None until schema."""
@@ -84,10 +94,22 @@ async def ws_handler(request):
 
     send_task = asyncio.create_task(sender())
     try:
-        async for _msg in ws:   # inbound: reserved for Phase 2b commands; ignored in 2a
-            pass
+        async for msg in ws:                       # inbound: control commands
+            if msg.type != WSMsgType.TEXT:
+                continue
+            try:
+                m = json.loads(msg.data)
+            except (ValueError, TypeError):
+                continue
+            hub.resolve_board()                    # ensure the commander knows the board
+            kind = m.get("type")
+            if kind == "cmd":
+                hub.commander.send(m["name"], m["value"])
+            elif kind == "arm":
+                hub.commander.arm(bool(m.get("on")))
     finally:
         send_task.cancel()
+        hub.commander.arm(0)                       # auto-disarm when the console disconnects
     return ws
 
 
@@ -134,6 +156,8 @@ def main():
     ap.add_argument("--udp", type=int, default=1500, help="telemetry UDP port to listen on")
     ap.add_argument("--http", type=int, default=8080, help="web/WebSocket port to serve")
     ap.add_argument("--fps", type=float, default=50.0, help="push rate to browsers")
+    ap.add_argument("--board", default=None,
+                    help="board host/IP for the command channel (default: learned from telemetry)")
     ap.add_argument("--selftest", action="store_true",
                     help="run a built-in synthetic source (no board required)")
     args = ap.parse_args()
@@ -143,9 +167,10 @@ def main():
     if args.selftest:
         _start_selftest_source(args.udp)
 
-    hub = Hub(listener, args.app, args.fps)
+    commander = Commander(host=(args.board or ("127.0.0.1" if args.selftest else None)))
+    hub = Hub(listener, args.app, args.fps, commander, board_host=args.board)
     app = build_app(hub)
-    print(f"web hub: http://0.0.0.0:{args.http}  (udp:{args.udp}, "
+    print(f"web hub: http://0.0.0.0:{args.http}  (udp:{args.udp}, cmd->{args.board or 'auto'}, "
           f"app={args.app or 'auto'}, {args.fps:.0f} fps)")
     try:
         web.run_app(app, host="0.0.0.0", port=args.http, print=None)

@@ -30,21 +30,55 @@ class TimePanel:
                 "y": self.y, "step": self.step}
 
 
+class Control:
+    """A control widget bound to a board command (see cmd.c CmdApply).
+
+    kind: "slider" | "toggle". `cmd` is the command name the board maps; `echo` is
+    the telemetry field that confirms the applied value (so the widget reflects real
+    board state). All commands are gated by the console's single ARM switch.
+    """
+
+    def __init__(self, kind, label, cmd, echo=None, lo=0.0, hi=1.0, step=0.01):
+        self.kind = kind
+        self.label = label
+        self.cmd = cmd
+        self.echo = echo
+        self.lo, self.hi, self.step = lo, hi, step
+
+    def to_dict(self):
+        return {"kind": self.kind, "label": self.label, "cmd": self.cmd,
+                "echo": self.echo, "lo": self.lo, "hi": self.hi, "step": self.step}
+
+
+def Slider(label, cmd, echo=None, lo=0.0, hi=1.0, step=0.01):
+    return Control("slider", label, cmd, echo, lo, hi, step)
+
+
+def Toggle(label, cmd, echo=None):
+    return Control("toggle", label, cmd, echo)
+
+
 class Dashboard:
-    """An ordered set of panels + an x field. Serializes to the layout the browser renders."""
+    """Panels + controls + an x field. Serializes to the layout the browser renders."""
 
     def __init__(self, title="openWearable", x=None):
         self.title = title
         self.x = x            # x-axis field name; None -> auto-detect / sample index
         self.panels = []
+        self.controls = []
 
     def add(self, panel):
         self.panels.append(panel)
         return self
 
+    def control(self, c):
+        self.controls.append(c)
+        return self
+
     def to_dict(self):
         return {"title": self.title, "x": self.x,
-                "panels": [p.to_dict() for p in self.panels]}
+                "panels": [p.to_dict() for p in self.panels],
+                "controls": [c.to_dict() for c in self.controls]}
 
 
 def pick_x(fields, x=None):
