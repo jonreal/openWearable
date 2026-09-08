@@ -58,7 +58,7 @@ void Pru1Init(pru_mem_t* mem) {
 
   // pam -- only sensor for now
   // sensor on mux ch. 6, 6 - 1 = 5
-  pressure_sensor = PressureSensorInit(mux,5,0x28);
+  pressure_sensor = PressureSensorInit(mux,5,0x28,1,0);
 
   // Sync Out ---- NEED TO CHANGE TO PROPER PIN
   ///* P8.45, MODE5, pr1_pru1_pru_r30_0 */

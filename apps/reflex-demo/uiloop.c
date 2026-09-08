@@ -141,7 +141,6 @@ int PruLoadParams(const char* file, param_mem_t* param) {
   param->fs_hz = 100;
   param->fs_ticks = HZ_TO_TICKS(param->fs_hz);
 
-  param->P0 = 0;
   param->threshold = fix16_from_float(0.025);
   param->dP = fix16_from_int(4);
   param->Pmax = fix16_from_int(30);   // EP controller ceiling (UI-mutable via [m])

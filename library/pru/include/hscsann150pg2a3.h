@@ -33,13 +33,13 @@ typedef struct {
   volatile uint8_t fresh;   // 1 if this tick did a real read (for fault judging)
 } pressure_sensor_t;
 
-// Public
+// Public. `decimate`/`phase` set the round-robin schedule at construction (read
+// every `decimate` ticks, staggered by `phase`); pass (1, 0) to read every tick.
 pressure_sensor_t* PressureSensorInit(i2cmux_t* mux,
                                       uint8_t mux_channel,
-                                      uint8_t i2c_address);
+                                      uint8_t i2c_address,
+                                      uint32_t decimate, uint32_t phase);
 void PressureSensorFree(pressure_sensor_t* sensor);
-void PressureSensorSetDecimate(pressure_sensor_t* sensor,
-                               uint32_t decimate, uint32_t phase);
 fix16_t PressureSensorSample(pressure_sensor_t* sensor);
 
 #endif /* _HSCSANN150PG2A3_H_ */

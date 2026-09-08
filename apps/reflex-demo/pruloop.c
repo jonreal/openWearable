@@ -56,10 +56,10 @@ const fix16_t EP_APPLY_EPS = 3277;
 
 void Pru0Init(pru_mem_t* mem) {
 
-  // pot1 - adc ch 0 (EP), pot2 - adc ch 1 (stiffness). Pass raw: the smoothing
-  // now lives in the EP controller (source-agnostic), so we don't double-filter.
-  pot1 = PotentiometerInit(0, NULL);
-  pot2 = PotentiometerInit(1, NULL);
+  // pot1 - adc ch 0 (EP), pot2 - adc ch 1 (stiffness). The pot filters its own
+  // noise (1.3 Hz LP) so userspace hands the EP controller a clean signal.
+  pot1 = PotentiometerInit(0, FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
+  pot2 = PotentiometerInit(1, FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
 
 }
 
@@ -92,36 +92,30 @@ void Pru1Init(pru_mem_t* mem) {
   i2c = I2cInit(2);
   mux = MuxI2cInit(i2c,0x70,PCA9548);
 
-  //// Ch. 7, 7-1 = 6
-  reservoir = PamReservoirInit(PressureSensorInit(mux,6,0x28));
+  //// Ch. 7, 7-1 = 6. i2c round-robin: decimate=3, staggered phases 0/1/2
+  //// (reservoir/pam1/pam2) -> one pressure read per tick.
+  reservoir = PamReservoirInit(PressureSensorInit(mux,6,0x28,3,0));
 
 
   // pam1
   // sensor on mux ch. 6, 6 - 1 = 5
   // out: P8.28, pr1_pru1_pru_r30_10
   // in: 8.27, pr1_pru1_pru_r30_8
-  pam1 = PamInitMuscle(PressureSensorInit(mux,5,0x28),
+  pam1 = PamInitMuscle(PressureSensorInit(mux,5,0x28,3,1),
                         reservoir,
                         8, 10,
                         refractory,
                         FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
-  PamSetPd(pam1,fix16_from_int(20));
 
   // pam2
   // sensor on mux ch. 5, 5 - 1 = 4
   // out: P8.30, pr1_pru1_pru_r30_9
   // in: 8.29, pr1_pru1_pru_r30_11
-  pam2 = PamInitMuscle(PressureSensorInit(mux,4,0x28),
+  pam2 = PamInitMuscle(PressureSensorInit(mux,4,0x28,3,2),
                         reservoir,
                         9, 11,
                         refractory,
                         FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
-  PamSetPd(pam2,fix16_from_int(20));
-
-  // i2c round-robin: one pressure read per tick (reservoir/pam1/pam2 staggered).
-  PressureSensorSetDecimate(reservoir->sensor, 3, 0);
-  PressureSensorSetDecimate(pam1->sensor,      3, 1);
-  PressureSensorSetDecimate(pam2->sensor,      3, 2);
 
 
 
@@ -130,11 +124,9 @@ void Pru1Init(pru_mem_t* mem) {
   reflex = ReflexInit(pam1, pam2, fix16_from_int(5), fix16_from_int(95),
                       FiltIirInit(1, b_dcblck, a_dcblck));
 
-  // EP / impedance controller: pots -> zero-load antagonist setpoints. Pmax is
-  // set live from params each control tick; a 1.3 Hz LP smooths each setpoint.
-  ep = EpControllerInit(0,
-                        FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a),
-                        FiltIirInit(1, k_lp_1_3Hz_b, k_lp_1_3Hz_a));
+  // EP / impedance controller: pots -> zero-load antagonist setpoints. Pure law
+  // (no filter -- the pots deliver clean signals); Pmax set live from params.
+  ep = EpControllerInit(0);
   //// pam3
   //// sensor on mux ch. 4, 4 - 1 = 3
   //// out: NC

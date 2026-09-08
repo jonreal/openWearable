@@ -19,7 +19,8 @@
 
 pressure_sensor_t* PressureSensorInit(i2cmux_t* mux,
                                       uint8_t mux_channel,
-                                      uint8_t i2c_address) {
+                                      uint8_t i2c_address,
+                                      uint32_t decimate, uint32_t phase) {
   pressure_sensor_t* sensor = malloc(sizeof(pressure_sensor_t));
   if(mux) {
     sensor->mux = mux;
@@ -29,8 +30,8 @@ pressure_sensor_t* PressureSensorInit(i2cmux_t* mux,
     sensor->mux_channel = NULL;
   }
   sensor->i2c_address = i2c_address;
-  sensor->decimate = 1;    // every tick by default -> bit-identical to before
-  sensor->phase    = 0;
+  sensor->decimate = decimate ? decimate : 1;   // read every `decimate` ticks
+  sensor->phase    = phase % sensor->decimate;   // staggered slot in the group
   sensor->cnt      = 0;
   sensor->last     = 0;
   sensor->fresh    = 1;
@@ -40,13 +41,6 @@ pressure_sensor_t* PressureSensorInit(i2cmux_t* mux,
 // Sensor owns decimation: read the bus every `decimate` ticks, staggered by
 // `phase` (< decimate). decimate=1 => every tick. Skip ticks return the held
 // value; the caller filters at full rate, so the filter cutoff is unchanged.
-void PressureSensorSetDecimate(pressure_sensor_t* sensor,
-                               uint32_t decimate, uint32_t phase) {
-  sensor->decimate = decimate ? decimate : 1;
-  sensor->phase    = phase % sensor->decimate;
-  sensor->cnt      = 0;
-}
-
 void PressureSensorFree(pressure_sensor_t* sensor) {
   free(sensor);
 }

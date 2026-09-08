@@ -18,11 +18,10 @@
 
 #include <stdint.h>
 #include "fix16.h"
-#include "filter.h"
 
 // Equilibrium-point / impedance controller for an antagonist PAM pair.
 //
-// Pure block: setpoints in -- an equilibrium point theta_d (differential, the
+// Pure law: setpoints in -- an equilibrium point theta_d (differential, the
 // virtual spring's rest offset) and a stiffness k (co-contraction) -- and the two
 // antagonist pressure setpoints Pd1/Pd2 out, scaled by a ceiling Pmax:
 //
@@ -31,25 +30,21 @@
 //     Pd1   = clamp(stiff + ep, 0, Pmax)
 //     Pd2   = clamp(stiff - ep, 0, Pmax)
 //
-// It owns NO actuator: userspace applies Pd1/Pd2 to the PAMs, and a reflex may
-// edit pam->pd on top (they compose as sparse, HOLD-gated editors). The setpoints
-// are input-agnostic -- drive theta_d/k from pots today, a web slider or ML
-// output tomorrow -- and optional per-input filters ramp any command in smoothly.
-// See notes/ep-controller-module.md.
+// It owns NO actuator (userspace applies Pd1/Pd2 to the PAMs; a reflex may edit
+// pam->pd on top -- sparse, HOLD-gated editors), and it does NOT condition its
+// inputs: the CALLER supplies clean, smooth theta_d/k (e.g. the pots filter their
+// own noise). Input-agnostic -- drive it from pots today, a web slider or ML
+// output tomorrow. See notes/ep-controller-module.md.
 typedef struct {
   fix16_t Pmax;          // pressure ceiling
-  fix16_t theta_d;       // EP setpoint target,  [-1, 1]  (differential)
-  fix16_t k;             // stiffness target,     [0, 1]  (co-contraction)
-  iir_filt_t* filt_ep;   // optional smoothing on theta_d (NULL = passthrough)
-  iir_filt_t* filt_k;    // optional smoothing on k       (NULL = passthrough)
-  fix16_t theta_f;       // filtered theta_d
-  fix16_t k_f;           // filtered k
-  fix16_t stiff;         // k_f * Pmax   (kept for logging)
-  fix16_t ep;            // theta_f*stiff (kept for logging)
+  fix16_t theta_d;       // EP setpoint,  [-1, 1]  (differential)
+  fix16_t k;             // stiffness,     [0, 1]  (co-contraction)
+  fix16_t stiff;         // k * Pmax     (kept for logging)
+  fix16_t ep;            // theta_d*stiff (kept for logging)
   fix16_t Pd1, Pd2;      // outputs: antagonist pressure setpoints
 } epcontroller_t;
 
-epcontroller_t* EpControllerInit(fix16_t Pmax, iir_filt_t* filt_ep, iir_filt_t* filt_k);
+epcontroller_t* EpControllerInit(fix16_t Pmax);
 void    EpControllerSetEp(epcontroller_t* c, fix16_t theta_d);  // EP target   [-1, 1]
 void    EpControllerSetK(epcontroller_t* c, fix16_t k);         // stiffness   [ 0, 1]
 void    EpControllerSetPmax(epcontroller_t* c, fix16_t Pmax);

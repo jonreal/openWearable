@@ -69,14 +69,14 @@ void Pru1Init(pru_mem_t* mem) {
   mux = MuxI2cInit(i2c,0x70,PCA9548);
 
   // Ch. 6, 6-1 = 5
-  reservoir = PamReservoirInit(PressureSensorInit(mux,5,0x28));
+  reservoir = PamReservoirInit(PressureSensorInit(mux,5,0x28,1,0));
 
   // pam
   // sensor on mux ch. 6, 6 - 1 = 5
   // IN: * P8.46, MODE5, pr1_pru1_pru_r30_1 */
   // OUT:* P8.44, MODE5, pr1_pru1_pru_r30_3 */
 
-  pam = PamInitMuscle(PressureSensorInit(mux,5,0x28),
+  pam = PamInitMuscle(PressureSensorInit(mux,5,0x28,1,0),
                         reservoir,
                         1, 3,
                         refractory,
