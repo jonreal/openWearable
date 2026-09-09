@@ -19,11 +19,15 @@ class Commander:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     def send(self, name, value):
-        """Send one command line. Returns False if we don't have a board host yet."""
+        """Send one command line. Returns False (never raises) if there's no board
+        host yet or the host doesn't resolve, so a bad target can't break control."""
         if not self.host:
             return False
-        self.sock.sendto(f"{name} {float(value)}\n".encode("ascii"), (self.host, self.port))
-        return True
+        try:
+            self.sock.sendto(f"{name} {float(value)}\n".encode("ascii"), (self.host, self.port))
+            return True
+        except OSError:                      # incl. gaierror (unresolvable host)
+            return False
 
     def arm(self, on):
         return self.send("arm", 1 if on else 0)

@@ -16,6 +16,7 @@ Then open http://<this-host>:8080 from a laptop or phone on the same network.
 import argparse
 import asyncio
 import json
+import socket
 import threading
 import time
 from pathlib import Path
@@ -31,6 +32,15 @@ WEB_DIR = Path(__file__).parent / "web"
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
+def _resolvable(host):
+    """True if `host` resolves to an IPv4 address (Python's resolver, not mDNS)."""
+    try:
+        socket.getaddrinfo(host, None, socket.AF_INET)
+        return True
+    except OSError:
+        return False
+
+
 class Hub:
     """Owns the listener + resolved dashboard; each WS connection streams from it."""
 
@@ -43,9 +53,15 @@ class Hub:
         self._dashboard = None  # resolved lazily once the schema is known
 
     def resolve_board(self):
-        """Point the commander at the board: explicit --board, else the telemetry source."""
-        if not self.commander.host:
-            self.commander.host = self._board_host or self.listener.source_host()
+        """Point the commander at the board (once): prefer an explicit --board that
+        actually resolves, else learn the IP from the telemetry source. This is
+        robust to unresolvable .local names -- Python's resolver often can't do mDNS."""
+        if self.commander.host:
+            return self.commander.host
+        if self._board_host and _resolvable(self._board_host):
+            self.commander.host = self._board_host
+        else:
+            self.commander.host = self.listener.source_host()   # the board's telemetry IP
         return self.commander.host
 
     def dashboard(self):
@@ -103,10 +119,13 @@ async def ws_handler(request):
                 continue
             hub.resolve_board()                    # ensure the commander knows the board
             kind = m.get("type")
-            if kind == "cmd":
-                hub.commander.send(m["name"], m["value"])
-            elif kind == "arm":
-                hub.commander.arm(bool(m.get("on")))
+            try:                                   # a bad send must never break control
+                if kind == "cmd":
+                    hub.commander.send(m["name"], m["value"])
+                elif kind == "arm":
+                    hub.commander.arm(bool(m.get("on")))
+            except Exception:
+                pass
     finally:
         send_task.cancel()
         hub.commander.arm(0)                       # auto-disarm when the console disconnects
