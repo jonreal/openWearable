@@ -46,6 +46,7 @@ static void* CmdRxLoop(void* arg) {
     float value;
     if (sscanf(buf, "%63s %f", name, &value) != 2)
       continue;
+    fprintf(stderr, "[cmd] rx: %s %.3f\n", name, value);   // arrival log (low rate)
     if (strcmp(name, "arm") == 0) {       // the single gate (A8 owns the arm word)
       if (value != 0.0f) g_pm->s->arm |=  ARM_ARMED;
       else               g_pm->s->arm &= ~ARM_ARMED;
@@ -62,6 +63,9 @@ void CmdInit(pru_mem_t* pm) {
 
   g_sock = socket(AF_INET, SOCK_DGRAM, 0);
   if (g_sock < 0) { printf("cmd: socket failed\n"); return; }
+
+  int one = 1;
+  setsockopt(g_sock, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));  // rebind after restart
 
   struct sockaddr_in a;
   memset(&a, 0, sizeof(a));
